@@ -3,7 +3,12 @@ OpenGlass
 
 First public preview, it's a work in progress (needs to be cleaned up, was written on the bus ride to NYC from DC when we got glass) but we wanted to get it out as early as possible.
 
-Right now it has two modes: 1.) if it is sent an image without text it runs an indoor classifier on it with the result being sent as a timeline item and 2.) if it is sent an image with text it is used as a question for human annotation with the results being sent as timeline items.  It is not expected that you will be able to run this yourself easily, it is primarily to share ideas and collaborate.
+Right now it has two modes
+
+1. If it is sent an image without text it runs an indoor classifier on it with the result being sent as a timeline item.  See demo http://youtu.be/hhWBvoqop2o
+2. If it is sent an image with text it is used as a question for human annotation with the results being sent as timeline items.  See demo http://youtu.be/7DVFbWQ1di8
+
+It is not expected that you will be able to run this yourself easily, it is primarily to share ideas and collaborate.
 
 License
 -------
