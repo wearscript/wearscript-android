@@ -141,7 +141,6 @@ func PicarusApiList(method string, path string, params url.Values) ([] map[strin
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(body)
 	var v []map[string]interface{}
 	err = json.Unmarshal(body, &v)
 	if err != nil {
@@ -197,6 +196,14 @@ func bootstrapUser(r *http.Request, client *http.Client, userId string) {
 		CallbackUrl: fullUrl + "/notify",
 	}
 	m.Subscriptions.Insert(s).Do()
+	/*
+	s = &mirror.Subscription{
+		Collection:  "locations",
+		UserToken:   userId,
+		CallbackUrl: fullUrl + "/notify",
+	}
+	m.Subscriptions.Insert(s).Do()
+	 */
 
 	c := &mirror.Contact{
 		Id:          "OpenGlass",
@@ -206,7 +213,9 @@ func bootstrapUser(r *http.Request, client *http.Client, userId string) {
 	m.Contacts.Insert(c).Do()
 
 	t := &mirror.TimelineItem{
-		Text:         "Welcome to OpenGlass",
+		Text:         "OpenGlass",
+		Creator:      c,
+		MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "REPLY"}, &mirror.MenuItem{Action: "TOGGLE_PINNED"}},
 		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
 	}
 
@@ -294,6 +303,10 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 	fmt.Println(not)
+	if not.Operation != "INSERT" {
+		fmt.Println("Not an insert, quitting...")
+		return
+	}
     userId := not.UserToken
 	itemId := not.ItemId
 	fmt.Println(userId)
@@ -301,10 +314,9 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 	trans := authTransport(userId)
 
 	svc, _ := mirror.New(trans.Client())
-
-	
 	t, err := svc.Timeline.Get(itemId).Do()
 	fmt.Println(t)
+	
 	fmt.Println("Text: " + t.Text)
 	if err != nil {
 		fmt.Println(fmt.Errorf("Unable to retrieve timeline item: %s", err))
@@ -379,43 +391,82 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	} else {
+		if len(t.Text) > 0 {
+			if strings.HasPrefix(t.Text, "where") {
+				loc, _ := svc.Locations.Get("latest").Do()
+				fmt.Println(*loc)
+				_, err = PicarusApi("POST", "/data/images", url.Values{B64Enc("meta:question"): {B64Enc(t.Text)}, B64Enc("meta:response_type"): {B64Enc("text")},
+					B64Enc("meta:openglass_user"): {B64Enc(userId)}, B64Enc("meta:latitude"): {B64Enc(strconv.FormatFloat(loc.Latitude, 'f', 16, 64))},
+					B64Enc("meta:longitude"): {B64Enc(strconv.FormatFloat(loc.Longitude, 'f', 16, 64))}})
+			} else {
+				_, err = PicarusApi("POST", "/data/images", url.Values{B64Enc("meta:question"): {B64Enc(t.Text)}, B64Enc("meta:response_type"): {B64Enc("text")}, B64Enc("meta:openglass_user"): {B64Enc(userId)}})
+			}
+
+			if err != nil {
+				fmt.Println("Unable to POST text-only message")
+				return
+			}
+			_, err = PicarusApi("POST", "/data/jobs/" + UB64Enc(annotationTask), url.Values{"action": {B64Enc("io/annotation/sync")}})
+			if err != nil {
+				fmt.Println("Unable to sync annotations")
+				return
+			}
+		}
 	}
 }
 
 func pollAnnotations() {
 	prevTime := time.Now()
 	for {
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(10000 * time.Millisecond)
 		v, err := PicarusApiList("GET", "/data/annotation-results-" + annotationTask, url.Values{})
 		if err != nil {
 			fmt.Println("Poll failed")
 			continue
 		}
-		fmt.Println(v)
+		nextTime := prevTime
+		//fmt.Println(v)
+		cnt := 0
 		for _, element := range v {
 			endTimeStrB64 := element[B64Enc("endTime")]
 			if endTimeStrB64 == nil {
 				continue
 			}
 			endTime, err := strconv.ParseFloat(B64Dec(endTimeStrB64.(string)), 64)
+
 			if err != nil {
 				fmt.Println("Couldn't parse float")
 				continue
 			}
+			curTime := time.Unix(int64(endTime), 0)
+			if nextTime.Before(curTime) {
+				nextTime = curTime
+			}
 
+			if !prevTime.Before(curTime) {
+				continue
+			}
 			userDataB64 := element[B64Enc("userData")]
 			if userDataB64 == nil {
 				continue
 			}
-			userData := B64Dec(userDataB64.(string))
+			userData := strings.Trim(B64Dec(userDataB64.(string)), "\"") // to remove quotes
 
 			imageB64 := element[B64Enc("image")]
 			if imageB64 == nil {
 				continue
 			}
 			image := B64Dec(imageB64.(string))
+			
+			/*questionB64 := element[B64Enc("image")]
+			if questionB64 == nil {
+				continue
+			}
+			question := B64Dec(questionB64.(string))*/
 
-			fmt.Println(image)
+
+			//fmt.Println(image)
 			fmt.Println(userData)
 
 			m, err := PicarusApi("GET", "/data/images/" + UB64Enc(image), url.Values{"columns": {B64Enc("meta:openglass_user")}})
@@ -424,16 +475,18 @@ func pollAnnotations() {
 				continue
 			}
 			userId := B64Dec(m[B64Enc("meta:openglass_user")].(string))
-			fmt.Println(userId)
-
-			if prevTime.After(time.Unix(int64(endTime), 0)) {
-				continue
+			//fmt.Println(userId)
+			if cnt > 3 {
+				return
 			}
+			cnt += 1
 			fmt.Println("Going to send a card!")
 			trans := authTransport(userId)
 			svc, _ := mirror.New(trans.Client())
 			nt := &mirror.TimelineItem{
 				Text: userData,
+				//SpeakableText: question + " " + userData,
+				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}},
 				Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
 			}
 			_, err = svc.Timeline.Insert(nt).Do()
@@ -442,7 +495,7 @@ func pollAnnotations() {
 				continue
 			}
 		}
-		prevTime = time.Now()
+		prevTime = nextTime
 	}
 }
 
