@@ -1,35 +1,23 @@
 package main
 
 import (
-	//"bytes"
+	picarus "github.com/bwhite/picarus/go"
 	"github.com/ugorji/go-msgpack"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"bytes"
 	"strconv"
-	"mime/multipart"
 	"github.com/bmizerany/pat"
 	"time"
 	"io"
 	"io/ioutil"
 	"log"
-	//"mime/multipart"
 	"net/http"
-	"net/url"
-	//"regexp"
 	"strings"
 	"code.google.com/p/goauth2/oauth"
 	"code.google.com/p/google-api-go-client/oauth2/v2"
-//	"code.google.com/p/google-api-go-client/googleapi"
 	"code.google.com/p/google-api-go-client/mirror/v1"
 )
-
-type PostRowResponse struct {
-	Row string `json:"row"`
-}
-
-//	"os"	"errors"
 
 const revokeEndpointFmt = "https://accounts.google.com/o/oauth2/revoke?token=%s"
 
@@ -50,6 +38,15 @@ func B64Dec(s string) string {
 	return string(decoded)
 }
 
+func B64DecBytes(s string) []byte {
+	decoded, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		fmt.Println(s)
+		panic(err)
+	}
+	return decoded
+}
+
 func UB64Enc(s string) string {
 	return base64.URLEncoding.EncodeToString([]byte(s))
 }
@@ -58,105 +55,18 @@ func B64Enc(s string) string {
 	return base64.StdEncoding.EncodeToString([]byte(s))
 }
 
-func PicarusApiImageUpload(image string) (row string, err error) {
-	buf := new(bytes.Buffer)
-	w := multipart.NewWriter(buf)
-	_, err = w.CreateFormFile(UB64Enc("data:image"), UB64Enc("data:image")) // fw
-	if err != nil {
-		return "", err
-	}
-	buf.Write([]byte(image))
-	w.Close()
-	req, err := http.NewRequest("POST", "https://api.picar.us/v0/data/images", buf)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
-	req.SetBasicAuth(picarusEmail, picarusApiKey)
-	response, err := http.DefaultClient.Do(req) // res
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return "", err
-	}
-	var rowResponse PostRowResponse  
-	json.Unmarshal(body, &rowResponse)
-	return rowResponse.Row, nil
+func PicarusApiImageUpload(conn *picarus.Conn, image []byte) (row string, err error) {
+	// TODO: Remove this and use the underlying method since we follow this with a patch anyways
+	out, err := conn.PostTable("images", map[string]string{}, map[string][]byte{"data:image": image}, []picarus.Slice{})
+	return out["row"], err
 }
 
-func PicarusApi(method string, path string, params url.Values) (map[string]interface{}, error) {
-	var err error
-	var req *http.Request
-	if method == "GET" {
-		req, err = http.NewRequest(method, "https://api.picar.us/v0" + path + "?" + params.Encode(), nil)
-	} else {
-		req, err = http.NewRequest(method, "https://api.picar.us/v0" + path, strings.NewReader(params.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	}
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(picarusEmail, picarusApiKey)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(body)
-	var v map[string]interface{}
-	err = json.Unmarshal(body, &v)
-	if err != nil {
-		fmt.Println("Json error 1")
-		return nil, err
-	}
-	return v, nil
-}
-
-func PicarusApiList(method string, path string, params url.Values) ([] map[string]interface{}, error) {
-	var err error
-	var req *http.Request
-	if method == "GET" {
-		req, err = http.NewRequest(method, "https://api.picar.us/v0" + path + "?" + params.Encode(), nil)
-	} else {
-		req, err = http.NewRequest(method, "https://api.picar.us/v0" + path, strings.NewReader(params.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	}
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(picarusEmail, picarusApiKey)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	var v []map[string]interface{}
-	err = json.Unmarshal(body, &v)
-	if err != nil {
-		fmt.Println("Json error 2")
-		return nil, err
-	}
-	return v, nil
-}
-
-
-func PicarusApiModel(row string, model string) (string, error) {
-	v, err := PicarusApi("POST", "/data/images/" + row, url.Values{"model": {model}, "action": {B64Enc("i/chain")}})
+func PicarusApiModel(conn *picarus.Conn, row string, model string) (string, error) {
+	v, err := conn.PostRow("images", row, map[string]string{"model": model, "action": "i/chain"})
 	if err != nil {
 		return "", err
 	}
-	return v[model].(string), nil
+	return v[model], nil
 }
 
 
@@ -296,6 +206,7 @@ func signoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func notifyHandler(w http.ResponseWriter, r *http.Request) {
+    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	fmt.Println("Got notify...")
     not := new(mirror.Notification)
     if err := json.NewDecoder(r.Body).Decode(not); err != nil {
@@ -347,27 +258,26 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Unable to read attachment body")
 			return
 		}
-		imageRow, err := PicarusApiImageUpload(string(body))
+		imageRow, err := PicarusApiImageUpload(&conn, body)
 		if err != nil {
 			fmt.Println("Could not upload to Picarus")
 			return
 		}
-		fmt.Println(imageRow)
 		// If there is a caption, send it to the annotation task
 		if len(t.Text) > 0 {
-			_, err = PicarusApi("PATCH", "/data/images/" + UB64Enc(B64Dec(imageRow)), url.Values{B64Enc("meta:question"): {B64Enc(t.Text)}, B64Enc("meta:response_type"): {B64Enc("text")}, B64Enc("meta:openglass_user"): {B64Enc(userId)}})
+			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:question": t.Text, "meta:openglass_user": userId}, map[string][]byte{})
 			if err != nil {
 				fmt.Println("Unable to patch image")
 				return
 			}
 			// TODO: Here is where we would resize the image, we can do that later
-			_, err = PicarusApi("POST", "/data/jobs/" + UB64Enc(annotationTask), url.Values{"action": {B64Enc("io/annotation/sync")}})
+			_, err = conn.PostRow("jobs", annotationTask, map[string]string{"action": "io/annotation/sync"})
 			if err != nil {
 				fmt.Println("Unable to sync annotations")
 				return
 			}
 		} else {
-			confMsgpack, err := PicarusApiModel(UB64Enc(B64Dec(imageRow)), "cHJlZDo7bbnf0NdIIju0gHF8y+Fx")
+			confMsgpack, err := PicarusApiModel(&conn, imageRow, B64Dec("cHJlZDo7bbnf0NdIIju0gHF8y+Fx"))
 			if err != nil {
 				fmt.Println("Picarus predict error")
 				return
@@ -396,18 +306,17 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(t.Text, "where") {
 				loc, _ := svc.Locations.Get("latest").Do()
 				fmt.Println(*loc)
-				_, err = PicarusApi("POST", "/data/images", url.Values{B64Enc("meta:question"): {B64Enc(t.Text)}, B64Enc("meta:response_type"): {B64Enc("text")},
-					B64Enc("meta:openglass_user"): {B64Enc(userId)}, B64Enc("meta:latitude"): {B64Enc(strconv.FormatFloat(loc.Latitude, 'f', 16, 64))},
-					B64Enc("meta:longitude"): {B64Enc(strconv.FormatFloat(loc.Longitude, 'f', 16, 64))}})
+				_, err = conn.PostTable("images", map[string]string{"meta:question": t.Text, "meta:openglass_user": userId, "meta:latitude": strconv.FormatFloat(loc.Latitude, 'f', 16, 64),
+					"meta:longitude": strconv.FormatFloat(loc.Longitude, 'f', 16, 64)}, map[string][]byte{}, []picarus.Slice{})
 			} else {
-				_, err = PicarusApi("POST", "/data/images", url.Values{B64Enc("meta:question"): {B64Enc(t.Text)}, B64Enc("meta:response_type"): {B64Enc("text")}, B64Enc("meta:openglass_user"): {B64Enc(userId)}})
+				_, err = conn.PostTable("images", map[string]string{"meta:question": t.Text, "meta:openglass_user": userId}, map[string][]byte{}, []picarus.Slice{})
 			}
 
 			if err != nil {
 				fmt.Println("Unable to POST text-only message")
 				return
 			}
-			_, err = PicarusApi("POST", "/data/jobs/" + UB64Enc(annotationTask), url.Values{"action": {B64Enc("io/annotation/sync")}})
+			_, err = conn.PostRow("jobs", annotationTask, map[string]string{"action": "io/annotation/sync"})
 			if err != nil {
 				fmt.Println("Unable to sync annotations")
 				return
@@ -416,27 +325,43 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type UserData struct {
+	Text string `json:"text"`	
+	Latitude  float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	ImageUrl string `json:"image_url"`
+}
+
+func download(url string) (io.ReadCloser, error) {
+	var err error
+	var req *http.Request
+
+	req, err = http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Body, nil
+}
+
 func pollAnnotations() {
+    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	prevTime := time.Now()
 	for {
 		time.Sleep(10000 * time.Millisecond)
-		v, err := PicarusApiList("GET", "/data/annotation-results-" + annotationTask, url.Values{})
+		v, err := conn.GetTable("annotation-results-" + annotationTask, []string{})
 		if err != nil {
 			fmt.Println("Poll failed")
 			continue
 		}
 		nextTime := prevTime
-		//fmt.Println(v)
 		cnt := 0
 		for _, element := range v {
-			endTimeStrB64 := element[B64Enc("endTime")]
-			if endTimeStrB64 == nil {
-				continue
-			}
-			endTime, err := strconv.ParseFloat(B64Dec(endTimeStrB64.(string)), 64)
-
+			endTime, err := strconv.ParseFloat(element["endTime"], 64)
 			if err != nil {
-				fmt.Println("Couldn't parse float")
 				continue
 			}
 			curTime := time.Unix(int64(endTime), 0)
@@ -447,34 +372,28 @@ func pollAnnotations() {
 			if !prevTime.Before(curTime) {
 				continue
 			}
-			userDataB64 := element[B64Enc("userData")]
-			if userDataB64 == nil {
+			var userData UserData
+			err = json.Unmarshal([]byte(element["userData"]), &userData)
+			if err != nil {
+				fmt.Println("Json error in user data")
 				continue
 			}
-			userData := strings.Trim(B64Dec(userDataB64.(string)), "\"") // to remove quotes
 
-			imageB64 := element[B64Enc("image")]
-			if imageB64 == nil {
+			image := element["image"]
+			question := element["question"]
+			if len(question) == 0 || len(image) == 0 {
+				fmt.Println("Missing image or question")
 				continue
 			}
-			image := B64Dec(imageB64.(string))
-			
-			/*questionB64 := element[B64Enc("image")]
-			if questionB64 == nil {
-				continue
-			}
-			question := B64Dec(questionB64.(string))*/
 
-
-			//fmt.Println(image)
 			fmt.Println(userData)
 
-			m, err := PicarusApi("GET", "/data/images/" + UB64Enc(image), url.Values{"columns": {B64Enc("meta:openglass_user")}})
+			m, err := conn.GetRow("images", image, []string{"meta:openglass_user"})
 			if err != nil {
 				fmt.Println("Getting openglass_user failed")
 				continue
 			}
-			userId := B64Dec(m[B64Enc("meta:openglass_user")].(string))
+			userId := m["meta:openglass_user"]
 			//fmt.Println(userId)
 			if cnt > 3 {
 				return
@@ -483,16 +402,38 @@ func pollAnnotations() {
 			fmt.Println("Going to send a card!")
 			trans := authTransport(userId)
 			svc, _ := mirror.New(trans.Client())
+		    text := question + "? " + userData.Text
+			fmt.Println(text)
+
 			nt := &mirror.TimelineItem{
-				Text: userData,
-				//SpeakableText: question + " " + userData,
-				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}},
+				Text: text,
+			    Html: "<article><section><p class=\"text-normal\" data-text-autosize=\"true\">" + text + "</p></section></article>",
+				SpeakableText: text,
+				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
 				Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
 			}
-			_, err = svc.Timeline.Insert(nt).Do()
+
+			if userData.ImageUrl != "" {
+				nt.HtmlPages = []string{"<img src=\"attachment:0\" width=\"100%\" height=\"100%\">"}
+			}
+			if userData.Latitude != 0. && userData.Longitude != 0. {
+				nt.MenuItems = []*mirror.MenuItem{&mirror.MenuItem{Action: "NAVIGATE"}, &mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}}
+				nt.Location = &mirror.Location{Latitude: userData.Latitude, Longitude: userData.Longitude}
+			}
+			item, err := svc.Timeline.Insert(nt).Do()
 			if err != nil {
 				fmt.Println("Unable to insert timeline item")
 				continue
+			}
+			if userData.ImageUrl != "" {
+				media, err := download(userData.ImageUrl)
+				a, err := svc.Timeline.Attachments.Insert(item.Id).Media(media).Do()
+				fmt.Println(a)
+				media.Close()
+				if err != nil {
+					fmt.Println("Unable to insert media")
+					continue
+				}
 			}
 		}
 		prevTime = nextTime
