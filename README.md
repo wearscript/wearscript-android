@@ -3,7 +3,7 @@ OpenGlass
 
 It's a work in progress but we wanted to get it out as early as possible.
 
-Right now it has tree modes
+Right now it has three modes
 
 1. If it is sent an image without text it runs an indoor classifier on it with the result being sent as a timeline item.  See demo http://youtu.be/hhWBvoqop2o
 2. If it is sent an image with text it is used as a question for human annotation with the results being sent as timeline items.  See demo http://youtu.be/7DVFbWQ1di8
