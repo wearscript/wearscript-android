@@ -91,7 +91,6 @@ func QueryServer(w http.ResponseWriter, req *http.Request) {
 }
 
 
-
 // Auth: From google's demo project, apache 2.0
 
 func bootstrapUser(r *http.Request, client *http.Client, userId string) {
@@ -174,6 +173,7 @@ func oauth2callbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fullUrl, http.StatusFound)
 	return
 }
+
 // signout Revokes access for the user and removes the associated credentials from the datastore.
 func signoutHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -282,10 +282,9 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Picarus predict error")
 				return
 			}
-			fmt.Println(confMsgpack)
 
 			var value float64
-			err = msgpack.Unmarshal([]byte(B64Dec(confMsgpack)), &value, nil)
+			err = msgpack.Unmarshal([]byte(confMsgpack), &value, nil)
 			if err != nil {
 				fmt.Println("Msgpack unpack error")
 				return
@@ -445,6 +444,8 @@ func main() {
 	m := pat.New()
 	m.Get("/", http.HandlerFunc(RootServer))
 	m.Get("/static/:path", http.HandlerFunc(StaticServer))
+	m.Post("/raven/:raven", http.HandlerFunc(RavenServer))
+	m.Post("/raven", http.HandlerFunc(RavenSetupHandler))
 	m.Post("/query", http.HandlerFunc(QueryServer))
 	// /auth -> google -> /oauth2callback
 	m.Get("/auth", http.HandlerFunc(authHandler))

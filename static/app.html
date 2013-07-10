@@ -68,6 +68,9 @@ img.thumb {
           $('#buttonSignout').click(function () {
               $.post('signout', {success: function () {location.reload()}});
           });
+          $('#buttonRaven').click(function () {
+              $.ajax({url: 'raven', type: 'POST', success: function (data, textStatus, xhr) {$('#ravenLink').attr('href', 'raven/' + data).text('Raven Link')}});
+          });
       }
       $(main);
     </script>
@@ -75,6 +78,10 @@ img.thumb {
         <div class="row">
           <button id="buttonAuth" class="btn btn-large btn-block btn-primary" type="button">Authenticate</button>
           <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
+          <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
+        </div>
+        <div class="row">
+          <a id="ravenLink"></a>
         </div>
         <div class="row">
           <div class="span6 well"><input type="file" id="files" name="files[]" multiple /><span id="list"><img id="thumb" class="thumb"\></span></div>

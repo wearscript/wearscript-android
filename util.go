@@ -28,7 +28,7 @@ func config(host string) *oauth.Config {
 	return r
 }
 
-func getConnection() (redis.Conn, error) {
+func GetRedisConnection() (redis.Conn, error) {
 	// TODO: Replace with pool
 	return redis.Dial("tcp", ":6383")
 }
@@ -60,7 +60,7 @@ func userID(r *http.Request) (string, error) {
 
 func storeCredential(userId string, token *oauth.Token) error {
 	// Store the tokens in the datastore.
-	c, err := getConnection()
+	c, err := GetRedisConnection()
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func storeCredential(userId string, token *oauth.Token) error {
 
 // authTransport loads credential for user from the datastore.
 func authTransport(userId string) *oauth.Transport {
-	c, err := getConnection()
+	c, err := GetRedisConnection()
 	if err != nil {
 		return nil
 	}
@@ -94,7 +94,7 @@ func authTransport(userId string) *oauth.Transport {
 }
 
 func deleteCredential(userId string) error {
-	c, err := getConnection()
+	c, err := GetRedisConnection()
 	if err != nil {
 		return err
 	}
