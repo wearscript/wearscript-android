@@ -26,4 +26,4 @@ If you want access to our demo server contact us, if you want to run this yourse
 
 Contact
 -------
-Brandyn White <bwhite dappervision com>
+Brandyn White (bwhite dappervision com)
