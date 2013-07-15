@@ -263,6 +263,29 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Could not upload to Picarus")
 			return
 		}
+
+
+		imageWarped, err := PicarusApiModel(&conn, imageRow, B64Dec(homographyModel))
+		if err != nil {
+			fmt.Println("Image warp error")
+			return
+		} else {
+			nt := &mirror.TimelineItem{
+			    Html: "<img src=\"attachment:0\" width=\"100%\" height=\"100%\">",
+				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "DELETE"}},
+				Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
+			}
+			item2, err := svc.Timeline.Insert(nt).Do()
+			if err != nil {
+				fmt.Println("Unable to insert timeline item warped image")
+			}
+			_, err = svc.Timeline.Attachments.Insert(item2.Id).Media(strings.NewReader(imageWarped)).Do()
+			if err != nil {
+				fmt.Println("Unable to insert media warped image")
+			}
+		}
+
+
 		// If there is a caption, send it to the annotation task
 		if len(t.Text) > 0 {
 			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:question": t.Text, "meta:openglass_user": userId}, map[string][]byte{})
