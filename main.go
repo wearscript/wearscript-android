@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"github.com/bmizerany/pat"
 	"time"
@@ -205,6 +206,49 @@ func signoutHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func sendImageCard(image string, text string, svc *mirror.Service) {
+	nt := &mirror.TimelineItem{
+		SpeakableText: text,
+		MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
+		Html: "<img src=\"attachment:0\" width=\"100%\" height=\"100%\">",
+		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
+	}
+	item, err := svc.Timeline.Insert(nt).Do()
+	if err != nil {
+		fmt.Println("Unable to insert timeline item")
+	}
+	_, err = svc.Timeline.Attachments.Insert(item.Id).Media(strings.NewReader(image)).Do()
+	if err != nil {
+		fmt.Println("Unable to insert timeline image")
+	}
+}
+
+func readFile(filename string) (string, error) {
+	fi, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("Couldn't open file: " + filename)
+		return "", err
+	}
+	defer func() {
+		if err := fi.Close(); err != nil {
+			fmt.Println("Couldn't close file:" + filename)
+		}
+	}()
+	buf := make([]byte, 1024)
+	data := ""
+	for {
+		// read a chunk
+		n, err := fi.Read(buf)
+		if err != nil && err != io.EOF {
+			fmt.Println("Couldn't read file: " + filename)
+			return "", err
+		}
+		if n == 0 { break }
+		data = data + string(buf[:n])
+	}
+	return data, nil
+}
+
 func notifyHandler(w http.ResponseWriter, r *http.Request) {
     conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	fmt.Println("Got notify...")
@@ -264,27 +308,38 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Slipstream example
 
+
+		imageSlipstream, err := readFile(userId + ".input.jpg")
+		if err != nil {
+			fmt.Println("Couldn't read slipstream file")
+		} else {
+			textSlipstream, err := readFile(userId + ".input.txt")
+			if err != nil {
+				textSlipstream = ""
+			}
+			sendImageCard(imageSlipstream, textSlipstream, svc)
+		}
+
+		// Warped image example
 		imageWarped, err := PicarusApiModel(&conn, imageRow, B64Dec(homographyModel))
 		if err != nil {
 			fmt.Println("Image warp error")
-			return
 		} else {
-			nt := &mirror.TimelineItem{
-			    Html: "<img src=\"attachment:0\" width=\"100%\" height=\"100%\">",
-				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "DELETE"}},
-				Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
-			}
-			item2, err := svc.Timeline.Insert(nt).Do()
-			if err != nil {
-				fmt.Println("Unable to insert timeline item warped image")
-			}
-			_, err = svc.Timeline.Attachments.Insert(item2.Id).Media(strings.NewReader(imageWarped)).Do()
-			if err != nil {
-				fmt.Println("Unable to insert media warped image")
+			sendImageCard(imageWarped, "", svc)
+			fo, err := os.Create(userId + ".output.jpg")
+			if err != nil { fmt.Println("Couldn't create warp file") }
+			// close fo on exit and check for its returned error
+			defer func() {
+				if err := fo.Close(); err != nil {
+					fmt.Println("Couldn't close warp file")
+				}
+			}()
+			if _, err := fo.Write([]byte(imageWarped)); err != nil {
+				fmt.Println("Couldn't write warp file")
 			}
 		}
-
 
 		// If there is a caption, send it to the annotation task
 		if len(t.Text) > 0 {
@@ -300,22 +355,29 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			confMsgpack, err := PicarusApiModel(&conn, imageRow, B64Dec("cHJlZDo7bbnf0NdIIju0gHF8y+Fx"))
-			if err != nil {
-				fmt.Println("Picarus predict error")
-				return
-			}
+			//predictionModels
+			confHTML := "<article><section><ul class=\"text-x-small\">"
+			for modelName, modelRow := range predictionModels {
+				confMsgpack, err := PicarusApiModel(&conn, imageRow, B64Dec(modelRow))
+				if err != nil {
+					fmt.Println("Picarus predict error")
+					return
+				}
 
-			var value float64
-			err = msgpack.Unmarshal([]byte(confMsgpack), &value, nil)
-			if err != nil {
-				fmt.Println("Msgpack unpack error")
-				return
+				var value float64
+				err = msgpack.Unmarshal([]byte(confMsgpack), &value, nil)
+				if err != nil {
+					fmt.Println("Msgpack unpack error")
+					return
+				}
+				confHTML = confHTML + fmt.Sprintf("<li>%s: %f</li>", modelName, value)
 			}
-			fmt.Println(value)
+			confHTML = confHTML + "</ul></section><footer><p>Image Attributes</p></footer></article>"
+
 			nt := &mirror.TimelineItem{
-				Text: fmt.Sprintf("Indoor: %f", value),
+			    Html: confHTML,
 				Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
+				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "DELETE"}},
 			}
 			_, err = svc.Timeline.Insert(nt).Do()
 			if err != nil {
