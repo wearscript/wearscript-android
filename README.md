@@ -24,6 +24,12 @@ If you want access to our demo server contact us, if you want to run this yourse
 * go get code.google.com/p/google-api-go-client/mirror/v1
 * go build main.go
 
+Resources
+---------
+These are helpful for development
+
+* https://code.google.com/p/google-api-go-client/source/browse/mirror/v1/mirror-gen.go
+
 Contact
 -------
 Brandyn White (bwhite dappervision com)

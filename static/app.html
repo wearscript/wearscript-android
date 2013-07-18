@@ -71,6 +71,13 @@ img.thumb {
           $('#buttonRaven').click(function () {
               $.ajax({url: 'raven', type: 'POST', success: function (data, textStatus, xhr) {$('#ravenLink').attr('href', 'raven/' + data).text('Raven Link')}});
           });
+
+          $('#buttonLocOn').click(function () {
+              $.ajax({url: 'location/on', type: 'POST', success: function (data, textStatus, xhr) {}});
+          });
+          $('#buttonLocOff').click(function () {
+              $.ajax({url: 'location/off', type: 'POST', success: function (data, textStatus, xhr) {}});
+          });
       }
       $(main);
     </script>
@@ -79,6 +86,8 @@ img.thumb {
           <button id="buttonAuth" class="btn btn-large btn-block btn-primary" type="button">Authenticate</button>
           <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
           <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
+          <button id="buttonLocOn" class="btn btn-large btn-block btn-primary" type="button">Location Update (On)</button>
+          <button id="buttonLocOff" class="btn btn-large btn-block btn-primary" type="button">Location Update (Off)</button>
         </div>
         <div class="row">
           <a id="ravenLink"></a>

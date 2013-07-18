@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Heatmaps</title>
+    <link href="https://developers.google.com/maps/documentation/javascript/examples/default.css" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=visualization"></script>
+    <script type="text/javascript">
+      var map, pointarray, heatmap;
+      var taxiData = [{{range .Points}}
+                      new google.maps.LatLng({{.Lat}}, {{.Lon}}),
+                      {{end}}];
+
+      function initialize() {
+          var center = new google.maps.LatLng({{.Center.Lat}}, {{.Center.Lon}});
+          var mapOptions = {
+              zoom: 13,
+              center: center,
+              mapTypeId: google.maps.MapTypeId.SATELLITE
+          };
+
+          map = new google.maps.Map(document.getElementById('map-canvas'),
+                                    mapOptions);
+          new google.maps.Marker({position: center, map: map});
+
+          var pointArray = new google.maps.MVCArray(taxiData);
+          
+          heatmap = new google.maps.visualization.HeatmapLayer({
+              data: pointArray
+          });
+          
+          heatmap.setMap(map);
+      }
+
+      function toggleHeatmap() {
+          heatmap.setMap(heatmap.getMap() ? null : map);
+      }
+
+      function changeGradient() {
+          var gradient = [
+              'rgba(0, 255, 255, 0)',
+              'rgba(0, 255, 255, 1)',
+              'rgba(0, 191, 255, 1)',
+              'rgba(0, 127, 255, 1)',
+              'rgba(0, 63, 255, 1)',
+              'rgba(0, 0, 255, 1)',
+              'rgba(0, 0, 223, 1)',
+              'rgba(0, 0, 191, 1)',
+              'rgba(0, 0, 159, 1)',
+              'rgba(0, 0, 127, 1)',
+              'rgba(63, 0, 91, 1)',
+              'rgba(127, 0, 63, 1)',
+              'rgba(191, 0, 31, 1)',
+              'rgba(255, 0, 0, 1)'
+          ]
+          heatmap.setOptions({
+              gradient: heatmap.get('gradient') ? null : gradient
+          });
+      }
+
+      function changeRadius() {
+          heatmap.setOptions({radius: heatmap.get('radius') ? null : 20});
+      }
+
+      function changeOpacity() {
+          heatmap.setOptions({opacity: heatmap.get('opacity') ? null : 0.2});
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  </head>
+
+  <body>
+    <div id="panel">
+      <button onclick="toggleHeatmap()">Toggle Heatmap</button>
+      <button onclick="changeGradient()">Change gradient</button>
+      <button onclick="changeRadius()">Change radius</button>
+      <button onclick="changeOpacity()">Change opacity</button>
+    </div>
+    <div id="map-canvas"></div>
+  </body>
+</html>

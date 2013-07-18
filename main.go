@@ -63,13 +63,12 @@ func PicarusApiImageUpload(conn *picarus.Conn, image []byte) (row string, err er
 }
 
 func PicarusApiModel(conn *picarus.Conn, row string, model string) (string, error) {
-	v, err := conn.PostRow("images", row, map[string]string{"model": model, "action": "i/chain"})
+	v, err := conn.PostRow("images", row, map[string]string{"model": model, "action": "io/chain"})
 	if err != nil {
 		return "", err
 	}
 	return v[model], nil
 }
-
 
 func StaticServer(w http.ResponseWriter, req *http.Request) {
 	content, err := ioutil.ReadFile("static/" + req.URL.Query().Get(":path"))
@@ -106,14 +105,6 @@ func bootstrapUser(r *http.Request, client *http.Client, userId string) {
 		CallbackUrl: fullUrl + "/notify",
 	}
 	m.Subscriptions.Insert(s).Do()
-	/*
-	s = &mirror.Subscription{
-		Collection:  "locations",
-		UserToken:   userId,
-		CallbackUrl: fullUrl + "/notify",
-	}
-	m.Subscriptions.Insert(s).Do()
-	 */
 
 	c := &mirror.Contact{
 		Id:          "OpenGlass",
@@ -258,14 +249,35 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 	fmt.Println(not)
+	for _, v := range not.UserActions {
+		fmt.Println(v)
+	}
+    userId := not.UserToken
+	itemId := not.ItemId
+	if not.Operation == "UPDATE" {
+		imageRow, err := getUserAttribute(userId, "tid_to_row:" + not.ItemId)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		for _, v := range not.UserActions {
+			vs := strings.Split(v.Payload, " ")
+			if len(vs) != 2 || predictionModels[vs[0]] == "" || len(vs[1]) != 1 {
+				fmt.Println("Unknown payload")
+				continue
+			}
+			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:userannot-" + vs[0]: vs[1]}, map[string][]byte{})
+			if err != nil {
+				fmt.Println("Couldn't patch row with annotation")
+			}
+		}
+		return
+	}
+
 	if not.Operation != "INSERT" {
 		fmt.Println("Not an insert, quitting...")
 		return
 	}
-    userId := not.UserToken
-	itemId := not.ItemId
-	fmt.Println(userId)
-	fmt.Println(itemId)
 	trans := authTransport(userId)
 
 	svc, _ := mirror.New(trans.Client())
@@ -297,20 +309,19 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer resp.Body.Close()
 		// Brandyn
-		body, err := ioutil.ReadAll(resp.Body)
+		imageData, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Println("Unable to read attachment body")
 			return
 		}
-		imageRow, err := PicarusApiImageUpload(&conn, body)
+		imageRow, err := PicarusApiImageUpload(&conn, imageData)
 		if err != nil {
 			fmt.Println("Could not upload to Picarus")
 			return
 		}
 
 		// Slipstream example
-
-
+		/*
 		imageSlipstream, err := readFile(userId + ".input.jpg")
 		if err != nil {
 			fmt.Println("Couldn't read slipstream file")
@@ -321,11 +332,20 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			sendImageCard(imageSlipstream, textSlipstream, svc)
 		}
-
+		 */
+		searchData, err := PicarusApiModel(&conn, imageRow, B64Dec(locationModel))
+			
+		if err != nil {
+			fmt.Println("Image search error")
+			fmt.Println(err)
+		} else {
+			setUserAttribute(userId, "latest_image_search", searchData)
+		}
 		// Warped image example
 		imageWarped, err := PicarusApiModel(&conn, imageRow, B64Dec(homographyModel))
 		if err != nil {
 			fmt.Println("Image warp error")
+			imageWarped = ""
 		} else {
 			sendImageCard(imageWarped, "", svc)
 			fo, err := os.Create(userId + ".output.jpg")
@@ -343,7 +363,23 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 
 		// If there is a caption, send it to the annotation task
 		if len(t.Text) > 0 {
-			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:question": t.Text, "meta:openglass_user": userId}, map[string][]byte{})
+			imageType := "full"
+			if strings.HasPrefix(t.Text, "augmented ") {
+				if len(imageWarped) > 0 {
+					imageWarpedData := []byte(imageWarped)
+					imageRowWarped, err := PicarusApiImageUpload(&conn, imageWarpedData)
+					if err != nil {
+						fmt.Println("Could not upload warped image to Picarus")
+					} else {
+						imageRow = imageRowWarped
+						imageData = imageWarpedData
+						imageType = "augmented"
+					}
+				}
+				t.Text = t.Text[10:]  // Remove "augmented "
+			}
+			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:question": t.Text, "meta:openglass_user": userId,
+				"meta:openglass_image_type": imageType}, map[string][]byte{})
 			if err != nil {
 				fmt.Println("Unable to patch image")
 				return
@@ -355,8 +391,8 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			//predictionModels
 			confHTML := "<article><section><ul class=\"text-x-small\">"
+			menuItems := []*mirror.MenuItem{}
 			for modelName, modelRow := range predictionModels {
 				confMsgpack, err := PicarusApiModel(&conn, imageRow, B64Dec(modelRow))
 				if err != nil {
@@ -371,17 +407,28 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				confHTML = confHTML + fmt.Sprintf("<li>%s: %f</li>", modelName, value)
+				menuItems = append(menuItems, &mirror.MenuItem{Action: "CUSTOM", Id: modelName + " 1", Values: []*mirror.MenuValue{&mirror.MenuValue{DisplayName: modelName, IconUrl: fullUrl + "/static/icon_plus.png"}}})
+				menuItems = append(menuItems, &mirror.MenuItem{Action: "CUSTOM", Id: modelName + " 0", Values: []*mirror.MenuValue{&mirror.MenuValue{DisplayName: modelName, IconUrl: fullUrl + "/static/icon_minus.png"}}})
+
 			}
+			menuItems = append(menuItems, &mirror.MenuItem{Action: "DELETE"})
 			confHTML = confHTML + "</ul></section><footer><p>Image Attributes</p></footer></article>"
 
 			nt := &mirror.TimelineItem{
 			    Html: confHTML,
 				Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
-				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "DELETE"}},
+				HtmlPages: []string{"<img src=\"attachment:0\" width=\"100%\" height=\"100%\">"},
+				MenuItems:    menuItems,
 			}
-			_, err = svc.Timeline.Insert(nt).Do()
+			tiConf, err := svc.Timeline.Insert(nt).Do()
 			if err != nil {
 				fmt.Println("Unable to insert timeline item")
+				return
+			}
+			setUserAttribute(userId, "tid_to_row:" + tiConf.Id, imageRow)
+			_, err = svc.Timeline.Attachments.Insert(tiConf.Id).Media(strings.NewReader(string(imageData))).Do()
+			if err != nil {
+				fmt.Println("Unable to insert media")
 				return
 			}
 		}
@@ -528,8 +575,12 @@ func pollAnnotations() {
 func main() {
 	m := pat.New()
 	m.Get("/", http.HandlerFunc(RootServer))
+	m.Get("/map", http.HandlerFunc(MapServer))
 	m.Get("/static/:path", http.HandlerFunc(StaticServer))
 	m.Post("/raven/:raven", http.HandlerFunc(RavenServer))
+	m.Post("/location/on", http.HandlerFunc(LocationOnHandler))
+	m.Post("/location/off", http.HandlerFunc(LocationOffHandler))
+	m.Post("/location", http.HandlerFunc(LocationHandler))
 	m.Post("/raven", http.HandlerFunc(RavenSetupHandler))
 	m.Post("/query", http.HandlerFunc(QueryServer))
 	// /auth -> google -> /oauth2callback
