@@ -2,9 +2,11 @@ package main
 
 import (
 	picarus "github.com/bwhite/picarus/go"
+	picarusto "github.com/bwhite/picarus_takeout/go"
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"bytes"
 	"net/http"
 	"io/ioutil"
 	"html/template"
@@ -100,9 +102,16 @@ type MapLatLon struct {
 	Lon string
 }
 
+type ThumbnailTemplate struct {
+	Data string
+	Title string
+}
+
 type MapTemplateData struct {
 	Center MapLatLon
 	Points []MapLatLon
+	Query *ThumbnailTemplate
+	Thumbnails []*ThumbnailTemplate
 }
 
 type SearchConfRow struct {
@@ -122,6 +131,34 @@ func DecodeSearchResults(data string) (*[]SearchConfRow, error) {
 		out = append(out, SearchConfRow{Conf: (v[0]).(float64), Row: string((v[1]).([]uint8))})
 	}
 	return &out, nil
+}
+
+func FeatureMatch(feat0 string, feat1 string) (bool, error) {
+	model := "kYKia3eDqG1heF9kaXN0PKttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMtACAAAAAAAAKRuYW1l2gAhcGljYXJ1cy5JbWFnZU1hdGNoZXJIYW1taW5nUmFuc2Fj"
+	var mh codec.MsgpackHandle
+	var w bytes.Buffer
+	err := codec.NewEncoder(&w, &mh).Encode([]string{feat0, feat1})
+	if err != nil {
+		fmt.Println("Couldn't encode msgpack")
+		return false, err
+	}
+	input := w.String()
+	WriteFile("points.msgpack", input)
+	out := picarusto.ModelChainProcessBinary(picarus.B64Dec(model), input)
+	var matched bool
+	var mh2 codec.MsgpackHandle
+	fmt.Println(picarus.B64Enc(out))
+	err = codec.NewDecoderBytes([]byte(out), &mh2).Decode(&matched)
+	if err != nil {
+		fmt.Println("Couldn't decode output")
+		return false, err
+	}
+	if matched {
+		fmt.Println("Matched")
+	} else {
+		fmt.Println("Not Matched")
+	}
+	return matched, nil
 }
 
 func MapServer(w http.ResponseWriter, req *http.Request) {
@@ -153,24 +190,64 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	points := []MapLatLon{}
-	for _, v := range *searchData {
-		m, err := conn.GetRow("images", v.Row, []string{"meta:latitude", "meta:longitude"})
+	thumbnails := []*ThumbnailTemplate{}
+
+	queryRow, err := getUserAttribute(userId, "latest_image_row")
+	if err != nil {
+		return
+	}
+
+	m, err := conn.GetRow("images", queryRow, []string{"thum:image_150sq"})
+	if err != nil {
+		fmt.Println("Cannot get query thumbnail")
+		return
+	}
+	queryImage := ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(queryRow)}
+
+	queryFeatures, err := PicarusApiModel(&conn, queryRow, picarus.B64Dec(locationFeatureModel))
+	if err != nil {
+		fmt.Println("Couldn't compute feature")
+		return
+	}
+
+	for _, v := range (*searchData)[:10] {
+		m, err := conn.GetRow("images", v.Row, []string{"meta:latitude", "meta:longitude", "meta:latlons", "thum:image_150sq", picarus.B64Dec(locationFeatureModel)})
 		if err != nil {
 			fmt.Println("Getting lat/lon failed")
 			continue
 		}
-		lat := m["meta:latitude"]
+		resultFeatures, err := PicarusApiModel(&conn, v.Row, picarus.B64Dec(locationFeatureModel))
+		if err != nil {
+			fmt.Println("Couldn't compute feature")
+			return
+		}
+		FeatureMatch(queryFeatures, resultFeatures)
+
+		thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64)})
+		latlonsSer := m["meta:latlons"]
+		latlons := [][]string{}
+		err = json.Unmarshal([]byte(latlonsSer), &latlons)
+		if err != nil {
+			fmt.Println("Couldn't load latlons")
+			continue
+		}
+		fmt.Println(latlons)
+		/*lat := m["meta:latitude"]
 		lon := m["meta:longitude"]
 		if len(lat) == 0 || len(lon) == 0 {
 			fmt.Println("Getting lat/lon failed")
 			continue
 		}
-		points = append(points, MapLatLon{Lat: lat, Lon: lon})
+		 */
+		for _, v := range latlons {
+			points = append(points, MapLatLon{Lat: v[0], Lon: v[1]})
+		}
 	}
-	fmt.Println(searchData)
 	mapData := MapTemplateData{
 		Center: MapLatLon{Lat: strconv.FormatFloat(loc.Latitude, 'f', 16, 64), Lon: strconv.FormatFloat(loc.Longitude, 'f', 16, 64)},
 	    Points: points,
+		Thumbnails: thumbnails,
+	    Query: &queryImage,
 	}
 
 	t := template.New("Map template")

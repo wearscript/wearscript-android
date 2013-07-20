@@ -1,20 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Heatmaps</title>
+    <title>OpenGlass: User Location Info</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <style>
+      body {
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+      
+      }
+      .container {
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 680px;
+      }
+    </style>
+<style>
+
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+
+text {
+  font: 10px sans-serif;
+  pointer-events: none;
+}
+
+text.shadow {
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-opacity: .8;
+}
+
+img.thumb {
+  height: 150px;
+  width: 150px;
+}
+</style>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.10/backbone-min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
     <link href="https://developers.google.com/maps/documentation/javascript/examples/default.css" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=visualization"></script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <script type="text/javascript">
       var map, pointarray, heatmap;
-      var taxiData = [{{range .Points}}
+      var imageLocations = [{{range .Points}}
                       new google.maps.LatLng({{.Lat}}, {{.Lon}}),
                       {{end}}];
 
       function initialize() {
           var center = new google.maps.LatLng({{.Center.Lat}}, {{.Center.Lon}});
           var mapOptions = {
-              zoom: 13,
+              zoom: 18,
               center: center,
               mapTypeId: google.maps.MapTypeId.SATELLITE
           };
@@ -23,7 +77,7 @@
                                     mapOptions);
           new google.maps.Marker({position: center, map: map});
 
-          var pointArray = new google.maps.MVCArray(taxiData);
+          var pointArray = new google.maps.MVCArray(imageLocations);
           
           heatmap = new google.maps.visualization.HeatmapLayer({
               data: pointArray
@@ -68,14 +122,19 @@
       google.maps.event.addDomListener(window, 'load', initialize);
     </script>
   </head>
-
   <body>
-    <div id="panel">
-      <button onclick="toggleHeatmap()">Toggle Heatmap</button>
-      <button onclick="changeGradient()">Change gradient</button>
-      <button onclick="changeRadius()">Change radius</button>
-      <button onclick="changeOpacity()">Change opacity</button>
-    </div>
-    <div id="map-canvas"></div>
+    <div class="container">
+        <div class="row">
+          <div id="map-canvas" style="width:100%; height:300px"></div>
+        </div>
+        <div class="row">
+          <img src="data:image/jpeg;base64,{{.Query.Data}}" title="{{.Query.Title}}" height="150px" width="150px">
+        </div>
+        <div class="row">
+      {{range .Thumbnails}}
+      <img src="data:image/jpeg;base64,{{.Data}}" title="{{.Title}}" height="150px" width="150px">
+      {{end}}
+        </div>
+    </div> <!-- /container -->
   </body>
 </html>

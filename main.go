@@ -63,12 +63,22 @@ func PicarusApiImageUpload(conn *picarus.Conn, image []byte) (row string, err er
 }
 
 func PicarusApiModel(conn *picarus.Conn, row string, model string) (string, error) {
-	v, err := conn.PostRow("images", row, map[string]string{"model": model, "action": "io/chain"})
+	v, err := conn.PostRow("images", row, map[string]string{"model": model, "action": "i/chain"})
 	if err != nil {
 		return "", err
 	}
 	return v[model], nil
 }
+
+
+func PicarusApiRowThumb(conn *picarus.Conn, row string) (string, error) {
+	v, err := conn.PostRow("images", row, map[string]string{"action": "io/thumbnail"})
+	if err != nil {
+		return "", err
+	}
+	return v["thum:image_150sq"], nil
+}
+
 
 func StaticServer(w http.ResponseWriter, req *http.Request) {
 	content, err := ioutil.ReadFile("static/" + req.URL.Query().Get(":path"))
@@ -204,13 +214,11 @@ func sendImageCard(image string, text string, svc *mirror.Service) {
 		Html: "<img src=\"attachment:0\" width=\"100%\" height=\"100%\">",
 		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
 	}
-	item, err := svc.Timeline.Insert(nt).Do()
+	req := svc.Timeline.Insert(nt)
+	req.Media(strings.NewReader(image))
+	_, err := req.Do()
 	if err != nil {
 		fmt.Println("Unable to insert timeline item")
-	}
-	_, err = svc.Timeline.Attachments.Insert(item.Id).Media(strings.NewReader(image)).Do()
-	if err != nil {
-		fmt.Println("Unable to insert timeline image")
 	}
 }
 
@@ -238,6 +246,19 @@ func readFile(filename string) (string, error) {
 		data = data + string(buf[:n])
 	}
 	return data, nil
+}
+
+func WriteFile(filename string, data string) {
+	fo, err := os.Create(filename)
+	if err != nil { fmt.Println("Couldn't create file") }
+	defer func() {
+		if err := fo.Close(); err != nil {
+			fmt.Println("Couldn't close file")
+		}
+	}()
+	if _, err := fo.Write([]byte(data)); err != nil {
+		fmt.Println("Couldn't write file")
+	}
 }
 
 func notifyHandler(w http.ResponseWriter, r *http.Request) {
@@ -319,6 +340,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Could not upload to Picarus")
 			return
 		}
+		PicarusApiRowThumb(&conn, imageRow)
 
 		// Slipstream example
 		/*
@@ -339,6 +361,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Image search error")
 			fmt.Println(err)
 		} else {
+			setUserAttribute(userId, "latest_image_row", imageRow)
 			setUserAttribute(userId, "latest_image_search", searchData)
 		}
 		// Warped image example
@@ -368,6 +391,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 				if len(imageWarped) > 0 {
 					imageWarpedData := []byte(imageWarped)
 					imageRowWarped, err := PicarusApiImageUpload(&conn, imageWarpedData)
+					PicarusApiRowThumb(&conn, imageRowWarped)
 					if err != nil {
 						fmt.Println("Could not upload warped image to Picarus")
 					} else {
@@ -420,17 +444,19 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 				HtmlPages: []string{"<img src=\"attachment:0\" width=\"100%\" height=\"100%\">"},
 				MenuItems:    menuItems,
 			}
-			tiConf, err := svc.Timeline.Insert(nt).Do()
+			imageThumbData, err := PicarusApiModel(&conn, imageRow, picarus.B64Dec(glassImageModel))
+			if err != nil {
+				fmt.Println("Unable to create thumbnail")
+				return
+			}
+			req := svc.Timeline.Insert(nt)
+			req.Media(strings.NewReader(string(imageThumbData)))
+			tiConf, err := req.Do()
 			if err != nil {
 				fmt.Println("Unable to insert timeline item")
 				return
 			}
 			setUserAttribute(userId, "tid_to_row:" + tiConf.Id, imageRow)
-			_, err = svc.Timeline.Attachments.Insert(tiConf.Id).Media(strings.NewReader(string(imageData))).Do()
-			if err != nil {
-				fmt.Println("Unable to insert media")
-				return
-			}
 		}
 	} else {
 		if len(t.Text) > 0 {
@@ -551,20 +577,21 @@ func pollAnnotations() {
 				nt.MenuItems = []*mirror.MenuItem{&mirror.MenuItem{Action: "NAVIGATE"}, &mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}}
 				nt.Location = &mirror.Location{Latitude: userData.Latitude, Longitude: userData.Longitude}
 			}
-			item, err := svc.Timeline.Insert(nt).Do()
+			req := svc.Timeline.Insert(nt)
+
+			if userData.ImageUrl != "" {
+				media, err := download(userData.ImageUrl)
+				if err != nil {
+					fmt.Println("Couldn't download image")
+					continue
+				}
+				req.Media(media)
+				defer media.Close()
+			}
+			_, err = req.Do()
 			if err != nil {
 				fmt.Println("Unable to insert timeline item")
 				continue
-			}
-			if userData.ImageUrl != "" {
-				media, err := download(userData.ImageUrl)
-				a, err := svc.Timeline.Attachments.Insert(item.Id).Media(media).Do()
-				fmt.Println(a)
-				media.Close()
-				if err != nil {
-					fmt.Println("Unable to insert media")
-					continue
-				}
 			}
 		}
 		prevTime = nextTime
