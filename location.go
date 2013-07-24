@@ -14,6 +14,29 @@ import (
 	"code.google.com/p/google-api-go-client/mirror/v1"
 )
 
+
+func SensorsHandler(w http.ResponseWriter, r *http.Request) {
+	
+	fmt.Println("Got sensor")
+}
+
+func ImagesHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Got image")
+	b := make([]byte, 0, 1048576)
+	f, _, err := r.FormFile("image")
+	if err != nil {
+		fmt.Println("Couldn't get param")
+		return
+	}
+	n, err := f.Read(b)
+	if err != nil {
+		fmt.Println("Couldn't read")
+		return
+	}
+	fmt.Println(n)
+	fmt.Println(b[0:n])
+}
+
 func LocationHandler(w http.ResponseWriter, r *http.Request) {
     conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	fmt.Println(conn)
@@ -33,7 +56,10 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(userId)
 	fmt.Println(itemId)
 	trans := authTransport(userId)
+
+
 	svc, _ := mirror.New(trans.Client())
+
 	loc, _ := svc.Locations.Get("latest").Do()
 	locSer, err := json.Marshal(loc)
 	if err == nil {
@@ -42,7 +68,6 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 	
 	//loc.Latitude
 	//fmt.Println(*loc)
-
 }
 
 func LocationOnHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +130,7 @@ type MapLatLon struct {
 type ThumbnailTemplate struct {
 	Data string
 	Title string
+	Class string
 }
 
 type MapTemplateData struct {
@@ -134,7 +160,7 @@ func DecodeSearchResults(data string) (*[]SearchConfRow, error) {
 }
 
 func FeatureMatch(feat0 string, feat1 string) (bool, error) {
-	model := "kYKia3eDqG1heF9kaXN0PKttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMtACAAAAAAAAKRuYW1l2gAhcGljYXJ1cy5JbWFnZU1hdGNoZXJIYW1taW5nUmFuc2Fj"
+	model := "kYKia3eDqG1heF9kaXN0WqttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMs/UGJN0vGp/KRuYW1l2gAhcGljYXJ1cy5JbWFnZU1hdGNoZXJIYW1taW5nUmFuc2Fj"
 	var mh codec.MsgpackHandle
 	var w bytes.Buffer
 	err := codec.NewEncoder(&w, &mh).Encode([]string{feat0, feat1})
@@ -143,11 +169,11 @@ func FeatureMatch(feat0 string, feat1 string) (bool, error) {
 		return false, err
 	}
 	input := w.String()
+	WriteFile("model.msgpack", picarus.B64Dec(model))
 	WriteFile("points.msgpack", input)
 	out := picarusto.ModelChainProcessBinary(picarus.B64Dec(model), input)
 	var matched bool
 	var mh2 codec.MsgpackHandle
-	fmt.Println(picarus.B64Enc(out))
 	err = codec.NewDecoderBytes([]byte(out), &mh2).Decode(&matched)
 	if err != nil {
 		fmt.Println("Couldn't decode output")
@@ -172,14 +198,7 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
-	searchDataEnc, err := getUserAttribute(userId, "latest_image_search")
-	if err != nil {
-		return
-	}
-	searchData, err := DecodeSearchResults(searchDataEnc)
-	if err != nil {
-		return
-	}
+
 	locationSer, err := getUserAttribute(userId, "latest_location")
 	if err != nil {
 		return
@@ -196,6 +215,7 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
+	//queryRow = picarus.B64Dec("bG9jYXRpb25jcmF3bDqwZImk3nwOj+FR/sbUmz+6")
 
 	m, err := conn.GetRow("images", queryRow, []string{"thum:image_150sq"})
 	if err != nil {
@@ -210,20 +230,44 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	for _, v := range (*searchData)[:10] {
-		m, err := conn.GetRow("images", v.Row, []string{"meta:latitude", "meta:longitude", "meta:latlons", "thum:image_150sq", picarus.B64Dec(locationFeatureModel)})
+	searchDataEnc, err := PicarusApiModel(&conn, queryRow, B64Dec(locationModel))
+			
+	if err != nil {
+		fmt.Println("Image search error")
+		return
+	}
+	/*
+	searchDataEnc, err := getUserAttribute(userId, "latest_image_search")
+	if err != nil {
+		return
+	}*/
+	searchData, err := DecodeSearchResults(searchDataEnc)
+	if err != nil {
+		return
+	}
+
+	for _, v := range (*searchData) {//[:50]
+		m, err := conn.GetRow("images", v.Row, []string{"meta:latitude", "meta:longitude", "meta:latlons", "thum:image_150sq"})
 		if err != nil {
 			fmt.Println("Getting lat/lon failed")
 			continue
 		}
 		resultFeatures, err := PicarusApiModel(&conn, v.Row, picarus.B64Dec(locationFeatureModel))
-		if err != nil {
+		if err != nil || resultFeatures == "" {
 			fmt.Println("Couldn't compute feature")
-			return
+			fmt.Println(m["meta:latitude"])
+			continue
 		}
-		FeatureMatch(queryFeatures, resultFeatures)
-
-		thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64)})
+		matched, err := FeatureMatch(queryFeatures, resultFeatures)
+		if err != nil {
+			fmt.Println("Can't match")
+			continue
+		}
+		if matched {
+			thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64) + " Matched", Class: "image-matched"})
+		} else {
+			thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64) + " Unmatched", Class: "image-unmatched"})
+		}
 		latlonsSer := m["meta:latlons"]
 		latlons := [][]string{}
 		err = json.Unmarshal([]byte(latlonsSer), &latlons)
@@ -239,8 +283,10 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 		 */
-		for _, v := range latlons {
-			points = append(points, MapLatLon{Lat: v[0], Lon: v[1]})
+		if matched {
+			for _, v := range latlons {
+				points = append(points, MapLatLon{Lat: v[0], Lon: v[1]})
+			}
 		}
 	}
 	mapData := MapTemplateData{

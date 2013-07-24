@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 	"github.com/bmizerany/pat"
 	"time"
 	"io"
+	"strconv"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -70,6 +70,14 @@ func PicarusApiModel(conn *picarus.Conn, row string, model string) (string, erro
 	return v[model], nil
 }
 
+func PicarusApiModelStore(conn *picarus.Conn, row string, model string) (string, error) {
+	v, err := conn.PostRow("images", row, map[string]string{"model": model, "action": "io/chain"})
+	if err != nil {
+		return "", err
+	}
+	return v[model], nil
+}
+
 
 func PicarusApiRowThumb(conn *picarus.Conn, row string) (string, error) {
 	v, err := conn.PostRow("images", row, map[string]string{"action": "io/thumbnail"})
@@ -117,6 +125,13 @@ func bootstrapUser(r *http.Request, client *http.Client, userId string) {
 	m.Subscriptions.Insert(s).Do()
 
 	c := &mirror.Contact{
+		Id:          "Memento",
+		DisplayName: "Memento",
+		ImageUrls:   []string{fullUrl + "/static/logo.jpg"},
+	}
+	m.Contacts.Insert(c).Do()
+
+	c = &mirror.Contact{
 		Id:          "OpenGlass",
 		DisplayName: "OpenGlass",
 		ImageUrls:   []string{fullUrl + "/static/logo.jpg"},
@@ -261,111 +276,82 @@ func WriteFile(filename string, data string) {
 	}
 }
 
-func notifyHandler(w http.ResponseWriter, r *http.Request) {
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
-	fmt.Println("Got notify...")
-    not := new(mirror.Notification)
-    if err := json.NewDecoder(r.Body).Decode(not); err != nil {
-        fmt.Println(fmt.Errorf("Unable to decode notification: %v", err))
-        return
-    }
-	fmt.Println(not)
-	for _, v := range not.UserActions {
-		fmt.Println(v)
-	}
-    userId := not.UserToken
-	itemId := not.ItemId
-	if not.Operation == "UPDATE" {
-		imageRow, err := getUserAttribute(userId, "tid_to_row:" + not.ItemId)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		for _, v := range not.UserActions {
-			vs := strings.Split(v.Payload, " ")
-			if len(vs) != 2 || predictionModels[vs[0]] == "" || len(vs[1]) != 1 {
-				fmt.Println("Unknown payload")
-				continue
-			}
-			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:userannot-" + vs[0]: vs[1]}, map[string][]byte{})
-			if err != nil {
-				fmt.Println("Couldn't patch row with annotation")
-			}
-		}
-		return
-	}
 
-	if not.Operation != "INSERT" {
-		fmt.Println("Not an insert, quitting...")
-		return
+func getImageAttachment(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem) ([]byte, error) {
+	fmt.Println("Retrieving attachment")
+	a, err := svc.Timeline.Attachments.Get(t.Id, t.Attachments[0].Id).Do()
+	fmt.Println(a)
+	if err != nil {
+		fmt.Println("Unable to retrieve attachment metadata")
+		return nil, err
 	}
-	trans := authTransport(userId)
+	req, err := http.NewRequest("GET", a.ContentUrl, nil)
+	if err != nil {
+		fmt.Println("Unable to create new HTTP request")
+		return nil, err
+	}
+	resp, err := trans.RoundTrip(req)
+	if err != nil {
+		fmt.Println("Unable to retrieve attachment content")
+		return nil, err
+	}
+	defer resp.Body.Close()
+	// Brandyn
+	imageData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Unable to read attachment body")
+		return nil, err
+	}
+	return imageData, nil
+}
 
-	svc, _ := mirror.New(trans.Client())
-	t, err := svc.Timeline.Get(itemId).Do()
-	fmt.Println(t)
-	
+
+func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {	
 	fmt.Println("Text: " + t.Text)
+	var err error
 	if err != nil {
 		fmt.Println(fmt.Errorf("Unable to retrieve timeline item: %s", err))
 		return
 	}
 	if t.Attachments != nil && len(t.Attachments) > 0 {
-		fmt.Println("Retrieving attachment")
-		a, err := svc.Timeline.Attachments.Get(t.Id, t.Attachments[0].Id).Do()
-		fmt.Println(a)
+		imageData, err := getImageAttachment(conn, svc, trans, t)
 		if err != nil {
-			fmt.Println("Unable to retrieve attachment metadata")
+			fmt.Println("Couldn't get image attachment")
 			return
 		}
-		req, err := http.NewRequest("GET", a.ContentUrl, nil)
-		if err != nil {
-			fmt.Println("Unable to create new HTTP request")
-			return
-		}
-		resp, err := trans.RoundTrip(req)
-		if err != nil {
-			fmt.Println("Unable to retrieve attachment content")
-			return
-		}
-		defer resp.Body.Close()
-		// Brandyn
-		imageData, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println("Unable to read attachment body")
-			return
-		}
-		imageRow, err := PicarusApiImageUpload(&conn, imageData)
+		imageRow, err := PicarusApiImageUpload(conn, imageData)
 		if err != nil {
 			fmt.Println("Could not upload to Picarus")
 			return
 		}
-		PicarusApiRowThumb(&conn, imageRow)
+		PicarusApiRowThumb(conn, imageRow)
 
-		// Slipstream example
-		/*
-		imageSlipstream, err := readFile(userId + ".input.jpg")
+		mementoMatches, _, err := matchMementoFeatures(conn, imageRow)
 		if err != nil {
-			fmt.Println("Couldn't read slipstream file")
+			fmt.Println("Couldn't match memento")
 		} else {
-			textSlipstream, err := readFile(userId + ".input.txt")
-			if err != nil {
-				textSlipstream = ""
+			fmt.Println("Memento matches")
+			fmt.Println(mementoMatches)
+			for row, note := range mementoMatches {
+				m, err := conn.GetRow("images", row, []string{picarus.B64Dec(glassImageModel)})
+				if err != nil {
+					fmt.Println("Getting image thumb failed in memento")
+					continue
+				}
+				sendImageCard(m[picarus.B64Dec(glassImageModel)], note, svc)
 			}
-			sendImageCard(imageSlipstream, textSlipstream, svc)
 		}
-		 */
-		searchData, err := PicarusApiModel(&conn, imageRow, B64Dec(locationModel))
+		//searchData, err := PicarusApiModel(conn, imageRow, B64Dec(locationModel))
 			
 		if err != nil {
 			fmt.Println("Image search error")
 			fmt.Println(err)
 		} else {
 			setUserAttribute(userId, "latest_image_row", imageRow)
-			setUserAttribute(userId, "latest_image_search", searchData)
+			//setUserAttribute(userId, "latest_image_search", searchData)
 		}
 		// Warped image example
-		imageWarped, err := PicarusApiModel(&conn, imageRow, B64Dec(homographyModel))
+		imageWarped, err := PicarusApiModel(conn, imageRow, B64Dec(homographyModel))
 		if err != nil {
 			fmt.Println("Image warp error")
 			imageWarped = ""
@@ -390,8 +376,8 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(t.Text, "augmented ") {
 				if len(imageWarped) > 0 {
 					imageWarpedData := []byte(imageWarped)
-					imageRowWarped, err := PicarusApiImageUpload(&conn, imageWarpedData)
-					PicarusApiRowThumb(&conn, imageRowWarped)
+					imageRowWarped, err := PicarusApiImageUpload(conn, imageWarpedData)
+					PicarusApiRowThumb(conn, imageRowWarped)
 					if err != nil {
 						fmt.Println("Could not upload warped image to Picarus")
 					} else {
@@ -418,7 +404,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			confHTML := "<article><section><ul class=\"text-x-small\">"
 			menuItems := []*mirror.MenuItem{}
 			for modelName, modelRow := range predictionModels {
-				confMsgpack, err := PicarusApiModel(&conn, imageRow, B64Dec(modelRow))
+				confMsgpack, err := PicarusApiModel(conn, imageRow, B64Dec(modelRow))
 				if err != nil {
 					fmt.Println("Picarus predict error")
 					return
@@ -444,7 +430,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 				HtmlPages: []string{"<img src=\"attachment:0\" width=\"100%\" height=\"100%\">"},
 				MenuItems:    menuItems,
 			}
-			imageThumbData, err := PicarusApiModel(&conn, imageRow, picarus.B64Dec(glassImageModel))
+			imageThumbData, err := PicarusApiModel(conn, imageRow, picarus.B64Dec(glassImageModel))
 			if err != nil {
 				fmt.Println("Unable to create thumbnail")
 				return
@@ -480,6 +466,71 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+
+func notifyHandler(w http.ResponseWriter, r *http.Request) {
+    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	fmt.Println("Got notify...")
+    not := new(mirror.Notification)
+    if err := json.NewDecoder(r.Body).Decode(not); err != nil {
+        fmt.Println(fmt.Errorf("Unable to decode notification: %v", err))
+        return
+    }
+	fmt.Println("Notification")
+	fmt.Println(not)
+	for _, v := range not.UserActions {
+		fmt.Println(v)
+	}
+    userId := not.UserToken
+	itemId := not.ItemId
+	if not.Operation == "UPDATE" {
+		imageRow, err := getUserAttribute(userId, "tid_to_row:" + not.ItemId)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		for _, v := range not.UserActions {
+			vs := strings.Split(v.Payload, " ")
+			if len(vs) != 2 || predictionModels[vs[0]] == "" || len(vs[1]) != 1 {
+				fmt.Println("Unknown payload")
+				continue
+			}
+			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:userannot-" + vs[0]: vs[1]}, map[string][]byte{})
+			if err != nil {
+				fmt.Println("Couldn't patch row with annotation")
+			}
+		}
+		return
+	}
+
+	if not.Operation != "INSERT" {
+		fmt.Println("Not an insert, quitting...")
+		return
+	}
+	trans := authTransport(userId)
+
+	svc, _ := mirror.New(trans.Client())
+	t, err := svc.Timeline.Get(itemId).Do()
+	if err != nil {
+		fmt.Println("Couldn't get timeline item")
+		return
+	}
+	fmt.Println("Timelineitem")
+	fmt.Println(t)
+	notifyOG := true
+	for _, r := range t.Recipients {
+		if r.Id == "Memento" {
+			notifyOG = false
+		}
+	}
+	// TODO: Look into this more
+	if notifyOG {
+		notifyOpenGlass(&conn, svc, trans, t, userId)
+	} else {
+		notifyMemento(&conn, svc, trans, t, userId)
+	}
+
 }
 
 type UserData struct {
@@ -600,9 +651,12 @@ func pollAnnotations() {
 
 
 func main() {
+    //conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	//reprocessMementoImages(&conn)
 	m := pat.New()
 	m.Get("/", http.HandlerFunc(RootServer))
 	m.Get("/map", http.HandlerFunc(MapServer))
+	m.Get("/search", http.HandlerFunc(MementoSearchServer))
 	m.Get("/static/:path", http.HandlerFunc(StaticServer))
 	m.Post("/raven/:raven", http.HandlerFunc(RavenServer))
 	m.Post("/location/on", http.HandlerFunc(LocationOnHandler))
@@ -610,6 +664,8 @@ func main() {
 	m.Post("/location", http.HandlerFunc(LocationHandler))
 	m.Post("/raven", http.HandlerFunc(RavenSetupHandler))
 	m.Post("/query", http.HandlerFunc(QueryServer))
+	m.Post("/sensors", http.HandlerFunc(SensorsHandler))
+	m.Post("/images", http.HandlerFunc(ImagesHandler))
 	// /auth -> google -> /oauth2callback
 	m.Get("/auth", http.HandlerFunc(authHandler))
 	m.Get("/oauth2callback", http.HandlerFunc(oauth2callbackHandler))
