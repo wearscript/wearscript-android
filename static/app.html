@@ -51,16 +51,28 @@ img.thumb {
   width: 150px;
 }
 </style>
-    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link href="static/bootstrap-switch.css" rel="stylesheet">
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.10/backbone-min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
     <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="static/bootstrap-switch.js"></script>
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
   </head>
   <body>
     <script type="text/javascript">
+      function setFlags(flags, success) {
+          $.ajax({url: 'flags', type: 'POST', data: JSON.stringify(flags), success: success});
+      }
+      function getFlags(success) {
+          $.ajax({url: 'flags', type: 'GET', success: success});
+      }
+      function unsetFlags(flags, success) {
+          $.ajax({url: 'flags', type: 'DELETE', data: JSON.stringify(flags), success: success});
+      }
+
       function main () {
           $('#buttonAuth').click(function () {
               window.location.replace('auth');
@@ -78,10 +90,34 @@ img.thumb {
           $('#buttonLocOff').click(function () {
               $.ajax({url: 'location/off', type: 'POST', success: function (data, textStatus, xhr) {}});
           });
+          $('.flag-check').change(function () {
+              var $this = $(this);
+              if (this.checked) {
+                  setFlags([$this.attr('name')]);
+              } else {
+                  unsetFlags([$this.attr('name')]);
+              }
+          });
+          getFlags(function (x) {
+              _.each(JSON.parse(x), function (y) {
+                  $('.flag-check[name=' + y + ']').prop('checked', true);
+              });
+          });
       }
       $(main);
     </script>
     <div class="container">
+        <div class="row">
+      <input class="flag-check" name="location" type="checkbox" />
+      <input class="flag-check" name="memento" type="checkbox" />
+      <input class="flag-check" name="raven" type="checkbox" />
+      <input class="flag-check" name="crowdqa" type="checkbox" />
+      <input class="flag-check" name="glog" type="checkbox" />
+      <input class="flag-check" name="warp" type="checkbox" />
+      <input class="flag-check" name="predict" type="checkbox" />
+      <input class="flag-check" name="location:flickr" type="checkbox" />
+      <input class="flag-check" name="location:streetview" type="checkbox" />
+      </div>
         <div class="row">
           <button id="buttonAuth" class="btn btn-large btn-block btn-primary" type="button">Authenticate</button>
           <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>

@@ -1,11 +1,9 @@
 package main
 import (
-	"crypto/rand"
 	picarus "github.com/bwhite/picarus/go"
 	"code.google.com/p/google-api-go-client/mirror/v1"
 	"code.google.com/p/goauth2/oauth"
 	"net/http"
-	"io"
 	"fmt"
 	"encoding/json"
 	"strconv"
@@ -13,17 +11,6 @@ import (
 	"time"
 	"io/ioutil"
 	)
-
-func randString() (string, error) {
-	nBytes := 10
-	b := make([]byte, nBytes)
-	n, err := io.ReadFull(rand.Reader, b)
-	if n != len(b) || err != nil {
-		fmt.Println("error:", err)
-		return "", err
-	}
-	return string(b), nil
-}
 
 
 func notifyMemento(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {
@@ -33,7 +20,7 @@ func notifyMemento(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transpo
 		return
 	}
 
-	locationSer, err := getUserAttribute(userId, "latest_location")
+	locationSer, err := getUserListFront(userId, "locations")
 	if err != nil {
 		return
 	}
@@ -177,7 +164,7 @@ func MementoSearchServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	queryRow, err := getUserAttribute(userId, "latest_image_row")
+	queryRow, err := getUserListFront(userId, "images")
 	if err != nil {
 		return
 	}

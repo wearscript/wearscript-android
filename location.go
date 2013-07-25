@@ -14,29 +14,6 @@ import (
 	"code.google.com/p/google-api-go-client/mirror/v1"
 )
 
-
-func SensorsHandler(w http.ResponseWriter, r *http.Request) {
-	
-	fmt.Println("Got sensor")
-}
-
-func ImagesHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Got image")
-	b := make([]byte, 0, 1048576)
-	f, _, err := r.FormFile("image")
-	if err != nil {
-		fmt.Println("Couldn't get param")
-		return
-	}
-	n, err := f.Read(b)
-	if err != nil {
-		fmt.Println("Couldn't read")
-		return
-	}
-	fmt.Println(n)
-	fmt.Println(b[0:n])
-}
-
 func LocationHandler(w http.ResponseWriter, r *http.Request) {
     conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	fmt.Println(conn)
@@ -52,18 +29,28 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
     userId := not.UserToken
+	flags, err := getUserFlags(userId, "uflags")
+	if err != nil {
+		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+		return
+	}
+	if !hasFlag(flags, "location") {
+		return
+	}
 	itemId := not.ItemId
 	fmt.Println(userId)
 	fmt.Println(itemId)
 	trans := authTransport(userId)
-
+	if trans == nil {
+		return // TODO: Error
+	}
 
 	svc, _ := mirror.New(trans.Client())
 
 	loc, _ := svc.Locations.Get("latest").Do()
 	locSer, err := json.Marshal(loc)
 	if err == nil {
-		setUserAttribute(userId, "latest_location", string(locSer))
+		pushUserListTrim(userId, "locations", string(locSer), maxLocations)
 	}
 	
 	//loc.Latitude
@@ -78,7 +65,7 @@ func LocationOnHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	subId, err := getLocationSubscription(userId)
+	subId, err := getUserAttribute(userId, "location_sub")
 	if err == nil && len(subId) > 0 {
 		fmt.Println("Existing subscription")
 		return
@@ -97,7 +84,7 @@ func LocationOnHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error subscribing to locations")
 		return
 	}
-	setLocationSubscription(userId, sub.Id)
+	setUserAttribute(userId, "location_sub", sub.Id)
 	fmt.Println("Location sub: " + sub.Id)
 }
 
@@ -112,13 +99,13 @@ func LocationOffHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	trans := authTransport(userId)
 	svc, _ := mirror.New(trans.Client())
-	subId, err := getLocationSubscription(userId)
+	subId, err := getUserAttribute(userId, "location_sub")
 	if err != nil {
 		fmt.Println("Error getting subscription id")
 		return
 	}
 	svc.Subscriptions.Delete(subId).Do()
-	deleteLocationSubscription(userId)
+	deleteUserAttribute(userId, "location_sub")
 	fmt.Println("Removed subscription")
 }
 
@@ -169,8 +156,8 @@ func FeatureMatch(feat0 string, feat1 string) (bool, error) {
 		return false, err
 	}
 	input := w.String()
-	WriteFile("model.msgpack", picarus.B64Dec(model))
-	WriteFile("points.msgpack", input)
+	//WriteFile("model.msgpack", picarus.B64Dec(model))
+	//WriteFile("points.msgpack", input)
 	out := picarusto.ModelChainProcessBinary(picarus.B64Dec(model), input)
 	var matched bool
 	var mh2 codec.MsgpackHandle
@@ -198,8 +185,8 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
-
-	locationSer, err := getUserAttribute(userId, "latest_location")
+	
+	locationSer, err := getUserListFront(userId, "locations")
 	if err != nil {
 		return
 	}
@@ -211,7 +198,7 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 	points := []MapLatLon{}
 	thumbnails := []*ThumbnailTemplate{}
 
-	queryRow, err := getUserAttribute(userId, "latest_image_row")
+	queryRow, err := getUserListFront(userId, "images")
 	if err != nil {
 		return
 	}
@@ -230,7 +217,7 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	searchDataEnc, err := PicarusApiModel(&conn, queryRow, B64Dec(locationModel))
+	searchDataEnc, err := PicarusApiModel(&conn, queryRow, picarus.B64Dec(locationModel))
 			
 	if err != nil {
 		fmt.Println("Image search error")

@@ -1,6 +1,5 @@
 package main
 import (
-	"github.com/garyburd/redigo/redis"
 	"github.com/gorilla/sessions"
 	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
@@ -26,11 +25,6 @@ func config(host string) *oauth.Config {
 		r.RedirectURL = fullUrl + "/oauth2callback"
 	}
 	return r
-}
-
-func GetRedisConnection() (redis.Conn, error) {
-	// TODO: Replace with pool
-	return redis.Dial("tcp", ":6383")
 }
 
 func storeUserID(w http.ResponseWriter, r *http.Request, userId string) error {
@@ -60,80 +54,16 @@ func userID(r *http.Request) (string, error) {
 
 func storeCredential(userId string, token *oauth.Token) error {
 	// Store the tokens in the datastore.
-	c, err := GetRedisConnection()
-	if err != nil {
-		return err
-	}
 	val, err := json.Marshal(token)
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("HSET", userId, "OAuth2Token", val)
+	err = setUserAttribute(userId, "oauth_token", string(val))
 	return err
 }
 
-func setUserAttribute(userId string, attribute string, data string) error {
-	c, err := GetRedisConnection()
-	if err != nil {
-		return err
-	}
-	_, err = c.Do("HSET", userId, attribute, data)
-	return err
-}
-
-func getUserAttribute(userId string, attribute string) (string, error) {
-	c, err := GetRedisConnection()
-	if err != nil {
-		return "", err
-	}
-	return redis.String(c.Do("HGET", userId, attribute))
-}
-
-func deleteUserAttribute(userId string, attribute string) error {
-	c, err := GetRedisConnection()
-	if err != nil {
-		return err
-	}
-	_, err = c.Do("HDEL", userId, attribute)
-	return err
-}
-
-func setLocationSubscription(userId string, id string) error {
-	// Store the tokens in the datastore.
-	c, err := GetRedisConnection()
-	if err != nil {
-		return err
-	}
-	_, err = c.Do("HSET", userId, "locsub", id)
-	return err
-}
-
-func deleteLocationSubscription(userId string) error {
-	// Store the tokens in the datastore.
-	c, err := GetRedisConnection()
-	if err != nil {
-		return err
-	}
-	_, err = c.Do("HDEL", userId, "locsub")
-	return err
-}
-
-func getLocationSubscription(userId string) (string, error) {
-	// Store the tokens in the datastore.
-	c, err := GetRedisConnection()
-	if err != nil {
-		return "", err
-	}
-	return redis.String(c.Do("HGET", userId, "locsub"))
-}
-
-// authTransport loads credential for user from the datastore.
 func authTransport(userId string) *oauth.Transport {
-	c, err := GetRedisConnection()
-	if err != nil {
-		return nil
-	}
-	val, err := redis.String(c.Do("HGET", userId, "OAuth2Token"))
+	val, err := getUserAttribute(userId, "oauth_token")
 	if err != nil {
 		return nil
 	}
@@ -149,13 +79,5 @@ func authTransport(userId string) *oauth.Transport {
 }
 
 func deleteCredential(userId string) error {
-	c, err := GetRedisConnection()
-	if err != nil {
-		return err
-	}
-	_, err = c.Do("HDEL", userId, "OAuth2Token")
-	if err != nil {
-		return err
-	}
-	return nil
+	return deleteUserAttribute(userId, "oauth_token")
 }

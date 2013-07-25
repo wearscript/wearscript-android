@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"github.com/garyburd/redigo/redis"
 	"code.google.com/p/google-api-go-client/mirror/v1"
-	"crypto/sha1"
-	"io"
 )
 /*
 {
@@ -30,39 +27,18 @@ type RavenEvent struct {
 	Level string `json:"level"`
 }
 
-
-func RavenSetupHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		return
-	}
-	fmt.Println("Setting up raven")
-	userId, err := userID(r)
-	if err != nil {
-		return
-	}
-	c, err := GetRedisConnection()
-	if err != nil {
-		return
-	}
-	h := sha1.New()
-	io.WriteString(h, userId)
-	hashedId := UB64Enc(string(h.Sum(nil)))
-
-	_, err = c.Do("SET", "raven:" + hashedId, userId)
-	if err != nil {
-		return
-	}
-	io.WriteString(w, hashedId)
-}
-
 func RavenServer(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	c, err := GetRedisConnection()
+	userId, err := getSecretUser("raven", secretHash(req.URL.Query().Get(":secret")))
 	if err != nil {
 		return
 	}
-	userId, err := redis.String(c.Do("GET", "raven:" + req.URL.Query().Get(":raven")))
+	flags, err := getUserFlags(userId, "uflags")
 	if err != nil {
+		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+		return
+	}
+	if !hasFlag(flags, "raven") {
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
