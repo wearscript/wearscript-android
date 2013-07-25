@@ -73,6 +73,10 @@ img.thumb {
           $.ajax({url: 'flags', type: 'DELETE', data: JSON.stringify(flags), success: success});
       }
 
+      function createKey(type, success) {
+          $.ajax({url: 'user/key/' + type, type: 'POST', success: success});
+      }
+
       function main () {
           $('#buttonAuth').click(function () {
               window.location.replace('auth');

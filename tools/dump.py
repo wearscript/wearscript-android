@@ -12,11 +12,13 @@ for x in a.keys():
 
 lists = ['locations', 'images']
 sets = ['flags', 'uflags']
+secrets = ['raven', 'glog']
 
 for user_id in user_ids:
     print('User[%s]' % user_id)
     keys_touched.add(user_id)
-    pp(a.hgetall(user_id))
+    user_data = a.hgetall(user_id)
+    pp(user_data)
     print('User lists (capped at 10)')
     for x in lists:
         lkey = user_id + ':' + x
@@ -31,6 +33,13 @@ for user_id in user_ids:
         l = list(a.smembers(skey))
         print('Set[%s][%d]' % (x, len(l)))
         pp(l[:25])
+    for x in secrets:
+        try:
+            skey = 'secret:%s:%s' % (x, user_data['secret_hash_' + x])
+        except KeyError:
+            continue
+        keys_touched.add(skey)
+        print('Secret[%s] correct: %s' % (x, a.get(skey) == user_id))
     print('')
 
 print('Unaccounted for keys')

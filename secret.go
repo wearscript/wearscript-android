@@ -28,22 +28,32 @@ func secretHash(secret string) (string) {
 
 func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		return // TODO: Error
+		w.WriteHeader(400)
+		return
 	}
 	userId, err := userID(r)
 	if err != nil {
-		return // TODO: Error
+		w.WriteHeader(400)
+		return
 	}
 	secretType := r.URL.Query().Get(":type")
-	if secretType != "raven" || secretType != "glog" {
-		return // TODO: Error
+	if secretType != "raven" && secretType != "glog" {
+		w.WriteHeader(400)
+		return
 	}
 	secret, err := randString()
 	if err != nil {
-		return // TODO: Error
+		w.WriteHeader(500)
+		return
+	}
+	// Remove previous secret
+	prevSecretHash, err := getUserAttribute(userId, "secret_hash_" + secretType)
+	if err == nil {
+		deleteSecretUser(secretType, prevSecretHash)
 	}
 	secret = picarus.UB64Enc(secret)
 	hash := secretHash(secret)
 	setSecretUser(secretType, hash, userId)
+	setUserAttribute(userId, "secret_hash_" + secretType, hash)
 	io.WriteString(w, secret)
 }

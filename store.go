@@ -33,7 +33,7 @@ func deleteSecretUser(secretType string, hash string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("DEL", "secret:" + secretType + ":" + hash,)
+	_, err = c.Do("DEL", "secret:" + secretType + ":" + hash)
 	return err
 }
 
