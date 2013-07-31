@@ -81,9 +81,7 @@ img.thumb {
       }
 
       function connectWebsocket() {
-          //var ws = new WebSocket("ws://api0.picar.us:16001/ws");
-          //var ws = new WebSocket("ws://api0.picar.us:16001/ws");
-          var ws = new WebSocket("ws://api0.picar.us:16001/ws");
+          var ws = new WebSocket("ws://api3.picar.us:16001/ws");
           ws.onopen = function () {
               ws.send(JSON.stringify({action: 'subscribe', channel: "glog_images"}));
               _.each(_.range(0, 12), function (x) {

@@ -42,5 +42,6 @@ const (
 	maxGlogSensors = 500
 	maxGlogBufferImages = 10
 	maxGlogBufferSensors = 50
+    redisServerPort = ""
 )
 var predictionModels = map[string]string{}

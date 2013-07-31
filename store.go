@@ -8,7 +8,7 @@ func getRedisConnection() (redis.Conn, error) {
 	// TODO: Replace with pool
 	// TODO: Add port to config
 	// TODO: Ensure that connections are being closed properly
-	return redis.Dial("tcp", ":6383")
+	return redis.Dial("tcp", redisServerPort)
 }
 
 
