@@ -29,30 +29,45 @@ type RavenEvent struct {
 
 func RavenServer(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	userId, err := getSecretUser("raven", secretHash(req.URL.Query().Get(":secret")))
+	fmt.Println(req)
+	userId, err := getSecretUser("raven", secretHash(req.URL.Query().Get(":key")))
 	if err != nil {
+		fmt.Println("Bad key")
+		return
+	}
+
+	trans := authTransport(userId)
+	if trans == nil {
+		fmt.Println("Couldn't get user")
+		w.WriteHeader(401)
 		return
 	}
 	flags, err := getUserFlags(userId, "uflags")
 	if err != nil {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+		w.WriteHeader(500)
 		return
 	}
 	if !hasFlag(flags, "raven") {
+		fmt.Println("User not flagged")
+		w.WriteHeader(400)
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
+		fmt.Println("Couldn't read body")
+		w.WriteHeader(500)
 		return
 	}
 	var r RavenEvent
 	err = json.Unmarshal(body, &r)
 	if err != nil {
+		fmt.Println("Couldn't unjson body")
+		w.WriteHeader(400)
 		return
 	}
 	fmt.Println(r)
 
-	trans := authTransport(userId)
 	svc, _ := mirror.New(trans.Client())
 	nt := &mirror.TimelineItem{
 		Html: "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Project + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Culprit + "</p></div></section><footer><div>" + r.Level + "</div></footer></article>",
@@ -63,6 +78,7 @@ func RavenServer(w http.ResponseWriter, req *http.Request) {
 	_, err = svc.Timeline.Insert(nt).Do()
 	if err != nil {
 		fmt.Println("Unable to insert timeline item")
+		w.WriteHeader(500)
 		return
 	}
 }

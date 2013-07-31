@@ -2,11 +2,9 @@ package main
 
 import (
 	picarus "github.com/bwhite/picarus/go"
-	picarusto "github.com/bwhite/picarus_takeout/go"
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"bytes"
 	"net/http"
 	"io/ioutil"
 	"html/template"
@@ -57,56 +55,31 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println(*loc)
 }
 
-func LocationOnHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		return
-	}
-	userId, err := userID(r)
-	if err != nil {
-		return
-	}
-	subId, err := getUserAttribute(userId, "location_sub")
-	if err == nil && len(subId) > 0 {
-		fmt.Println("Existing subscription")
-		return
-	}
-
-	trans := authTransport(userId)
-	svc, _ := mirror.New(trans.Client())
-
+func locationOn(svc *mirror.Service, userId string) error {
 	s := &mirror.Subscription{
 		Collection:  "locations",
 		UserToken:   userId,
 		CallbackUrl: fullUrl + "/location",
 	}
-	sub, err := svc.Subscriptions.Insert(s).Do()
-	if err != nil {
-		fmt.Println("Error subscribing to locations")
-		return
-	}
-	setUserAttribute(userId, "location_sub", sub.Id)
-	fmt.Println("Location sub: " + sub.Id)
+	_, err := svc.Subscriptions.Insert(s).Do()
+	return err
 }
 
 
-func LocationOffHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		return
-	}
-	userId, err := userID(r)
+func locationOff(svc *mirror.Service) error {
+	subscriptions, err := svc.Subscriptions.List().Do()
 	if err != nil {
-		return
+		return err
 	}
-	trans := authTransport(userId)
-	svc, _ := mirror.New(trans.Client())
-	subId, err := getUserAttribute(userId, "location_sub")
-	if err != nil {
-		fmt.Println("Error getting subscription id")
-		return
+	for _, v := range subscriptions.Items {
+		if v.Collection == "locations" {
+			err = svc.Subscriptions.Delete(v.Id).Do()
+			if err != nil {
+				return err
+			}
+		}
 	}
-	svc.Subscriptions.Delete(subId).Do()
-	deleteUserAttribute(userId, "location_sub")
-	fmt.Println("Removed subscription")
+	return nil
 }
 
 type MapLatLon struct {
@@ -144,34 +117,6 @@ func DecodeSearchResults(data string) (*[]SearchConfRow, error) {
 		out = append(out, SearchConfRow{Conf: (v[0]).(float64), Row: string((v[1]).([]uint8))})
 	}
 	return &out, nil
-}
-
-func FeatureMatch(feat0 string, feat1 string) (bool, error) {
-	model := "kYKia3eDqG1heF9kaXN0WqttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMs/UGJN0vGp/KRuYW1l2gAhcGljYXJ1cy5JbWFnZU1hdGNoZXJIYW1taW5nUmFuc2Fj"
-	var mh codec.MsgpackHandle
-	var w bytes.Buffer
-	err := codec.NewEncoder(&w, &mh).Encode([]string{feat0, feat1})
-	if err != nil {
-		fmt.Println("Couldn't encode msgpack")
-		return false, err
-	}
-	input := w.String()
-	//WriteFile("model.msgpack", picarus.B64Dec(model))
-	//WriteFile("points.msgpack", input)
-	out := picarusto.ModelChainProcessBinary(picarus.B64Dec(model), input)
-	var matched bool
-	var mh2 codec.MsgpackHandle
-	err = codec.NewDecoderBytes([]byte(out), &mh2).Decode(&matched)
-	if err != nil {
-		fmt.Println("Couldn't decode output")
-		return false, err
-	}
-	if matched {
-		fmt.Println("Matched")
-	} else {
-		fmt.Println("Not Matched")
-	}
-	return matched, nil
 }
 
 func MapServer(w http.ResponseWriter, req *http.Request) {
@@ -245,35 +190,22 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 			fmt.Println(m["meta:latitude"])
 			continue
 		}
-		matched, err := FeatureMatch(queryFeatures, resultFeatures)
+		_, err = ImagePointsMatch(queryFeatures, resultFeatures)
 		if err != nil {
-			fmt.Println("Can't match")
-			continue
-		}
-		if matched {
-			thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64) + " Matched", Class: "image-matched"})
-		} else {
 			thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64) + " Unmatched", Class: "image-unmatched"})
-		}
+		} else {
 		latlonsSer := m["meta:latlons"]
 		latlons := [][]string{}
-		err = json.Unmarshal([]byte(latlonsSer), &latlons)
-		if err != nil {
-			fmt.Println("Couldn't load latlons")
-			continue
-		}
-		fmt.Println(latlons)
-		/*lat := m["meta:latitude"]
-		lon := m["meta:longitude"]
-		if len(lat) == 0 || len(lon) == 0 {
-			fmt.Println("Getting lat/lon failed")
-			continue
-		}
-		 */
-		if matched {
+			err = json.Unmarshal([]byte(latlonsSer), &latlons)
+			if err != nil {
+				fmt.Println("Couldn't load latlons")
+				continue
+			}
+			fmt.Println(latlons)
 			for _, v := range latlons {
 				points = append(points, MapLatLon{Lat: v[0], Lon: v[1]})
 			}
+			thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64) + " Matched", Class: "image-matched"})
 		}
 	}
 	mapData := MapTemplateData{

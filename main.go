@@ -3,6 +3,7 @@ package main
 import (
 	picarus "github.com/bwhite/picarus/go"
 	"github.com/ugorji/go-msgpack"
+	"github.com/garyburd/redigo/redis"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"code.google.com/p/google-api-go-client/oauth2/v2"
 	"code.google.com/p/google-api-go-client/mirror/v1"
+	"code.google.com/p/go.net/websocket"
 )
 
 const revokeEndpointFmt = "https://accounts.google.com/o/oauth2/revoke?token=%s"
@@ -42,10 +44,9 @@ func RootServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, string(content))
 }
 
-func bootstrapUser(r *http.Request, client *http.Client, userId string) {
-	fmt.Println("Bootstrapping user...")
+func setupUser(r *http.Request, client *http.Client, userId string) {
+	fmt.Println("Setting up user...")
 	m, _ := mirror.New(client)
-
 
 	fmt.Println("Using mirror api...")
 	s := &mirror.Subscription{
@@ -58,7 +59,7 @@ func bootstrapUser(r *http.Request, client *http.Client, userId string) {
 	c := &mirror.Contact{
 		Id:          "Memento",
 		DisplayName: "Memento",
-		ImageUrls:   []string{fullUrl + "/static/logo.jpg"},
+		ImageUrls:   []string{fullUrl + "/static/memento.jpg"},
 	}
 	m.Contacts.Insert(c).Do()
 
@@ -98,27 +99,49 @@ func oauth2callbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Exchange the code for access and refresh tokens.
 	tok, err := t.Exchange(r.FormValue("code"))
 	if err != nil {
+		w.WriteHeader(500)
 		return
 	}
 	o, err := oauth2.New(t.Client())
 	if err != nil {
+		w.WriteHeader(500)
 		return
 	}
 	u, err := o.Userinfo.Get().Do()
 	if err != nil {
+		w.WriteHeader(500)
 		return
 	}
-
+	fmt.Println(u)
 	userId := fmt.Sprintf("%s_%s", strings.Split(clientId, ".")[0], u.Id)
 	if err = storeUserID(w, r, userId); err != nil {
+		w.WriteHeader(500)
 		return
 	}
-	storeCredential(userId, tok)
-
-	bootstrapUser(r, t.Client(), userId)
+	userSer, err := json.Marshal(u)
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+	storeCredential(userId, tok, string(userSer))
 	fmt.Println("Oauth callback succeeded, redirecting...")
 	http.Redirect(w, r, fullUrl, http.StatusFound)
 	return
+}
+
+func SetupHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Setting up user")
+	userId, err := userID(r)
+	if err != nil || userId == "" {
+		w.WriteHeader(400)
+		return
+	}
+	t := authTransport(userId)
+	if t == nil {
+		w.WriteHeader(401)
+		return
+	}
+	setupUser(r, t.Client(), userId)
 }
 
 // signout Revokes access for the user and removes the associated credentials from the datastore.
@@ -129,20 +152,22 @@ func signoutHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Signing out user...")
 	userId, err := userID(r)
 	if err != nil {
+		w.WriteHeader(500)
 		return
 	}
 	if userId == "" {
-		http.Redirect(w, r, fullUrl + "/auth", http.StatusFound)
+		w.WriteHeader(500)
 		return
 	}
 	t := authTransport(userId)
 	if t == nil {
-		http.Redirect(w, r, fullUrl + "/auth", http.StatusFound)
+		w.WriteHeader(500)
 		return
 	}
 	req, err := http.NewRequest("GET", fmt.Sprintf(revokeEndpointFmt, t.Token.RefreshToken), nil)
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
+		w.WriteHeader(500)
 		return
 	}
 	defer response.Body.Close()
@@ -186,7 +211,6 @@ func getImageAttachment(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Tr
 		return nil, err
 	}
 	defer resp.Body.Close()
-	// Brandyn
 	imageData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Unable to read attachment body")
@@ -216,8 +240,8 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 		}
 		pushUserListTrim(userId, "images", imageRow, maxImages)
 		PicarusApiRowThumb(conn, imageRow)
-		if hasFlag(flags, "memento") {
-			mementoMatches, _, err := matchMementoFeatures(conn, imageRow)
+		if hasFlag(flags, "match_memento") {
+			mementoMatches, _, err := matchMementoImage(conn, imageRow, userId)
 			if err != nil {
 				fmt.Println("Couldn't match memento")
 			} else {
@@ -267,6 +291,7 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 		// If there is a caption, send it to the annotation task
 		if len(t.Text) > 0 {
 			if hasFlag(flags, "crowdqa") {
+				fmt.Println("Sending crowdqa")
 				imageType := "full"
 				if strings.HasPrefix(t.Text, "augmented ") {
 					if len(imageWarped) > 0 {
@@ -403,8 +428,17 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	trans := authTransport(userId)
+	if trans == nil {
+		fmt.Println("Couldn't allocate trans")
+		return
+	}
 
-	svc, _ := mirror.New(trans.Client())
+	svc, err := mirror.New(trans.Client())
+	if err != nil {
+		fmt.Println("Couldn't allocate client")
+		return
+	}
+	
 	t, err := svc.Timeline.Get(itemId).Do()
 	if err != nil {
 		fmt.Println("Couldn't get timeline item")
@@ -420,9 +454,90 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO: Look into this more
 	if notifyOG {
-		notifyOpenGlass(&conn, svc, trans, t, userId)
+		go notifyOpenGlass(&conn, svc, trans, t, userId)
 	} else {
-		notifyMemento(&conn, svc, trans, t, userId)
+		go notifyMemento(&conn, svc, trans, t, userId)
+	}
+}
+
+func wsWebsocketHandler(c *websocket.Conn) {
+	defer c.Close()
+	/*userId, err := userID(c.Request())
+	if err != nil || userId == "" {
+		fmt.Println("Couldn't get user")
+		return
+	}*/
+	userId := "219250584360_109113122718379096525"
+	fmt.Println("Websocket connected")
+	fmt.Println(userId)
+	/*flags, err := getUserFlags(userId, "")
+	if err != nil {
+		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+		return
+	}*/
+	psc, err := userSubscriber()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	go func() {
+		responseChan := make(chan map[string]string)
+		go func() {
+			for {
+				response, ok := <-responseChan
+				if !ok {
+					break
+				}
+				err = websocket.JSON.Send(c, response)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+			}
+		}()
+		for {
+			switch n := psc.Receive().(type) {
+			case redis.Message:
+				response := map[string]string{}
+				response["type"] = strings.Split(n.Channel, ":")[1]
+				response["data"] = string(n.Data)
+				select {
+					case responseChan <- response:
+					default:
+						fmt.Println("Image skipping sending to webapp, too slow...")
+					}
+			case error:
+				fmt.Printf("error: %v\n", n)
+				return
+			}
+		}
+	}()
+
+	for {
+		request :=  map[string]string{}
+		err := websocket.JSON.Receive(c, &request)
+		fmt.Println(request)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if request["action"] == "subscribe" {
+			err := userSubscribeExisting(psc, userId, request["channel"])
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		} else if request["action"] == "setOverlay" {
+			userPublish(userId, "overlay", request["overlayb64"])
+		} else if request["action"] == "setMatchImage" {
+			points, err := ImagePoints(picarus.B64Dec(request["imageb64"]))
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			setUserAttribute(userId, "match_features", points)
+			fmt.Println("Finished setting match image")
+		}
 	}
 }
 
@@ -433,12 +548,13 @@ func main() {
 	m.Get("/map", http.HandlerFunc(MapServer))
 	m.Get("/search", http.HandlerFunc(MementoSearchServer))
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
-	m.Post("/raven/{secret}", http.HandlerFunc(RavenServer))
-	m.Post("/location/on", http.HandlerFunc(LocationOnHandler))
-	m.Post("/location/off", http.HandlerFunc(LocationOffHandler))
+	m.Post("/raven/{key}", http.HandlerFunc(RavenServer))
+	//m.Post("/location/on", http.HandlerFunc(LocationOnHandler))
+	//m.Post("/location/off", http.HandlerFunc(LocationOffHandler))
 	m.Post("/location", http.HandlerFunc(LocationHandler))
-	m.Post("/sensors", http.HandlerFunc(SensorsHandler))
-	m.Post("/images", http.HandlerFunc(ImagesHandler))
+	m.Post("/setup", http.HandlerFunc(SetupHandler))
+	m.Post("/glog/sensors/{key}", http.HandlerFunc(SensorsHandler))
+	m.Post("/glog/images/{key}", http.HandlerFunc(ImagesHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
 
 	// /auth -> google -> /oauth2callback
@@ -449,8 +565,14 @@ func main() {
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
+
+	//m.Post("/simulate/openglass", http.HandlerFunc(SimulateOpenglassHandler))
+	//m.Post("/simulate/memento", http.HandlerFunc(SimulateMementoHandler))
+
 	m.Get("/", http.HandlerFunc(RootServer))
 	go pollAnnotations()
+	http.Handle("/glog/ws/", websocket.Handler(glogWebsocketHandler))
+	http.Handle("/ws", websocket.Handler(wsWebsocketHandler))
 	http.Handle("/", m)
 	err := http.ListenAndServe(":16001", nil)
 	if err != nil {

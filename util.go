@@ -52,17 +52,27 @@ func userID(r *http.Request) (string, error) {
 	return "", nil
 }
 
-func storeCredential(userId string, token *oauth.Token) error {
+func storeCredential(userId string, token *oauth.Token, userInfo string) error {
 	// Store the tokens in the datastore.
+	err := setUserAttribute(userId, "user_info", userInfo)
+	if err != nil {
+		return err
+	}
 	val, err := json.Marshal(token)
 	if err != nil {
 		return err
 	}
-	err = setUserAttribute(userId, "oauth_token", string(val))
-	return err
+	return setUserAttribute(userId, "oauth_token", string(val))
 }
 
 func authTransport(userId string) *oauth.Transport {
+	flags, err := getUserFlags(userId, "flags")
+	if err != nil {
+		return nil
+	}
+	if !hasFlag(flags, "user") {
+		return nil
+	}
 	val, err := getUserAttribute(userId, "oauth_token")
 	if err != nil {
 		return nil

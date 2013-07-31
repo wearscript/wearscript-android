@@ -7,6 +7,7 @@ import (
 func getRedisConnection() (redis.Conn, error) {
 	// TODO: Replace with pool
 	// TODO: Add port to config
+	// TODO: Ensure that connections are being closed properly
 	return redis.Dial("tcp", ":6383")
 }
 
@@ -177,4 +178,39 @@ func hasFlag(flags []string, flag string) bool {
 		}
 	}
 	return false
+}
+
+func userSubscribe(userId string, channel string) (*redis.PubSubConn, error) {
+	c, err := getRedisConnection()
+	if err != nil {
+		return nil, err
+	}
+	psc := redis.PubSubConn{c}
+	err = psc.Subscribe(userId + ":" + channel)
+	if err != nil {
+		return nil, err
+	}
+	return &psc, nil
+}
+
+func userSubscribeExisting(psc *redis.PubSubConn, userId string, channel string) error {
+	return psc.Subscribe(userId + ":" + channel)
+}
+
+func userSubscriber() (*redis.PubSubConn, error) {
+	c, err := getRedisConnection()
+	if err != nil {
+		return nil, err
+	}
+	psc := redis.PubSubConn{c}
+	return &psc, nil
+}
+
+func userPublish(userId string, channel string, data string) error {
+	c, err := getRedisConnection()
+	if err != nil {
+		return err
+	}
+	_, err = c.Do("PUBLISH", userId + ":" + channel, data)
+	return err
 }

@@ -39,7 +39,7 @@ func notifyMemento(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transpo
 	}
 	files := map[string][]byte{}
 	files["data:image"] = imageData
-	imageRow := "bwhitememento:" + rowSuffix
+	imageRow := "bwhitememento:" + userId + ":" + rowSuffix
 	_, err = conn.PatchRow("images", imageRow, data, files)
 	if err != nil {
 		fmt.Println("Couldn't patch row")
@@ -96,15 +96,49 @@ func reprocessMementoImages(conn *picarus.Conn) error {
 }
 
 
-func matchMementoFeatures(conn *picarus.Conn, queryRow string) (map[string]string, map[string]string, error) {
+func matchMementoImage(conn *picarus.Conn, queryRow string, userId string) (map[string]string, map[string]string, error) {
 	queryFeatures, err := PicarusApiModel(conn, queryRow, picarus.B64Dec(locationFeatureModel))
 	if err != nil {
 		fmt.Println("Couldn't compute feature")
 		return nil, nil, err
 	}
+	return matchMementoFeatures(conn, queryFeatures, userId)
+}
+
+func getMementoDB(conn *picarus.Conn, userId string) ([]string, []map[string]string, error) {
+	rows := []string{}
+	columnss := []map[string]string{}
+
+	ss := conn.Scanner("images", "bwhitememento:" + userId + ":", "bwhitememento:" + userId + ";", []string{"meta:", picarus.B64Dec(locationFeatureModel)}, map[string]string{})
+	for {
+		row, columns, err := ss.Next()
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("Got error in scanner next")
+			return nil, nil, err
+		}
+		if ss.Done {
+			break
+		}
+		if columns["meta:note"] == "" {
+			continue
+		}
+		dbFeatures := columns[picarus.B64Dec(locationFeatureModel)]
+		if dbFeatures == "" {
+			continue
+		}
+		rows = append(rows, row)
+		columnss = append(columnss, columns)
+	}
+	return rows, columnss, nil
+}
+
+
+func matchMementoFeatures(conn *picarus.Conn, queryFeatures string, userId string) (map[string]string, map[string]string, error) {
+	// TODO: Refactor to use getMementoDB to avoid reuse, features fit in memory
 	rowsMatched := map[string]string{}
 	rowsUnmatched := map[string]string{}
-	ss := conn.Scanner("images", "bwhitememento:", "bwhitememento;", []string{"meta:", picarus.B64Dec(locationFeatureModel)}, map[string]string{})
+	ss := conn.Scanner("images", "bwhitememento:" + userId + ":", "bwhitememento:" + userId + ";", []string{"meta:", picarus.B64Dec(locationFeatureModel)}, map[string]string{})
 	for {
 		row, columns, err := ss.Next()
 		if err != nil {
@@ -123,15 +157,11 @@ func matchMementoFeatures(conn *picarus.Conn, queryRow string) (map[string]strin
 			continue
 		}
 		fmt.Println("Verifying match to db image")
-		match, err := FeatureMatch(queryFeatures, dbFeatures)
+		_, err = ImagePointsMatch(queryFeatures, dbFeatures)
 		if err != nil {
-			fmt.Println("Error in matching")
-			return nil, nil, err
-		}
-		if match {
-			rowsMatched[row] = columns["meta:note"]
-		} else {
 			rowsUnmatched[row] = columns["meta:note"]
+		} else {
+			rowsMatched[row] = columns["meta:note"]
 		}
 	}
 	return rowsMatched, rowsUnmatched, nil
@@ -179,7 +209,7 @@ func MementoSearchServer(w http.ResponseWriter, req *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	rowsMatched, rowsUnmatched, err := matchMementoFeatures(&conn, queryRow)
+	rowsMatched, rowsUnmatched, err := matchMementoFeatures(&conn, queryRow, userId)
 	if err != nil {
 		fmt.Println("Error matching memento rows")
 		return

@@ -73,27 +73,152 @@ img.thumb {
           $.ajax({url: 'flags', type: 'DELETE', data: JSON.stringify(flags), success: success});
       }
 
-      function createKey(type, success) {
-          $.ajax({url: 'user/key/' + type, type: 'POST', success: success});
+      function createKey(type, success, error) {
+          var xhr = $.ajax({url: 'user/key/' + type, type: 'POST', success: success});
+          if (!_.isUndefined(error)) {
+              xhr.error(error);
+          }
       }
+
+      function connectWebsocket() {
+          //var ws = new WebSocket("ws://api0.picar.us:16001/ws");
+          //var ws = new WebSocket("ws://api0.picar.us:16001/ws");
+          var ws = new WebSocket("ws://api0.picar.us:16001/ws");
+          ws.onopen = function () {
+              ws.send(JSON.stringify({action: 'subscribe', channel: "glog_images"}));
+              _.each(_.range(0, 12), function (x) {
+                  ws.send(JSON.stringify({action: 'subscribe', channel: "glog_sensors_" + x}));
+                  $('#sensors').append($('<div>').attr('id', 'sensor_' + x));
+              });
+          }
+          ws.onmessage = function (event) {
+              response = JSON.parse(event.data);
+              if (response.type == "glog_images") {
+                  latestImage = JSON.parse(response.data).imageb64;
+                  $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
+                  //ws.send(JSON.stringify({action: 'getLatestImage'}));
+              } else if (response.type.slice(0, 13) == "glog_sensors_") {
+                  var curSensor = response.type.split('_')[2]
+                  $('#sensor_' + curSensor).html(_.escape(response.data))
+              }
+          }
+          ws.onclose = function (event) {
+              //alert("Websocket closed");
+          }
+          return ws;
+      }
+
+      ws = connectWebsocket();
+      function initCanvas() {
+          var $canvas = $('#canvas')[0];
+
+          // 
+
+          var context = $canvas.getContext('2d');
+          context.fillStyle   = '#FF00FF'; // set canvas background color
+          context.fillRect  (0,   0, 640, 360);  // now fill the canvas
+
+          tool = {};
+          function ev_canvas (ev) {
+              if (ev.layerX || ev.layerX == 0) { // Firefox
+                  ev._x = ev.layerX;
+                  ev._y = ev.layerY;
+              } else if (ev.offsetX || ev.offsetX == 0) { // Opera
+                  ev._x = ev.offsetX;
+                  ev._y = ev.offsetY;
+              }
+              var evtype = ev.type;
+              if (evtype.slice(0, 5) == "touch" && event.touches.length == 1) {
+                  console.log('Touch')
+                  ev._x = ev.touches[0].pageX;
+                  ev._y = ev.touches[0].pageY;
+              }
+              console.log(ev._x + " " + ev._y)
+              //console.log(ev.pageX + " " + ev.pageY)
+
+              var func = tool[evtype];
+              if (func) {
+                  func(ev);
+              }
+          }
+
+          $canvas.addEventListener('mousedown', ev_canvas, false);
+          $canvas.addEventListener('mousemove', ev_canvas, false);
+          $canvas.addEventListener('mouseup', ev_canvas, false);
+          $canvas.addEventListener('touchmove', ev_canvas, false);
+          $canvas.addEventListener('touchstart', ev_canvas, false);
+          $canvas.addEventListener('touchend', ev_canvas, false);
+          tool.drawing = false;
+          tool.mousemove = function (ev) {
+              console.log('Mouse move')
+              if (this.drawing) {
+                  context.lineTo(ev._x, ev._y);
+                  context.stroke();
+              }
+          };
+          tool.mousedown = function (ev) {
+              console.log('Mouse down')
+              context.beginPath();
+              context.moveTo(ev._x, ev._y);
+              this.drawing = true;
+          };
+          tool.mouseup = function (ev) {
+              console.log('Mouse up')
+              if (this.drawing) {
+                  tool.mousemove(ev);
+                  this.drawing = false;
+                  var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
+                  $('#canvasMirror').attr('src', datauri);
+                  ws.send(JSON.stringify({action: 'setOverlay', overlayb64: datauri.split(',')[1]}));
+              }
+          };
+
+          tool.touchmove = function (ev) {
+              console.log('Touch move')
+              if (this.drawing) {
+                  context.lineTo(ev.pageX, ev.pageY);
+                  context.stroke();
+              }
+          };
+          tool.touchstart = function (ev) {
+              console.log('Touch start');
+              context.beginPath();
+              context.moveTo(ev.pageX, ev.pageY);
+              this.drawing = true;
+          };
+          tool.touchend = function (ev) {
+              console.log('Touch end')
+              if (this.drawing) {
+                  tool.touchmove(ev);
+                  this.drawing = false;
+                  var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
+                  $('#canvasMirror').attr('src', datauri);
+                  ws.send(JSON.stringify({action: 'setOverlay', overlayb64: datauri.split(',')[1]}));
+              }
+          };
+
+      }
+
 
       function main () {
           $('#buttonAuth').click(function () {
               window.location.replace('auth');
           });
           $('#buttonSignout').click(function () {
-              $.post('signout', {success: function () {location.reload()}});
-          });
-          $('#buttonRaven').click(function () {
-              $.ajax({url: 'raven', type: 'POST', success: function (data, textStatus, xhr) {$('#ravenLink').attr('href', 'raven/' + data).text('Raven Link')}});
+              $.post('signout', {success: function () {location.reload()}}).error(function () {alert("Could not signout")});
           });
 
-          $('#buttonLocOn').click(function () {
-              $.ajax({url: 'location/on', type: 'POST', success: function (data, textStatus, xhr) {}});
+          $('#buttonSetup').click(function () {
+              $.post('setup').error(function () {alert("Could not setup")});
           });
-          $('#buttonLocOff').click(function () {
-              $.ajax({url: 'location/off', type: 'POST', success: function (data, textStatus, xhr) {}});
+
+          $('#buttonRaven').click(function () {
+              createKey("raven", function (x) {$('#secret-raven').html(_.escape(x))}, function () {alert("Could not get raven")})
           });
+          $('#matchImage').click(function () {
+              ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
+          });
+
           $('.flag-check').change(function () {
               var $this = $(this);
               if (this.checked) {
@@ -107,34 +232,63 @@ img.thumb {
                   $('.flag-check[name=' + y + ']').prop('checked', true);
               });
           });
+          initCanvas();
+          //$('#files').change(_.partial(handleFileSelect, sendImage));
       }
       $(main);
     </script>
     <div class="container">
         <div class="row">
       <input class="flag-check" name="location" type="checkbox" />
-      <input class="flag-check" name="memento" type="checkbox" />
+      <input class="flag-check" name="match_memento" type="checkbox" />
       <input class="flag-check" name="raven" type="checkbox" />
       <input class="flag-check" name="crowdqa" type="checkbox" />
-      <input class="flag-check" name="glog" type="checkbox" />
+      <input class="flag-check" name="match_annotated" type="checkbox" />
+      <input class="flag-check" name="match_memento_glog" type="checkbox" />
+      <input class="flag-check" name="glog_store" type="checkbox" />
+      <input class="flag-check" name="glog_stream" type="checkbox" />
+      <input class="flag-check" name="glog_stream_throttle" type="checkbox" />
       <input class="flag-check" name="warp" type="checkbox" />
       <input class="flag-check" name="predict" type="checkbox" />
-      <input class="flag-check" name="location:flickr" type="checkbox" />
-      <input class="flag-check" name="location:streetview" type="checkbox" />
+      <input class="flag-check" name="location_flickr" type="checkbox" />
+      <input class="flag-check" name="location_streetview" type="checkbox" />
       </div>
         <div class="row">
-          <button id="buttonAuth" class="btn btn-large btn-block btn-primary" type="button">Authenticate</button>
-          <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
-          <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
-          <button id="buttonLocOn" class="btn btn-large btn-block btn-primary" type="button">Location Update (On)</button>
-          <button id="buttonLocOff" class="btn btn-large btn-block btn-primary" type="button">Location Update (Off)</button>
+          <div class="span7">
+            <button id="buttonAuth" class="btn btn-large btn-block btn-primary" type="button">Authenticate</button>
+            <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
+            <button id="buttonSetup" class="btn btn-large btn-block btn-primary" type="button">Setup</button>
+            <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
+          </div>
         </div>
         <div class="row">
-          <a id="ravenLink"></a>
+          <span id="secret-raven"></span>
         </div>
         <div class="row">
-          <div class="span6 well"><input type="file" id="files" name="files[]" multiple /><span id="list"><img id="thumb" class="thumb"\></span></div>
+          <img id="latest-image" \>
+          <button id="matchImage" class="btn btn-large btn-block btn-primary" type="button">Match Image</button>
         </div>
+        <div class="row">
+          <canvas id="canvas" width="640" height="360">
+        </div>
+        <div class="row">
+          <img id="canvasMirror" width="640" height="360" \>
+        </div>
+        <div class="row">
+          <div id="sensors" \>
+        </div>
+
+        <div class="row">
+          <h1>Simulate</h1>
+          <select>
+            <option value="openglass">OpenGlass</option>
+            <option value="memento">Memento</option>
+          </select>
+          <input type="text" name="fname">
+          <div class="span6 well"><input type="file" id="files" /></div>
+          <input type="submit" value="Submit" id="simulate-submit">
+        </div>
+
     </div> <!-- /container -->
   </body>
 </html>

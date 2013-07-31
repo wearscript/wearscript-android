@@ -11,6 +11,7 @@ for x in a.keys():
         user_ids.append(x)
 
 lists = ['locations', 'images']
+lists_big = ['glog_images']
 sets = ['flags', 'uflags']
 secrets = ['raven', 'glog']
 
@@ -26,6 +27,17 @@ for user_id in user_ids:
         l = a.lrange(lkey, 0, -1)
         print('List[%s][%d]' % (x, len(l)))
         pp(l[:10])
+    for lkey in a.keys(user_id + ':glog_sensors_*'):
+        keys_touched.add(lkey)
+        l = a.lrange(lkey, 0, -1)
+        print('List[%s][%d]' % (x, len(l)))
+        pp(l[:10])
+    for x in lists_big:
+        lkey = user_id + ':' + x
+        keys_touched.add(lkey)
+        l = a.lrange(lkey, 0, -1)
+        print('List[%s][%d]' % (x, len(l)))
+        
     print('User sets (capped at 25)')
     for x in sets:
         skey = user_id + ':' + x
