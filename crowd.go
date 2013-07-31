@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"encoding/json"
 	"code.google.com/p/google-api-go-client/mirror/v1"
 )
@@ -89,6 +90,9 @@ func pollAnnotations() {
 			trans := authTransport(userId)
 			svc, _ := mirror.New(trans.Client())
 		    text := question + "? " + userData.Text
+			if !strings.HasSuffix(text, ".") {
+				text = text + "."
+			} 
 			fmt.Println(text)
 
 			nt := &mirror.TimelineItem{
