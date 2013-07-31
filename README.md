@@ -19,9 +19,18 @@ Install
 -------
 If you want access to our demo server contact us, if you want to run this yourself definitely contact us (it requires a http://picar.us cluster with a classification model trained).
 
-* go get code.google.com/p/goauth2/oauth
-* go get code.google.com/p/google-api-go-client/googleapi
-* go get code.google.com/p/google-api-go-client/mirror/v1
+* Setup a config.go file (look at config.go.example)
+* go get -u code.google.com/p/go.net/websocket
+* go get -u code.google.com/p/goauth2/oauth
+* go get -u code.google.com/p/google-api-go-client/mirror/v1
+* go get -u code.google.com/p/google-api-go-client/oauth2/v2
+* go get -u github.com/bwhite/picarus/go
+* go get -u github.com/bwhite/picarus_takeout/go
+* go get -u github.com/garyburd/redigo/redis
+* go get -u github.com/gorilla/pat
+* go get -u github.com/gorilla/sessions
+* go get -u github.com/ugorji/go-msgpack
+* go get -u github.com/ugorji/go/codec
 * go build main.go
 
 Resources

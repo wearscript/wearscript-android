@@ -17,17 +17,30 @@ package main
 const (
 	debug       = true // Set to false to turn off logging every API request.
 	sessionName = "openglass"
-	secret      = "TODO Change me" // Make it a random string
-    annotationTask = "TODO Change me"
+	secret      = "" // Make it a random string
 
 	// Created at http://code.google.com/apis/console, these identify
 	// our app for the OAuth protocol.
-	clientId     = "TODO Change me"
-	clientSecret = "TODO Change me"
-	fullUrl = "TODO Change me"  // http://example
+	annotationTask = ""
+	annotationARTask = ""
+	homographyModel = ""
+	glassImageModel = ""
+	locationModel = ""
+	locationFeatureModel = ""
+	clientId     = ""
+	clientSecret = ""
+	fullUrl = ""
+	glogPrefix = ""
 	scopes       = "https://www.googleapis.com/auth/glass.timeline " +
 		"https://www.googleapis.com/auth/glass.location " +
 		"https://www.googleapis.com/auth/userinfo.profile"
-	picarusEmail = "TODO Change Me"
-	picarusApiKey = "TODO Change Me"
+	picarusEmail = ""
+	picarusApiKey = ""
+	maxLocations = 500
+	maxImages = 500
+	maxGlogImages = 500
+	maxGlogSensors = 500
+	maxGlogBufferImages = 10
+	maxGlogBufferSensors = 50
 )
+var predictionModels = map[string]string{}
