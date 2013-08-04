@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"time"
 	"github.com/garyburd/redigo/redis"
 	picarus "github.com/bwhite/picarus/go"
