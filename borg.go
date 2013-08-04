@@ -143,7 +143,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 				return
 			}
 			fmt.Println(request.Action)
-			if request.Action == "image" || request.Action == "sensors" {
+			if (request.Action == "image" && hasFlag(flags, "borg_web_image")) || (request.Action == "sensors" && hasFlag(flags, "borg_web_sensors")) {
 				userPublish(userId, "borg_server_to_web", string(requestJS))
 			}
 			if request.Action == "image"  {
