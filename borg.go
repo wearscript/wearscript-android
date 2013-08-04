@@ -119,7 +119,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					fmt.Println(err)
 					continue
 				}
-				err = websocket.JSON.Send(c, BorgData{H: h})
+				err = websocket.JSON.Send(c, BorgData{H: h, Action: "warpH"})
 				if err != nil {
 					fmt.Println(err)
 					continue
@@ -145,6 +145,12 @@ func BorgGlassHandler(c *websocket.Conn) {
 				userPublish(userId, "borg_server_to_web", string(requestJS))
 			}
 			if request.Action == "image"  {
+				go func() {
+					err = websocket.JSON.Send(c, BorgData{Action: "imageAck"})
+					if err != nil {
+						fmt.Println(err)
+					}
+				}()
 				if hasFlag(flags, "match_annotated") {
 					select {
 					case requestChan <- &request:
@@ -172,8 +178,13 @@ func BorgGlassHandler(c *websocket.Conn) {
 		switch n := psc.Receive().(type) {
 		case redis.Message:
 			fmt.Printf("Message: %s\n", n.Channel)
-			overlayb64 := string(n.Data)
-			err = websocket.JSON.Send(c, BorgData{Imageb64: &overlayb64})
+			response := BorgData{}
+			err := json.Unmarshal(n.Data, &response)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			err = websocket.JSON.Send(c, response)
 			if err != nil {
 				return
 			}
