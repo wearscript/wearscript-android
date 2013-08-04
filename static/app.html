@@ -81,7 +81,7 @@ img.thumb {
       }
 
       function connectWebsocket() {
-          var ws = new WebSocket("ws://api3.picar.us:16001/ws");
+          var ws = new WebSocket("ws://api3.picar.us:16001/borg/web");
           ws.onopen = function () {
               _.each(_.range(0, 12), function (x) {
                   $('#sensors').append($('<div>').attr('id', 'sensor_' + x));
