@@ -67,8 +67,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 		err = websocket.JSON.Send(c, BorgData{Action: "options", Options: &BorgOptions{LocalImage: hasFlag(flags, "borg_local_image"), LocalSensors: hasFlag(flags, "borg_local_sensors"), RemoteImage: hasFlag(flags, "borg_server_image") || hasFlag(flags, "borg_web_image"), RemoteSensors: hasFlag(flags, "borg_server_sensors") || hasFlag(flags, "borg_web_sensors")}})
 		if err != nil {
 			fmt.Println(err)
-		}
-		
+		}		
 	}()
 	go func() {
 		matchMementoChan := make(chan *BorgData)
@@ -129,17 +128,19 @@ func BorgGlassHandler(c *websocket.Conn) {
 					continue
 				}
 				h, err := ImagePointsMatch(points0, points1)
-				fmt.Println("No match")
 				if err != nil {
+					fmt.Println("No match")
 					fmt.Println(err)
 					continue
 				}
+				// 
 				fmt.Println("Match")
 				err = websocket.JSON.Send(c, BorgData{H: h, Action: "warpH"})
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println(h)
 				fmt.Println("Finished computing homography")
 			}
 		}()
