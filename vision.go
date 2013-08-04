@@ -41,3 +41,25 @@ func ImagePointsMatch(points0 string, points1 string) ([]float64, error) {
 	input := w.String()
 	return DecodeHomography(picarusto.ModelChainProcessBinary(picarus.B64Dec(model), input))
 }
+
+func ImageMatch(fn0 string, fn1 string) ([]float64, error) {
+	image0, err := ReadFile(fn0)
+	if err != nil {
+		return nil, err
+	}
+	image1, err := ReadFile(fn1)
+	if err != nil {
+		return nil, err
+	}
+	pts0, err := ImagePoints(image0)
+	if err != nil {
+		return nil, err
+	}
+	pts1, err := ImagePoints(image1)
+	if err != nil {
+		return nil, err
+	}
+	h, err := ImagePointsMatch(pts0, pts1)
+	fmt.Println(h)
+	return h, err
+}

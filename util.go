@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"io"
 	"net/http"
 )
 
@@ -104,4 +105,30 @@ func WriteFile(filename string, data string) {
 	if _, err := fo.Write([]byte(data)); err != nil {
 		fmt.Println("Couldn't write file")
 	}
+}
+
+func ReadFile(filename string) (string, error) {
+	fi, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("Couldn't open file: " + filename)
+		return "", err
+	}
+	defer func() {
+		if err := fi.Close(); err != nil {
+			fmt.Println("Couldn't close file:" + filename)
+		}
+	}()
+	buf := make([]byte, 1024)
+	data := ""
+	for {
+		// read a chunk
+		n, err := fi.Read(buf)
+		if err != nil && err != io.EOF {
+			fmt.Println("Couldn't read file: " + filename)
+			return "", err
+		}
+		if n == 0 { break }
+		data = data + string(buf[:n])
+	}
+	return data, nil
 }
