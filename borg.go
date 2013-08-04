@@ -64,7 +64,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 	go func() {
 		fmt.Println("Sending options")
 		// TODO: have it send this based on a subscription
-		err = websocket.JSON.Send(c, BorgData{Action: "options", Options: &BorgOptions{LocalImage: hasFlag(flags, "borg_local_image"), LocalSensors: hasFlag(flags, "borg_local_sensors"), RemoteImage: hasFlag(flags, "borg_server_image") || hasFlag(flags, "borg_web_image"), RemoteSensors: hasFlag(flags, "borg_server_sensors") || hasFlag(flags, "borg_web_sensors")}})
+		err = websocket.JSON.Send(c, BorgData{Action: "options", Options: &BorgOptions{LocalImage: hasFlag(flags, "borg_local_image"), LocalSensors: hasFlag(flags, "borg_local_sensors"), RemoteImage: hasFlag(flags, "borg_server_image") || hasFlag(flags, "borg_serverdisk_image") || hasFlag(flags, "borg_web_image"), RemoteSensors: hasFlag(flags, "borg_server_sensors") || hasFlag(flags, "borg_web_sensors")}})
 		if err != nil {
 			fmt.Println(err)
 		}		
@@ -145,6 +145,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			}
 		}()
 		// Data from glass loop
+		cnt := 0
 		for {
 			request := BorgData{}
 			err := websocket.JSON.Receive(c, &request)
@@ -152,6 +153,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 				fmt.Println(err)
 				return
 			}
+			cnt += 1
 			requestJS, err := json.Marshal(request)
 			if err != nil {
 				fmt.Println(err)
@@ -162,6 +164,11 @@ func BorgGlassHandler(c *websocket.Conn) {
 				userPublish(userId, "borg_server_to_web", string(requestJS))
 			}
 			if request.Action == "image"  {
+				if hasFlag(flags, "borg_serverdisk_image") {
+					go func() {
+						WriteFile(fmt.Sprintf("borg-serverdisk-%s-%.5d.jpg", userId, cnt), picarus.B64Dec(*request.Imageb64))
+					}()
+				}
 				go func() {
 					err = websocket.JSON.Send(c, BorgData{Action: "imageAck", TimestampAck: request.Timestamp})
 					if err != nil {

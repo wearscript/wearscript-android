@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"fmt"
+	"os"
 	"net/http"
 )
 
@@ -90,4 +91,17 @@ func authTransport(userId string) *oauth.Transport {
 
 func deleteCredential(userId string) error {
 	return deleteUserAttribute(userId, "oauth_token")
+}
+
+func WriteFile(filename string, data string) {
+	fo, err := os.Create(filename)
+	if err != nil { fmt.Println("Couldn't create file") }
+	defer func() {
+		if err := fo.Close(); err != nil {
+			fmt.Println("Couldn't close file")
+		}
+	}()
+	if _, err := fo.Write([]byte(data)); err != nil {
+		fmt.Println("Couldn't write file")
+	}
 }
