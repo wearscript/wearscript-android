@@ -93,13 +93,13 @@ img.thumb {
           ws.onmessage = function (event) {
               response = JSON.parse(event.data);
               if (response.action == "image") {
-                  latestImage = JSON.parse(response.data).imageb64;
+                  latestImage = response.imageb64;
                   $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
-                  //ws.send(JSON.stringify({action: 'getLatestImage'}));
               } else if (response.action == "sensors") {
-                  response_sesnor = response;
-                  var curSensor = response.type.split('_')[2]
-                  $('#sensor_' + curSensor).html(_.escape(response.data))
+                  response_sensor = response;
+                  _.each(response.sensors, function (x) {
+                      $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)))
+                  }
               }
           }
           ws.onclose = function (event) {
