@@ -62,6 +62,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 	}
 	// Send options
 	go func() {
+		fmt.Println("Sending options")
 		// TODO: have it send this based on a subscription
 		err = websocket.JSON.Send(c, BorgData{Action: "options", Options: &BorgOptions{LocalImage: hasFlag(flags, "borg_local_image"), LocalSensors: hasFlag(flags, "borg_local_sensors"), RemoteImage: hasFlag(flags, "borg_server_image") || hasFlag(flags, "borg_web_image"), RemoteSensors: hasFlag(flags, "borg_server_sensors") || hasFlag(flags, "borg_web_sensors")}})
 		if err != nil {
