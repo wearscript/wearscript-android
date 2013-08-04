@@ -129,10 +129,12 @@ func BorgGlassHandler(c *websocket.Conn) {
 					continue
 				}
 				h, err := ImagePointsMatch(points0, points1)
+				fmt.Println("No match")
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println("Match")
 				err = websocket.JSON.Send(c, BorgData{H: h, Action: "warpH"})
 				if err != nil {
 					fmt.Println(err)
