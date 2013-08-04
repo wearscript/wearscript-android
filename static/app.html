@@ -98,8 +98,8 @@ img.thumb {
               } else if (response.action == "sensors") {
                   response_sensor = response;
                   _.each(response.sensors, function (x) {
-                      $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)))
-                  }
+                      $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)));
+                  })
               }
           }
           ws.onclose = function (event) {
