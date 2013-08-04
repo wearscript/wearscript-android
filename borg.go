@@ -23,8 +23,9 @@ type BorgSensor struct {
 
 type BorgOptions struct {
 	Local *bool `json:"local"`
-	ImageFrequency *int `json:"image_frequency"`
-	SensorFrequency *int `json:"sensor_frequency"`
+	Remote *bool `json:"remote"`
+	ImageFrequency *int `json:"imageFrequency"`
+	SensorFrequency *int `json:"sensorFrequency"`
 	Sensors []int `json:"sensors"`
 }
 
@@ -33,6 +34,7 @@ type BorgData struct {
 	Imageb64 *string `json:"imageb64"`
 	Action string `json:"action"`
 	Timestamp int64 `json:"timestamp"`
+	TimestampAck int64 `json:"timestampAck"`
 	H []float64 `json:"H"`
 	Options *BorgOptions `json:"options"`
 	Say *string `json:"say"`
@@ -146,7 +148,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			}
 			if request.Action == "image"  {
 				go func() {
-					err = websocket.JSON.Send(c, BorgData{Action: "imageAck"})
+					err = websocket.JSON.Send(c, BorgData{Action: "imageAck", TimestampAck: request.Timestamp})
 					if err != nil {
 						fmt.Println(err)
 					}
