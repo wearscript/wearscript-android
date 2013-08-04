@@ -3,7 +3,6 @@ package main
 import (
 	picarus "github.com/bwhite/picarus/go"
 	"github.com/ugorji/go-msgpack"
-	"github.com/garyburd/redigo/redis"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -460,90 +459,9 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func wsWebsocketHandler(c *websocket.Conn) {
-	defer c.Close()
-	/*userId, err := userID(c.Request())
-	if err != nil || userId == "" {
-		fmt.Println("Couldn't get user")
-		return
-	}*/
-	userId := "219250584360_109113122718379096525"
-	fmt.Println("Websocket connected")
-	fmt.Println(userId)
-	/*flags, err := getUserFlags(userId, "")
-	if err != nil {
-		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
-		return
-	}*/
-	psc, err := userSubscriber()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	go func() {
-		responseChan := make(chan map[string]string)
-		go func() {
-			for {
-				response, ok := <-responseChan
-				if !ok {
-					break
-				}
-				err = websocket.JSON.Send(c, response)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-			}
-		}()
-		for {
-			switch n := psc.Receive().(type) {
-			case redis.Message:
-				response := map[string]string{}
-				response["type"] = strings.Split(n.Channel, ":")[1]
-				response["data"] = string(n.Data)
-				select {
-					case responseChan <- response:
-					default:
-						fmt.Println("Image skipping sending to webapp, too slow...")
-					}
-			case error:
-				fmt.Printf("error: %v\n", n)
-				return
-			}
-		}
-	}()
-
-	for {
-		request :=  map[string]string{}
-		err := websocket.JSON.Receive(c, &request)
-		fmt.Println(request)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		if request["action"] == "subscribe" {
-			err := userSubscribeExisting(psc, userId, request["channel"])
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-		} else if request["action"] == "setOverlay" {
-			userPublish(userId, "overlay", request["overlayb64"])
-		} else if request["action"] == "setMatchImage" {
-			points, err := ImagePoints(picarus.B64Dec(request["imageb64"]))
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			setUserAttribute(userId, "match_features", points)
-			fmt.Println("Finished setting match image")
-		}
-	}
-}
-
 func main() {
-    //conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
-	//reprocessMementoImages(&conn)
+    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	reprocessMementoImages(&conn)
 	m := pat.New()
 	m.Get("/map", http.HandlerFunc(MapServer))
 	m.Get("/search", http.HandlerFunc(MementoSearchServer))
@@ -553,8 +471,6 @@ func main() {
 	//m.Post("/location/off", http.HandlerFunc(LocationOffHandler))
 	m.Post("/location", http.HandlerFunc(LocationHandler))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
-	m.Post("/glog/sensors/{key}", http.HandlerFunc(SensorsHandler))
-	m.Post("/glog/images/{key}", http.HandlerFunc(ImagesHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
 
 	// /auth -> google -> /oauth2callback
@@ -571,8 +487,8 @@ func main() {
 
 	m.Get("/", http.HandlerFunc(RootServer))
 	go pollAnnotations()
-	http.Handle("/glog/ws/", websocket.Handler(glogWebsocketHandler))
-	http.Handle("/ws", websocket.Handler(wsWebsocketHandler))
+	http.Handle("/borg/glass/", websocket.Handler(BorgGlassHandler))
+	http.Handle("/borg/web", websocket.Handler(BorgWebHandler))
 	http.Handle("/", m)
 	err := http.ListenAndServe(":16001", nil)
 	if err != nil {

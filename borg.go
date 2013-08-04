@@ -1,53 +1,18 @@
 package main
 
 import (
-	"github.com/garyburd/redigo/redis"
 	"fmt"
 	"os"
-	"net/http"
 	"time"
+	"github.com/garyburd/redigo/redis"
 	picarus "github.com/bwhite/picarus/go"
 	"code.google.com/p/go.net/websocket"
 	"strings"
-	"strconv"
 	"encoding/json"
 )
 
-func SensorsHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Println(r.Form)
-}
 
-func ImagesHandler(w http.ResponseWriter, r *http.Request) {
-	userId, err := getSecretUser("glog", secretHash(r.URL.Query().Get(":key")))
-	if err != nil {
-		w.WriteHeader(401)
-		return
-	}
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
-	b := make([]byte, 1048576, 1048576)
-	f, _, err := r.FormFile("image")
-	if err != nil {
-		w.WriteHeader(400)
-		return
-	}
-	n, err := f.Read(b)
-	fmt.Println(n)
-	if err != nil {
-		w.WriteHeader(500)
-		return
-	}
-	randSuffix, err := randString()
-	if err != nil {
-		w.WriteHeader(500)
-		return
-	}
-	// TODO: Add time
-	conn.PatchRow("images", glogPrefix + randSuffix, map[string]string{"meta:openglass_user": userId}, map[string][]byte{"data:image": b})
-	//out, err := 
-}
-
-type GlogSensor struct {
+type BorgSensor struct {
 	Timestamp int64 `json:"timestamp"`	
 	Accuracy  int `json:"accuracy"`
 	Resolution  float64 `json:"resolution"`
@@ -57,35 +22,24 @@ type GlogSensor struct {
 	Values []float64 `json:"values"`
 }
 
+type BorgOptions struct {
+	Local *bool `json:"local"`
+	ImageFrequency *int `json:"image_frequency"`
+	SensorFrequency *int `json:"sensor_frequency"`
+	Sensors []int `json:"sensors"`
+}
 
-type GlogRequestWS struct {
-	Sensor *GlogSensor `json:"sensor"`
+type BorgData struct {
+	Sensors []BorgSensor `json:"sensors"`
 	Imageb64 *string `json:"imageb64"`
+	Action string `json:"action"`
 	Timestamp int64 `json:"timestamp"`
-}
-
-type GlogResponseWS struct {
-	Overlayb64 *string `json:"imageb64"`
 	H []float64 `json:"H"`
+	Options *BorgOptions `json:"options"`
 	Say *string `json:"say"`
-	Action *string `json:"action"`
-	Timestamp int64 `json:"timestamp"`
 }
 
-func WriteFile(filename string, data string) {
-	fo, err := os.Create(filename)
-	if err != nil { fmt.Println("Couldn't create file") }
-	defer func() {
-		if err := fo.Close(); err != nil {
-			fmt.Println("Couldn't close file")
-		}
-	}()
-	if _, err := fo.Write([]byte(data)); err != nil {
-		fmt.Println("Couldn't write file")
-	}
-}
-
-func glogWebsocketHandler(c *websocket.Conn) {
+func BorgGlassHandler(c *websocket.Conn) {
 	defer c.Close()
     conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	path := strings.Split(c.Request().URL.Path, "/")
@@ -93,26 +47,20 @@ func glogWebsocketHandler(c *websocket.Conn) {
 		fmt.Println("Bad path")
 		return
 	}
-	userId, err := getSecretUser("glog", secretHash(path[len(path) - 1]))
+	userId, err := getSecretUser("borg", secretHash(path[len(path) - 1]))
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	psc, err := userSubscribe(userId, "overlay")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	cnt := 0
-
 	go func() {
 		flags, err := getUserFlags(userId, "uflags")
 		if err != nil {
 			fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 			return
 		}
-		matchMementoChan := make(chan *GlogRequestWS)
-		requestChan := make(chan *GlogRequestWS)
+		matchMementoChan := make(chan *BorgData)
+		requestChan := make(chan *BorgData)
+		// Match memento loop
 		go func() {
 			locFeat := picarus.B64Dec(locationFeatureModel)
 			_, columnss, err := getMementoDB(&conn, userId)
@@ -140,7 +88,7 @@ func glogWebsocketHandler(c *websocket.Conn) {
 					}
 					note := columns["meta:note"]
 					go func() {
-						err = websocket.JSON.Send(c, GlogResponseWS{Say: &note})
+						err = websocket.JSON.Send(c, BorgData{Say: &note})
 						if err != nil {
 							fmt.Println(err)
 						}
@@ -150,6 +98,7 @@ func glogWebsocketHandler(c *websocket.Conn) {
 				fmt.Println(time.Now().Sub(st).Nanoseconds())
 			}
 		}()
+		// Match AR loop
 		go func() {
 			for {
 				request, ok := <-requestChan
@@ -171,7 +120,7 @@ func glogWebsocketHandler(c *websocket.Conn) {
 					fmt.Println(err)
 					continue
 				}
-				err = websocket.JSON.Send(c, GlogResponseWS{H: h})
+				err = websocket.JSON.Send(c, BorgData{H: h})
 				if err != nil {
 					fmt.Println(err)
 					continue
@@ -179,38 +128,23 @@ func glogWebsocketHandler(c *websocket.Conn) {
 				fmt.Println("Finished computing homography")
 			}
 		}()
+		// Data from glass loop
 		for {
-			request := GlogRequestWS{}
+			request := BorgData{}
 			err := websocket.JSON.Receive(c, &request)
 			if err != nil {
 				fmt.Println(err)
 				return
-			}
-			action := "image_throttle_ack"
-			err = websocket.JSON.Send(c, GlogResponseWS{Action: &action, Timestamp: request.Timestamp})
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				fmt.Println("Image acked")
 			}
 			requestJS, err := json.Marshal(request)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-			if request.Sensor != nil {
-				fmt.Println("sensor")
-				if hasFlag(flags, "glog_stream") {
-					userPublish(userId, "glog_sensors_" + strconv.Itoa(request.Sensor.Type), string(requestJS))
-				}
+			if request.Action == "image" || request.Action == "sensors" {
+				userPublish(userId, "borg_server_to_web", string(requestJS))
 			}
-			if request.Imageb64 != nil {
-				//WriteFile("glog-" + strconv.Itoa(cnt) + ".jpg", picarus.B64Dec(*request.Imageb64));
-				cnt += 1
-				fmt.Println("image")
-				if hasFlag(flags, "glog_stream") {
-					userPublish(userId, "glog_images", string(requestJS))
-				}
+			if request.Action == "image"  {
 				if hasFlag(flags, "match_annotated") {
 					select {
 					case requestChan <- &request:
@@ -218,7 +152,7 @@ func glogWebsocketHandler(c *websocket.Conn) {
 						fmt.Println("Image skipping match, too slow...")
 					}
 				}
-				if hasFlag(flags, "match_memento_glog") {
+				if hasFlag(flags, "match_memento_borg") {
 					select {
 					case matchMementoChan <- &request:
 					default:
@@ -228,19 +162,97 @@ func glogWebsocketHandler(c *websocket.Conn) {
 			}
 		}
 	}()
-
+	psc, err := userSubscribe(userId, "borg_web_to_server")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Data from web loop
 	for {
 		switch n := psc.Receive().(type) {
 		case redis.Message:
 			fmt.Printf("Message: %s\n", n.Channel)
 			overlayb64 := string(n.Data)
-			err = websocket.JSON.Send(c, GlogResponseWS{Overlayb64: &overlayb64})
+			err = websocket.JSON.Send(c, BorgData{Imageb64: &overlayb64})
 			if err != nil {
 				return
 			}
 		case error:
 			fmt.Printf("error: %v\n", n)
 			return
+		}
+	}
+}
+
+func BorgWebHandler(c *websocket.Conn) {
+	defer c.Close()
+	userId := "219250584360_109113122718379096525"
+	fmt.Println("Websocket connected")
+	psc, err := userSubscriber()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Data from server loop
+	go func() {
+		responseChan := make(chan *BorgData)
+		go func() {
+			for {
+				response, ok := <-responseChan
+				if !ok {
+					break
+				}
+				err = websocket.JSON.Send(c, response)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+			}
+		}()
+		for {
+			switch n := psc.Receive().(type) {
+			case redis.Message:
+				response := BorgData{}
+				err := json.Unmarshal(n.Data, &response)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				select {
+					case responseChan <- &response:
+					default:
+						fmt.Println("Image skipping sending to webapp, too slow...")
+					}
+			case error:
+				fmt.Printf("error: %v\n", n)
+				return
+			}
+		}
+	}()
+	// Data from web loop
+	for {
+		request := BorgData{}
+		err := websocket.JSON.Receive(c, &request)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		userSubscribeExisting(psc, userId, "borg_web_to_server")
+		if request.Action == "setOverlay" {
+			requestJS, err := json.Marshal(request)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			userPublish(userId, "borg_web_to_server", string(requestJS))
+		} else if request.Action == "setMatchImage" {
+			points, err := ImagePoints(picarus.B64Dec(*request.Imageb64))
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			setUserAttribute(userId, "match_features", points)
+			fmt.Println("Finished setting match image")
 		}
 	}
 }

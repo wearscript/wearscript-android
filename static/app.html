@@ -83,19 +83,21 @@ img.thumb {
       function connectWebsocket() {
           var ws = new WebSocket("ws://api3.picar.us:16001/ws");
           ws.onopen = function () {
-              ws.send(JSON.stringify({action: 'subscribe', channel: "glog_images"}));
               _.each(_.range(0, 12), function (x) {
-                  ws.send(JSON.stringify({action: 'subscribe', channel: "glog_sensors_" + x}));
                   $('#sensors').append($('<div>').attr('id', 'sensor_' + x));
               });
           }
+          ws.onclose = function () {
+
+          }
           ws.onmessage = function (event) {
               response = JSON.parse(event.data);
-              if (response.type == "glog_images") {
+              if (response.action == "image") {
                   latestImage = JSON.parse(response.data).imageb64;
                   $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
                   //ws.send(JSON.stringify({action: 'getLatestImage'}));
-              } else if (response.type.slice(0, 13) == "glog_sensors_") {
+              } else if (response.action == "sensors") {
+                  response_sesnor = response;
                   var curSensor = response.type.split('_')[2]
                   $('#sensor_' + curSensor).html(_.escape(response.data))
               }
@@ -109,8 +111,6 @@ img.thumb {
       ws = connectWebsocket();
       function initCanvas() {
           var $canvas = $('#canvas')[0];
-
-          // 
 
           var context = $canvas.getContext('2d');
           context.fillStyle   = '#FF00FF'; // set canvas background color
@@ -167,7 +167,7 @@ img.thumb {
                   this.drawing = false;
                   var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
                   $('#canvasMirror').attr('src', datauri);
-                  ws.send(JSON.stringify({action: 'setOverlay', overlayb64: datauri.split(',')[1]}));
+                  ws.send(JSON.stringify({action: 'setOverlay', imageb64: datauri.split(',')[1]}));
               }
           };
 
