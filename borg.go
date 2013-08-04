@@ -140,6 +140,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 				fmt.Println(err)
 				return
 			}
+			fmt.Println(request.Action)
 			if request.Action == "image" || request.Action == "sensors" {
 				userPublish(userId, "borg_server_to_web", string(requestJS))
 			}
@@ -187,7 +188,7 @@ func BorgWebHandler(c *websocket.Conn) {
 	defer c.Close()
 	userId := "219250584360_109113122718379096525"
 	fmt.Println("Websocket connected")
-	psc, err := userSubscriber()
+	psc, err := userSubscribe(userId, "borg_server_to_web")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -236,7 +237,6 @@ func BorgWebHandler(c *websocket.Conn) {
 			fmt.Println(err)
 			return
 		}
-		userSubscribeExisting(psc, userId, "borg_web_to_server")
 		if request.Action == "setOverlay" {
 			requestJS, err := json.Marshal(request)
 			if err != nil {
