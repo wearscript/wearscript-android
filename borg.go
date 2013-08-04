@@ -22,10 +22,12 @@ type BorgSensor struct {
 }
 
 type BorgOptions struct {
-	Local *bool `json:"local"`
-	Remote *bool `json:"remote"`
-	ImageFrequency *int `json:"imageFrequency"`
-	SensorFrequency *int `json:"sensorFrequency"`
+	LocalImage bool `json:"localImage"`
+	LocalSensors bool `json:"localSensors"`
+	RemoteImage bool `json:"remoteImage"`
+	RemoteSensors bool `json:"remoteSensors"`
+	ImageDelay *float64 `json:"imageFrequency"`
+	SensorDelay *float64 `json:"sensorFrequency"`
 	Sensors []int `json:"sensors"`
 }
 
@@ -53,12 +55,21 @@ func BorgGlassHandler(c *websocket.Conn) {
 		fmt.Println(err)
 		return
 	}
+	flags, err := getUserFlags(userId, "uflags")
+	if err != nil {
+		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+		return
+	}
+	// Send options
 	go func() {
-		flags, err := getUserFlags(userId, "uflags")
+		// TODO: have it send this based on a subscription
+		err = websocket.JSON.Send(c, BorgData{Action: "options", Options: &BorgOptions{LocalImage: hasFlag(flags, "borg_local_image"), LocalSensors: hasFlag(flags, "borg_local_sensors"), RemoteImage: hasFlag(flags, "borg_server_image") || hasFlag(flags, "borg_web_image"), RemoteSensors: hasFlag(flags, "borg_server_sensors") || hasFlag(flags, "borg_web_sensors")}})
 		if err != nil {
-			fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
-			return
+			fmt.Println(err)
 		}
+		
+	}()
+	go func() {
 		matchMementoChan := make(chan *BorgData)
 		requestChan := make(chan *BorgData)
 		// Match memento loop
