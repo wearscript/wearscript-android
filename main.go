@@ -460,8 +460,8 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
-	reprocessMementoImages(&conn)
+    //conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	//reprocessMementoImages(&conn)
 	m := pat.New()
 	m.Get("/map", http.HandlerFunc(MapServer))
 	m.Get("/search", http.HandlerFunc(MementoSearchServer))
