@@ -30,7 +30,7 @@ const (
 	clientId     = ""
 	clientSecret = ""
 	fullUrl = ""
-	glogPrefix = ""
+	borgPrefix = ""
 	scopes       = "https://www.googleapis.com/auth/glass.timeline " +
 		"https://www.googleapis.com/auth/glass.location " +
 		"https://www.googleapis.com/auth/userinfo.profile"
@@ -38,10 +38,6 @@ const (
 	picarusApiKey = ""
 	maxLocations = 500
 	maxImages = 500
-	maxGlogImages = 500
-	maxGlogSensors = 500
-	maxGlogBufferImages = 10
-	maxGlogBufferSensors = 50
     redisServerPort = ""
 )
 var predictionModels = map[string]string{}
