@@ -10,7 +10,7 @@ import (
 
 
 func ImagePoints(image string) (string, error) {
-	model := "kYKia3eDrXBhdHRlcm5fc2NhbGXLP/AAAAAAAACmdGhyZXNoHqdvY3RhdmVzAqRuYW1lu3BpY2FydXMuQlJJU0tJbWFnZUZlYXR1cmUyZA=="
+	model := "kYKia3eDrXBhdHRlcm5fc2NhbGXLP/AAAAAAAACmdGhyZXNoFKdvY3RhdmVzAqRuYW1lu3BpY2FydXMuQlJJU0tJbWFnZUZlYXR1cmUyZA=="
 	out := picarusto.ModelChainProcessBinary(picarus.B64Dec(model), image)
 	// TODO: Error check
 	return out, nil
@@ -30,7 +30,7 @@ func DecodeHomography(data string) ([]float64, error) {
 }
 
 func ImagePointsMatch(points0 string, points1 string) ([]float64, error) {
-	model := "kYKia3eDqG1heF9kaXN0eKttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMs/hHrhR64Ue6RuYW1l2gAkcGljYXJ1cy5JbWFnZUhvbW9ncmFwaHlSYW5zYWNIYW1taW5n"
+	model := "kYKia3eDqG1heF9kaXN0eKttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMtAFAAAAAAAAKRuYW1l2gAkcGljYXJ1cy5JbWFnZUhvbW9ncmFwaHlSYW5zYWNIYW1taW5n"
 	var mh codec.MsgpackHandle
 	var w bytes.Buffer
 	err := codec.NewEncoder(&w, &mh).Encode([]string{points0, points1})
