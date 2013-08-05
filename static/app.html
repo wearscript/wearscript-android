@@ -112,7 +112,7 @@ img.thumb {
       function initCanvas() {
           var $canvas = $('#canvas')[0];
           var context = $canvas.getContext('2d');
-          context.fillStyle = '#FF00FF'; // set canvas background color
+          context.fillStyle = '#FFFFFF'; // set canvas background color
           context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas
 
           tool = {};
@@ -150,6 +150,7 @@ img.thumb {
               console.log('Mouse move')
               if (this.drawing) {
                   context.lineTo(ev._x, ev._y);
+                  context.strokeStyle = '#0b61a4';
                   context.stroke();
               }
           };
@@ -247,7 +248,8 @@ img.thumb {
               var $canvas = $('#canvas')[0];
               var context = $canvas.getContext('2d');
               context.clearRect(0, 0, $canvas.width, $canvas.height);
-              render_image('data:image/jpeg;base64,' + latestImage, div, function (image_id, canvas_id) {
+              $('#canvas_images').html('');
+              render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
                   
               });
               ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
@@ -315,6 +317,8 @@ img.thumb {
         <div class="row">
           <div id="sensors" \>
         </div>
+
+          <div id="canvas_images" \>
 
         <div class="row">
           <h1>Simulate</h1>
