@@ -169,7 +169,8 @@ func BorgGlassHandler(c *websocket.Conn) {
 					fmt.Println(err)
 					continue
 				}
-				err = websocket.JSON.Send(c, BorgData{Imageb64: &imageWarped, Action: "setOverlay"})
+				imageWarpedB64 := picarus.B64Enc(imageWarped)
+				err = websocket.JSON.Send(c, BorgData{Imageb64: &imageWarpedB64, Action: "setOverlay"})
 				if err != nil {
 					fmt.Println(err)
 				}				
