@@ -111,10 +111,9 @@ img.thumb {
       ws = connectWebsocket();
       function initCanvas() {
           var $canvas = $('#canvas')[0];
-
           var context = $canvas.getContext('2d');
-          context.fillStyle   = '#FF00FF'; // set canvas background color
-          context.fillRect  (0,   0, 640, 360);  // now fill the canvas
+          context.fillStyle = '#FF00FF'; // set canvas background color
+          context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas
 
           tool = {};
           function ev_canvas (ev) {
@@ -197,6 +196,37 @@ img.thumb {
 
       }
 
+    function render_image(image_data, div, success) {
+        var image_id = _.uniqueId('image_');
+        var canvas_id = _.uniqueId('canvas_');
+        var image_tag = $('<img>').css('visibility', 'hidden').css('display', 'none').attr('id', image_id);
+        image_tag.load(function () {
+            success(image_id, canvas_id);
+        });
+        div.append(image_tag.attr('src', image_data));
+    }
+    function render_image_boxes(image_data, boxes, num_boxes, div) {
+        render_image(image_data, div, function (image_id, canvas_id) {
+            var h = $('#' + image_id).height();
+            var w = $('#' + image_id).width();
+            div.append($('<canvas>').attr('id', canvas_id).attr('height', h + 'px').attr('width', w + 'px'));
+            var c = document.getElementById(canvas_id);
+            var ctx = c.getContext("2d");
+            ctx.strokeStyle = 'blue';
+            var img = document.getElementById(image_id);
+            ctx.drawImage(img, 0, 0);
+            _.each(_.range(num_boxes), function (x) {
+                var x0 = boxes[x * 4 + 2] * w;
+                var x1 = boxes[x * 4 + 3] * w;
+                var y0 = boxes[x * 4] * h;
+                var y1 = boxes[x * 4 + 1] * h;
+                ctx.moveTo(x0, y0);ctx.lineTo(x0, y1);ctx.stroke(); // TL->BL
+                ctx.moveTo(x0, y1);ctx.lineTo(x1, y1);ctx.stroke(); // BL->BR
+                ctx.moveTo(x1, y1);ctx.lineTo(x1, y0);ctx.stroke(); // BR->TR
+                ctx.moveTo(x1, y0);ctx.lineTo(x0, y0);ctx.stroke(); // TR->TL
+            });
+        });
+    }
 
       function main () {
           $('#buttonAuth').click(function () {
@@ -214,6 +244,12 @@ img.thumb {
               createKey("raven", function (x) {$('#secret-raven').html(_.escape(x))}, function () {alert("Could not get raven")})
           });
           $('#matchImage').click(function () {
+              var $canvas = $('#canvas')[0];
+              var context = $canvas.getContext('2d');
+              context.clearRect(0, 0, $canvas.width, $canvas.height);
+              render_image('data:image/jpeg;base64,' + latestImage, div, function (image_id, canvas_id) {
+                  
+              });
               ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
           });
 
