@@ -49,7 +49,7 @@ func WarpImage(image string, h []float64, height int, width int) (string, error)
 	model["height"] = height
 	model["width"] = width
 	model["compression"] = "jpg"
-	models = append(models, model)
+	models = append(models, map[string]interface{}{"name": "picarus.ImageWarp", "kw": model})
 	var mh codec.MsgpackHandle
 	var w bytes.Buffer
 	err := codec.NewEncoder(&w, &mh).Encode(models)
