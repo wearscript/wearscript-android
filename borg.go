@@ -154,11 +154,17 @@ func BorgGlassHandler(c *websocket.Conn) {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println("hMatch01")
 				fmt.Println(h)
 				hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
+				fmt.Println("hSmallToBig")
+				fmt.Println(hSmallToBig)
 				hBigToGlass := []float64{1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1.0}
+				fmt.Println("hBigToGlass")
+				fmt.Println(hBigToGlass)
 				//hFinal := HMult(HMult(h, hSmallToBig), hBigToGlass)
 				hFinal := HMult(HMult(hBigToGlass, hSmallToBig), h)
+				fmt.Println("hFinal")
 				fmt.Println(hFinal)
 				image, err := getUserAttribute(userId, "match_overlay")
 				if err != nil {
