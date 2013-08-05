@@ -298,6 +298,7 @@ func BorgWebHandler(c *websocket.Conn) {
 			fmt.Println(err)
 			return
 		}
+		fmt.Println(request.Action)
 		if request.Action == "setOverlay" {
 			requestJS, err := json.Marshal(request)
 			if err != nil {

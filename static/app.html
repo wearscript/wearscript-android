@@ -165,7 +165,7 @@ img.thumb {
               if (this.drawing) {
                   tool.mousemove(ev);
                   this.drawing = false;
-                  var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
+                  var datauri = $('#canvas')[0].toDataURL();
                   $('#canvasMirror').attr('src', datauri);
                   ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1]}));
               }
