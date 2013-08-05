@@ -250,7 +250,8 @@ img.thumb {
               context.clearRect(0, 0, $canvas.width, $canvas.height);
               $('#canvas_images').html('');
               render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
-                  
+                  var img = document.getElementById(image_id);
+                  context.drawImage(img, 0, 0);
               });
               ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
           });
