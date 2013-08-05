@@ -462,7 +462,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
     //conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	//reprocessMementoImages(&conn)
-	ImageMatch("borg-serverdisk-219250584360_109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
+	//ImageMatch("borg-serverdisk-219250584360_109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
 	m := pat.New()
 	m.Get("/map", http.HandlerFunc(MapServer))
 	m.Get("/search", http.HandlerFunc(MementoSearchServer))
