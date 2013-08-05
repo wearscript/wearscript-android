@@ -42,6 +42,20 @@ type BorgData struct {
 	Say *string `json:"say"`
 }
 
+func HMult(a, b []float64) []float64 {
+	c := make([]float64, 9, 9)
+	c[0] = a[0] * b[0] + a[1] * b[3] + a[2] * b[6]
+	c[1] = a[0] * b[1] + a[1] * b[4] + a[2] * b[7]
+	c[2] = a[0] * b[2] + a[1] * b[5] + a[2] * b[8]
+	c[3] = a[3] * b[0] + a[4] * b[3] + a[5] * b[6]
+	c[4] = a[3] * b[1] + a[4] * b[4] + a[5] * b[7]
+	c[5] = a[3] * b[2] + a[4] * b[5] + a[5] * b[8]
+	c[6] = a[6] * b[0] + a[7] * b[3] + a[8] * b[6]
+	c[7] = a[6] * b[1] + a[7] * b[4] + a[8] * b[7]
+	c[8] = a[6] * b[2] + a[7] * b[5] + a[8] * b[8]
+	return c
+}
+
 func BorgGlassHandler(c *websocket.Conn) {
 	defer c.Close()
     conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
@@ -141,6 +155,24 @@ func BorgGlassHandler(c *websocket.Conn) {
 					continue
 				}
 				fmt.Println(h)
+				hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
+				hBigToGlass := []float64{1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1.0}
+				hFinal := HMult(HMult(h, hSmallToBig), hBigToGlass)
+				fmt.Println(hFinal)
+				image, err := getUserAttribute(userId, "match_overlay")
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				imageWarped, err := WarpImage(image, hFinal, 360, 640)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				err = websocket.JSON.Send(c, BorgData{Imageb64: &imageWarped, Action: "setOverlay"})
+				if err != nil {
+					fmt.Println(err)
+				}				
 				fmt.Println("Finished computing homography")
 			}
 		}()
@@ -279,6 +311,8 @@ func BorgWebHandler(c *websocket.Conn) {
 				return
 			}
 			userPublish(userId, "borg_web_to_server", string(requestJS))
+		} else if request.Action == "setMatchOverlay" {
+			setUserAttribute(userId, "match_overlay", picarus.B64Dec(*request.Imageb64))
 		} else if request.Action == "setMatchImage" {
 			points, err := ImagePoints(picarus.B64Dec(*request.Imageb64))
 			if err != nil {

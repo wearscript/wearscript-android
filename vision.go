@@ -42,6 +42,25 @@ func ImagePointsMatch(points0 string, points1 string) ([]float64, error) {
 	return DecodeHomography(picarusto.ModelChainProcessBinary(picarus.B64Dec(model), input))
 }
 
+func WarpImage(image string, h []float64, height int, width int) (string, error) {
+	models := []map[string]interface{}{}
+	model := map[string]interface{}{}
+	model["h"] = h
+	model["height"] = height
+	model["width"] = width
+	model["compression"] = "jpg"
+	models = append(models, model)
+	var mh codec.MsgpackHandle
+	var w bytes.Buffer
+	err := codec.NewEncoder(&w, &mh).Encode(models)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	modelBin := w.String()
+	return picarusto.ModelChainProcessBinary(modelBin, image), nil
+}
+
 func ImageMatch(fn0 string, fn1 string) ([]float64, error) {
 	image0, err := ReadFile(fn0)
 	if err != nil {
