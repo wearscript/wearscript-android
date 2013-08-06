@@ -1,67 +1,86 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="utf-8">
-    <title>OpenGlass: Glassware Debug</title>
+    <title>Bootstrap 101 Template</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="">
-
-    <!-- Le styles -->
-    <style>
-      body {
-        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
-      
-      }
-      .container {
-        margin-right: auto;
-        margin-left: auto;
-        max-width: 680px;
-      }
-    </style>
-<style>
-
-path.link {
-  fill: none;
-  stroke: #666;
-  stroke-width: 1.5px;
-}
-
-circle {
-  fill: #ccc;
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
-
-
-text {
-  font: 10px sans-serif;
-  pointer-events: none;
-}
-
-text.shadow {
-  stroke: #fff;
-  stroke-width: 3px;
-  stroke-opacity: .8;
-}
-
-img.thumb {
-  height: 150px;
-  width: 150px;
-}
-</style>
-<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
-    <link href="static/bootstrap-switch.css" rel="stylesheet">
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.10/backbone-min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
-    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="static/bootstrap-switch.js"></script>
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!-- Bootstrap -->
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="static/bootstrap-switch.css" rel="stylesheet" media="screen">
   </head>
   <body>
+    <div class="container">
+      <div class="row" id="switches">
+      </div>
+      <div class="row">
+
+
+<button type="button" class="btn btn-primary btn-lg btn-block">Block level button</button>
+<!--
+      <input class="flag-check" name="location" type="checkbox" />
+      <input class="flag-check" name="match_memento" type="checkbox" />
+      <input class="flag-check" name="raven" type="checkbox" />
+      <input class="flag-check" name="crowdqa" type="checkbox" />
+      <input class="flag-check" name="match_annotated" type="checkbox" />
+      <input class="flag-check" name="match_memento_glog" type="checkbox" />
+      <input class="flag-check" name="borg_local_image" type="checkbox" />
+      <input class="flag-check" name="borg_local_sensors" type="checkbox" />
+      <input class="flag-check" name="borg_serverdisk_image" type="checkbox" />
+      <input class="flag-check" name="borg_server_image" type="checkbox" />
+      <input class="flag-check" name="borg_server_sensors" type="checkbox" />
+      <input class="flag-check" name="borg_web_image" type="checkbox" />
+      <input class="flag-check" name="borg_web_sensors" type="checkbox" />
+      <input class="flag-check" name="warp" type="checkbox" />
+      <input class="flag-check" name="predict" type="checkbox" />
+      <input class="flag-check" name="location_flickr" type="checkbox" />
+      <input class="flag-check" name="location_streetview" type="checkbox" />-->
+      </div>
+        <div class="row">
+          <div class="span7">
+            <button id="buttonAuth" class="btn btn-large btn-block btn-primary" type="button">Authenticate</button>
+            <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
+            <button id="buttonSetup" class="btn btn-large btn-block btn-primary" type="button">Setup</button>
+            <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
+          </div>
+        </div>
+        <div class="row">
+          <span id="secret-raven"></span>
+        </div>
+        <div class="row">
+          <img id="latest-image" \>
+          <button id="matchImage" class="btn btn-large btn-block btn-primary" type="button">Match Image</button>
+        </div>
+        <div class="row">
+          <canvas id="canvas" width="640" height="360">
+        </div>
+        <div class="row">
+          <img id="canvasMirror" width="640" height="360" \>
+        </div>
+        <div class="row">
+          <div id="sensors" \>
+        </div>
+
+          <div id="canvas_images" \>
+
+        <div class="row">
+          <h1>Simulate</h1>
+          <select>
+            <option value="openglass">OpenGlass</option>
+            <option value="memento">Memento</option>
+          </select>
+          <input type="text" name="fname">
+          <div class="span6 well"><input type="file" id="files" /></div>
+          <input type="submit" value="Submit" id="simulate-submit">
+        </div>
+
+    </div> <!-- /container -->
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="static/bootstrap.min.js"></script>
+    <script src="static/bootstrap-switch.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
+    
+
     <script type="text/javascript">
       function setFlags(flags, success) {
           $.ajax({url: 'flags', type: 'POST', data: JSON.stringify(flags), success: success});
@@ -230,6 +249,14 @@ img.thumb {
     }
 
       function main () {
+          c = {names: ['location', 'match_memento', 'raven', 'crowdqa', 'match_annotated', 'match_memento_glog',
+                       'borg_local_image', 'borg_local_sensors', 'borg_serverdisk_image', 'borg_server_image',
+                       'borg_server_sensors', 'borg_web_image', 'borg_web_sensors', 'warp', 'predict',
+                       'location_flickr', 'location_streetview']};
+
+
+          $('#switches').html(Mustache.render('{{#names}}<div class="control-group"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
+          $('.make-switch').bootstrapSwitch();
           $('#buttonAuth').click(function () {
               window.location.replace('auth');
           });
@@ -256,9 +283,10 @@ img.thumb {
               ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
           });
 
-          $('.flag-check').change(function () {
+
+          $('.make-switch').on('switch-change', function () {
               var $this = $(this);
-              if (this.checked) {
+              if ($this.bootstrapSwitch('status')) {
                   setFlags([$this.attr('name')]);
               } else {
                   unsetFlags([$this.attr('name')]);
@@ -266,7 +294,7 @@ img.thumb {
           });
           getFlags(function (x) {
               _.each(JSON.parse(x), function (y) {
-                  $('.flag-check[name=' + y + ']').prop('checked', true);
+                  $('.make-switch[name=' + y + ']').bootstrapSwitch('setState', true);
               });
           });
           initCanvas();
@@ -274,64 +302,7 @@ img.thumb {
       }
       $(main);
     </script>
-    <div class="container">
-        <div class="row">
-      <input class="flag-check" name="location" type="checkbox" />
-      <input class="flag-check" name="match_memento" type="checkbox" />
-      <input class="flag-check" name="raven" type="checkbox" />
-      <input class="flag-check" name="crowdqa" type="checkbox" />
-      <input class="flag-check" name="match_annotated" type="checkbox" />
-      <input class="flag-check" name="match_memento_glog" type="checkbox" />
-      <input class="flag-check" name="borg_local_image" type="checkbox" />
-      <input class="flag-check" name="borg_local_sensors" type="checkbox" />
-      <input class="flag-check" name="borg_serverdisk_image" type="checkbox" />
-      <input class="flag-check" name="borg_server_image" type="checkbox" />
-      <input class="flag-check" name="borg_server_sensors" type="checkbox" />
-      <input class="flag-check" name="borg_web_image" type="checkbox" />
-      <input class="flag-check" name="borg_web_sensors" type="checkbox" />
-      <input class="flag-check" name="warp" type="checkbox" />
-      <input class="flag-check" name="predict" type="checkbox" />
-      <input class="flag-check" name="location_flickr" type="checkbox" />
-      <input class="flag-check" name="location_streetview" type="checkbox" />
-      </div>
-        <div class="row">
-          <div class="span7">
-            <button id="buttonAuth" class="btn btn-large btn-block btn-primary" type="button">Authenticate</button>
-            <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
-            <button id="buttonSetup" class="btn btn-large btn-block btn-primary" type="button">Setup</button>
-            <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
-          </div>
-        </div>
-        <div class="row">
-          <span id="secret-raven"></span>
-        </div>
-        <div class="row">
-          <img id="latest-image" \>
-          <button id="matchImage" class="btn btn-large btn-block btn-primary" type="button">Match Image</button>
-        </div>
-        <div class="row">
-          <canvas id="canvas" width="640" height="360">
-        </div>
-        <div class="row">
-          <img id="canvasMirror" width="640" height="360" \>
-        </div>
-        <div class="row">
-          <div id="sensors" \>
-        </div>
 
-          <div id="canvas_images" \>
 
-        <div class="row">
-          <h1>Simulate</h1>
-          <select>
-            <option value="openglass">OpenGlass</option>
-            <option value="memento">Memento</option>
-          </select>
-          <input type="text" name="fname">
-          <div class="span6 well"><input type="file" id="files" /></div>
-          <input type="submit" value="Submit" id="simulate-submit">
-        </div>
-
-    </div> <!-- /container -->
   </body>
 </html>

@@ -7,6 +7,7 @@ import (
 	picarus "github.com/bwhite/picarus/go"
 	"code.google.com/p/go.net/websocket"
 	"strings"
+	//"math"
 	"encoding/json"
 )
 
@@ -26,8 +27,8 @@ type BorgOptions struct {
 	LocalSensors bool `json:"localSensors"`
 	RemoteImage bool `json:"remoteImage"`
 	RemoteSensors bool `json:"remoteSensors"`
-	ImageDelay *float64 `json:"imageFrequency"`
-	SensorDelay *float64 `json:"sensorFrequency"`
+	//ImageDelay float64 `json:"imageDelay"`
+	//SensorsDelay float64 `json:"sensorsDelay"`
 	Sensors []int `json:"sensors"`
 }
 
@@ -60,18 +61,36 @@ func BorgGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
+	// Initialize delays
+	matchAnnotatedDelay := 0.
+	matchMementoDelay := 0.
+	
 	// Send options
 	go func() {
-		fmt.Println("Sending options")
-		// TODO: have it send this based on a subscription
-		err = websocket.JSON.Send(c, BorgData{Action: "options", Options: &BorgOptions{LocalImage: hasFlag(flags, "borg_local_image"), LocalSensors: hasFlag(flags, "borg_local_sensors"), RemoteImage: hasFlag(flags, "borg_server_image") || hasFlag(flags, "borg_serverdisk_image") || hasFlag(flags, "borg_web_image"), RemoteSensors: hasFlag(flags, "borg_server_sensors") || hasFlag(flags, "borg_web_sensors")}})
-		if err != nil {
-			fmt.Println(err)
-		}		
+		for {
+			flags, err = getUserFlags(userId, "uflags")
+			if err != nil {
+				fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+				time.Sleep(time.Millisecond * 500)
+				continue
+			}
+			fmt.Println("Sending options")
+			
+			// TODO: have it send this based on a subscription
+			//SensorsDelay: 0., ImageDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), 
+			opt := BorgOptions{LocalImage: hasFlag(flags, "borg_local_image"), LocalSensors: hasFlag(flags, "borg_local_sensors"), RemoteImage: hasFlag(flags, "borg_server_image") || hasFlag(flags, "borg_serverdisk_image") || hasFlag(flags, "borg_web_image"), RemoteSensors: hasFlag(flags, "borg_server_sensors") || hasFlag(flags, "borg_web_sensors")}
+			fmt.Println(opt)
+			err = websocket.JSON.Send(c, BorgData{Action: "options", Options: &opt})
+			if err != nil {
+				fmt.Println(err)
+			}
+			break
+			time.Sleep(time.Millisecond * 500)
+		}
 	}()
 	go func() {
 		matchMementoChan := make(chan *BorgData)
-		requestChan := make(chan *BorgData)
+		matchAnnotatedChan := make(chan *BorgData)
 		// Match memento loop
 		go func() {
 			locFeat := picarus.B64Dec(locationFeatureModel)
@@ -86,7 +105,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 				if !ok {
 					break
 				}
-				st := time.Now()
+				requestTime := time.Now()
 				points1, err := ImagePoints(picarus.B64Dec(*(*request).Imageb64))
 				if err != nil {
 					fmt.Println(err)
@@ -107,39 +126,50 @@ func BorgGlassHandler(c *websocket.Conn) {
 					}()
 				}
 				fmt.Println("Finished matching memento")
-				fmt.Println(time.Now().Sub(st).Nanoseconds())
+				matchMementoDelay = time.Now().Sub(requestTime).Seconds()
 			}
 		}()
 		// Match AR loop
 		go func() {
 			for {
-				request, ok := <-requestChan
+				request, ok := <-matchAnnotatedChan
 				if !ok {
 					break
 				}
+				requestTime := time.Now()
+				st := time.Now()
 				points0, err := getUserAttribute(userId, "match_features")
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println(fmt.Sprintf("[%s][%f]", "GetMatchFeat", float64(time.Now().Sub(st).Seconds())))
+				st = time.Now()
 				points1, err := ImagePoints(picarus.B64Dec(*(*request).Imageb64))
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println(fmt.Sprintf("[%s][%f]", "ComputePoints", float64(time.Now().Sub(st).Seconds())))
+				st = time.Now()
 				h, err := ImagePointsMatch(points0, points1)
 				if err != nil {
 					fmt.Println("No match")
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
+				st = time.Now()
 				// 
 				fmt.Println("Match")
+				/*
 				err = websocket.JSON.Send(c, BorgData{H: h, Action: "warpH"})
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
+				 */
+
 				fmt.Println("hMatch01")
 				fmt.Println(h)
 				hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
@@ -152,22 +182,31 @@ func BorgGlassHandler(c *websocket.Conn) {
 				hFinal := HMult(HMult(hBigToGlass, hSmallToBig), h)
 				fmt.Println("hFinal")
 				fmt.Println(hFinal)
+				fmt.Println(fmt.Sprintf("[%s][%f]", "Matrices", float64(time.Now().Sub(st).Seconds())))
+				st = time.Now()
 				image, err := getUserAttribute(userId, "match_overlay")
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println(fmt.Sprintf("[%s][%f]", "GetOverlay", float64(time.Now().Sub(st).Seconds())))
+				st = time.Now()
 				imageWarped, err := WarpImage(image, hFinal, 360, 640)
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
+				fmt.Println(fmt.Sprintf("[%s][%f]", "WarpImage", float64(time.Now().Sub(st).Seconds())))
+				st = time.Now()
 				imageWarpedB64 := picarus.B64Enc(imageWarped)
 				err = websocket.JSON.Send(c, BorgData{Imageb64: &imageWarpedB64, Action: "setOverlay"})
 				if err != nil {
 					fmt.Println(err)
-				}				
+				}
+				fmt.Println(fmt.Sprintf("[%s][%f]", "SendImage", float64(time.Now().Sub(st).Seconds())))
+				st = time.Now()	
 				fmt.Println("Finished computing homography")
+				matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
 			}
 		}()
 		// Data from glass loop
@@ -203,9 +242,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 				}()
 				if hasFlag(flags, "match_annotated") {
 					select {
-					case requestChan <- &request:
+					case matchAnnotatedChan <- &request:
 					default:
-						fmt.Println("Image skipping match, too slow...")
+						fmt.Println("Image skipping match annotated, too slow...")
 					}
 				}
 				if hasFlag(flags, "match_memento_borg") {

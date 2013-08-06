@@ -27,12 +27,7 @@ func StaticServer(w http.ResponseWriter, req *http.Request) {
 	if strings.ContainsAny(path, "/\\") {
 		return
 	}
-	content, err := ioutil.ReadFile("static/" + path)
-	if err != nil {
-		return
-	}
-	fmt.Println(req.URL.Query().Get(":path"))
-	io.WriteString(w, string(content))
+	http.ServeFile(w, req, "static/" + path)
 }
 
 func RootServer(w http.ResponseWriter, req *http.Request) {
