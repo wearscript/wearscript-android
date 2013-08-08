@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Bootstrap 101 Template</title>
+    <title>OpenGlass: Borg</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="static/bootstrap-switch.css" rel="stylesheet" media="screen">
+    <link href="static/cube2.css" rel="stylesheet" media="screen">
+    <link href="static/rickshaw.min.css" rel="stylesheet" media="screen">
   </head>
   <body>
     <div class="container">
@@ -15,24 +17,6 @@
 
 
 <button type="button" class="btn btn-primary btn-lg btn-block">Block level button</button>
-<!--
-      <input class="flag-check" name="location" type="checkbox" />
-      <input class="flag-check" name="match_memento" type="checkbox" />
-      <input class="flag-check" name="raven" type="checkbox" />
-      <input class="flag-check" name="crowdqa" type="checkbox" />
-      <input class="flag-check" name="match_annotated" type="checkbox" />
-      <input class="flag-check" name="match_memento_glog" type="checkbox" />
-      <input class="flag-check" name="borg_local_image" type="checkbox" />
-      <input class="flag-check" name="borg_local_sensors" type="checkbox" />
-      <input class="flag-check" name="borg_serverdisk_image" type="checkbox" />
-      <input class="flag-check" name="borg_server_image" type="checkbox" />
-      <input class="flag-check" name="borg_server_sensors" type="checkbox" />
-      <input class="flag-check" name="borg_web_image" type="checkbox" />
-      <input class="flag-check" name="borg_web_sensors" type="checkbox" />
-      <input class="flag-check" name="warp" type="checkbox" />
-      <input class="flag-check" name="predict" type="checkbox" />
-      <input class="flag-check" name="location_flickr" type="checkbox" />
-      <input class="flag-check" name="location_streetview" type="checkbox" />-->
       </div>
         <div class="row">
           <div class="span7">
@@ -40,10 +24,12 @@
             <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
             <button id="buttonSetup" class="btn btn-large btn-block btn-primary" type="button">Setup</button>
             <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
+            <button id="buttonNotify" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
           </div>
         </div>
         <div class="row">
           <span id="secret-raven"></span>
+          <span id="secret-notify"></span>
         </div>
         <div class="row">
           <img id="latest-image" \>
@@ -51,9 +37,6 @@
         </div>
         <div class="row">
           <canvas id="canvas" width="640" height="360">
-        </div>
-        <div class="row">
-          <img id="canvasMirror" width="640" height="360" \>
         </div>
         <div class="row">
           <div id="sensors" \>
@@ -77,6 +60,8 @@
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="static/bootstrap.min.js"></script>
     <script src="static/bootstrap-switch.min.js"></script>
+    <script src="static/d3.v3.min.js"></script>
+    <script src="static/rickshaw.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
     
@@ -101,6 +86,8 @@
 
       function connectWebsocket() {
           var ws = new WebSocket("ws://api3.picar.us:16001/borg/web");
+          var scale = (3.14159265359 / 2) / 360;
+          var shift = 3.14159265359 / 4;
           ws.onopen = function () {
               _.each(_.range(0, 12), function (x) {
                   $('#sensors').append($('<div>').attr('id', 'sensor_' + x));
@@ -111,20 +98,49 @@
           }
           ws.onmessage = function (event) {
               response = JSON.parse(event.data);
-              if (response.action == "image") {
-                  latestImage = response.imageb64;
-                  $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
-              } else if (response.action == "sensors") {
-                  response_sensor = response;
-                  _.each(response.sensors, function (x) {
-                      $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)));
-                  })
+              if (response.action == "data") {
+                  if (_.has(response, 'imageb64')) {
+                      latestImage = response.imageb64;
+                      $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
+                  }
+                  if (_.has(response, 'sensors')) {
+                      response_sensor = response;
+                      _.each(response.sensors, function (x) {
+                          if (x.type == 3) {
+                              rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
+                              addGraphValues(x);
+                          }
+                          $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)));
+                      });
+                  }
               }
           }
           ws.onclose = function (event) {
               //alert("Websocket closed");
           }
           return ws;
+      }
+      function addGraphValues(sensor) {
+          var ys = sensor.values;
+          var colors = ['red', 'green', 'blue'];
+          if (typeof graph == "undefined") {
+              // Sensor graph
+              var x = 0;
+              seriesData = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain([-180, 360]).nice()}});
+              graph = new Rickshaw.Graph( {
+                  element: document.querySelector("#chart"), 
+                  renderer: 'line',
+                  width: 300, 
+                  height: 200,
+                  series: seriesData
+              });
+          } else {
+              _.each(ys, function (y, z) {
+                  var x = seriesData[z].data.length;
+                  seriesData[z].data.push({x: x, y: y})
+              });
+              graph.update();
+          }
       }
 
       ws = connectWebsocket();
@@ -185,7 +201,6 @@
                   tool.mousemove(ev);
                   this.drawing = false;
                   var datauri = $('#canvas')[0].toDataURL();
-                  $('#canvasMirror').attr('src', datauri);
                   ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1]}));
               }
           };
@@ -247,13 +262,14 @@
             });
         });
     }
-
+      function rotate_cube($cube, x, y, z) {
+          $cube.css({
+              transform: 'rotateX(' + x + 'deg) rotateY(' + y + 'deg) rotateZ(' + z + 'deg)',
+              "transition-duration": '0s'
+          });
+      }
       function main () {
-          c = {names: ['location', 'match_memento', 'raven', 'crowdqa', 'match_annotated', 'match_memento_glog',
-                       'borg_local_image', 'borg_local_sensors', 'borg_serverdisk_image', 'borg_server_image',
-                       'borg_server_sensors', 'borg_web_image', 'borg_web_sensors', 'warp', 'predict',
-                       'location_flickr', 'location_streetview']};
-
+          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_memento_glog', 'borg_data_local', 'borg_data_serverdisk', 'borg_data_server', 'borg_data_web', 'borg_image', 'borg_sensor_accelerometer', 'borg_sensor_magneticfield', 'borg_sensor_orientation', 'borg_sensor_gyroscope', 'borg_sensor_light', 'borg_sensor_gravity', 'borg_sensor_linearacceleration', 'borg_sensor_rotationvector', 'warp', 'predict', 'location_flickr', 'location_streetview']};
 
           $('#switches').html(Mustache.render('{{#names}}<div class="control-group"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
           $('.make-switch').bootstrapSwitch();
@@ -270,6 +286,9 @@
 
           $('#buttonRaven').click(function () {
               createKey("raven", function (x) {$('#secret-raven').html(_.escape(x))}, function () {alert("Could not get raven")})
+          });
+          $('#buttonNotify').click(function () {
+              createKey("notify", function (x) {$('#secret-notify').html(_.escape(x))}, function () {alert("Could not get notify")})
           });
           $('#matchImage').click(function () {
               var $canvas = $('#canvas')[0];
@@ -302,7 +321,25 @@
       }
       $(main);
     </script>
-
-
+    <div id="chart"></div> 
+ 
+  <div class="ccontainer">
+  <div id="cube">
+    <figure class="front">1</figure>
+    <figure class="back">2</figure>
+    <figure class="right">3</figure>
+    <figure class="left">4</figure>
+    <figure class="top">5</figure>
+    <figure class="bottom">6</figure>
+  </div></div>
+<!--  <div id="cube" class="animate">
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+  </div>-->
+</div>
   </body>
 </html>

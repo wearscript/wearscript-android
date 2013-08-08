@@ -463,6 +463,7 @@ func main() {
 	m.Get("/search", http.HandlerFunc(MementoSearchServer))
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/raven/{key}", http.HandlerFunc(RavenServer))
+	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
 	//m.Post("/location/on", http.HandlerFunc(LocationOnHandler))
 	//m.Post("/location/off", http.HandlerFunc(LocationOffHandler))
 	m.Post("/location", http.HandlerFunc(LocationHandler))
