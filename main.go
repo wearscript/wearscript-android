@@ -5,7 +5,6 @@ import (
 	"github.com/ugorji/go-msgpack"
 	"encoding/json"
 	"fmt"
-	"os"
 	"github.com/gorilla/pat"
 	"io"
 	"strconv"
@@ -39,10 +38,7 @@ func RootServer(w http.ResponseWriter, req *http.Request) {
 }
 
 func setupUser(r *http.Request, client *http.Client, userId string) {
-	fmt.Println("Setting up user...")
 	m, _ := mirror.New(client)
-
-	fmt.Println("Using mirror api...")
 	s := &mirror.Subscription{
 		Collection:  "timeline",
 		UserToken:   userId,
@@ -77,7 +73,6 @@ func setupUser(r *http.Request, client *http.Client, userId string) {
 // auth is the HTTP handler that redirects the user to authenticate
 // with OAuth.
 func authHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Redirecting to Google's Oauth service...")
 	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
 	http.Redirect(w, r, url, http.StatusFound)
 }
@@ -86,53 +81,54 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 // user after they have granted the appropriate permissions.
 func oauth2callbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Create an oauth transport with a urlfetch.Transport embedded inside.
-	fmt.Println("Got oauth callback...")
 	t := &oauth.Transport{Config:config(r.Host)}
-	//Transport: &urlfetch.Transport{Context: c}
 
 	// Exchange the code for access and refresh tokens.
 	tok, err := t.Exchange(r.FormValue("code"))
 	if err != nil {
 		w.WriteHeader(500)
+		LogPrintf("oauth: exchange")
 		return
 	}
 	o, err := oauth2.New(t.Client())
 	if err != nil {
 		w.WriteHeader(500)
+		LogPrintf("oauth: oauth get")
 		return
 	}
 	u, err := o.Userinfo.Get().Do()
 	if err != nil {
 		w.WriteHeader(500)
+		LogPrintf("oauth: userinfo get")
 		return
 	}
-	fmt.Println(u)
 	userId := fmt.Sprintf("%s_%s", strings.Split(clientId, ".")[0], u.Id)
 	if err = storeUserID(w, r, userId); err != nil {
 		w.WriteHeader(500)
+		LogPrintf("oauth: store userid")
 		return
 	}
 	userSer, err := json.Marshal(u)
 	if err != nil {
 		w.WriteHeader(500)
+		LogPrintf("oauth: json marshal")
 		return
 	}
 	storeCredential(userId, tok, string(userSer))
-	fmt.Println("Oauth callback succeeded, redirecting...")
 	http.Redirect(w, r, fullUrl, http.StatusFound)
-	return
 }
 
 func SetupHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Setting up user")
 	userId, err := userID(r)
 	if err != nil || userId == "" {
 		w.WriteHeader(400)
+		LogPrintf("setup: userid")
 		return
 	}
 	t := authTransport(userId)
 	if t == nil {
 		w.WriteHeader(401)
+		LogPrintf("setup: auth")
 		return
 	}
 	setupUser(r, t.Client(), userId)
@@ -140,35 +136,29 @@ func SetupHandler(w http.ResponseWriter, r *http.Request) {
 
 // signout Revokes access for the user and removes the associated credentials from the datastore.
 func signoutHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		return
-	}
-	fmt.Println("Signing out user...")
 	userId, err := userID(r)
-	if err != nil {
-		w.WriteHeader(500)
-		return
-	}
-	if userId == "" {
-		w.WriteHeader(500)
+	if err != nil || userId == ""{
+		w.WriteHeader(400)
+		LogPrintf("signout: userid")
 		return
 	}
 	t := authTransport(userId)
 	if t == nil {
 		w.WriteHeader(500)
+		LogPrintf("signout: auth")
 		return
 	}
 	req, err := http.NewRequest("GET", fmt.Sprintf(revokeEndpointFmt, t.Token.RefreshToken), nil)
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		w.WriteHeader(500)
+		LogPrintf("signout: revoke")
 		return
 	}
 	defer response.Body.Close()
 	storeUserID(w, r, "")
 	deleteCredential(userId)
 	http.Redirect(w, r, fullUrl, http.StatusFound)
-	return
 }
 
 func sendImageCard(image string, text string, svc *mirror.Service) {
@@ -182,32 +172,31 @@ func sendImageCard(image string, text string, svc *mirror.Service) {
 	req.Media(strings.NewReader(image))
 	_, err := req.Do()
 	if err != nil {
-		fmt.Println("Unable to insert timeline item")
+		LogPrintf("sendimage: insert")
+		return
 	}
 }
 
 func getImageAttachment(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem) ([]byte, error) {
-	fmt.Println("Retrieving attachment")
 	a, err := svc.Timeline.Attachments.Get(t.Id, t.Attachments[0].Id).Do()
-	fmt.Println(a)
 	if err != nil {
-		fmt.Println("Unable to retrieve attachment metadata")
+		LogPrintf("getattachment: metadata")
 		return nil, err
 	}
 	req, err := http.NewRequest("GET", a.ContentUrl, nil)
 	if err != nil {
-		fmt.Println("Unable to create new HTTP request")
+		LogPrintf("getattachment: http")
 		return nil, err
 	}
 	resp, err := trans.RoundTrip(req)
 	if err != nil {
-		fmt.Println("Unable to retrieve attachment content")
+		LogPrintf("getattachment: content")
 		return nil, err
 	}
 	defer resp.Body.Close()
 	imageData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Unable to read attachment body")
+		LogPrintf("getattachment: body")
 		return nil, err
 	}
 	return imageData, nil
@@ -215,24 +204,24 @@ func getImageAttachment(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Tr
 
 func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {	
 	if !hasFlagSingle(userId, "flags", "user_openglass") {
+		LogPrintf("openglass: flag user_openglass")
 		return
 	}
-	fmt.Println("Text: " + t.Text)
 	var err error
 	flags, err := getUserFlags(userId, "uflags")
 	if err != nil {
-		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+		LogPrintf("openglass: uflags")
 		return
 	}
 	if t.Attachments != nil && len(t.Attachments) > 0 {
 		imageData, err := getImageAttachment(conn, svc, trans, t)
 		if err != nil {
-			fmt.Println("Couldn't get image attachment")
+			LogPrintf("openglass: attachment")
 			return
 		}
 		imageRow, err := PicarusApiImageUpload(conn, imageData)
 		if err != nil {
-			fmt.Println("Could not upload to Picarus")
+			LogPrintf("openglass: picarus upload")
 			return
 		}
 		pushUserListTrim(userId, "images", imageRow, maxImages)
@@ -240,14 +229,12 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 		if hasFlag(flags, "match_memento") {
 			mementoMatches, _, err := matchMementoImage(conn, imageRow, userId)
 			if err != nil {
-				fmt.Println("Couldn't match memento")
+				LogPrintf("openglass: memento match")
 			} else {
-				fmt.Println("Memento matches")
-				fmt.Println(mementoMatches)
 				for row, note := range mementoMatches {
 					m, err := conn.GetRow("images", row, []string{picarus.B64Dec(glassImageModel)})
 					if err != nil {
-						fmt.Println("Getting image thumb failed in memento")
+						LogPrintf("openglass: memento get thumb")
 						continue
 					}
 					sendImageCard(m[picarus.B64Dec(glassImageModel)], note, svc)
@@ -259,36 +246,22 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 		}
 			
 		if err != nil {
-			fmt.Println("Image search error")
-			fmt.Println(err)
+			LogPrintf("openglass: image search")
 		}
 		// Warped image example
 		var imageWarped string
 		if hasFlag(flags, "warp") {
 			imageWarped, err := PicarusApiModel(conn, imageRow, picarus.B64Dec(homographyModel))
 			if err != nil {
-				fmt.Println("Image warp error")
+				LogPrintf("openglass: image warp")
 				imageWarped = ""
 			} else {
 				sendImageCard(imageWarped, "", svc)
-				fo, err := os.Create(userId + ".output.jpg")
-				if err != nil { fmt.Println("Couldn't create warp file") }
-				// close fo on exit and check for its returned error
-				defer func() {
-					if err := fo.Close(); err != nil {
-						fmt.Println("Couldn't close warp file")
-					}
-				}()
-				if _, err := fo.Write([]byte(imageWarped)); err != nil {
-					fmt.Println("Couldn't write warp file")
-				}
 			}
 		}
-
 		// If there is a caption, send it to the annotation task
 		if len(t.Text) > 0 {
 			if hasFlag(flags, "crowdqa") {
-				fmt.Println("Sending crowdqa")
 				imageType := "full"
 				if strings.HasPrefix(t.Text, "augmented ") {
 					if len(imageWarped) > 0 {
@@ -296,7 +269,7 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 						imageRowWarped, err := PicarusApiImageUpload(conn, imageWarpedData)
 						PicarusApiRowThumb(conn, imageRowWarped)
 						if err != nil {
-							fmt.Println("Could not upload warped image to Picarus")
+							LogPrintf("openglass: warp image upload")
 						} else {
 							imageRow = imageRowWarped
 							imageData = imageWarpedData
@@ -308,13 +281,13 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 				_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:question": t.Text, "meta:openglass_user": userId,
 					"meta:openglass_image_type": imageType}, map[string][]byte{})
 				if err != nil {
-					fmt.Println("Unable to patch image")
+					LogPrintf("openglass: patch image")
 					return
 				}
 				// TODO: Here is where we would resize the image, we can do that later
 				_, err = conn.PostRow("jobs", annotationTask, map[string]string{"action": "io/annotation/sync"})
 				if err != nil {
-					fmt.Println("Unable to sync annotations")
+					LogPrintf("openglass: sync annotations")
 					return
 				}
 			}
@@ -325,13 +298,13 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 				for modelName, modelRow := range predictionModels {
 					confMsgpack, err := PicarusApiModel(conn, imageRow, picarus.B64Dec(modelRow))
 					if err != nil {
-						fmt.Println("Picarus predict error")
+						LogPrintf("openglass: predict")
 						return
 					}
 					var value float64
 					err = msgpack.Unmarshal([]byte(confMsgpack), &value, nil)
 					if err != nil {
-						fmt.Println("Msgpack unpack error")
+						LogPrintf("openglass: predict msgpack")
 						return
 					}
 					confHTML = confHTML + fmt.Sprintf("<li>%s: %f</li>", modelName, value)
@@ -348,14 +321,14 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 				}
 				imageThumbData, err := PicarusApiModel(conn, imageRow, picarus.B64Dec(glassImageModel))
 				if err != nil {
-					fmt.Println("Unable to create thumbnail")
+					LogPrintf("openglass: thumb")
 					return
 				}
 				req := svc.Timeline.Insert(nt)
 				req.Media(strings.NewReader(string(imageThumbData)))
 				tiConf, err := req.Do()
 				if err != nil {
-					fmt.Println("Unable to insert timeline item")
+					LogPrintf("openglass: predictinsert")
 					return
 				}
 				setUserAttribute(userId, "tid_to_row:" + tiConf.Id, imageRow)
@@ -365,7 +338,6 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 		if len(t.Text) > 0 {
 			if strings.HasPrefix(t.Text, "where") && hasFlag(flags, "location") {
 				loc, _ := svc.Locations.Get("latest").Do()
-				fmt.Println(*loc)
 				_, err = conn.PostTable("images", map[string]string{"meta:question": t.Text, "meta:openglass_user": userId, "meta:latitude": strconv.FormatFloat(loc.Latitude, 'f', 16, 64),
 					"meta:longitude": strconv.FormatFloat(loc.Longitude, 'f', 16, 64)}, map[string][]byte{}, []picarus.Slice{})
 			} else {
@@ -373,12 +345,12 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 			}
 
 			if err != nil {
-				fmt.Println("Unable to POST text-only message")
+				LogPrintf("openglass: qa post text-only")
 				return
 			}
 			_, err = conn.PostRow("jobs", annotationTask, map[string]string{"action": "io/annotation/sync"})
 			if err != nil {
-				fmt.Println("Unable to sync annotations")
+				LogPrintf("openglass: qa post text-only sync")
 				return
 			}
 		}
@@ -387,69 +359,60 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 
 func notifyHandler(w http.ResponseWriter, r *http.Request) {
     conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
-	fmt.Println("Got notify...")
     not := new(mirror.Notification)
     if err := json.NewDecoder(r.Body).Decode(not); err != nil {
-        fmt.Println(fmt.Errorf("Unable to decode notification: %v", err))
+		LogPrintf("notify: decode")
         return
     }
-	fmt.Println("Notification")
-	fmt.Println(not)
-	for _, v := range not.UserActions {
-		fmt.Println(v)
-	}
     userId := not.UserToken
 	itemId := not.ItemId
 	if not.Operation == "UPDATE" {
 		imageRow, err := getUserAttribute(userId, "tid_to_row:" + not.ItemId)
 		if err != nil {
-			fmt.Println(err)
+			LogPrintf("notify: tid_to_row")
 			return
 		}
 		for _, v := range not.UserActions {
 			vs := strings.Split(v.Payload, " ")
 			if len(vs) != 2 || predictionModels[vs[0]] == "" || len(vs[1]) != 1 {
-				fmt.Println("Unknown payload")
+				LogPrintf("notify: payload")
 				continue
 			}
 			_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:userannot-" + vs[0]: vs[1]}, map[string][]byte{})
 			if err != nil {
-				fmt.Println("Couldn't patch row with annotation")
+				LogPrintf("notify: patch annotation")
+				continue
 			}
 		}
 		return
 	}
 
 	if not.Operation != "INSERT" {
-		fmt.Println("Not an insert, quitting...")
 		return
 	}
 	trans := authTransport(userId)
 	if trans == nil {
-		fmt.Println("Couldn't allocate trans")
+		LogPrintf("notify: auth")
 		return
 	}
 
 	svc, err := mirror.New(trans.Client())
 	if err != nil {
-		fmt.Println("Couldn't allocate client")
+		LogPrintf("notify: mirror")
 		return
 	}
 	
 	t, err := svc.Timeline.Get(itemId).Do()
 	if err != nil {
-		fmt.Println("Couldn't get timeline item")
+		LogPrintf("notify: timeline item")
 		return
 	}
-	fmt.Println("Timelineitem")
-	fmt.Println(t)
 	notifyOG := true
 	for _, r := range t.Recipients {
 		if r.Id == "Memento" {
 			notifyOG = false
 		}
 	}
-	// TODO: Look into this more
 	if notifyOG {
 		go notifyOpenGlass(&conn, svc, trans, t, userId)
 	} else {
@@ -467,8 +430,6 @@ func main() {
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/raven/{key}", http.HandlerFunc(RavenServer))
 	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
-	//m.Post("/location/on", http.HandlerFunc(LocationOnHandler))
-	//m.Post("/location/off", http.HandlerFunc(LocationOffHandler))
 	m.Post("/location", http.HandlerFunc(LocationHandler))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
@@ -481,10 +442,6 @@ func main() {
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
-
-	//m.Post("/simulate/openglass", http.HandlerFunc(SimulateOpenglassHandler))
-	//m.Post("/simulate/memento", http.HandlerFunc(SimulateMementoHandler))
-
 	m.Get("/", http.HandlerFunc(RootServer))
 	go pollAnnotations()
 	http.Handle("/borg/glass/", websocket.Handler(BorgGlassHandler))
