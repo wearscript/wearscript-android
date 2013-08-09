@@ -1,19 +1,18 @@
 OpenGlass
 =========
 
-It's a work in progress but we wanted to get it out as early as possible.
-
-Right now it has three modes
-
-1. If it is sent an image without text it runs an indoor classifier on it with the result being sent as a timeline item.  See demo http://youtu.be/hhWBvoqop2o
-2. If it is sent an image with text it is used as a question for human annotation with the results being sent as timeline items.  See demo http://youtu.be/mHWejjTwOMY
-3. If a raven exception (compatible with http://getsentry.com) is posted to /raven/:key it is send to the glass user for that corresponding key.
-
-It is not expected that you will be able to run this yourself easily, it is primarily to share ideas and collaborate.
+It's a work in progress but we wanted to get it out as early as possible.  For demos of this code see openglass.us (this readme would be out of data in terms of capabilities).  It is not expected that you will be able to run this yourself easily, it is primarily to share ideas and collaborate.
 
 License
 -------
 Apache 2.0
+
+Go Install
+----------
+* wget https://go.googlecode.com/files/go1.1.1.linux-amd64.tar.gz
+* tar -xzf go1.1.1.linux-amd64.tar.gz
+* Put "export GOROOT=<yourpath>/go" and "export GOPATH=<yourpath>/gocode" in your .bashrc
+* The "gocode" is where packages will be stored and "go" is the location of the extracted folder.
 
 Install
 -------
