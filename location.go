@@ -27,6 +27,9 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
     userId := not.UserToken
+	if !hasFlagSingle(userId, "flags", "user_location") {
+		return
+	}
 	flags, err := getUserFlags(userId, "uflags")
 	if err != nil {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))

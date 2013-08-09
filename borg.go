@@ -70,6 +70,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 		fmt.Println(err)
 		return
 	}
+	if !hasFlagSingle(userId, "flags", "user_borg") {
+		return
+	}
 	flags, err := getUserFlags(userId, "uflags")
 	if err != nil {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))

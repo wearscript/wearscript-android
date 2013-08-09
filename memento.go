@@ -14,6 +14,9 @@ import (
 
 
 func notifyMemento(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {
+	if !hasFlagSingle(userId, "flags", "user_memento") {
+		return
+	}
 	imageData, err := getImageAttachment(conn, svc, trans, t)
 	if err != nil {
 		fmt.Println("Couldn't get image attachment")

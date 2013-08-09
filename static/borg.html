@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OpenGlass: Borg</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="bootstrap-switch.css" rel="stylesheet" media="screen">
+    <link href="cube2.css" rel="stylesheet" media="screen">
+    <link href="rickshaw.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+    <div class="container">
+        <div class="row">
+          <img id="latest-image" \>
+          <button id="matchImage" class="btn btn-large btn-block btn-primary" type="button">Match Image</button>
+        </div>
+        <div class="row">
+          <canvas id="canvas" width="640" height="360">
+        </div>
+        <div class="row">
+          <div id="sensors" \>
+        </div>
+
+          <div id="canvas_images" \>
+
+        <div class="row">
+          <h1>Simulate</h1>
+          <select>
+            <option value="openglass">OpenGlass</option>
+            <option value="memento">Memento</option>
+          </select>
+          <input type="text" name="fname">
+          <div class="span6 well"><input type="file" id="files" /></div>
+          <input type="submit" value="Submit" id="simulate-submit">
+        </div>
+
+    </div> <!-- /container -->
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <script src="bootstrap-switch.min.js"></script>
+    <script src="d3.v3.min.js"></script>
+    <script src="rickshaw.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
+
+    <script type="text/javascript">
+      function connectWebsocket() {
+          var ws = new WebSocket("ws://api3.picar.us:16001/borg/web");
+          var scale = (3.14159265359 / 2) / 360;
+          var shift = 3.14159265359 / 4;
+          ws.onopen = function () {
+              _.each(_.range(0, 12), function (x) {
+                  $('#sensors').append($('<div>').attr('id', 'sensor_' + x));
+              });
+          }
+          ws.onclose = function () {
+
+          }
+          ws.onmessage = function (event) {
+              response = JSON.parse(event.data);
+              if (response.action == "data") {
+                  if (_.has(response, 'imageb64')) {
+                      latestImage = response.imageb64;
+                      $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
+                  }
+                  if (_.has(response, 'sensors')) {
+                      response_sensor = response;
+                      _.each(response.sensors, function (x) {
+                          if (x.type == 11) {
+                              
+                              // rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
+                              rotate_cuber($('#cube'), getRotationMatrixFromVector(x.values));
+                              addGraphValues(x);
+                          }
+                          $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)));
+                      });
+                  }
+              }
+          }
+          ws.onclose = function (event) {
+              //alert("Websocket closed");
+          }
+          return ws;
+      }
+      function addGraphValues(sensor) {
+          var ys = sensor.values;
+          var colors = ['red', 'green', 'blue'];
+          if (typeof graph == "undefined") {
+              // Sensor graph
+              var x = 0;
+              seriesData = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain([-180, 360]).nice()}});
+              graph = new Rickshaw.Graph( {
+                  element: document.querySelector("#chart"), 
+                  renderer: 'line',
+                  width: 300, 
+                  height: 200,
+                  series: seriesData
+              });
+          } else {
+          }
+      }
+
+
+      ws = connectWebsocket();
+      function initCanvas() {
+          var $canvas = $('#canvas')[0];
+          var context = $canvas.getContext('2d');
+          context.fillStyle = '#FFFFFF'; // set canvas background color
+          context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
+
+          tool = {};
+          function ev_canvas (ev) {
+              if (ev.layerX || ev.layerX == 0) { // Firefox
+                  ev._x = ev.layerX;
+                  ev._y = ev.layerY;
+              } else if (ev.offsetX || ev.offsetX == 0) { // Opera
+                  ev._x = ev.offsetX;
+                  ev._y = ev.offsetY;
+              }
+              var evtype = ev.type;
+              if (evtype.slice(0, 5) == "touch" && event.touches.length == 1) {
+                  console.log('Touch')
+                  ev._x = ev.touches[0].pageX;
+                  ev._y = ev.touches[0].pageY;
+              }
+              console.log(ev._x + " " + ev._y)
+              //console.log(ev.pageX + " " + ev.pageY)
+
+              var func = tool[evtype];
+              if (func) {
+                  func(ev);
+              }
+          }
+
+          $canvas.addEventListener('mousedown', ev_canvas, false);
+          $canvas.addEventListener('mousemove', ev_canvas, false);
+          $canvas.addEventListener('mouseup', ev_canvas, false);
+          $canvas.addEventListener('touchmove', ev_canvas, false);
+          $canvas.addEventListener('touchstart', ev_canvas, false);
+          $canvas.addEventListener('touchend', ev_canvas, false);
+          tool.drawing = false;
+          tool.mousemove = function (ev) {
+              console.log('Mouse move')
+              if (this.drawing) {
+                  context.lineTo(ev._x, ev._y);
+                  context.strokeStyle = '#0b61a4';
+
+                  context.stroke();
+              }
+          };
+          tool.mousedown = function (ev) {
+              console.log('Mouse down')
+              context.beginPath();
+              context.moveTo(ev._x, ev._y);
+              this.drawing = true;
+          };
+          tool.mouseup = function (ev) {
+              console.log('Mouse up')
+              if (this.drawing) {
+                  tool.mousemove(ev);
+                  this.drawing = false;
+                  var datauri = $('#canvas')[0].toDataURL();
+                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1]}));
+              }
+          };
+
+          tool.touchmove = function (ev) {
+              console.log('Touch move')
+              if (this.drawing) {
+                  context.lineTo(ev.pageX, ev.pageY);
+                  context.stroke();
+              }
+          };
+          tool.touchstart = function (ev) {
+              console.log('Touch start');
+              context.beginPath();
+              context.moveTo(ev.pageX, ev.pageY);
+              this.drawing = true;
+          };
+          tool.touchend = function (ev) {
+              console.log('Touch end')
+              if (this.drawing) {
+                  tool.touchmove(ev);
+                  this.drawing = false;
+                  var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
+                  $('#canvasMirror').attr('src', datauri);
+                  ws.send(JSON.stringify({action: 'setMatchOverlay', overlayb64: datauri.split(',')[1]}));
+              }
+          };
+
+      }
+
+    function render_Image
+      (image_data, div, success) {
+        var image_id = _.uniqueId('image_');
+        var canvas_id = _.uniqueId('canvas_');
+        var image_tag = $('<img>').css('visibility', 'hidden').css('display', 'none').attr('id', image_id);
+        image_tag.load(function () {
+            success(image_id, canvas_id);
+        });
+        div.append(image_tag.attr('src', image_data));
+    }
+    function render_image_boxes(image_data, boxes, num_boxes, div) {
+        render_image(image_data, div, function (image_id, canvas_id) {
+            var h = $('#' + image_id).height();
+            var w = $('#' + image_id).width();
+            div.append($('<canvas>').attr('id', canvas_id).attr('height', h + 'px').attr('width', w + 'px'));
+            var c = document.getElementById(canvas_id);
+            var ctx = c.getContext("2d");
+            ctx.strokeStyle = 'blue';
+            var img = document.getElementById(image_id);
+            ctx.drawImage(img, 0, 0);
+            _.each(_.range(num_boxes), function (x) {
+                var x0 = boxes[x * 4 + 2] * w;
+                var x1 = boxes[x * 4 + 3] * w;
+                var y0 = boxes[x * 4] * h;
+                var y1 = boxes[x * 4 + 1] * h;
+                ctx.moveTo(x0, y0);ctx.lineTo(x0, y1);ctx.stroke(); // TL->BL
+                ctx.moveTo(x0, y1);ctx.lineTo(x1, y1);ctx.stroke(); // BL->BR
+                ctx.moveTo(x1, y1);ctx.lineTo(x1, y0);ctx.stroke(); // BR->TR
+                ctx.moveTo(x1, y0);ctx.lineTo(x0, y0);ctx.stroke(); // TR->TL
+            });
+        });
+    }
+
+      function getRotationMatrixFromVector(rotationVector) {
+          var q0;
+          var q1 = rotationVector[2];
+          var q2 = rotationVector[1];
+          var q3 = rotationVector[0];
+
+          R = new Array(16);
+
+          if (rotationVector.length == 4) {
+              q0 = rotationVector[3];
+          } else {
+              q0 = 1 - q1*q1 - q2*q2 - q3*q3;
+              q0 = (q0 > 0) ? Math.sqrt(q0) : 0;
+          }
+
+          var sq_q1 = 2 * q1 * q1;
+          var sq_q2 = 2 * q2 * q2;
+          var sq_q3 = 2 * q3 * q3;
+          var q1_q2 = 2 * q1 * q2;
+          var q3_q0 = 2 * q3 * q0;
+          var q1_q3 = 2 * q1 * q3;
+          var q2_q0 = 2 * q2 * q0;
+          var q2_q3 = 2 * q2 * q3;
+          var q1_q0 = 2 * q1 * q0;
+
+          R[0] = 1 - sq_q2 - sq_q3;
+          R[1] = q1_q2 - q3_q0;
+          R[2] = q1_q3 + q2_q0;
+          R[3] = 0.0;
+          
+          R[4] = q1_q2 + q3_q0;
+          R[5] = 1 - sq_q1 - sq_q3;
+          R[6] = q2_q3 - q1_q0;
+          R[7] = 0.0;
+          
+          R[8] = q1_q3 - q2_q0;
+          R[9] = q2_q3 + q1_q0;
+          R[10] = 1 - sq_q1 - sq_q2;
+          R[11] = 0.0;
+          
+          R[12] = R[13] = R[14] = 0.0;
+          R[15] = 1.0;
+
+          return R;
+      }
+      function rotate_cuber($cube, mat) {
+          mat_trans = [];
+          _.each(_.range(4), function (i) {
+              _.each(_.range(4), function (j) {
+                  mat_trans.push(mat[j * 4 + i]);
+              });
+          });
+          
+          $cube.css({
+              transform: 'matrix3d(' + mat_trans.join(',') + ')',
+              "transition-duration": '0s'
+          });
+          
+      }
+      function rotate_cube($cube, x, y, z) {
+          $cube.css({
+              transform: 'rotateZ(' + z + 'deg) rotateX(' + x + 'deg) rotateY(' + y + 'deg)',
+              "transition-duration": '0s'
+          });
+      }
+      function main () {
+          $('#matchImage').click(function () {
+              var $canvas = $('#canvas')[0];
+              var context = $canvas.getContext('2d');
+              context.clearRect(0, 0, $canvas.width, $canvas.height);
+              $('#canvas_images').html('');
+              render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
+                  var img = document.getElementById(image_id);
+                  context.drawImage(img, 0, 0);
+              });
+              ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
+          });
+
+
+          initCanvas();
+          //$('#files').change(_.partial(handleFileSelect, sendImage));
+      }
+      $(main);
+    </script>
+    <div id="chart"></div> 
+ 
+  <div class="ccontainer">
+  <div id="cube">
+    <figure class="front">1</figure>
+    <figure class="back">2</figure>
+    <figure class="right">3</figure>
+    <figure class="left">4</figure>
+    <figure class="top">5</figure>
+    <figure class="bottom">6</figure>
+  </div></div>
+</div>
+  </body>
+</html>

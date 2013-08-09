@@ -180,6 +180,14 @@ func hasFlag(flags []string, flag string) bool {
 	return false
 }
 
+func hasFlagSingle(userId string, name string, flag string) bool {
+	flags, err := getUserFlags(userId, name)
+	if err != nil {
+		return false
+	}
+	return hasFlag(flags, flag)
+}
+
 func userSubscribe(userId string, channel string) (*redis.PubSubConn, error) {
 	c, err := getRedisConnection()
 	if err != nil {

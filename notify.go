@@ -7,35 +7,25 @@ import (
 	"net/http"
 	"code.google.com/p/google-api-go-client/mirror/v1"
 )
-/*
-{
-    'id': '134343',
-    'project': 'project-slug',
-    'message': 'This is an example',
-    'culprit': 'foo.bar.baz',
-    'logger': 'root',
-    'level': 'error'
-}
-*/
 
-type RavenEvent struct {
-	Id string `json:"id"`
-	Project string `json:"project"`
+type NotifyEvent struct {
+	Application string `json:"application"`
 	Message string `json:"message"`
-	Culprit string `json:"culprit"`
-	Logger string `json:logger"`
-	Level string `json:"level"`
+	Priority bool `json:"priority"`
+	Title string `json:"title"`
 }
 
-func RavenServer(w http.ResponseWriter, req *http.Request) {
+func NotifyServer(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	fmt.Println(req)
-	userId, err := getSecretUser("raven", secretHash(req.URL.Query().Get(":key")))
+	userId, err := getSecretUser("notify", secretHash(req.URL.Query().Get(":key")))
 	if err != nil {
+		w.WriteHeader(401)
 		fmt.Println("Bad key")
 		return
 	}
 	if !hasFlagSingle(userId, "flags", "user_notify") {
+		w.WriteHeader(401)
 		return
 	}
 	trans := authTransport(userId)
@@ -50,7 +40,7 @@ func RavenServer(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	if !hasFlag(flags, "raven") {
+	if !hasFlag(flags, "notify") {
 		fmt.Println("User not flagged")
 		w.WriteHeader(400)
 		return
@@ -61,7 +51,7 @@ func RavenServer(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	var r RavenEvent
+	var r NotifyEvent
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		fmt.Println("Couldn't unjson body")
@@ -72,10 +62,12 @@ func RavenServer(w http.ResponseWriter, req *http.Request) {
 
 	svc, _ := mirror.New(trans.Client())
 	nt := &mirror.TimelineItem{
-		Html: "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Project + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Culprit + "</p></div></section><footer><div>" + r.Level + "</div></footer></article>",
-		SpeakableText: r.Project + " " + r.Level + " " + r.Message + " " + r.Culprit,
+		Html: "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Title + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Application + "</p></div></section></article>",
+		SpeakableText: r.Title + " " + r.Application + " " + r.Message,
 		MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
-		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
+	}
+	if r.Priority {
+		nt.Notification = &mirror.NotificationConfig{Level: "DEFAULT"}
 	}
 	_, err = svc.Timeline.Insert(nt).Do()
 	if err != nil {

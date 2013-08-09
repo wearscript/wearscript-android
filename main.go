@@ -214,6 +214,9 @@ func getImageAttachment(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Tr
 }
 
 func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {	
+	if !hasFlagSingle(userId, "flags", "user_openglass") {
+		return
+	}
 	fmt.Println("Text: " + t.Text)
 	var err error
 	flags, err := getUserFlags(userId, "uflags")

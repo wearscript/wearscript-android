@@ -33,7 +33,16 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userId, err := userID(r)
 	if err != nil {
-		w.WriteHeader(400)
+		w.WriteHeader(401)
+		return
+	}
+	flags, err := getUserFlags(userId, "flags")
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+	if !hasFlag(flags, "user") || (!hasFlag(flags, "user_notify") && !hasFlag(flags, "user_borg")) {
+		w.WriteHeader(401)
 		return
 	}
 	secretType := r.URL.Query().Get(":type")

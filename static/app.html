@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>OpenGlass: Borg</title>
+    <title>OpenGlass</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
@@ -15,8 +15,6 @@
       </div>
       <div class="row">
 
-
-<button type="button" class="btn btn-primary btn-lg btn-block">Block level button</button>
       </div>
         <div class="row">
           <div class="span7">
@@ -24,36 +22,14 @@
             <button id="buttonSignout" class="btn btn-large btn-block" type="button">Sign Out</button>
             <button id="buttonSetup" class="btn btn-large btn-block btn-primary" type="button">Setup</button>
             <button id="buttonRaven" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
-            <button id="buttonNotify" class="btn btn-large btn-block btn-primary" type="button">Raven</button>
+            <button id="buttonNotify" class="btn btn-large btn-block btn-primary" type="button">Notify</button>
           </div>
         </div>
         <div class="row">
           <span id="secret-raven"></span>
           <span id="secret-notify"></span>
         </div>
-        <div class="row">
-          <img id="latest-image" \>
-          <button id="matchImage" class="btn btn-large btn-block btn-primary" type="button">Match Image</button>
-        </div>
-        <div class="row">
-          <canvas id="canvas" width="640" height="360">
-        </div>
-        <div class="row">
-          <div id="sensors" \>
-        </div>
 
-          <div id="canvas_images" \>
-
-        <div class="row">
-          <h1>Simulate</h1>
-          <select>
-            <option value="openglass">OpenGlass</option>
-            <option value="memento">Memento</option>
-          </select>
-          <input type="text" name="fname">
-          <div class="span6 well"><input type="file" id="files" /></div>
-          <input type="submit" value="Submit" id="simulate-submit">
-        </div>
 
     </div> <!-- /container -->
 
@@ -83,191 +59,6 @@
               xhr.error(error);
           }
       }
-
-      function connectWebsocket() {
-          var ws = new WebSocket("ws://api3.picar.us:16001/borg/web");
-          var scale = (3.14159265359 / 2) / 360;
-          var shift = 3.14159265359 / 4;
-          ws.onopen = function () {
-              _.each(_.range(0, 12), function (x) {
-                  $('#sensors').append($('<div>').attr('id', 'sensor_' + x));
-              });
-          }
-          ws.onclose = function () {
-
-          }
-          ws.onmessage = function (event) {
-              response = JSON.parse(event.data);
-              if (response.action == "data") {
-                  if (_.has(response, 'imageb64')) {
-                      latestImage = response.imageb64;
-                      $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
-                  }
-                  if (_.has(response, 'sensors')) {
-                      response_sensor = response;
-                      _.each(response.sensors, function (x) {
-                          if (x.type == 3) {
-                              rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
-                              addGraphValues(x);
-                          }
-                          $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)));
-                      });
-                  }
-              }
-          }
-          ws.onclose = function (event) {
-              //alert("Websocket closed");
-          }
-          return ws;
-      }
-      function addGraphValues(sensor) {
-          var ys = sensor.values;
-          var colors = ['red', 'green', 'blue'];
-          if (typeof graph == "undefined") {
-              // Sensor graph
-              var x = 0;
-              seriesData = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain([-180, 360]).nice()}});
-              graph = new Rickshaw.Graph( {
-                  element: document.querySelector("#chart"), 
-                  renderer: 'line',
-                  width: 300, 
-                  height: 200,
-                  series: seriesData
-              });
-          } else {
-              _.each(ys, function (y, z) {
-                  var x = seriesData[z].data.length;
-                  seriesData[z].data.push({x: x, y: y})
-              });
-              graph.update();
-          }
-      }
-
-      ws = connectWebsocket();
-      function initCanvas() {
-          var $canvas = $('#canvas')[0];
-          var context = $canvas.getContext('2d');
-          context.fillStyle = '#FFFFFF'; // set canvas background color
-          context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas
-
-          tool = {};
-          function ev_canvas (ev) {
-              if (ev.layerX || ev.layerX == 0) { // Firefox
-                  ev._x = ev.layerX;
-                  ev._y = ev.layerY;
-              } else if (ev.offsetX || ev.offsetX == 0) { // Opera
-                  ev._x = ev.offsetX;
-                  ev._y = ev.offsetY;
-              }
-              var evtype = ev.type;
-              if (evtype.slice(0, 5) == "touch" && event.touches.length == 1) {
-                  console.log('Touch')
-                  ev._x = ev.touches[0].pageX;
-                  ev._y = ev.touches[0].pageY;
-              }
-              console.log(ev._x + " " + ev._y)
-              //console.log(ev.pageX + " " + ev.pageY)
-
-              var func = tool[evtype];
-              if (func) {
-                  func(ev);
-              }
-          }
-
-          $canvas.addEventListener('mousedown', ev_canvas, false);
-          $canvas.addEventListener('mousemove', ev_canvas, false);
-          $canvas.addEventListener('mouseup', ev_canvas, false);
-          $canvas.addEventListener('touchmove', ev_canvas, false);
-          $canvas.addEventListener('touchstart', ev_canvas, false);
-          $canvas.addEventListener('touchend', ev_canvas, false);
-          tool.drawing = false;
-          tool.mousemove = function (ev) {
-              console.log('Mouse move')
-              if (this.drawing) {
-                  context.lineTo(ev._x, ev._y);
-                  context.strokeStyle = '#0b61a4';
-                  context.stroke();
-              }
-          };
-          tool.mousedown = function (ev) {
-              console.log('Mouse down')
-              context.beginPath();
-              context.moveTo(ev._x, ev._y);
-              this.drawing = true;
-          };
-          tool.mouseup = function (ev) {
-              console.log('Mouse up')
-              if (this.drawing) {
-                  tool.mousemove(ev);
-                  this.drawing = false;
-                  var datauri = $('#canvas')[0].toDataURL();
-                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1]}));
-              }
-          };
-
-          tool.touchmove = function (ev) {
-              console.log('Touch move')
-              if (this.drawing) {
-                  context.lineTo(ev.pageX, ev.pageY);
-                  context.stroke();
-              }
-          };
-          tool.touchstart = function (ev) {
-              console.log('Touch start');
-              context.beginPath();
-              context.moveTo(ev.pageX, ev.pageY);
-              this.drawing = true;
-          };
-          tool.touchend = function (ev) {
-              console.log('Touch end')
-              if (this.drawing) {
-                  tool.touchmove(ev);
-                  this.drawing = false;
-                  var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
-                  $('#canvasMirror').attr('src', datauri);
-                  ws.send(JSON.stringify({action: 'setMatchOverlay', overlayb64: datauri.split(',')[1]}));
-              }
-          };
-
-      }
-
-    function render_image(image_data, div, success) {
-        var image_id = _.uniqueId('image_');
-        var canvas_id = _.uniqueId('canvas_');
-        var image_tag = $('<img>').css('visibility', 'hidden').css('display', 'none').attr('id', image_id);
-        image_tag.load(function () {
-            success(image_id, canvas_id);
-        });
-        div.append(image_tag.attr('src', image_data));
-    }
-    function render_image_boxes(image_data, boxes, num_boxes, div) {
-        render_image(image_data, div, function (image_id, canvas_id) {
-            var h = $('#' + image_id).height();
-            var w = $('#' + image_id).width();
-            div.append($('<canvas>').attr('id', canvas_id).attr('height', h + 'px').attr('width', w + 'px'));
-            var c = document.getElementById(canvas_id);
-            var ctx = c.getContext("2d");
-            ctx.strokeStyle = 'blue';
-            var img = document.getElementById(image_id);
-            ctx.drawImage(img, 0, 0);
-            _.each(_.range(num_boxes), function (x) {
-                var x0 = boxes[x * 4 + 2] * w;
-                var x1 = boxes[x * 4 + 3] * w;
-                var y0 = boxes[x * 4] * h;
-                var y1 = boxes[x * 4 + 1] * h;
-                ctx.moveTo(x0, y0);ctx.lineTo(x0, y1);ctx.stroke(); // TL->BL
-                ctx.moveTo(x0, y1);ctx.lineTo(x1, y1);ctx.stroke(); // BL->BR
-                ctx.moveTo(x1, y1);ctx.lineTo(x1, y0);ctx.stroke(); // BR->TR
-                ctx.moveTo(x1, y0);ctx.lineTo(x0, y0);ctx.stroke(); // TR->TL
-            });
-        });
-    }
-      function rotate_cube($cube, x, y, z) {
-          $cube.css({
-              transform: 'rotateX(' + x + 'deg) rotateY(' + y + 'deg) rotateZ(' + z + 'deg)',
-              "transition-duration": '0s'
-          });
-      }
       function main () {
           c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_memento_glog', 'borg_data_local', 'borg_data_serverdisk', 'borg_data_server', 'borg_data_web', 'borg_image', 'borg_sensor_accelerometer', 'borg_sensor_magneticfield', 'borg_sensor_orientation', 'borg_sensor_gyroscope', 'borg_sensor_light', 'borg_sensor_gravity', 'borg_sensor_linearacceleration', 'borg_sensor_rotationvector', 'warp', 'predict', 'location_flickr', 'location_streetview']};
 
@@ -290,18 +81,6 @@
           $('#buttonNotify').click(function () {
               createKey("notify", function (x) {$('#secret-notify').html(_.escape(x))}, function () {alert("Could not get notify")})
           });
-          $('#matchImage').click(function () {
-              var $canvas = $('#canvas')[0];
-              var context = $canvas.getContext('2d');
-              context.clearRect(0, 0, $canvas.width, $canvas.height);
-              $('#canvas_images').html('');
-              render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
-                  var img = document.getElementById(image_id);
-                  context.drawImage(img, 0, 0);
-              });
-              ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
-          });
-
 
           $('.make-switch').on('switch-change', function () {
               var $this = $(this);
@@ -316,30 +95,8 @@
                   $('.make-switch[name=' + y + ']').bootstrapSwitch('setState', true);
               });
           });
-          initCanvas();
-          //$('#files').change(_.partial(handleFileSelect, sendImage));
       }
       $(main);
     </script>
-    <div id="chart"></div> 
- 
-  <div class="ccontainer">
-  <div id="cube">
-    <figure class="front">1</figure>
-    <figure class="back">2</figure>
-    <figure class="right">3</figure>
-    <figure class="left">4</figure>
-    <figure class="top">5</figure>
-    <figure class="bottom">6</figure>
-  </div></div>
-<!--  <div id="cube" class="animate">
-    <div></div>
-    <div></div>
-    <div></div>
-    <div></div>
-    <div></div>
-    <div></div>
-  </div>-->
-</div>
   </body>
 </html>
