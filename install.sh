@@ -9,4 +9,5 @@ go get -u github.com/gorilla/pat
 go get -u github.com/gorilla/sessions
 go get -u github.com/ugorji/go-msgpack
 go get -u github.com/ugorji/go/codec
+go get -u github.com/kisielk/raven-go/raven
 go build main.go
