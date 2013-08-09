@@ -18,14 +18,14 @@ Install
 -------
 If you want access to our demo server contact us, if you want to run this yourself definitely contact us (some features requires a http://picar.us cluster).
 
+* Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this if possible
+* Ubuntu packages: apt-get install mercurial
 * Setup a config.go file (look at config.go.example)
 * Run install.sh (this does basic dependencies and such, it is not expected to automatically install everything at this point)
 
-Resources
----------
-These are helpful for development
-
-* https://code.google.com/p/google-api-go-client/source/browse/mirror/v1/mirror-gen.go
+Hacking
+-------
+See the HACKING.md file for help.
 
 Contact
 -------
