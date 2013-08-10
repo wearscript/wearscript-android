@@ -246,11 +246,11 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println("hFinal")
 			fmt.Println(hFinal)
 			fmt.Println(fmt.Sprintf("[%s][%f]", "Matrices", float64(time.Now().Sub(st).Seconds())))
-			hFinalJS, err := json.Marshal(hFinal)
+			/*hFinalJS, err := json.Marshal(hFinal)
 			if err != nil {
 				fmt.Println(err)
 				continue
-			}
+			}*/
 
 			st = time.Now()
 			image, err := getUserAttribute(userId, "match_overlay")
