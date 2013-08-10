@@ -6,7 +6,7 @@
     <!-- Bootstrap -->
     <link href="bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="bootstrap-switch.css" rel="stylesheet" media="screen">
-    <link href="cube2.css" rel="stylesheet" media="screen">
+    <link href="cube.css" rel="stylesheet" media="screen">
     <link href="rickshaw.min.css" rel="stylesheet" media="screen">
   </head>
   <body>
@@ -61,9 +61,17 @@
           ws.onmessage = function (event) {
               response = JSON.parse(event.data);
               if (response.action == "data") {
+                  if (!_.has(glassIdToNum, response.glassID)) {
+                      var glassNum = _.uniqueId('glass-');
+                      var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
+                      $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="chart"></div><div class="sensors"></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
+                      response.glassID
+                      glassIdToNum[response.glassID] = glassNum;
+                  }
+                  $glass = $('#' + glassIdToNum[response.glassID]);
                   if (_.has(response, 'imageb64')) {
                       latestImage = response.imageb64;
-                      $('#latest-image').attr('src', 'data:image/jpeg;base64,' + latestImage);
+                      $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + latestImage);
                   }
                   if (_.has(response, 'sensors')) {
                       response_sensor = response;
@@ -71,10 +79,13 @@
                           if (x.type == 11) {
                               
                               // rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
-                              rotate_cuber($('#cube'), getRotationMatrixFromVector(x.values));
-                              addGraphValues(x);
+                              rotate_cuber($glass.find('.cube'), getRotationMatrixFromVector(x.values));
+                              addGraphValues($glass.find('.chart'), x);
                           }
-                          $('#sensor_' + x.type).html(_.escape(JSON.stringify(x)));
+                          if ($glass.find('.sensor_' + x.type).length == 0) {
+                              $glass.find('.sensors').append($('<div>').attr('class', 'sensor_' + x.type));
+                          }
+                          $glass.find('.sensor_' + x.type).html(_.escape(JSON.stringify(x)));
                       });
                   }
               }
@@ -84,24 +95,28 @@
           }
           return ws;
       }
-      function addGraphValues(sensor) {
+      function addGraphValues(chart, sensor) {
           var ys = sensor.values;
           var colors = ['red', 'green', 'blue'];
           if (typeof graph == "undefined") {
               // Sensor graph
               var x = 0;
-              seriesData = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain([-180, 360]).nice()}});
+              seriesData = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain([-1, 1]).nice()}});
               graph = new Rickshaw.Graph( {
-                  element: document.querySelector("#chart"), 
+                  element: chart,
                   renderer: 'line',
-                  width: 300, 
+                  width: 300,
                   height: 200,
                   series: seriesData
               });
           } else {
+              _.each(ys, function (y, z) {
+                  var x = seriesData[z].data.length;
+                  seriesData[z].data.push({x: x, y: y})
+              });
+              graph.update();
           }
       }
-
 
       ws = connectWebsocket();
       function initCanvas() {
@@ -302,24 +317,15 @@
               });
               ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
           });
-
+          glassIdToNum = {};
 
           initCanvas();
           //$('#files').change(_.partial(handleFileSelect, sendImage));
       }
       $(main);
     </script>
+    <div id="glasses"></div>
     <div id="chart"></div> 
- 
-  <div class="ccontainer">
-  <div id="cube">
-    <figure class="front">1</figure>
-    <figure class="back">2</figure>
-    <figure class="right">3</figure>
-    <figure class="left">4</figure>
-    <figure class="top">5</figure>
-    <figure class="bottom">6</figure>
-  </div></div>
-</div>
+
   </body>
 </html>

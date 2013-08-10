@@ -29,6 +29,7 @@ type BorgOptions struct {
 	DataDelay float64 `json:"dataDelay"`
 	DataRemote bool `json:"dataRemote"`
 	DataLocal bool `json:"dataLocal"`
+	RavenDSN string `json:"ravenDSN"`
 }
 
 type BorgData struct {
@@ -37,12 +38,13 @@ type BorgData struct {
 	Action string `json:"action"`
 	Timestamp float64 `json:"timestamp"`
 	TimestampAck float64 `json:"timestampAck"`
+	GlassID string `json:"glassID"`
 	H []float64 `json:"H"`
 	Options *BorgOptions `json:"options"`
 	Say *string `json:"say"`
 }
 
-func WarpOverlay(wsSendChan chan *BorgData, image string, h []float64) {
+func WarpOverlay(wsSendChan chan *BorgData, image string, h []float64, glassID string) {
 	st := time.Now()
 	imageWarped, err := WarpImage(image, h, 360, 640)
 	if err != nil {
@@ -52,7 +54,7 @@ func WarpOverlay(wsSendChan chan *BorgData, image string, h []float64) {
 	fmt.Println(fmt.Sprintf("[%s][%f]", "WarpImage", float64(time.Now().Sub(st).Seconds())))
 	st = time.Now()
 	imageWarpedB64 := picarus.B64Enc(imageWarped)
-	wsSendChan <- &BorgData{Imageb64: &imageWarpedB64, Action: "setOverlay"}
+	wsSendChan <- &BorgData{Imageb64: &imageWarpedB64, Action: "setOverlay", GlassID: glassID}
 	fmt.Println(fmt.Sprintf("[%s][%f]", "SendImage", float64(time.Now().Sub(st).Seconds())))
 }
 
@@ -70,10 +72,15 @@ func BorgGlassHandler(c *websocket.Conn) {
 		fmt.Println(err)
 		return
 	}
-	if !hasFlagSingle(userId, "flags", "user_borg") {
+	flags, err := getUserFlags(userId, "flags")
+	if err != nil {
+		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
-	flags, err := getUserFlags(userId, "uflags")
+	if !hasFlag(flags, "user_borg") {
+		return
+	}
+	uflags, err := getUserFlags(userId, "uflags")
 	if err != nil {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
@@ -103,7 +110,13 @@ func BorgGlassHandler(c *websocket.Conn) {
 	// Option sender
 	go func() {
 		for {
-			flags, err = getUserFlags(userId, "uflags")
+			uflags, err = getUserFlags(userId, "uflags")
+			if err != nil {
+				fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
+				time.Sleep(time.Millisecond * 2000)
+				continue
+			}
+			flags, err = getUserFlags(userId, "flags")
 			if err != nil {
 				fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 				time.Sleep(time.Millisecond * 2000)
@@ -113,14 +126,17 @@ func BorgGlassHandler(c *websocket.Conn) {
 
 			// TODO: have it send this based on a subscription
 			sensors := []int{}
-			for _, flag := range flags {
+			for _, flag := range uflags {
 				ind := sensorLUT[flag]
 				if ind != 0 {
 					sensors = append(sensors, ind)
 				}
 			}
 			
-			opt := BorgOptions{DataDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(flags, "borg_data_local"), DataRemote: hasFlag(flags, "borg_data_server") || hasFlag(flags, "borg_data_serverdisk") || hasFlag(flags, "borg_data_web"), Sensors: sensors, Image: hasFlag(flags, "borg_image"), SensorResolution: .1}
+			opt := BorgOptions{DataDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1}
+			if hasFlag(flags, "debug") {
+				opt.RavenDSN = ravenDSN
+			}
 			fmt.Println(opt)
 			wsSendChan <- &BorgData{Action: "options", Options: &opt}
 			time.Sleep(time.Millisecond * 2000)
@@ -238,7 +254,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 				continue
 			}
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetOverlay", float64(time.Now().Sub(st).Seconds())))
-			WarpOverlay(wsSendChan, image, hFinal)
+			WarpOverlay(wsSendChan, image, hFinal, request.GlassID)
 			st = time.Now()
 			fmt.Println("Finished computing homography")
 			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
@@ -262,22 +278,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					fmt.Println(err)
 					continue
 				}
-				if (response.Action == "setMatchOverlay") {
-					hJS, err := getUserAttribute(userId, "match_h")
-					if err != nil {
-						fmt.Println(err)
-						continue
-					}
-					h := []float64{}
-					err = json.Unmarshal([]byte(hJS), &h)
-					if err != nil {
-						fmt.Println(err)
-						continue
-					}
-					WarpOverlay(wsSendChan, picarus.B64Dec(*response.Imageb64), h)
-				} else {
-					wsSendChan <- &response
-				}
+				wsSendChan <- &response
 			case error:
 				fmt.Printf("error: %v\n", n)
 				return
@@ -296,7 +297,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 		}
 		cnt += 1
 		fmt.Println(request.Action)
-		if (request.Action == "data" && hasFlag(flags, "borg_data_web")) {
+		if (request.Action == "data" && hasFlag(uflags, "borg_data_web")) {
 			requestJS, err := json.Marshal(request)
 			if err != nil {
 				fmt.Println(err)
@@ -305,20 +306,20 @@ func BorgGlassHandler(c *websocket.Conn) {
 			userPublish(userId, "borg_server_to_web", string(requestJS))
 		}
 		if request.Action == "data" && request.Imageb64 != nil {
-			if hasFlag(flags, "borg_serverdisk_image") {
+			if hasFlag(uflags, "borg_serverdisk_image") {
 				go func() {
 					WriteFile(fmt.Sprintf("borg-serverdisk-%s-%.5d.jpg", userId, cnt), picarus.B64Dec(*request.Imageb64))
 				}()
 			}
 			wsSendChan <- &BorgData{Action: "dataAck", TimestampAck: request.Timestamp}
-			if hasFlag(flags, "match_annotated") {
+			if hasFlag(uflags, "match_annotated") {
 				select {
 				case matchAnnotatedChan <- &request:
 				default:
 					fmt.Println("Image skipping match annotated, too slow...")
 				}
 			}
-			if hasFlag(flags, "match_memento_borg") {
+			if hasFlag(uflags, "match_memento_borg") {
 				select {
 				case matchMementoChan <- &request:
 				default:
@@ -391,14 +392,7 @@ func BorgWebHandler(c *websocket.Conn) {
 			}
 			userPublish(userId, "borg_web_to_server", string(requestJS))
 		} else if request.Action == "setMatchOverlay" {
-			//deleteUserAttribute(userId, "match_h")
-			//setUserAttribute(userId, "match_overlay", picarus.B64Dec(*request.Imageb64))
-			requestJS, err := json.Marshal(request)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			userPublish(userId, "borg_web_to_server", string(requestJS))
+			setUserAttribute(userId, "match_overlay", picarus.B64Dec(*request.Imageb64))
 		} else if request.Action == "setMatchImage" {
 			image := picarus.B64Dec(*request.Imageb64)
 			points, err := ImagePoints(image)
