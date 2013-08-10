@@ -13,7 +13,7 @@ import (
 
 
 type BorgSensor struct {
-	Timestamp int64 `json:"timestamp"`	
+	Timestamp float64 `json:"timestamp"`
 	Accuracy  int `json:"accuracy"`
 	Resolution  float32 `json:"resolution"`
 	MaximumRange float32 `json:"maximumRange"`
@@ -55,9 +55,13 @@ func WarpOverlay(wsSendChan chan *BorgData, image string, h []float64, glassID s
 	st = time.Now()
 	imageWarpedB64 := picarus.B64Enc(imageWarped)
 	wsSendChan <- &BorgData{Imageb64: &imageWarpedB64, Action: "setOverlay", GlassID: glassID}
-	fmt.Println(fmt.Sprintf("[%s][%f]", "SendImage", float64(time.Now().Sub(st).Seconds())))
+	fmt.Println(fmt.Sprintf("[%s][%f]", "SendImage", time.Now().Sub(st).Seconds()))
 }
 
+
+func CurTime() float64 {
+	return float64(time.Now().UnixNano()) / 1000000000.
+}
 
 func BorgGlassHandler(c *websocket.Conn) {
 	defer c.Close()
@@ -295,6 +299,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(err)
 			return
 		}
+		fmt.Println(fmt.Sprintf("Send Delay[%f] (not deskewed)", CurTime() - request.Timestamp))
 		cnt += 1
 		fmt.Println(request.Action)
 		if (request.Action == "data" && hasFlag(uflags, "borg_data_web")) {
@@ -311,7 +316,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					WriteFile(fmt.Sprintf("borg-serverdisk-%s-%.5d.jpg", userId, cnt), picarus.B64Dec(*request.Imageb64))
 				}()
 			}
-			wsSendChan <- &BorgData{Action: "dataAck", TimestampAck: request.Timestamp}
+			wsSendChan <- &BorgData{Action: "dataAck", TimestampAck: request.Timestamp, Timestamp: CurTime()}
 			if hasFlag(uflags, "match_annotated") {
 				select {
 				case matchAnnotatedChan <- &request:
