@@ -33,6 +33,9 @@ type BorgOptions struct {
 }
 
 type BorgData struct {
+	Tg0 float64 `json:"Tg0"` // See Hacking.md for details
+	Ts0 float64 `json:"Ts0"`
+	Tg1 float64 `json:"Tg1"`
 	Sensors []BorgSensor `json:"sensors"`
 	Imageb64 *string `json:"imageb64"`
 	Action string `json:"action"`
@@ -291,6 +294,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 	}()
 
 	// Data from glass loop
+	skew := 0.
+	delay := 0.
+	delayData := 0.
 	cnt := 0
 	for {
 		request := BorgData{}
@@ -302,33 +308,42 @@ func BorgGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Sprintf("Send Delay[%f] (not deskewed)", CurTime() - request.Timestamp))
 		cnt += 1
 		fmt.Println(request.Action)
-		if (request.Action == "data" && hasFlag(uflags, "borg_data_web")) {
-			requestJS, err := json.Marshal(request)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			userPublish(userId, "borg_server_to_web", string(requestJS))
+		if (request.Action == "pong") {
+			Ts1 := CurTime()
+			delay = .5 * (Ts1 - request.Ts0)
+			skew = request.Tg1 - Ts1 + delay
+			delayData = request.Ts0 + skew - request.Tg0
+			fmt.Println(fmt.Sprintf("Delay[%f] DataDelay[%f] Skew[%f]", delay, delayData, skew))
 		}
-		if request.Action == "data" && request.Imageb64 != nil {
-			if hasFlag(uflags, "borg_serverdisk_image") {
-				go func() {
-					WriteFile(fmt.Sprintf("borg-serverdisk-%s-%.5d.jpg", userId, cnt), picarus.B64Dec(*request.Imageb64))
-				}()
-			}
-			wsSendChan <- &BorgData{Action: "dataAck", TimestampAck: request.Timestamp, Timestamp: CurTime()}
-			if hasFlag(uflags, "match_annotated") {
-				select {
-				case matchAnnotatedChan <- &request:
-				default:
-					fmt.Println("Image skipping match annotated, too slow...")
+		if (request.Action == "data") {
+			wsSendChan <- &BorgData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
+			if hasFlag(uflags, "borg_data_web") {
+				requestJS, err := json.Marshal(request)
+				if err != nil {
+					fmt.Println(err)
+					return
 				}
+				userPublish(userId, "borg_server_to_web", string(requestJS))
 			}
-			if hasFlag(uflags, "match_memento_borg") {
-				select {
-				case matchMementoChan <- &request:
-				default:
-					fmt.Println("Image skipping match memento, too slow...")
+			if request.Imageb64 != nil {
+				if hasFlag(uflags, "borg_serverdisk_image") {
+					go func() {
+						WriteFile(fmt.Sprintf("borg-serverdisk-%s-%.5d.jpg", userId, cnt), picarus.B64Dec(*request.Imageb64))
+					}()
+				}
+				if hasFlag(uflags, "match_annotated") {
+					select {
+					case matchAnnotatedChan <- &request:
+					default:
+						fmt.Println("Image skipping match annotated, too slow...")
+					}
+				}
+				if hasFlag(uflags, "match_memento_borg") {
+					select {
+					case matchMementoChan <- &request:
+					default:
+						fmt.Println("Image skipping match memento, too slow...")
+					}
 				}
 			}
 		}
