@@ -40,7 +40,6 @@ type BorgData struct {
 	Imageb64 *string `json:"imageb64"`
 	Action string `json:"action"`
 	Timestamp float64 `json:"timestamp"`
-	TimestampAck float64 `json:"timestampAck"`
 	GlassID string `json:"glassID"`
 	H []float64 `json:"H"`
 	Options *BorgOptions `json:"options"`
@@ -96,8 +95,8 @@ func BorgGlassHandler(c *websocket.Conn) {
 	matchAnnotatedDelay := 0.
 	matchMementoDelay := 0.
 	wsSendChan := make(chan *BorgData, 1)
-	matchMementoChan := make(chan *BorgData, 1)
-	matchAnnotatedChan := make(chan *BorgData, 1)
+	matchMementoChan := make(chan *BorgData)
+	matchAnnotatedChan := make(chan *BorgData)
 	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
 	// Websocket sender
@@ -252,7 +251,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 				fmt.Println(err)
 				continue
 			}
-			setUserAttribute(userId, "match_h", string(hFinalJS))
 
 			st = time.Now()
 			image, err := getUserAttribute(userId, "match_overlay")
