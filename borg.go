@@ -225,6 +225,10 @@ func BorgGlassHandler(c *websocket.Conn) {
 			st = time.Now()
 			h, err := ImagePointsMatch(points0, points1)
 			if err != nil {
+			    curMatchAnnotatedDelay := time.Now().Sub(requestTime).Seconds()
+				if matchAnnotatedDelay < curMatchAnnotatedDelay {
+					matchAnnotatedDelay = curMatchAnnotatedDelay
+				}
 				fmt.Println("No match")
 				fmt.Println(err)
 				continue
