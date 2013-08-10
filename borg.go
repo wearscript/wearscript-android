@@ -316,10 +316,11 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(fmt.Sprintf("Tg0[%f] -> D0[%f] -> Ts0[%f]", request.Tg0, delayData, request.Ts0))
 			fmt.Println(fmt.Sprintf("Tg1[%f] <- D[%f] <- Ts0[%f]", request.Tg1, delay, request.Ts0))
 			fmt.Println(fmt.Sprintf("Tg1[%f] -> D[%f] -> Ts1[%f]", request.Tg1, delay, Ts1))
-			fmt.Println(fmt.Sprintf("Skew[%f] Deskewed times (server centric)", delay, delayData, skew))
-			fmt.Println(fmt.Sprintf("Tg0[%f] -> D0[%f] -> Ts0[%f]", request.Tg0 - skew, delayData, request.Ts0))
-			fmt.Println(fmt.Sprintf("Tg1[%f] <- D[%f] <- Ts0[%f]", request.Tg1 - skew, delay, request.Ts0))
-			fmt.Println(fmt.Sprintf("Tg1[%f] -> D[%f] -> Ts1[%f]", request.Tg1 - skew, delay, Ts1))
+			fmt.Println(fmt.Sprintf("Skew[%f] Deskewed times (server centric, origin at glass send)", delay, delayData, skew))
+			origin := request.Tg0 - skew
+			fmt.Println(fmt.Sprintf("Tg0[%f] -> D0[%f] -> Ts0[%f]", request.Tg0 - skew - origin, delayData, request.Ts0 - origin))
+			fmt.Println(fmt.Sprintf("Tg1[%f] <- D[%f] <- Ts0[%f]", request.Tg1 - skew - origin, delay, request.Ts0 - origin))
+			fmt.Println(fmt.Sprintf("Tg1[%f] -> D[%f] -> Ts1[%f]", request.Tg1 - skew - origin, delay, Ts1 - origin))
 		}
 		if (request.Action == "data") {
 			wsSendChan <- &BorgData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
