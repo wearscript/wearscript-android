@@ -207,16 +207,16 @@
 
       }
 
-    function render_Image
-      (image_data, div, success) {
-        var image_id = _.uniqueId('image_');
-        var canvas_id = _.uniqueId('canvas_');
-        var image_tag = $('<img>').css('visibility', 'hidden').css('display', 'none').attr('id', image_id);
-        image_tag.load(function () {
-            success(image_id, canvas_id);
-        });
-        div.append(image_tag.attr('src', image_data));
-    }
+      function render_image(image_data, div, success) {
+          var image_id = _.uniqueId('image_');
+          var canvas_id = _.uniqueId('canvas_');
+          var image_tag = $('<img>').css('visibility', 'hidden').css('display', 'none').attr('id', image_id);
+          image_tag.load(function () {
+              success(image_id, canvas_id);
+          });
+          div.append(image_tag.attr('src', image_data));
+      }
+
     function render_image_boxes(image_data, boxes, num_boxes, div) {
         render_image(image_data, div, function (image_id, canvas_id) {
             var h = $('#' + image_id).height();
