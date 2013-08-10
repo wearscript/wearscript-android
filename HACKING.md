@@ -17,11 +17,12 @@ Clock deskew and latency estimation
 * Server computes k = Tg - Ts (skew), D = D1 = D2  (delay, assuming last two equal), and data delay D0.
 * D = .5 * (Ts1 - Ts0), k = Tg1 - Ts1 + D, and D0 = Ts0 + k - tg0
 
-
-    Glass        Server
-    Tg0  - D0 -> Ts0
-    Tg1 <- D1 -  Ts0
-    Tg1 -  D2 -> Ts1
+```
+Glass        Server
+Tg0  - D0 -> Ts0
+Tg1 <- D1 -  Ts0
+Tg1 -  D2 -> Ts1
+```
 
 Notification Clients
 --------------------
