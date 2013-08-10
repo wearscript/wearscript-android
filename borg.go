@@ -305,7 +305,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println(fmt.Sprintf("Send Delay[%f] (not deskewed)", CurTime() - request.Timestamp))
+		fmt.Println(fmt.Sprintf("Send Delay[%f] (not deskewed)", CurTime() - request.Tg0))
 		cnt += 1
 		fmt.Println(request.Action)
 		if (request.Action == "pong") {
