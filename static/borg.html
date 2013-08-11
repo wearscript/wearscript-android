@@ -24,6 +24,9 @@
 
           <div id="canvas_images" \>
 
+            <div id="matchImage"></div>
+            <div id="matchSensor"></div>
+
         <div class="row">
           <h1>Simulate</h1>
           <select>
@@ -46,6 +49,11 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
 
     <script type="text/javascript">
+      function sensorLatest(sensors, type) {
+          return _.last(_.filter(sensors, function (x) {
+              return x.type == type;
+          }));
+      }
       function connectWebsocket() {
           var ws = new WebSocket("ws://api3.picar.us:16001/borg/web");
           var scale = (3.14159265359 / 2) / 360;
@@ -71,6 +79,8 @@
                           var latestImage = latestImages[response.glassID];
                           if (_.isUndefined(latestImage))
                               return;
+                          $('#matchImage').attr('src', 'data:image/jpeg;base64,' + latestImage);
+                          $('#matchSensor').html(JSON.stringify(sensorLatest(latestSensors[response.glassID], 11)));
                           render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
                               var img = document.getElementById(image_id);
                               context.drawImage(img, 0, 0);
@@ -85,6 +95,7 @@
                       $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response.imageb64);
                   }
                   if (_.has(response, 'sensors')) {
+                      latestSensors[response.glassID] = response.sensors;
                       response_sensor = response;
                       _.each(response.sensors, function (x) {
                           if (x.type == 11) {
@@ -106,7 +117,7 @@
                       $('#matches').append($('<img>').attr('src', 'data:image/jpeg;base64,' + response.imageb64));
                   }
                   if (_.has(response, 'sensors')) {
-                      $('#matches').append(JSON.stringify(_.last(response.sensors)));
+                      $('#matches').append(JSON.stringify(sensorLatest(response.sensors, 11)));
                   }
                   if (_.has(response, 'H')) {
                       $('#matches').append(JSON.stringify(response.H));
@@ -331,6 +342,7 @@
       function main () {
           glassIdToNum = {};
           latestImages = {};
+          latestSensors = {};
           initCanvas();
           //$('#files').change(_.partial(handleFileSelect, sendImage));
       }
