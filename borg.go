@@ -100,6 +100,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 	matchAnnotatedChan := make(chan *BorgData)
 	annotationPoints := ""
 	annotationOverlay := ""
+	hFlip := []float64{-1., 0., 0., 0., -1., 0., 0., 0., 1.}
 	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
 	// Websocket sender
@@ -208,9 +209,30 @@ func BorgGlassHandler(c *websocket.Conn) {
 			if annotationPoints == "" || annotationOverlay == "" {
 				continue
 			}
+			image := picarus.B64Dec(*(*request).Imageb64)
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetMatchFeat", float64(time.Now().Sub(st).Seconds())))
+			flipImage := false
+			if hasFlag(uflags, "match_annotated_flipper") {
+				for _, v := range request.Sensors {
+					if v.Type == 9 && v.Values[1] < -5 {
+						flipImage = true
+						break
+					}
+				}
+				if flipImage {
+					imageWarped, err := WarpImage(image, hFlip, 360, 640)
+					if err != nil {
+						LogPrintf("borg: match_annotated_flipper warp")
+						flipImage = false
+					} else {
+						fmt.Println("Image flipped")
+						image = imageWarped
+					}
+				}
+			}
+
 			st = time.Now()
-			points1, err := ImagePoints(picarus.B64Dec(*(*request).Imageb64))
+			points1, err := ImagePoints(image)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -226,6 +248,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 				fmt.Println("No match")
 				fmt.Println(err)
 				continue
+			}
+			if flipImage {
+				h = HMult(h, hFlip)
 			}
 			fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
 			st = time.Now()
