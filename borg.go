@@ -32,6 +32,8 @@ type BorgOptions struct {
 	PreviewWarp  bool `json:"previewWarp"`
 	Flicker  bool `json:"flicker"`
 	RavenDSN string `json:"ravenDSN"`
+	HSmallToBig []float64 `json:"HSmallToBig"`
+	HBigToGlass []float64 `json:"HBigToGlass"`
 }
 
 type BorgData struct {
@@ -44,8 +46,6 @@ type BorgData struct {
 	Timestamp float64 `json:"timestamp"`
 	GlassID string `json:"glassID"`
 	H []float64 `json:"H"`
-	HSmallToBig []float64 `json:"HSmallToBig"`
-	HBigToGlass []float64 `json:"HBigToGlass"`
 	Options *BorgOptions `json:"options"`
 	Say *string `json:"say"`
 }
@@ -105,6 +105,8 @@ func BorgGlassHandler(c *websocket.Conn) {
 	annotationPoints := ""
 	annotationOverlay := ""
 	hFlip := []float64{-1., 0., float64(borgWidth), 0., -1., float64(borgHeight), 0., 0., 1.}
+	hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
+	hBigToGlass := []float64{1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1.0}
 	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
 	// Websocket sender
@@ -150,7 +152,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					sensors = append(sensors, ind)
 				}
 			}
-			opt := BorgOptions{DataDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker")}
+			opt := BorgOptions{DataDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
 			if hasFlag(flags, "debug") {
 				opt.RavenDSN = ravenDSN
 			}
@@ -261,10 +263,8 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println("Match")
 			fmt.Println("hMatch01")
 			fmt.Println(h)
-			hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
 			fmt.Println("hSmallToBig")
 			fmt.Println(hSmallToBig)
-			hBigToGlass := []float64{1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1.0}
 			fmt.Println("hBigToGlass")
 			fmt.Println(hBigToGlass)
 			hFinal := HMult(HMult(hBigToGlass, hSmallToBig), h)
@@ -272,7 +272,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(hFinal)
 			fmt.Println(fmt.Sprintf("[%s][%f]", "Matrices", float64(time.Now().Sub(st).Seconds())))
 			if hasFlag(uflags, "match_annotated_web") {
-				matchJS, err := json.Marshal(BorgData{Action: "match", Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass})
+				matchJS, err := json.Marshal(BorgData{Action: "match", Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, Options: &BorgOptions{HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}})
 				if err != nil {
 					fmt.Println(err)
 				} else {
