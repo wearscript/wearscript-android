@@ -59,7 +59,7 @@
           }
       }
       function main () {
-          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_annotated_web', 'match_annotated_flipper', 'match_memento_glog', 'borg_data_local', 'borg_data_serverdisk', 'borg_data_server', 'borg_data_web', 'borg_image', 'borg_sensor_accelerometer', 'borg_sensor_magneticfield', 'borg_sensor_orientation', 'borg_sensor_gyroscope', 'borg_sensor_light', 'borg_sensor_gravity', 'borg_sensor_linearacceleration', 'borg_sensor_rotationvector', 'warp', 'predict', 'location_flickr', 'location_streetview']};
+          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_annotated_web', 'match_annotated_flipper', 'match_memento_glog', 'borg_data_local', 'borg_data_serverdisk', 'borg_data_server', 'borg_data_web', 'borg_image', 'borg_sensor_accelerometer', 'borg_sensor_magneticfield', 'borg_sensor_orientation', 'borg_sensor_gyroscope', 'borg_sensor_light', 'borg_sensor_gravity', 'borg_sensor_linearacceleration', 'borg_sensor_rotationvector', 'warp', 'predict', 'location_flickr', 'location_streetview', 'glass_flicker', 'glass_preview_warp']};
 
           $('#switches').html(Mustache.render('{{#names}}<div class="control-group"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
           $('.make-switch').bootstrapSwitch();
