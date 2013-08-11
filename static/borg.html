@@ -13,7 +13,7 @@
     <div class="container">
         <div class="row">
           <img id="latest-image" \>
-          <button id="matchImage" class="btn btn-large btn-block btn-primary" type="button">Match Image</button>
+          
         </div>
         <div class="row">
           <canvas id="canvas" width="640" height="360">
@@ -63,15 +63,29 @@
               if (response.action == "data") {
                   if (!_.has(glassIdToNum, response.glassID)) {
                       var glassNum = _.uniqueId('glass-');
-                      var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
+                      var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div><button class="matchButton" class="btn btn-primary" type="button">Match Image</button>'
                       $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="chart"></div><div class="sensors"></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
                       response.glassID
+                      $('#' + glassIdToNum[response.glassID]).find('.matchButton').click(function () {
+                          var $canvas = $('#canvas')[0];
+                          var context = $canvas.getContext('2d');
+                          context.clearRect(0, 0, $canvas.width, $canvas.height);
+                          $('#canvas_images').html('');
+                          var latestImage = latestImages[response.glassID];
+                          if (_.isUndefined(latestImage))
+                              return;
+                          render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
+                              var img = document.getElementById(image_id);
+                              context.drawImage(img, 0, 0);
+                          });
+                          ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
+                      });
                       glassIdToNum[response.glassID] = glassNum;
                   }
                   $glass = $('#' + glassIdToNum[response.glassID]);
                   if (_.has(response, 'imageb64')) {
-                      latestImage = response.imageb64;
-                      $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + latestImage);
+                      latestImages[response.glassID] = response.imageb64;
+                      $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response.imageb64);
                   }
                   if (_.has(response, 'sensors')) {
                       response_sensor = response;
@@ -306,19 +320,8 @@
           });
       }
       function main () {
-          $('#matchImage').click(function () {
-              var $canvas = $('#canvas')[0];
-              var context = $canvas.getContext('2d');
-              context.clearRect(0, 0, $canvas.width, $canvas.height);
-              $('#canvas_images').html('');
-              render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
-                  var img = document.getElementById(image_id);
-                  context.drawImage(img, 0, 0);
-              });
-              ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
-          });
           glassIdToNum = {};
-
+          latestImages = {};
           initCanvas();
           //$('#files').change(_.partial(handleFileSelect, sendImage));
       }
