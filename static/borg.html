@@ -90,7 +90,7 @@
                               
                               // rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
                               rotate_cuber($glass.find('.cube'), getRotationMatrixFromVector(x.values));
-                              addGraphValues($glass.find('.chart'), x);
+                              addGraphValues($glass.find('.chart')[0], x);
                           }
                           if ($glass.find('.sensor_' + x.type).length == 0) {
                               $glass.find('.sensors').append($('<div>').attr('class', 'sensor_' + x.type));
