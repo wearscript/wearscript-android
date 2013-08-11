@@ -30,6 +30,7 @@ type BorgOptions struct {
 	DataRemote bool `json:"dataRemote"`
 	DataLocal bool `json:"dataLocal"`
 	PreviewWarp  bool `json:"previewWarp"`
+	Overlay  bool `json:"overlay"`
 	Flicker  bool `json:"flicker"`
 	RavenDSN string `json:"ravenDSN"`
 	HSmallToBig []float64 `json:"HSmallToBig"`
@@ -152,7 +153,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					sensors = append(sensors, ind)
 				}
 			}
-			opt := BorgOptions{DataDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
+			opt := BorgOptions{DataDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
 			if hasFlag(flags, "debug") {
 				opt.RavenDSN = ravenDSN
 			}
