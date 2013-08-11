@@ -20,13 +20,14 @@
         <img id="matchImage" \>
         <div id="matchSensor"></div>
       </div>
-      <div class="row" id="matches">
-        <h1>Matches</h1>
-      </div>
       <div id="glasses">
         <h1>Glasses</h1>
       </div>
       <div id="canvas_images"></div>
+      <div class="row">
+        <h1>Matches</h1>
+        <div id="matches"></div>
+      </div>
     </div> <!-- /container -->
 
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
@@ -69,6 +70,7 @@
                               return;
                           $('#matchImage').attr('src', 'data:image/jpeg;base64,' + latestImage);
                           $('#matchSensor').html(JSON.stringify(sensorLatest(latestSensors[response.glassID], 11)));
+                          $('#matches').html('');
                           render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
                               var img = document.getElementById(image_id);
                               context.drawImage(img, 0, 0);
