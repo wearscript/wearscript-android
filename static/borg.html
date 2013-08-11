@@ -66,7 +66,7 @@
                       var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
                       $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="chart"></div><div class="sensors"></div><button class="matchButton btn btn-primary" type="button">Match Image</button>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
                       response.glassID
-                      $('#' + glassIdToNum[response.glassID]).find('.matchButton').click(function () {
+                      $('#' + glassNum).find('.matchButton').click(function () {
                           var $canvas = $('#canvas')[0];
                           var context = $canvas.getContext('2d');
                           context.clearRect(0, 0, $canvas.width, $canvas.height);
