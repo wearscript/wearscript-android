@@ -92,11 +92,14 @@ func BorgGlassHandler(c *websocket.Conn) {
 		return
 	}
 	// Initialize delays
+	die := false
 	matchAnnotatedDelay := 0.
 	matchMementoDelay := 0.
 	wsSendChan := make(chan *BorgData, 1)
 	matchMementoChan := make(chan *BorgData)
 	matchAnnotatedChan := make(chan *BorgData)
+	annotationPoints := ""
+	annotationOverlay := ""
 	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
 	// Websocket sender
@@ -104,6 +107,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 		for {
 			request, ok := <-wsSendChan
 			if !ok {
+				die = true
 				break
 			}
 			err = websocket.JSON.Send(c, *request)
@@ -116,6 +120,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 	// Option sender
 	go func() {
 		for {
+			if die {
+				break
+			}
 			uflags, err = getUserFlags(userId, "uflags")
 			if err != nil {
 				fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
@@ -145,6 +152,16 @@ func BorgGlassHandler(c *websocket.Conn) {
 			}
 			fmt.Println(opt)
 			wsSendChan <- &BorgData{Action: "options", Options: &opt}
+			annotationPoints, err = getUserAttribute(userId, "match_features")
+			if err != nil {
+				fmt.Println(err)
+				annotationPoints = ""
+			}
+			annotationOverlay, err = getUserAttribute(userId, "match_overlay")
+			if err != nil {
+				fmt.Println(err)
+				annotationOverlay = ""
+			}
 			time.Sleep(time.Millisecond * 2000)
 		}
 	}()
@@ -161,17 +178,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 		for {
 			request, ok := <-matchMementoChan
 			if !ok {break}
-			/*
-			for {
-				select {
-				case request2, ok :=  <- matchMementoChan:
-					if ok {
-						request = request2
-					}
-				default:
-					break
-				}
-			}*/
 			requestTime := time.Now()
 			points1, err := ImagePoints(picarus.B64Dec(*(*request).Imageb64))
 			if err != nil {
@@ -197,21 +203,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 		for {
 			request, ok := <-matchAnnotatedChan
 			if !ok {break}
-			/*for {
-				select {
-				case request2, ok :=  <- matchAnnotatedChan:
-					if ok {
-						request = request2
-					}
-				default:
-					break
-				}
-			}*/
 			requestTime := time.Now()
 			st := time.Now()
-			points0, err := getUserAttribute(userId, "match_features")
-			if err != nil {
-				fmt.Println(err)
+			if annotationPoints == "" || annotationOverlay == "" {
 				continue
 			}
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetMatchFeat", float64(time.Now().Sub(st).Seconds())))
@@ -223,7 +217,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			}
 			fmt.Println(fmt.Sprintf("[%s][%f]", "ComputePoints", float64(time.Now().Sub(st).Seconds())))
 			st = time.Now()
-			h, err := ImagePointsMatch(points0, points1)
+			h, err := ImagePointsMatch(annotationPoints, points1)
 			if err != nil {
 			    curMatchAnnotatedDelay := time.Now().Sub(requestTime).Seconds()
 				if matchAnnotatedDelay < curMatchAnnotatedDelay {
@@ -257,13 +251,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 			}*/
 
 			st = time.Now()
-			image, err := getUserAttribute(userId, "match_overlay")
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
+
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetOverlay", float64(time.Now().Sub(st).Seconds())))
-			WarpOverlay(wsSendChan, image, hFinal, request.GlassID)
+			WarpOverlay(wsSendChan, annotationOverlay, hFinal, request.GlassID)
 			st = time.Now()
 			fmt.Println("Finished computing homography")
 			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
@@ -278,6 +268,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 			return
 		}
 		for {
+			if die {
+				break
+			}
 			switch n := psc.Receive().(type) {
 			case redis.Message:
 				fmt.Printf("Message: %s\n", n.Channel)
@@ -289,8 +282,9 @@ func BorgGlassHandler(c *websocket.Conn) {
 				}
 				wsSendChan <- &response
 			case error:
+				die = true
 				fmt.Printf("error: %v\n", n)
-				return
+				break
 			}
 		}
 	}()
@@ -305,7 +299,11 @@ func BorgGlassHandler(c *websocket.Conn) {
 		err := websocket.JSON.Receive(c, &request)
 		if err != nil {
 			fmt.Println(err)
+			die = true
 			return
+		}
+		if die {
+			break
 		}
 		fmt.Println(fmt.Sprintf("Send Delay[%f] (not deskewed)", CurTime() - request.Tg0))
 		cnt += 1
