@@ -108,7 +108,7 @@
                       $('#matches').append(JSON.stringify(sensorLatest(response.sensors, 11)));
                   }
                   if (_.has(response, 'H')) {
-                      $('#matches').append(JSON.stringify(response.H));
+                      $('#matches').append(JSON.stringify(_.omit(response, ['sensors', 'imageb64'])));
                   }
               }
           }

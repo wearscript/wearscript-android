@@ -42,6 +42,8 @@ type BorgData struct {
 	Timestamp float64 `json:"timestamp"`
 	GlassID string `json:"glassID"`
 	H []float64 `json:"H"`
+	HSmallToBig []float64 `json:"HSmallToBig"`
+	HBigToGlass []float64 `json:"HBigToGlass"`
 	Options *BorgOptions `json:"options"`
 	Say *string `json:"say"`
 }
@@ -269,7 +271,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(hFinal)
 			fmt.Println(fmt.Sprintf("[%s][%f]", "Matrices", float64(time.Now().Sub(st).Seconds())))
 			if hasFlag(uflags, "match_annotated_web") {
-				matchJS, err := json.Marshal(BorgData{Action: "match", Imageb64: (*request).Imageb64, H: hFinal, Sensors: (*request).Sensors})
+				matchJS, err := json.Marshal(BorgData{Action: "match", Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass})
 				if err != nil {
 					fmt.Println(err)
 				} else {
