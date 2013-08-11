@@ -268,12 +268,14 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println("hFinal")
 			fmt.Println(hFinal)
 			fmt.Println(fmt.Sprintf("[%s][%f]", "Matrices", float64(time.Now().Sub(st).Seconds())))
-			/*hFinalJS, err := json.Marshal(hFinal)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}*/
-
+			if hasFlag(uflags, "match_annotated_web") {
+				matchJS, err := json.Marshal(BorgData{Action: "match", Imageb64: (*request).Imageb64, H: hFinal, Sensors: (*request).Sensors})
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					userPublish(userId, "borg_server_to_web", string(matchJS))
+				}
+			}
 			st = time.Now()
 
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetOverlay", float64(time.Now().Sub(st).Seconds())))

@@ -18,8 +18,8 @@
         <div class="row">
           <canvas id="canvas" width="640" height="360">
         </div>
-        <div class="row">
-          <div id="sensors" \>
+        <div class="row" id="matches">
+          
         </div>
 
           <div id="canvas_images" \>
@@ -51,9 +51,6 @@
           var scale = (3.14159265359 / 2) / 360;
           var shift = 3.14159265359 / 4;
           ws.onopen = function () {
-              _.each(_.range(0, 12), function (x) {
-                  $('#sensors').append($('<div>').attr('id', 'sensor_' + x));
-              });
           }
           ws.onclose = function () {
 
@@ -101,6 +98,18 @@
                           }
                           $glass.find('.sensor_' + x.type).html(_.escape(JSON.stringify(x)));
                       });
+                  }
+              }
+              if (response.action == 'match') {
+                  response_match = response;
+                  if (_.has(response, 'imageb64')) {
+                      $('#matches').append($('<img>').attr('src', 'data:image/jpeg;base64,' + response.imageb64));
+                  }
+                  if (_.has(response, 'sensors')) {
+                      $('#matches').append(JSON.stringify(_.last(response.sensors)));
+                  }
+                  if (_.has(response, 'H')) {
+                      $('#matches').append(JSON.stringify(response.H));
                   }
               }
           }
