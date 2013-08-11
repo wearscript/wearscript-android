@@ -100,7 +100,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 	matchAnnotatedChan := make(chan *BorgData)
 	annotationPoints := ""
 	annotationOverlay := ""
-	hFlip := []float64{-1., 0., 0., 0., -1., 0., 0., 0., 1.}
+	hFlip := []float64{-1., 0., float64(borgWidth), 0., -1., float64(borgHeight), 0., 0., 1.}
 	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
 	// Websocket sender
