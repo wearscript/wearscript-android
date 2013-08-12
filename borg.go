@@ -65,7 +65,6 @@ func WarpOverlay(wsSendChan chan *BorgData, image string, h []float64, glassID s
 	fmt.Println(fmt.Sprintf("[%s][%f]", "SendImage", time.Now().Sub(st).Seconds()))
 }
 
-
 func CurTime() float64 {
 	return float64(time.Now().UnixNano()) / 1000000000.
 }
@@ -107,9 +106,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 	annotationOverlay := ""
 	hFlip := []float64{-1., 0., float64(borgWidth), 0., -1., float64(borgHeight), 0., 0., 1.}
 	hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
-	//hBigToGlass := []float64{1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1.0}
-	//hBigToGlass := []float64{1.4092356580416736, -0.09150880896374515, -1225.59578021323, 0.013652721354367538, 1.3550325944209505, -498.64858156657164, -6.329521675864407e-05, -0.00012284717238408507, 1.0}
-	//hBigToGlass := []float64{1.2909882114646825, -0.07562274042052525, -1034.5839084445756, -0.012140256090372874, 1.2990074016698907, -491.41328602611065, -6.990258847758109e-05, -0.00012719547419664265, 1.0}
 	hBigToGlass := []float64{1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0}
 	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
@@ -239,7 +235,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 					}
 				}
 			}
-
 			st = time.Now()
 			points1, err := ImagePoints(image)
 			if err != nil {
@@ -262,19 +257,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 				h = HMult(hFlip, h)
 			}
 			fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
-			st = time.Now()
-			// 
-			fmt.Println("Match")
-			fmt.Println("hMatch01")
-			fmt.Println(h)
-			fmt.Println("hSmallToBig")
-			fmt.Println(hSmallToBig)
-			fmt.Println("hBigToGlass")
-			fmt.Println(hBigToGlass)
-			hFinal := HMult(HMult(hBigToGlass, hSmallToBig), h)
-			fmt.Println("hFinal")
-			fmt.Println(hFinal)
-			fmt.Println(fmt.Sprintf("[%s][%f]", "Matrices", float64(time.Now().Sub(st).Seconds())))
 			if hasFlag(uflags, "match_annotated_web") {
 				matchJS, err := json.Marshal(BorgData{Action: "match", Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, Options: &BorgOptions{HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}})
 				if err != nil {
@@ -283,11 +265,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					userPublish(userId, "borg_server_to_web", string(matchJS))
 				}
 			}
-			st = time.Now()
-
-			fmt.Println(fmt.Sprintf("[%s][%f]", "GetOverlay", float64(time.Now().Sub(st).Seconds())))
-			WarpOverlay(wsSendChan, annotationOverlay, hFinal, request.GlassID)
-			st = time.Now()
+			wsSendChan <- &BorgData{H: &h, Action: "setOverlayH", GlassID: glassID}
 			fmt.Println("Finished computing homography")
 			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
 		}
