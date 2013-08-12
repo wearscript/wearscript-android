@@ -107,7 +107,8 @@ func BorgGlassHandler(c *websocket.Conn) {
 	annotationOverlay := ""
 	hFlip := []float64{-1., 0., float64(borgWidth), 0., -1., float64(borgHeight), 0., 0., 1.}
 	hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
-	hBigToGlass := []float64{1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1.0}
+	//hBigToGlass := []float64{1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1.0}
+	hBigToGlass := []float64{1.4092356580416736, -0.09150880896374515, -1225.59578021323, 0.013652721354367538, 1.3550325944209505, -498.64858156657164, -6.329521675864407e-05, -0.00012284717238408507, 1.0}
 	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
 	// Websocket sender
