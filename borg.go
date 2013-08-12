@@ -416,17 +416,14 @@ func BorgWebHandler(c *websocket.Conn) {
 			return
 		}
 		fmt.Println(request.Action)
+		requestJS, err := json.Marshal(request)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		userPublish(userId, "borg_web_to_server", string(requestJS))
 		if request.Action == "setOverlay" {
-			requestJS, err := json.Marshal(request)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
 			deleteUserAttribute(userId, "match_features")
-			userPublish(userId, "borg_web_to_server", string(requestJS))
-		} else if request.Action == "setMatchOverlay" {
-			setUserAttribute(userId, "match_overlay", picarus.B64Dec(*request.Imageb64))
-			// TODO: Send
 		} else if request.Action == "setMatchImage" {
 			image := picarus.B64Dec(*request.Imageb64)
 			points, err := ImagePoints(image)
@@ -435,8 +432,6 @@ func BorgWebHandler(c *websocket.Conn) {
 				continue
 			}
 			setUserAttribute(userId, "match_features", points)
-			// TODO: Send
-			fmt.Println("Finished setting match image")
 		}
 	}
 }

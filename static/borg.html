@@ -146,7 +146,7 @@
           var out = {action: 'setOverlay', imageb64: imageb64};
           if (!_.isUndefined(glassID))
               out['glassID'] = glassID;
-          ws.send(JSON.stringify());
+          ws.send(JSON.stringify(out));
       }
       ws = connectWebsocket();
       function initCanvas() {
