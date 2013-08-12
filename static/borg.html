@@ -76,6 +76,7 @@
                               context.drawImage(img, 0, 0);
                           });
                           ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
+                          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: latestImage}));
                       });
                       glassIdToNum[response.glassID] = glassNum;
                   }
@@ -231,7 +232,7 @@
                   this.drawing = false;
                   var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
                   $('#canvasMirror').attr('src', datauri);
-                  ws.send(JSON.stringify({action: 'setMatchOverlay', overlayb64: datauri.split(',')[1]}));
+                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1]}));
               }
           };
 
