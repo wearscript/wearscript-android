@@ -259,7 +259,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					userPublish(userId, "borg_server_to_web", string(matchJS))
 				}
 			}
-			wsSendChan <- &BorgData{H: &h, Action: "setOverlayH", GlassID: glassID}
+			wsSendChan <- &BorgData{H: h, Action: "setOverlayH"}
 			fmt.Println("Finished computing homography")
 			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
 		}
