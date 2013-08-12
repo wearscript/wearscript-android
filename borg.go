@@ -103,7 +103,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 	matchMementoChan := make(chan *BorgData)
 	matchAnnotatedChan := make(chan *BorgData)
 	annotationPoints := ""
-	annotationOverlay := ""
 	hFlip := []float64{-1., 0., float64(borgWidth), 0., -1., float64(borgHeight), 0., 0., 1.}
 	hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
 	hBigToGlass := []float64{1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0}
@@ -163,11 +162,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 				fmt.Println(err)
 				annotationPoints = ""
 			}
-			annotationOverlay, err = getUserAttribute(userId, "match_overlay")
-			if err != nil {
-				fmt.Println(err)
-				annotationOverlay = ""
-			}
 			time.Sleep(time.Millisecond * 2000)
 		}
 	}()
@@ -211,7 +205,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			if !ok {break}
 			requestTime := time.Now()
 			st := time.Now()
-			if annotationPoints == "" || annotationOverlay == "" {
+			if annotationPoints == "" {
 				continue
 			}
 			image := picarus.B64Dec(*(*request).Imageb64)
@@ -428,9 +422,11 @@ func BorgWebHandler(c *websocket.Conn) {
 				fmt.Println(err)
 				continue
 			}
+			deleteUserAttribute(userId, "match_features")
 			userPublish(userId, "borg_web_to_server", string(requestJS))
 		} else if request.Action == "setMatchOverlay" {
 			setUserAttribute(userId, "match_overlay", picarus.B64Dec(*request.Imageb64))
+			// TODO: Send
 		} else if request.Action == "setMatchImage" {
 			image := picarus.B64Dec(*request.Imageb64)
 			points, err := ImagePoints(image)
@@ -439,7 +435,7 @@ func BorgWebHandler(c *websocket.Conn) {
 				continue
 			}
 			setUserAttribute(userId, "match_features", points)
-			setUserAttribute(userId, "match_overlay", image)
+			// TODO: Send
 			fmt.Println("Finished setting match image")
 		}
 	}

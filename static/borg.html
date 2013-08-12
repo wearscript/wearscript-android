@@ -19,7 +19,6 @@
         <h1>Match Image/sensor</h1>
         <img id="matchImage" \>
         <div id="matchSensor"></div>
-        <input type="file" id="files" />
       </div>
       <div id="glasses">
         <h1>Glasses</h1>
@@ -143,6 +142,12 @@
           }
       }
 
+      function setOverlay(imageb64, glassID) {
+          var out = {action: 'setOverlay', imageb64: imageb64};
+          if (!_.isUndefined(glassID))
+              out['glassID'] = glassID;
+          ws.send(JSON.stringify());
+      }
       ws = connectWebsocket();
       function initCanvas() {
           var $canvas = $('#canvas')[0];
@@ -335,7 +340,6 @@
           latestImages = {};
           latestSensors = {};
           initCanvas();
-          //$('#files').change(_.partial(handleFileSelect, sendImage));
       }
       $(main);
     </script>
