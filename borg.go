@@ -260,6 +260,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					userPublish(userId, "borg_server_to_web", string(matchJS))
 				}
 			}
+			fmt.Println(fmt.Sprintf("Match delay: %f", CurTime() - request.Timestamp))
 			wsSendChan <- &BorgData{H: h, Action: "setMatchH"}
 			fmt.Println("Finished computing homography")
 			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
@@ -329,6 +330,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(fmt.Sprintf("Tg1[%f] -> D[%f] -> Ts1[%f]", request.Tg1 - skew - origin, delay, Ts1 - origin))
 		}
 		if (request.Action == "data") {
+			request.Timestamp = request.Tg0 - skew
 			wsSendChan <- &BorgData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
 			if hasFlag(uflags, "borg_data_web") {
 				requestJS, err := json.Marshal(request)
