@@ -22,11 +22,19 @@ type BorgSensor struct {
 	Values []float32 `json:"values"`
 }
 
+type BorgAnnotation struct {
+	Timestamp float64 `json:"timestamp"`
+	Name string `json:"name"`
+	Polarity bool `json:"polarity"`
+}
+
+
 type BorgOptions struct {
 	Image bool `json:"image"`
 	Sensors []int `json:"sensors"`
+	ImageResolution float64 `json:"imageResolution"`
 	SensorResolution float64 `json:"sensorResolution"`
-	DataDelay float64 `json:"dataDelay"`
+	SensorDelay float64 `json:"sensorDelay"`
 	DataRemote bool `json:"dataRemote"`
 	DataLocal bool `json:"dataLocal"`
 	PreviewWarp  bool `json:"previewWarp"`
@@ -39,17 +47,17 @@ type BorgOptions struct {
 }
 
 type BorgData struct {
-	Tg0 float64 `json:"Tg0"` // See Hacking.md for details
-	Ts0 float64 `json:"Ts0"`
-	Tg1 float64 `json:"Tg1"`
+	Tg0 float64 `json:"Tg0,omitempty"` // See Hacking.md for details
+	Ts0 float64 `json:"Ts0,omitempty"`
+	Tg1 float64 `json:"Tg1,omitempty"`
 	Sensors []BorgSensor `json:"sensors"`
-	Imageb64 *string `json:"imageb64"`
-	Action string `json:"action"`
-	Timestamp float64 `json:"timestamp"`
-	GlassID string `json:"glassID"`
-	H []float64 `json:"H"`
-	Options *BorgOptions `json:"options"`
-	Say *string `json:"say"`
+	Imageb64 *string `json:"imageb64,omitempty"`
+	Action string `json:"action,omitempty"`
+	Timestamp float64 `json:"timestamp,omitempty"`
+	GlassID string `json:"glassID,omitempty"`
+	H []float64 `json:"H,omitempty"`
+	Options *BorgOptions `json:"options,omitempty"`
+	Say *string `json:"say,omitempty"`
 }
 
 func WarpOverlay(wsSendChan chan *BorgData, image string, h []float64, glassID string) {
@@ -152,7 +160,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 					sensors = append(sensors, ind)
 				}
 			}
-			opt := BorgOptions{DataDelay: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
+			opt := BorgOptions{ImageResolution: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, SensorDelay: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
 			if hasFlag(flags, "debug") {
 				opt.RavenDSN = ravenDSN
 			}
@@ -213,6 +221,8 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetMatchFeat", float64(time.Now().Sub(st).Seconds())))
 			flipImage := false
 			if hasFlag(uflags, "match_annotated_flipper") {
+				// TODO: Need to save the last sensor values to make this work
+				// now that it is sparse
 				for _, v := range request.Sensors {
 					if v.Type == 9 && v.Values[1] < -5 {
 						flipImage = true
@@ -331,7 +341,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 		}
 		if (request.Action == "data") {
 			request.Timestamp = request.Tg0 - skew
-			wsSendChan <- &BorgData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
 			if hasFlag(uflags, "borg_data_web") {
 				requestJS, err := json.Marshal(request)
 				if err != nil {
@@ -341,6 +350,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 				userPublish(userId, "borg_server_to_web", string(requestJS))
 			}
 			if request.Imageb64 != nil {
+				wsSendChan <- &BorgData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
 				if hasFlag(uflags, "borg_serverdisk_image") {
 					go func() {
 						WriteFile(fmt.Sprintf("borg-serverdisk-%s-%.5d.jpg", userId, cnt), picarus.B64Dec(*request.Imageb64))

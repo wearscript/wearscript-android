@@ -56,18 +56,25 @@ func setupUser(r *http.Request, client *http.Client, userId string) {
 	c = &mirror.Contact{
 		Id:          "OpenGlass",
 		DisplayName: "OpenGlass",
-		ImageUrls:   []string{fullUrl + "/static/logo.jpg"},
+		ImageUrls:   []string{fullUrl + "/static/oglogo.png"},
 	}
 	m.Contacts.Insert(c).Do()
+
+	menuItems := []*mirror.MenuItem{&mirror.MenuItem{Action: "REPLY"}, &mirror.MenuItem{Action: "TOGGLE_PINNED"}}
+	for _, eventName := range eventNames {
+		menuItems = append(menuItems, &mirror.MenuItem{Action: "CUSTOM", Id: eventName + " 1", Values: []*mirror.MenuValue{&mirror.MenuValue{DisplayName: eventName, IconUrl: fullUrl + "/static/icon_plus.png"}}})
+		menuItems = append(menuItems, &mirror.MenuItem{Action: "CUSTOM", Id: eventName + " 0", Values: []*mirror.MenuValue{&mirror.MenuValue{DisplayName: eventName, IconUrl: fullUrl + "/static/icon_minus.png"}}})
+	}	
 
 	t := &mirror.TimelineItem{
 		Text:         "OpenGlass",
 		Creator:      c,
-		MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "REPLY"}, &mirror.MenuItem{Action: "TOGGLE_PINNED"}},
+		MenuItems:    menuItems,
 		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
 	}
 
-	m.Timeline.Insert(t).Do()
+	req, _ := m.Timeline.Insert(t).Do()
+	setUserAttribute(userId, "ogtid", req.Id)
 }
 
 // auth is the HTTP handler that redirects the user to authenticate
@@ -366,7 +373,37 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
     }
     userId := not.UserToken
 	itemId := not.ItemId
+	fmt.Println(not)
 	if not.Operation == "UPDATE" {
+		ogTid, err := getUserAttribute(userId, "ogtid")
+		if err != nil {
+			LogPrintf("notify: ogtid")
+			return
+		}
+		// Annotation set by user in OpenGlass
+		fmt.Println(not.ItemId)
+		fmt.Println(ogTid)
+		if not.ItemId == ogTid {
+			for _, v := range not.UserActions {
+				vs := strings.Split(v.Payload, " ")
+				if len(vs) != 2 || len(vs[1]) != 1 {
+					LogPrintf("notify: payload")
+					continue
+				}
+				annotationJS, err := json.Marshal(BorgAnnotation{Timestamp: CurTime(), Name: vs[0], Polarity: vs[1] == "1"})
+				if err != nil {
+					LogPrintf("notify: annotationJS")
+					return
+				}
+				err = pushUserListTrim(userId, "annotations", string(annotationJS), 100)
+				if err != nil {
+					LogPrintf("notify: push list")
+					return
+				}
+			}
+			return
+		}
+
 		imageRow, err := getUserAttribute(userId, "tid_to_row:" + not.ItemId)
 		if err != nil {
 			LogPrintf("notify: tid_to_row")
