@@ -12,22 +12,22 @@
   <body>
     <div class="container">
       <div class="row">
-        <h1>Canvas</h1>
-        <canvas id="canvas" width="640" height="360">
-      </div>
-      <div class="row">
         <h1>Match Image/sensor</h1>
-        <img id="matchImage" \>
-        <div id="matchSensor"></div>
+        <button id="resetMatches" class="btn btn-primary" type="button">Reset Matches</button>
+        <div id="matchControls"></div>
       </div>
       <div id="glasses">
         <h1>Glasses</h1>
       </div>
-      <div id="canvas_images"></div>
+      <div class="row">
+        <h1>Mosaic</h1>
+        <canvas id="mosaic" width="640" height="360"></canvas>
+      </div>
       <div class="row">
         <h1>Matches</h1>
         <div id="matches"></div>
       </div>
+      <div id="canvas_images"></div>
     </div> <!-- /container -->
 
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
@@ -37,6 +37,122 @@
     <script src="rickshaw.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
+
+    
+    <script id="2d-vertex-shader" type="x-shader/x-vertex">
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      
+      uniform vec2 u_resolution;
+      uniform mat3 u_h;
+      
+      varying vec2 v_texCoord;
+      
+      void main() {
+      // convert the rectangle from pixels to 0.0 to 1.0
+      
+      vec3 warped = u_h * vec3(a_position, 1);
+      
+      vec2 zeroToOne = warped.xy / u_resolution;
+      
+      // convert from 0->1 to 0->2
+      vec2 zeroToTwo = zeroToOne * 2.0;
+      
+      // convert from 0->2 to -1->+1 (clipspace)
+      vec2 clipSpace = zeroToTwo - 1.0;
+      
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, warped.z);
+      
+      // pass the texCoord to the fragment shader
+      // The GPU will interpolate this value between points.
+      v_texCoord = a_texCoord;
+      }
+    </script>
+    
+    <script id="2d-fragment-shader" type="x-shader/x-fragment">
+      precision mediump float;
+      
+      // our texture
+      uniform sampler2D u_image;
+      
+      // the texCoords passed in from the vertex shader.
+      varying vec2 v_texCoord;
+      
+      void main() {
+      // Look up a color from the texture.
+      gl_FragColor = texture2D(u_image, v_texCoord);
+      }
+    </script>
+    <script src="webgl-utils.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+    function setRectangle(gl,x,y,width,height){
+        var x1=x;
+        var x2=x+width;
+        var y1=y;
+        var y2=y+height;
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([x1,y1,x2,y1,x1,y2,x1,y2,x2,y1,x2,y2]),gl.STATIC_DRAW);
+    }
+
+    function render(image, h) {
+        h = [h[0], h[3], h[6], h[1], h[4], h[7], h[2], h[5], h[8]];
+        // Get A WebGL context
+        var canvas = document.getElementById("mosaic");
+        var gl = canvas.getContext("experimental-webgl");
+        
+        // setup a GLSL program
+        var vertexShader = createShaderFromScriptElement(gl, "2d-vertex-shader");
+        var fragmentShader = createShaderFromScriptElement(gl, "2d-fragment-shader");
+        var program = createProgram(gl, [vertexShader, fragmentShader]);
+        gl.useProgram(program);
+        
+        // look up where the vertex data needs to go.
+        var positionLocation = gl.getAttribLocation(program, "a_position");
+
+        // look up where the texture coordinates need to go.
+        var texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+        
+        // provide texture coordinates for the rectangle.
+        var texCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            0.0,  0.0,
+            1.0,  0.0,
+            0.0,  1.0,
+            0.0,  1.0,
+            1.0,  0.0,
+            1.0,  1.0]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(texCoordLocation);
+        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+        
+        // Create a texture.
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        
+        // Set the parameters so we can render any size image.
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        
+        // Upload the image into the texture.
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+        var hLocation=gl.getUniformLocation(program,"u_h");
+        gl.uniformMatrix3fv(hLocation,false,new Float32Array(h));
+
+        var resolutionLocation=gl.getUniformLocation(program,"u_resolution");
+        gl.uniform2f(resolutionLocation,canvas.width,canvas.height);
+        var buffer=gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation,2,gl.FLOAT,false,0,0);
+        setRectangle(gl,0,0,image.width,image.height);
+        gl.drawArrays(gl.TRIANGLES,0,6);
+        console.log(image.width + " " + image.height + " " + canvas.width + " " + canvas.height);
+    }
+    </script>
+
 
     <script type="text/javascript">
       function sensorLatest(sensors, type) {
@@ -54,29 +170,28 @@
 
           }
           ws.onmessage = function (event) {
-              response = JSON.parse(event.data);
+              var response = JSON.parse(event.data);
               if (response.action == "data") {
                   if (!_.has(glassIdToNum, response.glassID)) {
                       var glassNum = _.uniqueId('glass-');
                       var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
                       $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="chart"></div><div class="sensors"></div><button class="matchButton btn btn-primary" type="button">Match Image</button>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
                       $('#' + glassNum).find('.matchButton').click(function () {
-                          var $canvas = $('#canvas')[0];
-                          var context = $canvas.getContext('2d');
-                          context.clearRect(0, 0, $canvas.width, $canvas.height);
-                          $('#canvas_images').html('');
+                          var matchKey = String('m' + (new Date).getTime());
                           var latestImage = latestImages[response.glassID];
                           if (_.isUndefined(latestImage))
                               return;
-                          $('#matchImage').attr('src', 'data:image/jpeg;base64,' + latestImage);
-                          $('#matchSensor').html(JSON.stringify(sensorLatest(latestSensors[response.glassID], 11)));
-                          $('#matches').html('');
-                          render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id, canvas_id) {
-                              var img = document.getElementById(image_id);
-                              context.drawImage(img, 0, 0);
+                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}"><canvas class="matchCanvas" width="640" height="360"></canvas><div class="matchSensor">{{sensor}}</div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
+                          var $matchControl = $('#' + matchKey);
+                          var $canvas = $matchControl.find('.matchCanvas')[0];
+                          initCanvas($canvas, matchKey);
+                          var context = $canvas.getContext('2d');
+                          context.clearRect(0, 0, $canvas.width, $canvas.height);
+                          render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id) {
+                              context.drawImage($('#' + image_id)[0], 0, 0);
                           });
-                          ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage}));
-                          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: latestImage}));
+                          ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage, matchKey: matchKey}));
+                          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: latestImage, matchKey: matchKey}));
                       });
                       glassIdToNum[response.glassID] = glassNum;
                   }
@@ -90,10 +205,9 @@
                       response_sensor = response;
                       _.each(response.sensors, function (x) {
                           if (x.type == 11) {
-                              
                               // rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
                               rotate_cuber($glass.find('.cube'), getRotationMatrixFromVector(x.values));
-                              addGraphValues($glass.find('.chart')[0], x);
+                              addGraphValues($glass.find('.chart'), x);
                           }
                           if ($glass.find('.sensor_' + x.type).length == 0) {
                               $glass.find('.sensors').append($('<div>').attr('class', 'sensor_' + x.type));
@@ -105,7 +219,11 @@
               if (response.action == 'match') {
                   response_match = response;
                   if (_.has(response, 'imageb64')) {
-                      $('#matches').append($('<img>').attr('src', 'data:image/jpeg;base64,' + response.imageb64));
+                      var id = _.uniqueId('match');
+                      $('#matches').append($('<img>').attr('src', 'data:image/jpeg;base64,' + response.imageb64).attr('id', id));
+                      if (_.has(response, 'H')) {
+                          render($('#' + id)[0], response.H);
+                      }
                   }
                   if (_.has(response, 'sensors')) {
                       $('#matches').append(JSON.stringify(sensorLatest(response.sensors, 11)));
@@ -123,12 +241,13 @@
       function addGraphValues(chart, sensor) {
           var ys = sensor.values;
           var colors = ['red', 'green', 'blue'];
-          if (typeof graph == "undefined") {
+          if (typeof graph == "undefined" || seriesData['0'].data.length > 1000) {
               // Sensor graph
+              chart.html('');
               var x = 0;
               seriesData = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain([-1, 1]).nice()}});
               graph = new Rickshaw.Graph( {
-                  element: chart,
+                  element: chart[0],
                   renderer: 'line',
                   width: 300,
                   height: 200,
@@ -137,7 +256,7 @@
           } else {
               _.each(ys, function (y, z) {
                   var x = seriesData[z].data.length;
-                  seriesData[z].data.push({x: x, y: y})
+                  seriesData[z].data.push({x: x, y: y});
               });
               graph.update();
           }
@@ -150,8 +269,13 @@
           ws.send(JSON.stringify(out));
       }
       ws = connectWebsocket();
-      function initCanvas() {
-          var $canvas = $('#canvas')[0];
+      function resetMatches() {
+          $('#matches').html('');
+          $('#matchControls').html('');
+          ws.send(JSON.stringify({action: 'resetMatch'}));
+      }
+
+      function initCanvas($canvas, matchKey) {
           var context = $canvas.getContext('2d');
           context.fillStyle = '#FFFFFF'; // set canvas background color
           context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
@@ -207,8 +331,8 @@
               if (this.drawing) {
                   tool.mousemove(ev);
                   this.drawing = false;
-                  var datauri = $('#canvas')[0].toDataURL();
-                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1]}));
+                  var datauri = $canvas.toDataURL();
+                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1], matchKey: matchKey}));
               }
           };
 
@@ -230,9 +354,8 @@
               if (this.drawing) {
                   tool.touchmove(ev);
                   this.drawing = false;
-                  var datauri = $('#canvas')[0].toDataURL();//"image/jpeg", .2
-                  $('#canvasMirror').attr('src', datauri);
-                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1]}));
+                  var datauri = $canvas.toDataURL();//"image/jpeg", .2
+                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1], matchKey: matchKey}));
               }
           };
 
@@ -240,36 +363,13 @@
 
       function render_image(image_data, div, success) {
           var image_id = _.uniqueId('image_');
-          var canvas_id = _.uniqueId('canvas_');
           var image_tag = $('<img>').css('visibility', 'hidden').css('display', 'none').attr('id', image_id);
           image_tag.load(function () {
-              success(image_id, canvas_id);
+              success(image_id);
           });
           div.append(image_tag.attr('src', image_data));
       }
 
-    function render_image_boxes(image_data, boxes, num_boxes, div) {
-        render_image(image_data, div, function (image_id, canvas_id) {
-            var h = $('#' + image_id).height();
-            var w = $('#' + image_id).width();
-            div.append($('<canvas>').attr('id', canvas_id).attr('height', h + 'px').attr('width', w + 'px'));
-            var c = document.getElementById(canvas_id);
-            var ctx = c.getContext("2d");
-            ctx.strokeStyle = 'blue';
-            var img = document.getElementById(image_id);
-            ctx.drawImage(img, 0, 0);
-            _.each(_.range(num_boxes), function (x) {
-                var x0 = boxes[x * 4 + 2] * w;
-                var x1 = boxes[x * 4 + 3] * w;
-                var y0 = boxes[x * 4] * h;
-                var y1 = boxes[x * 4 + 1] * h;
-                ctx.moveTo(x0, y0);ctx.lineTo(x0, y1);ctx.stroke(); // TL->BL
-                ctx.moveTo(x0, y1);ctx.lineTo(x1, y1);ctx.stroke(); // BL->BR
-                ctx.moveTo(x1, y1);ctx.lineTo(x1, y0);ctx.stroke(); // BR->TR
-                ctx.moveTo(x1, y0);ctx.lineTo(x0, y0);ctx.stroke(); // TR->TL
-            });
-        });
-    }
 
       function getRotationMatrixFromVector(rotationVector) {
           var q0;
@@ -340,7 +440,7 @@
           glassIdToNum = {};
           latestImages = {};
           latestSensors = {};
-          initCanvas();
+          $('#resetMatches').click(resetMatches);
       }
       $(main);
     </script>

@@ -39,8 +39,6 @@
     <script src="static/rickshaw.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
-    
-
     <script type="text/javascript">
       function setFlags(flags, success) {
           $.ajax({url: 'flags', type: 'POST', data: JSON.stringify(flags), success: success});
@@ -59,7 +57,7 @@
           }
       }
       function main () {
-          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_annotated_web', 'match_annotated_flipper', 'match_memento_glog', 'borg_data_local', 'borg_data_serverdisk', 'borg_data_server', 'borg_data_web', 'borg_image', 'borg_sensor_accelerometer', 'borg_sensor_magneticfield', 'borg_sensor_orientation', 'borg_sensor_gyroscope', 'borg_sensor_light', 'borg_sensor_gravity', 'borg_sensor_linearacceleration', 'borg_sensor_rotationvector', 'warp', 'warp_sensor', 'predict', 'location_flickr', 'location_streetview', 'glass_flicker', 'glass_preview_warp', 'glass_overlay']};
+          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'flipper', 'match_annotated', 'match_annotated_web', 'match_annotated_flipper', 'match_memento_glog', 'borg_data_local', 'borg_data_serverdisk', 'borg_data_server', 'borg_data_web', 'borg_image', 'borg_sensor_gps', 'borg_sensor_accelerometer', 'borg_sensor_magneticfield', 'borg_sensor_orientation', 'borg_sensor_gyroscope', 'borg_sensor_light', 'borg_sensor_gravity', 'borg_sensor_linearacceleration', 'borg_sensor_rotationvector', 'warp', 'warp_sensor', 'predict', 'location_flickr', 'location_streetview', 'glass_flicker', 'glass_preview_warp', 'glass_overlay']};
 
           $('#switches').html(Mustache.render('{{#names}}<div class="control-group"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
           $('.make-switch').bootstrapSwitch();

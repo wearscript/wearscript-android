@@ -14,12 +14,12 @@ import (
 
 type BorgSensor struct {
 	Timestamp float64 `json:"timestamp"`
-	Accuracy  int `json:"accuracy"`
+	Accuracy  float64 `json:"accuracy"`
 	Resolution  float32 `json:"resolution"`
 	MaximumRange float32 `json:"maximumRange"`
 	Type int `json:"type"`
 	Name string `json:"name"`
-	Values []float32 `json:"values"`
+	Values []float64 `json:"values"`
 }
 
 type BorgAnnotation struct {
@@ -56,6 +56,7 @@ type BorgData struct {
 	Timestamp float64 `json:"timestamp,omitempty"`
 	GlassID string `json:"glassID,omitempty"`
 	H []float64 `json:"H,omitempty"`
+	MatchKey string `json:"matchKey,omitempty"`
 	Options *BorgOptions `json:"options,omitempty"`
 	Say *string `json:"say,omitempty"`
 }
@@ -111,11 +112,12 @@ func BorgGlassHandler(c *websocket.Conn) {
 	wsSendChan := make(chan *BorgData, 1)
 	matchMementoChan := make(chan *BorgData)
 	matchAnnotatedChan := make(chan *BorgData)
-	annotationPoints := ""
+	annotationPoints := map[string]string{}
+	sensorCache := map[int]*BorgSensor{}
 	hFlip := []float64{-1., 0., float64(borgWidth), 0., -1., float64(borgHeight), 0., 0., 1.}
 	hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
 	hBigToGlass := []float64{1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0}
-	sensorLUT := map[string]int{"borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
+	sensorLUT := map[string]int{"borg_sensor_gps": -1, "borg_sensor_accelerometer": 1, "borg_sensor_magneticfield": 2, "borg_sensor_orientation": 3, "borg_sensor_gyroscope": 4, "borg_sensor_light": 5, "borg_sensor_gravity": 9, "borg_sensor_linearacceleration": 10, "borg_sensor_rotationvector": 11}
 	
 	// Websocket sender
 	go func() {
@@ -160,16 +162,16 @@ func BorgGlassHandler(c *websocket.Conn) {
 					sensors = append(sensors, ind)
 				}
 			}
-			opt := BorgOptions{ImageResolution: math.Max(matchAnnotatedDelay, matchMementoDelay), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, SensorDelay: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
+			opt := BorgOptions{ImageResolution: math.Max(.25, math.Max(matchAnnotatedDelay, matchMementoDelay)), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, SensorDelay: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
 			if hasFlag(flags, "debug") {
 				opt.RavenDSN = ravenDSN
 			}
 			fmt.Println(opt)
 			wsSendChan <- &BorgData{Action: "options", Options: &opt}
-			annotationPoints, err = getUserAttribute(userId, "match_features")
+			annotationPoints, err = getUserMapAll(userId, "match_points")
 			if err != nil {
 				fmt.Println(err)
-				annotationPoints = ""
+				annotationPoints = map[string]string{}
 			}
 			time.Sleep(time.Millisecond * 2000)
 		}
@@ -214,20 +216,16 @@ func BorgGlassHandler(c *websocket.Conn) {
 			if !ok {break}
 			requestTime := time.Now()
 			st := time.Now()
-			if annotationPoints == "" {
+			if len(annotationPoints) == 0 {
 				continue
 			}
 			image := picarus.B64Dec(*(*request).Imageb64)
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetMatchFeat", float64(time.Now().Sub(st).Seconds())))
 			flipImage := false
-			if hasFlag(uflags, "match_annotated_flipper") {
-				// TODO: Need to save the last sensor values to make this work
-				// now that it is sparse
-				for _, v := range request.Sensors {
-					if v.Type == 9 && v.Values[1] < -5 {
-						flipImage = true
-						break
-					}
+			if !hasFlag(uflags, "flipper") && hasFlag(uflags, "match_annotated_flipper") {
+				lastGravityVector := sensorCache[9]
+				if lastGravityVector != nil && lastGravityVector.Values[1] < -5 {
+					flipImage = true
 				}
 				if flipImage {
 					imageWarped, err := WarpImage(image, hFlip, 360, 640)
@@ -247,32 +245,30 @@ func BorgGlassHandler(c *websocket.Conn) {
 				continue
 			}
 			fmt.Println(fmt.Sprintf("[%s][%f]", "ComputePoints", float64(time.Now().Sub(st).Seconds())))
-			st = time.Now()
-			h, err := ImagePointsMatch(annotationPoints, points1)
-			if err != nil {
-			    curMatchAnnotatedDelay := time.Now().Sub(requestTime).Seconds()
-				if matchAnnotatedDelay < curMatchAnnotatedDelay {
-					matchAnnotatedDelay = curMatchAnnotatedDelay
-				}
-				fmt.Println("No match")
-				fmt.Println(err)
-				continue
-			}
-			if flipImage {
-				h = HMult(hFlip, h)
-			}
-			fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
-			if hasFlag(uflags, "match_annotated_web") {
-				matchJS, err := json.Marshal(BorgData{Action: "match", Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, Options: &BorgOptions{HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}})
-				if err != nil {
+			for matchKey, points0 := range annotationPoints {
+				st = time.Now()
+				h, err := ImagePointsMatch(points0, points1)
+				if h == nil || err != nil {
+					fmt.Println("No match")
 					fmt.Println(err)
-				} else {
-					userPublish(userId, "borg_server_to_web", string(matchJS))
+					continue
 				}
+				if flipImage {
+					h = HMult(hFlip, h)
+				}
+				fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
+				if hasFlag(uflags, "match_annotated_web") {
+					matchJS, err := json.Marshal(BorgData{Action: "match", MatchKey: matchKey, Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, Options: &BorgOptions{HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}})
+					if err != nil {
+						fmt.Println(err)
+					} else {
+						userPublish(userId, "borg_server_to_web", string(matchJS))
+					}
+				}
+				fmt.Println(fmt.Sprintf("Match delay: %f", CurTime() - request.Timestamp))
+				wsSendChan <- &BorgData{H: h, Action: "setMatchH", MatchKey: matchKey}
+				fmt.Println("Finished computing homography")
 			}
-			fmt.Println(fmt.Sprintf("Match delay: %f", CurTime() - request.Timestamp))
-			wsSendChan <- &BorgData{H: h, Action: "setMatchH"}
-			fmt.Println("Finished computing homography")
 			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
 		}
 	}()
@@ -341,6 +337,25 @@ func BorgGlassHandler(c *websocket.Conn) {
 		}
 		if (request.Action == "data") {
 			request.Timestamp = request.Tg0 - skew
+			for _, sensor := range request.Sensors {
+				sensorCache[sensor.Type] = &sensor
+			}
+			if hasFlag(uflags, "flipper") && request.Imageb64 != nil {
+				imageWarped, err := WarpImage(picarus.B64Dec(*request.Imageb64), hFlip, 360, 640)
+				if err != nil {
+					LogPrintf("borg: flipper warp")
+				} else {
+					fmt.Println("Image flipped")
+					imageWarped = picarus.B64Enc(imageWarped)
+					request.Imageb64 = &imageWarped
+				}
+				/*
+				lastGravityVector := sensorCache[9]
+				if lastGravityVector != nil && lastGravityVector.Values[1] < -5 {
+				
+				}*/
+			}
+
 			if hasFlag(uflags, "borg_data_web") {
 				requestJS, err := json.Marshal(request)
 				if err != nil {
@@ -410,10 +425,10 @@ func BorgWebHandler(c *websocket.Conn) {
 					return
 				}
 				select {
-					case wsSendChan <- &response:
-					default:
-						fmt.Println("Image skipping sending to webapp, too slow...")
-					}
+				case wsSendChan <- &response:
+				default:
+					fmt.Println("Image skipping sending to webapp, too slow...")
+				}
 			case error:
 				fmt.Printf("error: %v\n", n)
 				return
@@ -434,17 +449,20 @@ func BorgWebHandler(c *websocket.Conn) {
 			fmt.Println(err)
 			continue
 		}
-		userPublish(userId, "borg_web_to_server", string(requestJS))
-		if request.Action == "setOverlay" {
-			deleteUserAttribute(userId, "match_features")
-		} else if request.Action == "setMatchImage" {
+		if request.Action == "setMatchImage" {
 			image := picarus.B64Dec(*request.Imageb64)
 			points, err := ImagePoints(image)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			setUserAttribute(userId, "match_features", points)
+			setUserMap(userId, "match_points", request.MatchKey, points)
+			// NOTE(brandyn): We won't publish this to glass, it isn't needed
+		} else if request.Action == "resetMatch" {
+			deleteUserMapAll(userId, "match_points")
+			userPublish(userId, "borg_web_to_server", string(requestJS))
+		} else {
+			userPublish(userId, "borg_web_to_server", string(requestJS))
 		}
 	}
 }

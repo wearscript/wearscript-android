@@ -136,12 +136,37 @@ func getUserMap(userId string, name string, key string) (string, error) {
 	return redis.String(c.Do("HGET", userId + ":" + name, key))
 }
 
+func getUserMapAll(userId string, name string) (map[string]string, error) {
+	c, err := getRedisConnection()
+	out := map[string]string{}
+	if err != nil {
+		return out, err
+	}
+	data, err := redis.Strings(c.Do("HGETALL", userId + ":" + name))
+	if err != nil {
+		return out, err
+	}
+	for i := 0; i < len(data) / 2; i++ {
+		out[data[i * 2]] = data[i * 2 + 1]
+	}
+	return out, nil
+}
+
 func deleteUserMap(userId string, name string, key string) error {
 	c, err := getRedisConnection()
 	if err != nil {
 		return err
 	}
 	_, err = c.Do("HDEL", userId + ":" + name, key)
+	return err
+}
+
+func deleteUserMapAll(userId string, name string) error {
+	c, err := getRedisConnection()
+	if err != nil {
+		return err
+	}
+	_, err = c.Do("DEL", userId + ":" + name)
 	return err
 }
 
