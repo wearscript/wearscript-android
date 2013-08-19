@@ -8,12 +8,30 @@
     <link href="bootstrap-switch.css" rel="stylesheet" media="screen">
     <link href="cube.css" rel="stylesheet" media="screen">
     <link href="rickshaw.min.css" rel="stylesheet" media="screen">
+<style type="text/css">
+.outsideWrapper{ 
+    width:640px; height:360px;}
+.insideWrapper{ 
+    width:100%; height:100%; 
+    position:relative;}
+.coveredImage{ 
+    width:100%; height:100%; 
+    position:absolute; top:0px; left:0px;
+}
+.matchCanvas{ 
+    width:100%; height:100%; 
+    position:absolute; top:0px; left:0px;
+    background-color: rgba(255,0,0,.1);
+}
+</style>
+
   </head>
   <body>
     <div class="container">
       <div class="row">
         <h1>Match Image/sensor</h1>
         <button id="resetMatches" class="btn btn-primary" type="button">Reset Matches</button>
+        <div class="control-group"><label class="control-label" for="switch-wrap-overlayimage">Overlay Image</label><div class="controls"><div id="switch-wrap-overlayimage" name="overlayimage" class="make-switch"><input class="flag-check" type="checkbox" name="overlayimage"></div></div></div>
         <div id="matchControls"></div>
       </div>
       <div id="glasses">
@@ -92,6 +110,15 @@
         var y1=y;
         var y2=y+height;
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([x1,y1,x2,y1,x1,y2,x1,y2,x2,y1,x2,y2]),gl.STATIC_DRAW);
+    }
+
+    function invert_3x3(m) {
+        var a=m[0], b=m[1], c=m[2], d=m[3], e=m[4], f=m[5], g=m[6], h=m[7], i=m[8];
+        var s = a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g);
+        var g = [e*i-f*h, c*h-b*i, b*f-c*e, f*g-d*i, a*i-c*g, c*d-a*f, d*h-e*g, b*g-a*h, a*e-b*d];
+        return _.map(g, function (x) {
+            return x / s;
+        });
     }
 
     function render(image, h) {
@@ -181,15 +208,19 @@
                           var latestImage = latestImages[response.glassID];
                           if (_.isUndefined(latestImage))
                               return;
-                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}"><canvas class="matchCanvas" width="640" height="360"></canvas><div class="matchSensor">{{sensor}}</div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
+                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}" class="outsideWrapper"><div class="insideWrapper"><img class="coveredImage"\><canvas class="matchCanvas" width="640" height="360"></canvas><div class="matchSensor">{{sensor}}</div></div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
                           var $matchControl = $('#' + matchKey);
                           var $canvas = $matchControl.find('.matchCanvas')[0];
                           initCanvas($canvas, matchKey);
                           var context = $canvas.getContext('2d');
                           context.clearRect(0, 0, $canvas.width, $canvas.height);
-                          render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id) {
-                              context.drawImage($('#' + image_id)[0], 0, 0);
-                          });
+                          if ($('.flag-check').prop('checked')) {
+                              render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id) {
+                                  context.drawImage($('#' + image_id)[0], 0, 0);
+                              });
+                          } else {
+                              $matchControl.find('.coveredImage').attr('src', 'data:image/jpeg;base64,' + latestImage);
+                          }
                           ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage, matchKey: matchKey}));
                           ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: latestImage, matchKey: matchKey}));
                       });
@@ -222,7 +253,9 @@
                       var id = _.uniqueId('match');
                       $('#matches').append($('<img>').attr('src', 'data:image/jpeg;base64,' + response.imageb64).attr('id', id));
                       if (_.has(response, 'H')) {
-                          render($('#' + id)[0], response.H);
+                          debug_hinv = invert_3x3(response.H);
+                          debug_h = response.H;
+                          render($('#' + id)[0], debug_hinv);
                       }
                   }
                   if (_.has(response, 'sensors')) {
@@ -231,6 +264,10 @@
                   if (_.has(response, 'H')) {
                       $('#matches').append(JSON.stringify(_.omit(response, ['sensors', 'imageb64'])));
                   }
+                  var children = $('#matches').children();
+                  var maxChildren = 10;
+                  if (children.length > maxChildren)
+                      children.slice(children.length - maxChildren);
               }
           }
           ws.onclose = function (event) {
@@ -268,6 +305,10 @@
               out['glassID'] = glassID;
           ws.send(JSON.stringify(out));
       }
+      function setMatchOverlay(imageb64, matchKey) {
+          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: imageb64, matchKey: matchKey}));
+      }
+
       ws = connectWebsocket();
       function resetMatches() {
           $('#matches').html('');

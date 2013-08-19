@@ -222,7 +222,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			image := picarus.B64Dec(*(*request).Imageb64)
 			fmt.Println(fmt.Sprintf("[%s][%f]", "GetMatchFeat", float64(time.Now().Sub(st).Seconds())))
 			flipImage := false
-			if !hasFlag(uflags, "flipper") && hasFlag(uflags, "match_annotated_flipper") {
+			if hasFlag(uflags, "match_annotated_flipper") {
 				lastGravityVector := sensorCache[9]
 				if lastGravityVector != nil && lastGravityVector.Values[1] < -5 {
 					flipImage = true
@@ -340,22 +340,6 @@ func BorgGlassHandler(c *websocket.Conn) {
 			for _, sensor := range request.Sensors {
 				sensorCache[sensor.Type] = &sensor
 			}
-			if hasFlag(uflags, "flipper") && request.Imageb64 != nil {
-				imageWarped, err := WarpImage(picarus.B64Dec(*request.Imageb64), hFlip, 360, 640)
-				if err != nil {
-					LogPrintf("borg: flipper warp")
-				} else {
-					fmt.Println("Image flipped")
-					imageWarped = picarus.B64Enc(imageWarped)
-					request.Imageb64 = &imageWarped
-				}
-				/*
-				lastGravityVector := sensorCache[9]
-				if lastGravityVector != nil && lastGravityVector.Values[1] < -5 {
-				
-				}*/
-			}
-
 			if hasFlag(uflags, "borg_data_web") {
 				requestJS, err := json.Marshal(request)
 				if err != nil {
