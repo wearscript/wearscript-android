@@ -30,12 +30,20 @@ func StaticServer(w http.ResponseWriter, req *http.Request) {
 }
 
 func RootServer(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("Got /")
 	content, err := ioutil.ReadFile("static/app.html")
 	if err != nil {
 		return
 	}
 	io.WriteString(w, string(content))
 }
+
+
+func DebugServer(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("Debug server")
+	fmt.Println(req)
+}
+
 
 func setupUser(r *http.Request, client *http.Client, userId string) {
 	m, _ := mirror.New(client)
@@ -462,6 +470,7 @@ func main() {
 	//reprocessMementoImages(&conn)
 	//ImageMatch("borg-serverdisk-219250584360_109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
 	m := pat.New()
+	//m.Post("/", http.HandlerFunc(DebugServer))
 	m.Get("/map", http.HandlerFunc(MapServer))
 	m.Get("/search", http.HandlerFunc(MementoSearchServer))
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
@@ -474,8 +483,9 @@ func main() {
 	// /auth -> google -> /oauth2callback
 	m.Get("/auth", http.HandlerFunc(authHandler))
 	m.Get("/oauth2callback", http.HandlerFunc(oauth2callbackHandler))
+	m.Post("/notify", http.HandlerFunc(NotifyServer))
+	//m.Post("/notify", http.HandlerFunc(notifyHandler))
 	m.Post("/signout", http.HandlerFunc(signoutHandler))
-	m.Post("/notify", http.HandlerFunc(notifyHandler))
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))

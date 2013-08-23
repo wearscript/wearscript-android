@@ -29,6 +29,7 @@ type RavenEvent struct {
 
 func RavenServer(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
+	fmt.Println("Got /raven/")
 	fmt.Println(req)
 	userId, err := getSecretUser("raven", secretHash(req.URL.Query().Get(":key")))
 	if err != nil {

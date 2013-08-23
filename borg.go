@@ -14,6 +14,7 @@ import (
 
 type BorgSensor struct {
 	Timestamp float64 `json:"timestamp"`
+	TimestampRaw int64 `json:"timestampRaw"`
 	Accuracy  float64 `json:"accuracy"`
 	Resolution  float32 `json:"resolution"`
 	MaximumRange float32 `json:"maximumRange"`

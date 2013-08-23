@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"fmt"
 )
 
 
 func FlagsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Got /flags")
 	userId, err := userID(r)
 	if err != nil {
 		return
