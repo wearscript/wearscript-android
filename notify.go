@@ -14,6 +14,9 @@ type NotifyEvent struct {
 	Priority bool `json:"priority"`
 	Title string `json:"title"`
 	Key string `json:"key"`
+	Html string `json:"html"`
+	SpeakableText string `json:"speakableText"`
+	HtmlPages []string `json:"htmlPages"`
 }
 
 func NotifyServer(w http.ResponseWriter, req *http.Request) {
@@ -74,10 +77,24 @@ func NotifyServer(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	nt := &mirror.TimelineItem{
-		Html: "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Title + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Application + "</p></div></section></article>",
-		SpeakableText: r.Title + " " + r.Application + " " + r.Message,
-		MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
+	
+	nt := &mirror.TimelineItem{}
+	if r.Html == "" {
+		nt.Html = "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Title + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Application + "</p></div></section></article>"
+		nt.SpeakableText = r.Title + " " + r.Application + " " + r.Message
+	} else {
+		nt.Html = r.Html
+	}
+	if r.HtmlPages != nil {
+		nt.HtmlPages = r.HtmlPages
+	}
+	if r.SpeakableText != "" {
+		nt.SpeakableText = r.SpeakableText
+	}
+	if nt.SpeakableText != "" {
+		nt.MenuItems = []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}}
+	} else {
+		nt.MenuItems = []*mirror.MenuItem{&mirror.MenuItem{Action: "DELETE"}}
 	}
 	if r.Priority {
 		nt.Notification = &mirror.NotificationConfig{Level: "DEFAULT"}

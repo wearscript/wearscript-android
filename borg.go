@@ -48,7 +48,9 @@ type BorgOptions struct {
 }
 
 type BorgData struct {
-	Tg0 float64 `json:"Tg0,omitempty"` // See Hacking.md for details
+	// See Hacking.md for details
+	Tsave float64 `json:"Tsave,omitempty"` // Time packet data is final
+	Tg0 float64 `json:"Tg0,omitempty"` // Time packet is saved
 	Ts0 float64 `json:"Ts0,omitempty"`
 	Tg1 float64 `json:"Tg1,omitempty"`
 	Sensors []BorgSensor `json:"sensors"`
@@ -130,7 +132,8 @@ func BorgGlassHandler(c *websocket.Conn) {
 			}
 			err = websocket.JSON.Send(c, *request)
 			if err != nil {
-				return
+				die = true
+				break
 			}
 		}
 	}()
@@ -314,7 +317,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 		if err != nil {
 			fmt.Println(err)
 			die = true
-			return
+			break
 		}
 		if die {
 			break
@@ -337,7 +340,7 @@ func BorgGlassHandler(c *websocket.Conn) {
 			fmt.Println(fmt.Sprintf("Tg1[%f] -> D[%f] -> Ts1[%f]", request.Tg1 - skew - origin, delay, Ts1 - origin))
 		}
 		if (request.Action == "data") {
-			request.Timestamp = request.Tg0 - skew
+			request.Timestamp = request.Tsave - skew
 			for _, sensor := range request.Sensors {
 				sensorCache[sensor.Type] = &sensor
 			}
@@ -377,7 +380,11 @@ func BorgGlassHandler(c *websocket.Conn) {
 
 func BorgWebHandler(c *websocket.Conn) {
 	defer c.Close()
-	userId := "219250584360_109113122718379096525"
+	userId, err := userID(c.Request())
+	if err != nil || userId == "" {
+		LogPrintf("borg: userid")
+		return
+	}
 	fmt.Println("Websocket connected")
 	wsSendChan := make(chan *BorgData, 1)
 	// Websocket sender

@@ -37,10 +37,10 @@
       <div id="glasses">
         <h1>Glasses</h1>
       </div>
-      <div class="row">
+      <!--<div class="row">
         <h1>Mosaic</h1>
         <canvas id="mosaic" width="640" height="360"></canvas>
-      </div>
+      </div>-->
       <div class="row">
         <h1>Matches</h1>
         <div id="matches"></div>
@@ -188,7 +188,7 @@
           }));
       }
       function connectWebsocket() {
-          var ws = new WebSocket("ws://api3.picar.us:16001/borg/web");
+          var ws = new WebSocket("wss://api.picar.us/openglass/borg/web");
           var scale = (3.14159265359 / 2) / 360;
           var shift = 3.14159265359 / 4;
           ws.onopen = function () {
@@ -202,13 +202,15 @@
                   if (!_.has(glassIdToNum, response.glassID)) {
                       var glassNum = _.uniqueId('glass-');
                       var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
-                      $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="chart"></div><div class="sensors"></div><button class="matchButton btn btn-primary" type="button">Match Image</button>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
+
+
+                      $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><div class="charts"></div><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div><button class="matchButton btn btn-primary" type="button">Match Image</button>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
                       $('#' + glassNum).find('.matchButton').click(function () {
                           var matchKey = String('m' + (new Date).getTime());
                           var latestImage = latestImages[response.glassID];
                           if (_.isUndefined(latestImage))
                               return;
-                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}" class="outsideWrapper"><div class="insideWrapper"><img class="coveredImage"\><canvas class="matchCanvas" width="640" height="360"></canvas><div class="matchSensor">{{sensor}}</div></div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
+                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}" class="outsideWrapper"><div class="insideWrapper"><img class="coveredImage"\><canvas class="matchCanvas" width="640" height="360"></canvas></div><div class="matchSensor">{{sensor}}</div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
                           var $matchControl = $('#' + matchKey);
                           var $canvas = $matchControl.find('.matchCanvas')[0];
                           initCanvas($canvas, matchKey);
@@ -230,6 +232,7 @@
                   if (_.has(response, 'imageb64')) {
                       latestImages[response.glassID] = response.imageb64;
                       $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response.imageb64);
+                      $glass.find('.times').html('Save Time: ' + (response.Tg0 - response.Tsave) + ' Tsave: ' + response.Tsave + ' Tg0: ' + response.Tg0);
                   }
                   if (_.has(response, 'sensors')) {
                       latestSensors[response.glassID] = response.sensors;
@@ -238,12 +241,17 @@
                           if (x.type == 11) {
                               // rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
                               rotate_cuber($glass.find('.cube'), getRotationMatrixFromVector(x.values));
-                              addGraphValues($glass.find('.chart'), x);
                           }
-                          if ($glass.find('.sensor_' + x.type).length == 0) {
-                              $glass.find('.sensors').append($('<div>').attr('class', 'sensor_' + x.type));
+                          addGraphValues($glass.find('.chart-' + x.type), x);
+                          if (!$glass.find('.sensor-' + x.type).length) {
+                              $('.sensor-data').append($('<tr>').attr('class', 'sensor-' + x.type));
+                              $('.sensor-data').html($('.sensor-data').children().sort(function (x, y) {return Number(x.className.split('-')[1]) -Number(y.className.split('-')[1])}));
                           }
-                          $glass.find('.sensor_' + x.type).html(_.escape(JSON.stringify(x)));
+                          x.valuesStr = x.values.join(', ');
+                          x.glassID = response.glassID;
+                          var $sensor = $glass.find('.sensor-' + x.type);
+                          $sensor.html(Mustache.render('<td>{{type}}</td><td>{{name}}</td><td>{{timestamp}}</td><td>{{valuesStr}}</td><td><button type="button" class="btn btn-primary btn-xs sensor-graph-button" glass="{{glassID}}" name="{{type}}">Graph</button></td>', x));
+                          $sensor.find('.sensor-graph-button').click(sensor_graph_click);
                       });
                   }
               }
@@ -276,26 +284,30 @@
           return ws;
       }
       function addGraphValues(chart, sensor) {
+          if (!chart.length)
+              return;
+          var domains = {1: [-10, 10], 2: [-60, 60], 3: [-180, 360], 4: [-3, 3], 5: [0, 2000], 9: [-10, 10], 10: [-12, 12], 11: [-1, 1]};
           var ys = sensor.values;
           var colors = ['red', 'green', 'blue'];
-          if (typeof graph == "undefined" || seriesData['0'].data.length > 1000) {
+          var type = sensor.type;
+          if (!_.has(graphs, type) || seriesDatas[type]['0'].data.length > 1000) {
               // Sensor graph
               chart.html('');
               var x = 0;
-              seriesData = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain([-1, 1]).nice()}});
-              graph = new Rickshaw.Graph( {
+              seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain(domains[type]).nice()}});
+              graphs[type] = new Rickshaw.Graph( {
                   element: chart[0],
                   renderer: 'line',
                   width: 300,
                   height: 200,
-                  series: seriesData
+                  series: seriesDatas[type]
               });
           } else {
               _.each(ys, function (y, z) {
-                  var x = seriesData[z].data.length;
-                  seriesData[z].data.push({x: x, y: y});
+                  var x = seriesDatas[type][z].data.length;
+                  seriesDatas[type][z].data.push({x: x, y: y});
               });
-              graph.update();
+              graphs[type].update();
           }
       }
 
@@ -477,10 +489,22 @@
               "transition-duration": '0s'
           });
       }
+      function sensor_graph_click() {
+          var $this = $(this);
+          var $glass = $('#' + glassIdToNum[$this.attr('glass')]);
+          var type = $this.attr('name');
+          debug_this = $this;
+          if (!$glass.find('.chart-' + type).length) {
+              $glass.find('.charts').append($('<div>').attr('class', 'chart-' + type).attr('name', type).attr('title', 'Sensor #' + type));
+              $glass.find('.charts').html($glass.find('.charts').children().sort(function (x, y) {return Number($(x).attr('name')) - Number($(y).attr('name'))}));
+          }
+      }
       function main () {
           glassIdToNum = {};
           latestImages = {};
           latestSensors = {};
+          graphs = {};
+          seriesDatas = {};
           $('#resetMatches').click(resetMatches);
       }
       $(main);
