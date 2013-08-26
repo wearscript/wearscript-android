@@ -204,13 +204,13 @@
                       var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
 
 
-                      $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><div class="charts"></div><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div><button class="matchButton btn btn-primary" type="button">Match Image</button>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
+                      $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><button class="matchButton btn btn-primary" type="button">Match Image</button><div class="charts"></div><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
                       $('#' + glassNum).find('.matchButton').click(function () {
                           var matchKey = String('m' + (new Date).getTime());
                           var latestImage = latestImages[response.glassID];
                           if (_.isUndefined(latestImage))
                               return;
-                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}" class="outsideWrapper"><div class="insideWrapper"><img class="coveredImage"\><canvas class="matchCanvas" width="640" height="360"></canvas></div><div class="matchSensor">{{sensor}}</div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
+                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}"><div class="outsideWrapper"><div class="insideWrapper"><img class="coveredImage"\><canvas class="matchCanvas" width="640" height="360"></canvas></div></div><div class="matchSensor">{{sensor}}</div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
                           var $matchControl = $('#' + matchKey);
                           var $canvas = $matchControl.find('.matchCanvas')[0];
                           initCanvas($canvas, matchKey);
