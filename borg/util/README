@@ -1,0 +1,2 @@
+python picarus_uploader.py --api_key taAYUsje0De8jRayboeB bwhite@dappervision.com images "" ~/borg-data1-jpg/
+adb shell ls sdcard/borg/data/* -l

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OpenGlass: Borg</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="/static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/static/rickshaw.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+    <div style="position:absolute"><img id="scrubThumb"></div>
+    <div class="container">
+      <div class="row">
+        <h1>Overview</h1>
+      </div>
+      <div class="row">
+        <h1>Events</h1>
+        {{events}}
+      </div>
+    </div> <!-- /container -->
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="/static/bootstrap.min.js"></script>
+    <script src="/static/d3.v3.min.js"></script>
+    <script src="/static/rickshaw.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
+
+    <script type="text/javascript">
+      function buildChart(chart, timeData) {
+          //element.append($('<div>').attr('class', 'chart'))
+          //element.append($('<div>').attr('class', 'slider'))
+          //var chart = element.find('.chart');
+          //var slider = element.find('.slider');
+          // data: Lists of sensor data (each list is a list of values)
+          var colors = ['red', 'green', 'blue'];
+          var minDomain = 1000;
+          var maxDomain = -1000;
+          var times = timeData[0];
+          var data = timeData.slice(1);
+          _.each(data, function (values, z) {
+              _.each(values, function (y) {
+                  minDomain = Math.min(minDomain, y);
+                  maxDomain = Math.max(maxDomain, y);
+              });
+          });
+          var seriesData = _.map(data, function (values, z) {
+              var curData = _.map(values, function (y, x) { return {x: times[x], y: y}});
+              return {data: curData, name: String(z), color: colors[z], scale: d3.scale.linear().domain([minDomain, maxDomain]).nice()};
+          });
+          var graph = new Rickshaw.Graph({
+              element: chart[0],
+              renderer: 'line',
+              width: 1200,
+              height: 200,
+              series: seriesData
+          });
+          graph.render();
+          var scrub = _.debounce(function(x) {$('#scrubThumb').attr('src', '/{{AUTH_KEY}}/thumb/' + x); $('#scrubThumb').parent().css({'top': mouseY, 'left': mouseX});}, 100);
+          var hoverDetail = new Rickshaw.Graph.HoverDetail({
+              graph: graph,
+              xFormatter: function (x) {scrub(x); return x}
+          });
+          /*var slider = new Rickshaw.Graph.RangeSlider({
+              graph: graph,
+              element: slider[0]
+          });*/
+      }
+      function main () {
+          glassIdToNum = {};
+          latestImages = {};
+          latestSensors = {};
+          chartValues = {{chartValues}};
+          $(document).mousemove( function(e) {
+              mouseX = 0; 
+              mouseY = e.pageY - 75;
+          });
+          mouseX = mouseY = 0;
+          _.each(chartValues, function (x, y) {
+              buildChart($('#' + y), x);
+          });
+      }
+      $(main);
+    </script>
+  </body>
+</html>
