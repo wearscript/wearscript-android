@@ -499,6 +499,9 @@
               $glass.find('.charts').html($glass.find('.charts').children().sort(function (x, y) {return Number($(x).attr('name')) - Number($(y).attr('name'))}));
           }
       }
+      function say(msg) {
+          ws.send(JSON.stringify({say: msg, action: "say"}));
+      }
       function main () {
           glassIdToNum = {};
           latestImages = {};

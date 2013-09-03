@@ -150,7 +150,7 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
-	//queryRow = picarus.B64Dec("bG9jYXRpb25jcmF3bDqwZImk3nwOj+FR/sbUmz+6")
+	queryRow = picarus.B64Dec("bG9jYXRpb25jcmF3bDqwZImk3nwOj+FR/sbUmz+6")
 
 	m, err := conn.GetRow("images", queryRow, []string{"thum:image_150sq"})
 	if err != nil {
