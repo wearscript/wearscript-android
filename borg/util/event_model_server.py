@@ -1,13 +1,17 @@
 import gevent
 from gevent import monkey
 monkey.patch_all()
+from picarus_event_model import _local_data, _picarus_data
 import bottle
 import argparse
 import picarus
 import bisect
 import cPickle as pickle
 from borg_events import get_row_bounds, get_event_sensors
-from image_server.auth import verify
+try:
+    from image_server.auth import verify
+except ImportError:
+    from static_server.auth import verify
 from event_classification import classify_slice
 import event_classification
 bottle.debug(True)
@@ -42,7 +46,6 @@ def main(auth_key):
 @bottle.route('/:auth_key#[a-zA-Z0-9\_\-]+#/thumb/<event>/<t>')
 @verify
 def thumb(auth_key, event, t):
-    thumb_column = 'thum:image_150sq'
     rows = EVENT_ROWS[event]
     times = EVENT_ROW_TIMES[event]
     # >= time
@@ -51,7 +54,7 @@ def thumb(auth_key, event, t):
     if i != len(times):
         bottle.response.headers['Content-Type'] = 'image/jpeg'
         bottle.response.headers['Cache-Control'] = 'max-age=2592000'
-        return CLIENT.get_row('images', rows[i], columns=[thumb_column])[thumb_column]
+        return CLIENT.get_row('images', rows[i], columns=[THUMB_COLUMN])[THUMB_COLUMN]
     bottle.abort(404)
 
 
@@ -66,7 +69,6 @@ def thumb_range(auth_key, event, t0, t1, num, off):
         bottle.abort(400)
     t0f = float(t0)
     t1f = float(t1)
-    thumb_column = 'thum:image_150sq'
     rows = EVENT_ROWS[event]
     times = EVENT_ROW_TIMES[event]
     # Left: >= time Right: <= time
@@ -79,7 +81,7 @@ def thumb_range(auth_key, event, t0, t1, num, off):
             skip = len(rows) / num
         bottle.response.headers['Content-Type'] = 'image/jpeg'
         bottle.response.headers['Cache-Control'] = 'max-age=2592000'
-        return CLIENT.get_row('images', rows[off * skip], columns=[thumb_column])[thumb_column]
+        return CLIENT.get_row('images', rows[off * skip], columns=[THUMB_COLUMN])[THUMB_COLUMN]
     bottle.abort(404)
 
 
@@ -110,13 +112,22 @@ def static(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('model')
-    parser.add_argument('email')
-    parser.add_argument('api_key')
+    subparsers = parser.add_subparsers()
+    subparser = subparsers.add_parser('picarus')
+    subparser.add_argument('model')
+    subparser.add_argument('email')
+    subparser.add_argument('api_key')
+    subparser.set_defaults(func=_picarus_data)
+
+    subparser = subparsers.add_parser('local')
+    subparser.add_argument('model')
+    subparser.add_argument('input_dir')
+    subparser.set_defaults(func=_local_data)
+
     parser.add_argument('--port', help='Run on this port (default 8080)', default='8080')
 
     ARGS = parser.parse_args()
-    CLIENT = picarus.PicarusClient(email=ARGS.email, api_key=ARGS.api_key)
+    CLIENT = ARGS.func(**vars(ARGS))
     data_type, EVENT_ROWS, ROW_COLUMNS = pickle.load(open(ARGS.model))
     EVENT_ROW_TIMES = {e: [float(ROW_COLUMNS[row]['meta:time']) for row in rows] for e, rows in EVENT_ROWS.items()}
     EVENT_CLASSIFICATIONS = {}  # [event_name] = list of (start_time, stop_time, classification results)
@@ -130,4 +141,8 @@ if __name__ == "__main__":
             for c, v in classification.items():
                 agg[c][v] += 1
     print(EVENT_CLASSIFICATIONS_AGGREGATE)
+    if ARGS.func == _local_data:
+        THUMB_COLUMN = 'data:image'
+    else:
+        THUMB_COLUMN = 'thum:image_150sq'
     bottle.run(host='0.0.0.0', port=ARGS.port, server='gevent')

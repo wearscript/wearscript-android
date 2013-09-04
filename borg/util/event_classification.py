@@ -79,6 +79,8 @@ def locomotion_classifier(sensors):
 
 
 def classify_sensors(sensor_values, window_size=10):
+    if not len(sensor_values):
+        return
     start_time = min(sensor_values[tp][0, 0] for tp in sensor_values)
     stop_time = max(sensor_values[tp][-1, 0] for tp in sensor_values)
     for t in np.arange(start_time, stop_time - window_size, window_size):

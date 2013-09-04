@@ -1,6 +1,8 @@
 import argparse
 import picarus
 import cPickle as pickle
+import base64
+from picarus_local import PicarusClientLocal
 
 
 def detect_events(client, start_row, stop_row, max_event_delay=10., min_event_rows=30, max_event_rows=500):
@@ -37,15 +39,35 @@ def detect_events(client, start_row, stop_row, max_event_delay=10., min_event_ro
     return event_rows_split, row_columns
 
 
+def _picarus_data(email, api_key, **kw):
+    return picarus.PicarusClient(email=email, api_key=api_key)
+
+def _local_data(input_dir, **kw):
+    return PicarusClientLocal(table_dirs={'images': input_dir})
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('model')
-    parser.add_argument('email')
-    parser.add_argument('api_key')
-    parser.add_argument('prefix')
+    subparsers = parser.add_subparsers()
+    subparser = subparsers.add_parser('picarus')
+    subparser.add_argument('model')
+    subparser.add_argument('email')
+    subparser.add_argument('api_key')
+    subparser.add_argument('prefix')
+    subparser.set_defaults(func=_picarus_data)
+
+    subparser = subparsers.add_parser('local')
+    subparser.add_argument('model')
+    subparser.add_argument('input_dir')
+    subparser.add_argument('--prefix')
+    subparser.set_defaults(func=_local_data)
+    
     ARGS = parser.parse_args()
-    CLIENT = picarus.PicarusClient(email=ARGS.email, api_key=ARGS.api_key)
-    ARGS.start_row = ARGS.prefix
-    ARGS.stop_row = ARGS.prefix[:-1] + chr(ord(ARGS.prefix[-1]) + 1)
+    if ARGS.prefix:
+        ARGS.start_row = ARGS.prefix
+        ARGS.stop_row = ARGS.prefix[:-1] + chr(ord(ARGS.prefix[-1]) + 1)
+    else:
+        ARGS.start_row = None
+        ARGS.stop_row = None
+    CLIENT = ARGS.func(**vars(ARGS))
     EVENT_ROWS, ROW_COLUMNS = detect_events(CLIENT, ARGS.start_row, ARGS.stop_row)
     pickle.dump(('picarus', EVENT_ROWS, ROW_COLUMNS), open(ARGS.model, 'w'), -1)

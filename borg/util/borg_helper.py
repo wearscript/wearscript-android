@@ -59,13 +59,31 @@ def update_sensor_count(sensors, total_counts):
             total_type_c[c] = 1
 
 
-def picarusdir(input_dir, email, api_key, prefix, max_sensor_radius=2, **kw):
-    sensors = []
-    max_sensor_time = 0
-    sensor_sample_hist = {}  # [type][count]
-    total_images = 0
+def picarus_store(email, api_key, prefix, **kw):
     import picarus
     client = picarus.PicarusClient(email=email, api_key=api_key)
+    for row, columns in load_dir(**kw):
+        client.patch_row('images', prefix + row, columns)
+
+
+def local_store(output_dir, **kw):
+    try:
+        os.makedirs(output_dir)
+    except OSError:
+        pass
+    for row, columns in load_dir(**kw):
+        row_dir = os.path.join(output_dir, base64.urlsafe_b64encode(row))
+        try:
+            os.makedirs(row_dir)
+        except OSError:
+            pass
+        for k, v in columns.items():
+            open(os.path.join(row_dir, base64.urlsafe_b64encode(k)), 'wb').write(v)
+
+
+def load_dir(input_dir, max_sensor_radius=2, **kw):
+    sensors = []
+    sensor_sample_hist = {}  # [type][count]
     for fn in sorted(glob.glob(input_dir + '/*.js')):
         print(fn)
         try:
@@ -75,19 +93,17 @@ def picarusdir(input_dir, email, api_key, prefix, max_sensor_radius=2, **kw):
             continue
         sensors += data['sensors']
         if 'imageb64' in data:
-            total_images += 1
             update_sensor_count(sensors, sensor_sample_hist)
             print(sensor_sample_hist)
             for s in sensors:
                 sensor_time = data['Tsave'] - s['timestamp']
                 if sensor_time > max_sensor_radius:
                     continue
-                max_sensor_time = max(max_sensor_time, sensor_time)
             print('NumSensors[%d]' % len(sensors))
-            client.patch_row('images', '%s%d' % (prefix, data['Tsave'] * 1000), {'data:image': base64.b64decode(data['imageb64']),
-                                                                                 'meta:filename': os.path.basename(fn),
-                                                                                 'meta:sensors': json.dumps(sensors),
-                                                                                 'meta:time': json.dumps(data['Tsave'])})
+            yield str(data['Tsave'] * 1000), {'data:image': base64.b64decode(data['imageb64']),
+                                              'meta:filename': os.path.basename(fn),
+                                              'meta:sensors': json.dumps(sensors),
+                                              'meta:time': json.dumps(data['Tsave'])}
             sensors = []
     print('NumSensors At End[%d]' % len(sensors))
 
@@ -115,12 +131,17 @@ if __name__ == '__main__':
     subparser = subparsers.add_parser('adb_rmr')
     subparser.set_defaults(func=adb_rmr)
 
-    subparser = subparsers.add_parser('picarusdir')
+    subparser = subparsers.add_parser('picarus_store')
     subparser.add_argument('input_dir')
     subparser.add_argument('email')
     subparser.add_argument('api_key')
     subparser.add_argument('prefix')
-    subparser.set_defaults(func=picarusdir)
+    subparser.set_defaults(func=picarus_store)
+
+    subparser = subparsers.add_parser('local_store')
+    subparser.add_argument('input_dir')
+    subparser.add_argument('output_dir')
+    subparser.set_defaults(func=local_store)
 
     args = parser.parse_args()
     args.func(**vars(args))
