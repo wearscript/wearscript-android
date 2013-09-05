@@ -166,7 +166,15 @@ func BorgGlassHandler(c *websocket.Conn) {
 					sensors = append(sensors, ind)
 				}
 			}
-			opt := BorgOptions{ImageResolution: math.Max(.25, math.Max(matchAnnotatedDelay, matchMementoDelay)), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: .1, SensorDelay: .1, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
+			sensorResolution := .1
+			sensorDelay := .1
+			imageResolution := .25
+			if hasFlag(uflags, "borg_slow") {
+			    sensorResolution = .25
+			    sensorDelay = .25
+			    imageResolution = 2.
+			}
+			opt := BorgOptions{ImageResolution: math.Max(imageResolution, math.Max(matchAnnotatedDelay, matchMementoDelay)), DataLocal: hasFlag(uflags, "borg_data_local"), DataRemote: hasFlag(uflags, "borg_data_server") || hasFlag(uflags, "borg_data_serverdisk") || hasFlag(uflags, "borg_data_web"), Sensors: sensors, Image: hasFlag(uflags, "borg_image"), SensorResolution: sensorResolution, SensorDelay: sensorDelay, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
 			if hasFlag(flags, "debug") {
 				opt.RavenDSN = ravenDSN
 			}

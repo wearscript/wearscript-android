@@ -26,7 +26,7 @@ def generate_event(auth_key, event):
     out.append('<h1><a href="event/%s">%s</a></h1><p>Num Rows: %d</p><p>Duration (min): %.2f</p><p>FPS: %.2f</p>' % (event, event, len(rows), duration / 60., len(rows) / duration))
     colors = ['00B25C', '0A67A3', 'FF8E00', 'FF4100']
     for x in range(8):
-        out.append('<img class="thumb-range" src="/%s/thumb/%s/%f/%f/%d/%d">' % (auth_key, event, times[0], times[-1], 8, x))
+        out.append('<img width="%spx" class="thumb-range" src="/%s/thumb/%s/%f/%f/%d/%d">' % (ARGS.thumbwidth, auth_key, event, times[0], times[-1], 8, x))
     for class_type, class_counts in EVENT_CLASSIFICATIONS_AGGREGATE[event].items():
         out.append(' '.join('<span style="color: #%s">%s</span>' % x for x in zip(colors, event_classification.CLASSES[class_type])))
         out.append('<span class="pie" data-colours=\'[%s]\' data-diameter="40">%s</span>' % (','.join('"#%s"' % x for x in colors), ','.join(map(str, class_counts))))
@@ -40,7 +40,7 @@ def main(auth_key):
     template = open('static_private/picarus_event_explorer_template.html').read()
     for event in sorted(EVENT_ROWS):
         out += ['<div class="event">'] + generate_event(auth_key, event) + ['</div>']
-    return template.replace('{{events}}', ''.join(out)).replace('{{chartValues}}', '{}').replace('{{AUTH_KEY}}', auth_key).replace('{{EVENT}}', event)
+    return template.replace('{{events}}', ''.join(out)).replace('{{chartValues}}', '{}').replace('{{AUTH_KEY}}', auth_key).replace('{{EVENT}}', event).replace('{{THUMBWIDTH}}', ARGS.thumbwidth)
 
 
 @bottle.route('/:auth_key#[a-zA-Z0-9\_\-]+#/thumb/<event>/<t>')
@@ -102,7 +102,7 @@ def event(auth_key, event):
         chart_values[chart_id] = [[x['timestamp'] for x in event_sensors[chart_num]]] + zip(*[x['values'] for x in event_sensors[chart_num]])
         chart_count += 1
     out.append('</div>')
-    return template.replace('{{events}}', ''.join(out)).replace('{{chartValues}}', json.dumps(chart_values)).replace('{{AUTH_KEY}}', auth_key).replace('{{EVENT}}', event)
+    return template.replace('{{events}}', ''.join(out)).replace('{{chartValues}}', json.dumps(chart_values)).replace('{{AUTH_KEY}}', auth_key).replace('{{EVENT}}', event).replace('{{THUMBWIDTH}}', ARGS.thumbwidth)
 
 
 @bottle.route('/static/<path>')
@@ -112,6 +112,7 @@ def static(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--thumbwidth', default='150')
     subparsers = parser.add_subparsers()
     subparser = subparsers.add_parser('picarus')
     subparser.add_argument('model')
