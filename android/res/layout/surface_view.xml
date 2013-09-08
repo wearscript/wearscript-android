@@ -3,10 +3,10 @@
 	android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <us.openglass.borg.JavaCameraView
+    <us.openglass.JavaCameraView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        android:id="@+id/borg_activity_java_surface_view" />
+        android:id="@+id/activity_java_surface_view" />
 
 </LinearLayout>
