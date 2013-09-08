@@ -1,4 +1,4 @@
-package us.openglass.borg;
+package us.openglass;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,7 +63,7 @@ import android.view.WindowManager;
 import com.codebutler.android_websockets.WebSocketClient;
 
 public class MainActivity extends Activity implements CvCameraViewListener2, SensorEventListener, OnInitListener, OnRecordPositionUpdateListener {
-	private static final String TAG = "Borg";
+	private static final String TAG = "OpenGlass";
 
 	private JavaCameraView view;
 	private WebSocketClient client;
@@ -86,22 +86,22 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	private int saveDataThreadRunning;
 	private JSONArray sensorBuffer;
 
-	// Borg Options
-	protected TreeSet<Integer> borgSensors;
-	protected Boolean borgDataRemote;
-	protected Boolean borgDataLocal;
-	protected long borgSensorDelay;
-	protected long borgSensorResolution;
-	protected long borgImageResolution;
-	protected Boolean borgImage;
-	protected Boolean borgPreviewWarp;
-	protected Boolean borgFlicker;
-	protected Boolean borgOverlay;
-	protected Boolean borgWarpSensor;
-	protected double[] borgHBigToGlass;
-	protected double[] borgHSmallToBig;
-	protected double[] borgHSmallToGlass;
-	protected Mat borgHSmallToGlassMat;
+	// Options
+	protected TreeSet<Integer> optionSensors;
+	protected Boolean optionDataRemote;
+	protected Boolean optionDataLocal;
+	protected long optionSensorDelay;
+	protected long optionSensorResolution;
+	protected long optionImageResolution;
+	protected Boolean optionImage;
+	protected Boolean optionPreviewWarp;
+	protected Boolean optionFlicker;
+	protected Boolean optionOverlay;
+	protected Boolean optionWarpSensor;
+	protected double[] optionHBigToGlass;
+	protected double[] optionHSmallToBig;
+	protected double[] optionHSmallToGlass;
+	protected Mat optionHSmallToGlassMat;
 
 	// Andrew's rotation
 	protected long senhackTime;
@@ -230,25 +230,25 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		JSONObject opts = (JSONObject) o.get("options");
 		if (opts == null)
 			return;
-		borgImage = (Boolean)opts.get("image");
+		optionImage = (Boolean)opts.get("image");
 		JSONArray newSensors = (JSONArray)opts.get("sensors");
 		TreeSet<Integer> newSensorsSet = new TreeSet<Integer>();
 		for (int i = 0; i < newSensors.size(); ++i) {
 			newSensorsSet.add(((Long)newSensors.get(i)).intValue());
 		}
-		borgSensors = newSensorsSet;
-		borgOverlay = (Boolean)opts.get("overlay");
-		borgPreviewWarp = (Boolean)opts.get("previewWarp");
-		borgFlicker = (Boolean)opts.get("previewWarp");
-		borgWarpSensor = (Boolean)opts.get("warpSensor");
+		optionSensors = newSensorsSet;
+		optionOverlay = (Boolean)opts.get("overlay");
+		optionPreviewWarp = (Boolean)opts.get("previewWarp");
+		optionFlicker = (Boolean)opts.get("previewWarp");
+		optionWarpSensor = (Boolean)opts.get("warpSensor");
 
-		borgDataRemote = (Boolean)opts.get("dataRemote");
-		borgDataLocal = (Boolean)opts.get("dataLocal");
-		borgHBigToGlass = ParseJSONDoubleArray((JSONArray)opts.get("HBigToGlass"));
-		borgHSmallToBig = ParseJSONDoubleArray((JSONArray)opts.get("HSmallToBig"));
-		borgHSmallToGlass = HMult(borgHBigToGlass, borgHSmallToBig);
-		if (borgHSmallToGlass != null) {
-			borgHSmallToGlassMat = HMatFromArray(borgHSmallToGlass);
+		optionDataRemote = (Boolean)opts.get("dataRemote");
+		optionDataLocal = (Boolean)opts.get("dataLocal");
+		optionHBigToGlass = ParseJSONDoubleArray((JSONArray)opts.get("HBigToGlass"));
+		optionHSmallToBig = ParseJSONDoubleArray((JSONArray)opts.get("HSmallToBig"));
+		optionHSmallToGlass = HMult(optionHBigToGlass, optionHSmallToBig);
+		if (optionHSmallToGlass != null) {
+			optionHSmallToGlassMat = HMatFromArray(optionHSmallToGlass);
 		}
 		senhackTime = 0;
 		senhackOldValues = null;
@@ -267,16 +267,16 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		} catch (ClassCastException e) {
 			delayNew = ((Long)opts.get("sensorDelay")).doubleValue();
 		}
-		borgSensorDelay = Math.round(Math.max(delayNew, .25) * 1000000000.);
+		optionSensorDelay = Math.round(Math.max(delayNew, .25) * 1000000000.);
 		try {
-			borgSensorResolution = Math.round((Double)opts.get("sensorResolution") * 1000000000.);
+			optionSensorResolution = Math.round((Double)opts.get("sensorResolution") * 1000000000.);
 		} catch (ClassCastException e) {
-			borgSensorResolution = Math.round(((Long)opts.get("sensorResolution")).doubleValue() * 1000000000.);
+			optionSensorResolution = Math.round(((Long)opts.get("sensorResolution")).doubleValue() * 1000000000.);
 		}
 		try {
-			borgImageResolution = Math.round((Double)opts.get("imageResolution") * 1000000000.);
+			optionImageResolution = Math.round((Double)opts.get("imageResolution") * 1000000000.);
 		} catch (ClassCastException e) {
-			borgImageResolution = Math.round(((Long)opts.get("imageResolution")).doubleValue() * 1000000000.);
+			optionImageResolution = Math.round(((Long)opts.get("imageResolution")).doubleValue() * 1000000000.);
 		}
 		String url = (String)opts.get("url");
 		if (url != null && (wsUrl == null || !wsUrl.equals(url))) {
@@ -311,18 +311,18 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		lastSensorTime = new TreeMap<Integer, Long>();
 		location = (LocationManager)getSystemService(LOCATION_SERVICE);
 
-		borgDataLocal = borgDataRemote = borgImage = false;
-		borgSensors = new TreeSet<Integer>();
-		borgSensorDelay = 100000000;
-		borgSensorResolution = 100000000;
-		borgImageResolution = 250000000;
-		borgPreviewWarp = false;
-		borgFlicker = false;
-		borgWarpSensor = false;
-		borgOverlay = false;
-		borgHBigToGlass = null;
-		borgHSmallToBig = null;
-		borgHSmallToGlass = null;
+		optionDataLocal = optionDataRemote = optionImage = false;
+		optionSensors = new TreeSet<Integer>();
+		optionSensorDelay = 100000000;
+		optionSensorResolution = 100000000;
+		optionImageResolution = 250000000;
+		optionPreviewWarp = false;
+		optionFlicker = false;
+		optionWarpSensor = false;
+		optionOverlay = false;
+		optionHBigToGlass = null;
+		optionHSmallToBig = null;
+		optionHSmallToGlass = null;
 		saveDataThreadRunning = 0;
 		isForeground = true;
 		client = null;
@@ -420,7 +420,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 					} else if (action.equals("resetMatch")) {
 						matchOverlays = new TreeMap<String, Mat>();
 					} else if (action.equals("setMatchH")) {
-						matchH = HMatFromArray(HMult(borgHSmallToGlass, ParseJSONDoubleArray((JSONArray)o.get("H"))));
+						matchH = HMatFromArray(HMult(optionHSmallToGlass, ParseJSONDoubleArray((JSONArray)o.get("H"))));
 						String matchKey = (String)o.get("matchKey");
 						if (matchKey == null) {
 							Log.w(TAG, String.format("No match key"));
@@ -551,10 +551,10 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		data.put("glassID", glassID);
 		data.put("action", "data");
 		final String dataStr = data.toJSONString();
-		if (borgDataLocal) {
+		if (optionDataLocal) {
 			SaveData(dataStr.getBytes(), "data/", true, ".js");
 		}
-		if (borgDataRemote) {
+		if (optionDataRemote) {
 			if (clientConnected())
 				client.send(dataStr);
 		}
@@ -571,7 +571,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 
 	public Mat mutateFrame(Mat frame, boolean mutable) {
 		Mat frameOut = frame;
-		if (borgFlicker) {
+		if (optionFlicker) {
 			if (frame.channels() == 3) {
 				if (!mutable)
 					frameOut = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
@@ -586,7 +586,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	}
 
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-		boolean sendData = !borgImage || (!borgDataLocal && !borgDataRemote) || (borgDataRemote && remoteImageCount - remoteImageAckCount > 0) || System.nanoTime() - lastImageSaveTime < borgImageResolution;
+		boolean sendData = !optionImage || (!optionDataLocal && !optionDataRemote) || (optionDataRemote && remoteImageCount - remoteImageAckCount > 0) || System.nanoTime() - lastImageSaveTime < optionImageResolution;
 		sendData = !sendData;
 		Mat frame = null;
 		if (sendData) {
@@ -596,33 +596,33 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 			saveDataPacket(frame);
 		}
 
-		if (borgWarpSensor && senhackOldValues != null && senhackNewValues != null) {
+		if (optionWarpSensor && senhackOldValues != null && senhackNewValues != null) {
 			frame = inputFrame.rgba();
 			double hSensor[] = homographyFromRotations(senhackNewValues, senhackOldValues);
-			double hWarp[] = HMult(hSensor, borgHSmallToGlass);
+			double hWarp[] = HMult(hSensor, optionHSmallToGlass);
 			Log.i(TAG, String.format("BRAN: Sensor %s %s -> %s -> %s", Arrays.toString(senhackOldValues), Arrays.toString(senhackNewValues), Arrays.toString(hSensor), Arrays.toString(hWarp)));
 			Mat frameWarp = ImageLike(frame);
 			Imgproc.warpPerspective(frame, frameWarp, HMatFromArray(hWarp), new Size(640, 360));
 			return mutateFrame(frameWarp, true);
 		}
-		if (borgOverlay && overlay != null)
+		if (optionOverlay && overlay != null)
 			return mutateFrame(overlay, false);
-		if (borgPreviewWarp && borgHSmallToGlassMat != null) {
+		if (optionPreviewWarp && optionHSmallToGlassMat != null) {
 			frame = inputFrame.rgba();
 			Mat frameWarp = ImageLike(frame);
-			Imgproc.warpPerspective(frame, frameWarp, borgHSmallToGlassMat, new Size(640, 360));
+			Imgproc.warpPerspective(frame, frameWarp, optionHSmallToGlassMat, new Size(640, 360));
 			return mutateFrame(frameWarp, true);
 		}
 		return mutateFrame(inputFrame.rgba(), true);
 	}
 
 	public boolean sampleSensor(Integer type) {
-		if (!borgDataLocal && !borgDataRemote)
+		if (!optionDataLocal && !optionDataRemote)
 			return false;
-		if (!borgSensors.contains(type))	
+		if (!optionSensors.contains(type))	
 			return false;
 		Long val = lastSensorTime.get(type);
-		if (val != null && System.nanoTime() - val < borgSensorResolution)
+		if (val != null && System.nanoTime() - val < optionSensorResolution)
 			return false;
 		lastSensorTime.put(type, System.nanoTime());
 		return true;
@@ -661,7 +661,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		}
 		sensor.put("values", values);
 		sensorBuffer.add(sensor);
-		if (System.nanoTime() - lastSensorSaveTime > borgSensorDelay && saveDataThreadRunning == 0) {
+		if (System.nanoTime() - lastSensorSaveTime > optionSensorDelay && saveDataThreadRunning == 0) {
 			lastSensorSaveTime = System.nanoTime();
 			saveDataPacket(null);
 		}
@@ -669,7 +669,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	protected void SaveData(byte[] data, String path, boolean timestamp, String suffix) {
 		try {
 			try {
-				File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/borg/" + path);
+				File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/openglass/" + path);
 				dir.mkdirs();
 				File file;
 				if (timestamp)

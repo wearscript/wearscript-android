@@ -30,17 +30,17 @@ def b64dir(input_dir, output_dir, **kw):
 
 
 def adb_pull(output_dir, **kw):
-    c = 'adb pull sdcard/borg/data/ %s' % output_dir
+    c = 'adb pull sdcard/openglass/data/ %s' % output_dir
     subprocess.call(c.split())
 
 
 def adb_rmr(**kw):
-    c = 'adb shell rm -r sdcard/borg/data/'
+    c = 'adb shell rm -r sdcard/openglass/data/'
     subprocess.call(c.split())
 
 
 def adb_ls(**kw):
-    c = 'adb shell ls -l sdcard/borg/data/'
+    c = 'adb shell ls -l sdcard/openglass/data/'
     subprocess.call(c.split())
 
 

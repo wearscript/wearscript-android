@@ -1,4 +1,4 @@
-package us.openglass.borg;
+package us.openglass;
 
 import org.opencv.android.CameraBridgeViewBase;
 import java.util.List;

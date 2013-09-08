@@ -27,9 +27,10 @@ def generate_event(auth_key, event):
     colors = ['00B25C', '0A67A3', 'FF8E00', 'FF4100']
     for x in range(8):
         out.append('<img width="%spx" class="thumb-range" src="/%s/thumb/%s/%f/%f/%d/%d">' % (ARGS.thumbwidth, auth_key, event, times[0], times[-1], 8, x))
-    for class_type, class_counts in EVENT_CLASSIFICATIONS_AGGREGATE[event].items():
-        out.append(' '.join('<span style="color: #%s">%s</span>' % x for x in zip(colors, event_classification.CLASSES[class_type])))
-        out.append('<span class="pie" data-colours=\'[%s]\' data-diameter="40">%s</span>' % (','.join('"#%s"' % x for x in colors), ','.join(map(str, class_counts))))
+    if ARGS.classify:
+        for class_type, class_counts in EVENT_CLASSIFICATIONS_AGGREGATE[event].items():
+            out.append(' '.join('<span style="color: #%s">%s</span>' % x for x in zip(colors, event_classification.CLASSES[class_type])))
+            out.append('<span class="pie" data-colours=\'[%s]\' data-diameter="40">%s</span>' % (','.join('"#%s"' % x for x in colors), ','.join(map(str, class_counts))))
     return out
 
 
@@ -113,6 +114,7 @@ def static(path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--thumbwidth', default='150')
+    parser.add_argument('--classify', action='store_true')
     subparsers = parser.add_subparsers()
     subparser = subparsers.add_parser('picarus')
     subparser.add_argument('model')
