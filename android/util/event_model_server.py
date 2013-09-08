@@ -7,7 +7,7 @@ import argparse
 import picarus
 import bisect
 import cPickle as pickle
-from borg_events import get_row_bounds, get_event_sensors
+from events import get_row_bounds, get_event_sensors
 try:
     from image_server.auth import verify
 except ImportError:

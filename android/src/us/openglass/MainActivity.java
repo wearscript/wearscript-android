@@ -365,8 +365,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		 */
 		Intent intent = new Intent("com.google.zxing.client.android.SCAN");
 		startActivityForResult(intent, 0);
-		setContentView(R.layout.borg_surface_view);
-		view = (JavaCameraView)findViewById(R.id.borg_activity_java_surface_view);
+		setContentView(R.layout.surface_view);
+		view = (JavaCameraView)findViewById(R.id.activity_java_surface_view);
 
 		tts = new TextToSpeech(this, this);
 
@@ -697,7 +697,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	protected byte[] LoadData(String path, String suffix) {
 		try {
 			try {
-				File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/borg/" + path);
+				File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/openglass/" + path);
 				File file;
 				file = new File(dir, suffix);
 				FileInputStream inputStream = new FileInputStream(file);
