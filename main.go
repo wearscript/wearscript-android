@@ -476,6 +476,7 @@ func main() {
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/raven/{key}", http.HandlerFunc(RavenServer))
 	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
+	m.Post("/pupil/{key}", http.HandlerFunc(PupilServer))
 	m.Post("/location", http.HandlerFunc(LocationHandler))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))

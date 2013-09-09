@@ -46,7 +46,7 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	secretType := r.URL.Query().Get(":type")
-	if secretType != "raven" && secretType != "borg" && secretType != "notify" {
+	if secretType != "raven" && secretType != "pupil" && secretType != "borg" && secretType != "notify" {
 		w.WriteHeader(400)
 		return
 	}
