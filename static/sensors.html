@@ -242,7 +242,7 @@
                       });
                       glassIdToNum[response.glassID] = glassNum;
                   }
-                  $glass = $('#' + glassIdToNum[response.glassID]);
+                  var $glass = $('#' + glassIdToNum[response.glassID]);
                   if (_.has(response, 'imageb64')) {
                       latestImages[response.glassID] = response.imageb64;
                       $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response.imageb64);
@@ -300,7 +300,6 @@
       function addGraphValues(chart, sensor) {
           if (!chart.length)
               return;
-          console.log('in graph');
           var domains = {'-2': [-1, 1], 1: [-10, 10], 2: [-60, 60], 3: [-180, 360], 4: [-3, 3], 5: [0, 2000], 9: [-10, 10], 10: [-12, 12], 11: [-1, 1]};
           var ys = sensor.values;
           var colors = ['red', 'green', 'blue'];
@@ -372,7 +371,6 @@
           $canvas.addEventListener('touchend', ev_canvas, false);
           tool.drawing = false;
           tool.mousemove = function (ev) {
-              console.log('Mouse move')
               if (this.drawing) {
                   context.lineTo(ev._x, ev._y);
                   context.strokeStyle = '#0b61a4';
@@ -381,13 +379,11 @@
               }
           };
           tool.mousedown = function (ev) {
-              console.log('Mouse down')
               context.beginPath();
               context.moveTo(ev._x, ev._y);
               this.drawing = true;
           };
           tool.mouseup = function (ev) {
-              console.log('Mouse up')
               if (this.drawing) {
                   tool.mousemove(ev);
                   this.drawing = false;
@@ -429,7 +425,6 @@
           });
           div.append(image_tag.attr('src', image_data));
       }
-
 
       function getRotationMatrixFromVector(rotationVector) {
           var q0;
@@ -500,7 +495,6 @@
           var $this = $(this);
           var $glass = $('#' + glassIdToNum[$this.attr('glass')]);
           var type = $this.attr('name');
-          debug_this = $this;
           if (!$glass.find('.chart-' + type).length) {
               $glass.find('.charts').append($('<div>').attr('class', 'chart-' + type).attr('name', type).attr('title', 'Sensor #' + type));
               $glass.find('.charts').html($glass.find('.charts').children().sort(function (x, y) {return Number($(x).attr('name')) - Number($(y).attr('name'))}));
