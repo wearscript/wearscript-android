@@ -398,7 +398,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 					LogPrintf("notify: payload")
 					continue
 				}
-				annotationJS, err := json.Marshal(BorgAnnotation{Timestamp: CurTime(), Name: vs[0], Polarity: vs[1] == "1"})
+				annotationJS, err := json.Marshal(WSAnnotation{Timestamp: CurTime(), Name: vs[0], Polarity: vs[1] == "1"})
 				if err != nil {
 					LogPrintf("notify: annotationJS")
 					return
@@ -468,7 +468,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
     //conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	//reprocessMementoImages(&conn)
-	//ImageMatch("borg-serverdisk-219250584360_109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
+	//ImageMatch("109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
 	m := pat.New()
 	//m.Post("/", http.HandlerFunc(DebugServer))
 	m.Get("/map", http.HandlerFunc(MapServer))
@@ -492,8 +492,8 @@ func main() {
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/", http.HandlerFunc(RootServer))
 	go pollAnnotations()
-	http.Handle("/borg/glass/", websocket.Handler(BorgGlassHandler))
-	http.Handle("/borg/web", websocket.Handler(BorgWebHandler))
+	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
+	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
 	http.Handle("/", m)
 	err := http.ListenAndServe(":16001", nil)
 	if err != nil {

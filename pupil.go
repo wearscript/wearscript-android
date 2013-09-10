@@ -18,7 +18,7 @@ func PupilServer(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	var r BorgSensor
+	var r WSSensor
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		LogPrintf("/pupil/: couldn't unjson body")
@@ -52,8 +52,8 @@ func PupilServer(w http.ResponseWriter, req *http.Request) {
 	}
 	//fmt.Println(r)
 	//v0 := r.Values[0] * Math.Cos()
-	if hasFlag(flags, "borg_data_web") {
-		data := &BorgData{Action: "data", Ts0: r.Timestamp, Sensors: []BorgSensor{r}, GlassID: "pupil"}
+	if hasFlag(flags, "ws_data_web") {
+		data := &WSData{Action: "data", Ts0: r.Timestamp, Sensors: []WSSensor{r}, GlassID: "pupil"}
 		dataJS, err := json.Marshal(data)
 		if err != nil {
 			LogPrintf("/pupil/: couldn't create data packet")
@@ -61,6 +61,6 @@ func PupilServer(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		fmt.Println(string(dataJS))
-		userPublish(userId, "borg_server_to_web", string(dataJS))
+		userPublish(userId, "ws_server_to_web", string(dataJS))
 	}
 }

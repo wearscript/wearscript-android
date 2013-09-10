@@ -41,12 +41,12 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	if !hasFlag(flags, "user") || (!hasFlag(flags, "user_notify") && !hasFlag(flags, "user_borg")) {
+	if !hasFlag(flags, "user") || (!hasFlag(flags, "user_notify") && !hasFlag(flags, "user_ws")) {
 		w.WriteHeader(401)
 		return
 	}
 	secretType := r.URL.Query().Get(":type")
-	if secretType != "raven" && secretType != "pupil" && secretType != "borg" && secretType != "notify" {
+	if secretType != "raven" && secretType != "pupil" && secretType != "ws" && secretType != "notify" {
 		w.WriteHeader(400)
 		return
 	}
