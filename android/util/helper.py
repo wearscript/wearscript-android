@@ -19,16 +19,6 @@ def load_images(input_dir, **kw):
             print('Error[%s]: Skipping' % fn)
 
 
-def b64dir(input_dir, output_dir, **kw):
-    for fn in glob.glob(input_dir + '/*.jpg'):
-        row = 'glassborg:' + os.urandom(10)
-        rowub64 = base64.urlsafe_b64encode(row)
-        row_dir = output_dir + '/' + rowub64
-        os.makedirs(row_dir)
-        shutil.copy(fn, row_dir + '/' + base64.urlsafe_b64encode('data:image'))
-        open(row_dir + '/' + base64.urlsafe_b64encode('meta:filename'), 'w').write(os.path.basename(fn))
-
-
 def adb_pull(output_dir, **kw):
     c = 'adb pull sdcard/openglass/data/ %s' % output_dir
     subprocess.call(c.split())
@@ -115,11 +105,6 @@ if __name__ == '__main__':
     subparser = subparsers.add_parser('images')
     subparser.add_argument('input_dir')
     subparser.set_defaults(func=load_images)
-
-    subparser = subparsers.add_parser('b64dir')
-    subparser.add_argument('input_dir')
-    subparser.add_argument('output_dir')
-    subparser.set_defaults(func=b64dir)
 
     subparser = subparsers.add_parser('adb_pull')
     subparser.add_argument('output_dir')
