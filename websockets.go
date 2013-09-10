@@ -84,6 +84,7 @@ func CurTime() float64 {
 
 func WSGlassHandler(c *websocket.Conn) {
 	defer c.Close()
+	fmt.Println("Connected with glass")
     conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	path := strings.Split(c.Request().URL.Path, "/")
 	if len(path) != 4 {
@@ -100,6 +101,7 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
+	fmt.Println("Glass: 0")
 	if !hasFlag(flags, "user_ws") {
 		return
 	}
@@ -108,6 +110,7 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
+	fmt.Println("Glass: 1")
 	// Initialize delays
 	die := false
 	matchAnnotatedDelay := 0.
@@ -120,7 +123,7 @@ func WSGlassHandler(c *websocket.Conn) {
 	hFlip := []float64{-1., 0., float64(wsWidth), 0., -1., float64(wsHeight), 0., 0., 1.}
 	hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
 	hBigToGlass := []float64{1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0}
-	sensorLUT := map[string]int{"ws_sensor_gps": -1, "ws_sensor_accelerometer": 1, "ws_sensor_magneticfield": 2, "ws_sensor_orientation": 3, "ws_sensor_gyroscope": 4, "ws_sensor_light": 5, "ws_sensor_gravity": 9, "ws_sensor_linearacceleration": 10, "ws_sensor_rotationvector": 11}
+	sensorLUT := map[string]int{"sensor_gps": -1, "sensor_accelerometer": 1, "sensor_magneticfield": 2, "sensor_orientation": 3, "sensor_gyroscope": 4, "sensor_light": 5, "sensor_gravity": 9, "sensor_linearacceleration": 10, "sensor_rotationvector": 11}
 	
 	// Websocket sender
 	go func() {
@@ -368,7 +371,7 @@ func WSGlassHandler(c *websocket.Conn) {
 			                fmt.Println(err)
 			            } else {
 				        go func() {
-					    WriteFile(fmt.Sprintf("ws-serverdisk-%s-%.5d.js", userId, cnt), requestJS)
+							WriteFile(fmt.Sprintf("ws-serverdisk-%s-%.5d.js", userId, cnt), string(requestJS))
 					}()
                                     }
 				}
