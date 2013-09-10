@@ -259,8 +259,9 @@
                           }
                           addGraphValues(response.glassID, $glass.find('.chart-' + x.type), x);
                           if (!$glass.find('.sensor-' + x.type).length) {
-                              $('.sensor-data').append($('<tr>').attr('class', 'sensor-' + x.type));
-                              $('.sensor-data').html($('.sensor-data').children().sort(function (x, y) {return Number(x.className.split('-')[1]) -Number(y.className.split('-')[1])}));
+	                      var $sensorData = $glass.find('.sensor-data');
+                              $sensorData.append($('<tr>').attr('class', 'sensor-' + x.type));
+                              $sensorData.html($sensorData.children().sort(function (x, y) {return Number(x.className.split('-')[1]) -Number(y.className.split('-')[1])}));
                           }
                           x.valuesStr = x.values.join(', ');
                           x.glassID = response.glassID;
