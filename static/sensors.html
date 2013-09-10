@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>OpenGlass: Borg</title>
+    <title>OpenGlass: Live Sensors</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="bootstrap.min.css" rel="stylesheet" media="screen">
@@ -202,7 +202,7 @@
           }));
       }
       function connectWebsocket() {
-          var ws = new WebSocket("wss://api.picar.us/openglass/borg/web");
+          var ws = new WebSocket("wss://api.picar.us/openglass/ws/web");
           var scale = (3.14159265359 / 2) / 360;
           var shift = 3.14159265359 / 4;
           ws.onopen = function () {

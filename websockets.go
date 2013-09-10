@@ -169,12 +169,12 @@ func WSGlassHandler(c *websocket.Conn) {
 			sensorResolution := .1
 			sensorDelay := .1
 			imageResolution := .25
-			if hasFlag(uflags, "ws_slow") {
+			if hasFlag(uflags, "slow") {
 			    sensorResolution = .25
 			    sensorDelay = .25
 			    imageResolution = 2.
 			}
-			opt := WSOptions{ImageResolution: math.Max(imageResolution, math.Max(matchAnnotatedDelay, matchMementoDelay)), DataLocal: hasFlag(uflags, "ws_data_local"), DataRemote: hasFlag(uflags, "ws_data_server") || hasFlag(uflags, "ws_data_serverdisk") || hasFlag(uflags, "ws_data_web"), Sensors: sensors, Image: hasFlag(uflags, "ws_image"), SensorResolution: sensorResolution, SensorDelay: sensorDelay, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
+			opt := WSOptions{ImageResolution: math.Max(imageResolution, math.Max(matchAnnotatedDelay, matchMementoDelay)), DataLocal: hasFlag(uflags, "data_local"), DataRemote: hasFlag(uflags, "ws_server") || hasFlag(uflags, "data_serverdisk") || hasFlag(uflags, "ws_web"), Sensors: sensors, Image: hasFlag(uflags, "image"), SensorResolution: sensorResolution, SensorDelay: sensorDelay, PreviewWarp:  hasFlag(uflags, "glass_preview_warp"), Flicker:  hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay:  hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
 			if hasFlag(flags, "debug") {
 				opt.RavenDSN = ravenDSN
 			}
@@ -352,7 +352,7 @@ func WSGlassHandler(c *websocket.Conn) {
 			for _, sensor := range request.Sensors {
 				sensorCache[sensor.Type] = &sensor
 			}
-			if hasFlag(uflags, "ws_data_web") {
+			if hasFlag(uflags, "ws_web") {
 				requestJS, err := json.Marshal(request)
 				if err != nil {
 					fmt.Println(err)
@@ -362,10 +362,15 @@ func WSGlassHandler(c *websocket.Conn) {
 			}
 			if request.Imageb64 != nil {
 				wsSendChan <- &WSData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
-				if hasFlag(uflags, "ws_serverdisk_image") {
-					go func() {
-						WriteFile(fmt.Sprintf("ws-serverdisk-%s-%.5d.jpg", userId, cnt), picarus.B64Dec(*request.Imageb64))
+				if hasFlag(uflags, "data_serverdisk") {
+				    requestJS, err := json.Marshal(request)
+				    if err != nil {			
+			                fmt.Println(err)
+			            } else {
+				        go func() {
+					    WriteFile(fmt.Sprintf("ws-serverdisk-%s-%.5d.js", userId, cnt), requestJS)
 					}()
+                                    }
 				}
 				if hasFlag(uflags, "match_annotated") {
 					select {

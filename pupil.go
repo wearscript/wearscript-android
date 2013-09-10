@@ -52,7 +52,7 @@ func PupilServer(w http.ResponseWriter, req *http.Request) {
 	}
 	//fmt.Println(r)
 	//v0 := r.Values[0] * Math.Cos()
-	if hasFlag(flags, "ws_data_web") {
+	if hasFlag(flags, "ws_web") {
 		data := &WSData{Action: "data", Ts0: r.Timestamp, Sensors: []WSSensor{r}, GlassID: "pupil"}
 		dataJS, err := json.Marshal(data)
 		if err != nil {
