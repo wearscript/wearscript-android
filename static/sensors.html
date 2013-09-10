@@ -241,6 +241,7 @@
                           ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: latestImage, matchKey: matchKey}));
                       });
                       glassIdToNum[response.glassID] = glassNum;
+	              graphs[response.glassID] = {};
                   }
                   var $glass = $('#' + glassIdToNum[response.glassID]);
                   if (_.has(response, 'imageb64')) {
@@ -256,7 +257,7 @@
                               // rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
                               rotate_cuber($glass.find('.cube'), getRotationMatrixFromVector(x.values));
                           }
-                          addGraphValues($glass.find('.chart-' + x.type), x);
+                          addGraphValues(response.glassID, $glass.find('.chart-' + x.type), x);
                           if (!$glass.find('.sensor-' + x.type).length) {
                               $('.sensor-data').append($('<tr>').attr('class', 'sensor-' + x.type));
                               $('.sensor-data').html($('.sensor-data').children().sort(function (x, y) {return Number(x.className.split('-')[1]) -Number(y.className.split('-')[1])}));
@@ -297,23 +298,23 @@
           }
           return ws;
       }
-      function addGraphValues(chart, sensor) {
+      function addGraphValues(glassID, chart, sensor) {
           if (!chart.length)
               return;
           var domains = {'-2': [-1, 1], 1: [-10, 10], 2: [-60, 60], 3: [-180, 360], 4: [-3, 3], 5: [0, 2000], 9: [-10, 10], 10: [-12, 12], 11: [-1, 1]};
           var ys = sensor.values;
           var colors = ['red', 'green', 'blue'];
           var type = sensor.type;
-          if (!_.has(graphs, type) || seriesDatas[type]['0'].data.length > 1000) {
+          if (!_.has(graphs[glassID], type) || seriesDatas[type]['0'].data.length > 1000) {
               // Sensor graph
               chart.html('');
               seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: sensor.timestamp, y: y}], color: colors[z], name: String(z), scale: d3.scale.linear().domain(domains[type]).nice()}});
-              graphs[type] = buildChart(chart, seriesDatas[type]);
+              graphs[glassID][type] = buildChart(chart, seriesDatas[type]);
           } else {
               _.each(ys, function (y, z) {
                   seriesDatas[type][z].data.push({x: sensor.timestamp, y: y});
               });
-              graphs[type].update();
+              graphs[glassID][type].update();
           }
       }
 
