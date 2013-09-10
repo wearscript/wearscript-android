@@ -182,6 +182,21 @@
 
 
     <script type="text/javascript">
+      function buildChart(chart, seriesData) {
+          // data: Lists of sensor data (each list is a list of values)
+          var colors = ['red', 'green', 'blue'];
+          });
+          var graph = new Rickshaw.Graph({
+              element: chart[0],
+              renderer: 'line',
+              width: 1200,
+              height: 200,
+              series: seriesData
+          });
+          graph.render();
+          var hoverDetail = new Rickshaw.Graph.HoverDetail({graph: graph});
+          return graph;
+      }
       function sensorLatest(sensors, type) {
           return _.last(_.filter(sensors, function (x) {
               return x.type == type;
@@ -294,19 +309,11 @@
           if (!_.has(graphs, type) || seriesDatas[type]['0'].data.length > 1000) {
               // Sensor graph
               chart.html('');
-              var x = 0;
-              seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: x, y: y}], color: colors[z], scale: d3.scale.linear().domain(domains[type]).nice()}});
-              graphs[type] = new Rickshaw.Graph( {
-                  element: chart[0],
-                  renderer: 'line',
-                  width: 300,
-                  height: 200,
-                  series: seriesDatas[type]
-              });
+              seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: sensor.timestamp, y: y}], color: colors[z], name: String(z), scale: d3.scale.linear().domain(domains[type]).nice()}});
+              graphs[type] = buildChart(chart, seriesDatas[type]);
           } else {
               _.each(ys, function (y, z) {
-                  var x = seriesDatas[type][z].data.length;
-                  seriesDatas[type][z].data.push({x: x, y: y});
+                  seriesDatas[type][z].data.push({x: sensor.timestamp, y: y});
               });
               graphs[type].update();
           }
