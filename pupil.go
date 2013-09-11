@@ -62,6 +62,20 @@ func PupilServer(w http.ResponseWriter, req *http.Request) {
 		fmt.Println(string(dataJS))
 		userPublish(userId, "ws_server_to_web", string(dataJS))
 	}
+
+	pupilStateStr, err := getUserAttribute(userId, "control_state")
+	if err == nil {
+		pupilState, err := strconv.Atoi(pupilStateStr)
+		if err != nil || pupilState % 2 == 1 || pupilState > 8 {
+			return
+		}
+		
+		sampleJS, err := json.Marshal([]float64{float64(pupilState) / 2., r.Values[0], r.Values[1]})
+		if err != nil {
+			return
+		}
+		pushUserListTrim(userId, "control_samples", string(sampleJS), 1000)
+	}
 }
 
 func ControlServer(w http.ResponseWriter, req *http.Request) {
@@ -72,9 +86,9 @@ func ControlServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	action := req.URL.Query().Get(":action")
-	pupilState := 0
+	pupilState := 1
 	if action == "calibrate" {
-		setUserAttribute(userId, "control_state", "0")
+		setUserAttribute(userId, "control_state", "1")
 		deleteUserKey(userId, "control_samples")
 	} else if action == "calibrate_next" {
 		pupilState, err = incrUserAttribute(userId, "control_state", 1)
@@ -82,6 +96,14 @@ func ControlServer(w http.ResponseWriter, req *http.Request) {
 			LogPrintf("/control/: couldn't get pupil state")
 			w.WriteHeader(500)
 			return
+		}
+		if pupilState == 9 {
+			fmt.Println("Calibrating")
+			controlSamples, err := getUserList(userId, "control_samples")
+			if err != nil {
+				return
+			}
+			fmt.Println(controlSamples)
 		}
 	} else {
 		LogPrintf("/control/: bad action")

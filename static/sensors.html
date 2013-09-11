@@ -45,12 +45,14 @@
         <h1>Matches</h1>
         <div id="matches"></div>
       </div>
-      <div id="canvas_images"></div>
-    </div> <!-- /container -->
     <div class="row">
         <h1>Control</h1>
         <canvas id="controlCanvas" width="640" height="360"></canvas>
     </div>
+
+      <div id="canvas_images"></div>
+
+    </div> <!-- /container -->
 
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="bootstrap.min.js"></script>
@@ -107,7 +109,6 @@
                           var $matchControl = $('#' + matchKey);
                           var $canvas = $matchControl.find('.matchCanvas')[0];
                           initCanvas($canvas, matchKey);
-	                  initControlCanvas($('#controlCanvas'));
                           var context = $canvas.getContext('2d');
                           context.clearRect(0, 0, $canvas.width, $canvas.height);
                           if ($('.flag-check').prop('checked')) {
@@ -205,12 +206,12 @@
           ws.send(JSON.stringify({action: 'resetMatch'}));
       }
 
-      function initControlCanvas($canvas) {
+      function initCanvas($canvas, matchKey) {
           var context = $canvas.getContext('2d');
           context.fillStyle = '#FFFFFF'; // set canvas background color
           context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
 
-          tool = {};
+          var tool = {};
           function ev_canvas (ev) {
               if (ev.layerX || ev.layerX == 0) { // Firefox
                   ev._x = ev.layerX;
@@ -288,12 +289,15 @@
 
       }
 
-      function initCanvas($canvas, matchKey) {
+      function initControlCanvas(key) {
+          var $canvas = $('#controlCanvas');
+          $canvas.show();
+          $canvas = $canvas[0];
           var context = $canvas.getContext('2d');
-          context.fillStyle = '#FFFFFF'; // set canvas background color
+          context.fillStyle = '#00FFFF'; // set canvas background color
           context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
 
-          tool = {};
+          var tool = {};
           function ev_canvas (ev) {
               if (ev.layerX || ev.layerX == 0) { // Firefox
                   ev._x = ev.layerX;
@@ -318,7 +322,7 @@
           }
           $canvas.addEventListener('mousedown', ev_canvas, false);
           tool.mousedown = function (ev) {
-	      console.log([ev._x, ev._y]);
+              $.ajax({url: 'https://api.picar.us/openglass/pupil/' + key, type: 'POST', data: JSON.stringify({values: [ev.offsetX, ev.offsetY], 'type': -2, 'name': 'Pupil Eyetracker (fake)', 'timestamp': (new Date).getTime() / 1000})});
           };
       }
 
@@ -486,6 +490,7 @@
           graphs = {};
           seriesDatas = {};
           $('#resetMatches').click(resetMatches);
+          $('#controlCanvas').hide();
       }
       $(main);
     </script>
