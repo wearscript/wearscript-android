@@ -77,6 +77,11 @@ func PupilServer(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		pushUserListTrim(userId, "control_samples", string(sampleJS), 1000)
+		controlSamples, err := getUserList(userId, "control_samples")
+		if err != nil {
+			return
+		}
+		fmt.Println(controlSamples)
 	}
 }
 
