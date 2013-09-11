@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kisielk/raven-go/raven"
 	"fmt"
+	"github.com/kisielk/raven-go/raven"
 	"log"
 )
 

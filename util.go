@@ -1,12 +1,13 @@
 package main
+
 import (
-	"github.com/gorilla/sessions"
 	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"fmt"
-	"os"
+	"github.com/gorilla/sessions"
 	"io"
 	"net/http"
+	"os"
 )
 
 // Cookie store used to store the user's ID in the current session.
@@ -81,8 +82,8 @@ func authTransport(userId string) *oauth.Transport {
 		return nil
 	}
 	return &oauth.Transport{
-		Config:    config(""),
-		Token:     tok,
+		Config: config(""),
+		Token:  tok,
 	}
 }
 
@@ -92,7 +93,9 @@ func deleteCredential(userId string) error {
 
 func WriteFile(filename string, data string) {
 	fo, err := os.Create(filename)
-	if err != nil { fmt.Println("Couldn't create file") }
+	if err != nil {
+		fmt.Println("Couldn't create file")
+	}
 	defer func() {
 		if err := fo.Close(); err != nil {
 			fmt.Println("Couldn't close file")
@@ -123,7 +126,9 @@ func ReadFile(filename string) (string, error) {
 			fmt.Println("Couldn't read file: " + filename)
 			return "", err
 		}
-		if n == 0 { break }
+		if n == 0 {
+			break
+		}
 		data = data + string(buf[:n])
 	}
 	return data, nil

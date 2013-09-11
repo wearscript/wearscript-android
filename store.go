@@ -1,4 +1,5 @@
 package main
+
 import (
 	"github.com/garyburd/redigo/redis"
 	"strconv"
@@ -11,13 +12,12 @@ func getRedisConnection() (redis.Conn, error) {
 	return redis.Dial("tcp", redisServerPort)
 }
 
-
 func setSecretUser(secretType string, hash string, userId string) error {
 	c, err := getRedisConnection()
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("SET", "secret:" + secretType + ":" + hash, userId)
+	_, err = c.Do("SET", "secret:"+secretType+":"+hash, userId)
 	return err
 }
 
@@ -26,7 +26,7 @@ func getSecretUser(secretType string, hash string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return redis.String(c.Do("GET", "secret:" + secretType + ":" + hash))
+	return redis.String(c.Do("GET", "secret:"+secretType+":"+hash))
 }
 
 func deleteSecretUser(secretType string, hash string) error {
@@ -34,7 +34,7 @@ func deleteSecretUser(secretType string, hash string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("DEL", "secret:" + secretType + ":" + hash)
+	_, err = c.Do("DEL", "secret:"+secretType+":"+hash)
 	return err
 }
 
@@ -58,7 +58,7 @@ func getUserAttribute(userId string, attribute string) (string, error) {
 func incrUserAttribute(userId string, attribute string, incr int) (int, error) {
 	c, err := getRedisConnection()
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 	return redis.Int(c.Do("HINCRBY", userId, attribute, incr))
 }
@@ -77,7 +77,7 @@ func setUserCache(userId string, attribute string, data string, ttl int) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("SET", userId + ":cache:" + attribute, data, "EX", strconv.Itoa(ttl))
+	_, err = c.Do("SET", userId+":cache:"+attribute, data, "EX", strconv.Itoa(ttl))
 	return err
 }
 
@@ -86,7 +86,7 @@ func getUserCache(userId string, attribute string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return redis.String(c.Do("GET", userId + ":cache:" + attribute))
+	return redis.String(c.Do("GET", userId+":cache:"+attribute))
 }
 
 func deleteUserCache(userId string, attribute string) error {
@@ -94,7 +94,7 @@ func deleteUserCache(userId string, attribute string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("DEL", userId + ":cache:" + attribute)
+	_, err = c.Do("DEL", userId+":cache:"+attribute)
 	return err
 }
 
@@ -103,11 +103,11 @@ func pushUserListTrim(userId string, name string, data string, size int) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("LPUSH", userId + ":" + name, data)
+	_, err = c.Do("LPUSH", userId+":"+name, data)
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("LTRIM", userId + ":" + name, "0", strconv.Itoa(size))
+	_, err = c.Do("LTRIM", userId+":"+name, "0", strconv.Itoa(size))
 	return err
 }
 
@@ -116,7 +116,7 @@ func getUserListFront(userId string, name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return redis.String(c.Do("LINDEX", userId + ":" + name, "0"))
+	return redis.String(c.Do("LINDEX", userId+":"+name, "0"))
 }
 
 func getUserList(userId string, name string) ([]string, error) {
@@ -124,15 +124,15 @@ func getUserList(userId string, name string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return redis.Strings(c.Do("LRANGE", userId + ":" + name, "0", "-1"))
+	return redis.Strings(c.Do("LRANGE", userId+":"+name, "0", "-1"))
 }
 
 func deleteUserKey(userId string, name string) error {
 	c, err := getRedisConnection()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	_, err = c.Do("DEL", userId + ":" + name)
+	_, err = c.Do("DEL", userId+":"+name)
 	return err
 }
 
@@ -141,7 +141,7 @@ func setUserMap(userId string, name string, key string, data string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("HSET", userId + ":" + name, key, data)
+	_, err = c.Do("HSET", userId+":"+name, key, data)
 	return err
 }
 
@@ -150,7 +150,7 @@ func getUserMap(userId string, name string, key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return redis.String(c.Do("HGET", userId + ":" + name, key))
+	return redis.String(c.Do("HGET", userId+":"+name, key))
 }
 
 func getUserMapAll(userId string, name string) (map[string]string, error) {
@@ -159,12 +159,12 @@ func getUserMapAll(userId string, name string) (map[string]string, error) {
 	if err != nil {
 		return out, err
 	}
-	data, err := redis.Strings(c.Do("HGETALL", userId + ":" + name))
+	data, err := redis.Strings(c.Do("HGETALL", userId+":"+name))
 	if err != nil {
 		return out, err
 	}
-	for i := 0; i < len(data) / 2; i++ {
-		out[data[i * 2]] = data[i * 2 + 1]
+	for i := 0; i < len(data)/2; i++ {
+		out[data[i*2]] = data[i*2+1]
 	}
 	return out, nil
 }
@@ -174,7 +174,7 @@ func deleteUserMap(userId string, name string, key string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("HDEL", userId + ":" + name, key)
+	_, err = c.Do("HDEL", userId+":"+name, key)
 	return err
 }
 
@@ -183,7 +183,7 @@ func deleteUserMapAll(userId string, name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("DEL", userId + ":" + name)
+	_, err = c.Do("DEL", userId+":"+name)
 	return err
 }
 
@@ -192,7 +192,7 @@ func setUserFlag(userId string, name string, flag string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("SADD", userId + ":" + name, flag)
+	_, err = c.Do("SADD", userId+":"+name, flag)
 	return err
 }
 
@@ -201,7 +201,7 @@ func getUserFlags(userId string, name string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return redis.Strings(c.Do("SMEMBERS", userId + ":" + name))
+	return redis.Strings(c.Do("SMEMBERS", userId+":"+name))
 }
 
 func unsetUserFlag(userId string, name string, flag string) error {
@@ -209,7 +209,7 @@ func unsetUserFlag(userId string, name string, flag string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("SREM", userId + ":" + name, flag)
+	_, err = c.Do("SREM", userId+":"+name, flag)
 	return err
 }
 
@@ -261,6 +261,6 @@ func userPublish(userId string, channel string, data string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("PUBLISH", userId + ":" + channel, data)
+	_, err = c.Do("PUBLISH", userId+":"+channel, data)
 	return err
 }
