@@ -319,16 +319,6 @@
           }
       }
 
-      function setOverlay(imageb64, glassID) {
-          var out = {action: 'setOverlay', imageb64: imageb64};
-          if (!_.isUndefined(glassID))
-              out['glassID'] = glassID;
-          ws.send(JSON.stringify(out));
-      }
-      function setMatchOverlay(imageb64, matchKey) {
-          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: imageb64, matchKey: matchKey}));
-      }
-
       ws = connectWebsocket();
       function resetMatches() {
           $('#matches').html('');
@@ -505,6 +495,20 @@
       function say(msg) {
           ws.send(JSON.stringify({say: msg, action: "say"}));
       }
+      function setOverlay(imageb64, glassID) {
+          var out = {action: 'setOverlay', imageb64: imageb64};
+          if (!_.isUndefined(glassID))
+              out['glassID'] = glassID;
+          ws.send(JSON.stringify(out));
+      }
+      function sendTimelineImage(imageb64) {
+          var out = {action: 'sendTimelineImage', imageb64: imageb64};
+          ws.send(JSON.stringify(out));
+      }
+      function setMatchOverlay(imageb64, matchKey) {
+          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: imageb64, matchKey: matchKey}));
+      }
+
       function main () {
           glassIdToNum = {};
           latestImages = {};

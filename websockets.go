@@ -466,6 +466,19 @@ func WSWebHandler(c *websocket.Conn) {
 			}
 			setUserMap(userId, "match_points", request.MatchKey, points)
 			// NOTE(brandyn): We won't publish this to glass, it isn't needed
+	        } else if request.Action == "sendTimelineImage" {
+		    	trans := authTransport(userId)
+	if trans == nil {
+		LogPrintf("notify: auth")
+		return
+	}
+
+	svc, err := mirror.New(trans.Client())
+	if err != nil {
+		LogPrintf("notify: mirror")
+		return
+	}
+	sendImageCard(picarus.B64Dec(*request.Imageb64), "", svc)
 		} else if request.Action == "resetMatch" {
 			deleteUserMapAll(userId, "match_points")
 			userPublish(userId, "ws_web_to_server", string(requestJS))
