@@ -466,6 +466,9 @@ func main() {
 	//conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	//reprocessMementoImages(&conn)
 	//ImageMatch("109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
+	samples := [][]float64{float64{4,6,357}, float64{4,5,354}, float64{4,8,352}, float64{3,627,350} ,float64{3,636,350} ,float64{3,628,356} ,float64{2,630,31} ,float64{2,637,17} ,float64{2,629,6} ,float64{1,7,6} ,float64{1,7,6} ,float64{1,7,4}}
+	fmt.Println(samples)
+
 	m := pat.New()
 	//m.Post("/", http.HandlerFunc(DebugServer))
 	m.Get("/map", http.HandlerFunc(MapServer))
