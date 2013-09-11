@@ -357,6 +357,14 @@ func WSGlassHandler(c *websocket.Conn) {
 			for _, sensor := range request.Sensors {
 				sensorCache[sensor.Type] = &sensor
 			}
+			if hasFlag(uflags, "control") {
+			    // TODO: Add flag forb
+			    if hasFlag(uflags, "control_pupil") {
+			        // TODO: This is if we are using pupil for control
+			    } else {
+			        // TODO: If head rotation is for control
+			    }
+			}
 			if hasFlag(uflags, "ws_web") {
 				requestJS, err := json.Marshal(request)
 				if err != nil {
