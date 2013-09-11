@@ -55,6 +55,14 @@ func getUserAttribute(userId string, attribute string) (string, error) {
 	return redis.String(c.Do("HGET", userId, attribute))
 }
 
+func incrUserAttribute(userId string, attribute string, incr int) (int, error) {
+	c, err := getRedisConnection()
+	if err != nil {
+		return "", err
+	}
+	return redis.Int(c.Do("HINCRBY", userId, attribute, incr))
+}
+
 func deleteUserAttribute(userId string, attribute string) error {
 	c, err := getRedisConnection()
 	if err != nil {
@@ -117,6 +125,15 @@ func getUserList(userId string, name string) ([]string, error) {
 		return nil, err
 	}
 	return redis.Strings(c.Do("LRANGE", userId + ":" + name, "0", "-1"))
+}
+
+func deleteUserKey(userId string, name string) error {
+	c, err := getRedisConnection()
+	if err != nil {
+		return nil, err
+	}
+	_, err = c.Do("DEL", userId + ":" + name)
+	return err
 }
 
 func setUserMap(userId string, name string, key string, data string) error {

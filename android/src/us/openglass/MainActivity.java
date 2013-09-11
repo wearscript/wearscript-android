@@ -54,6 +54,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
@@ -298,6 +299,14 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		if (url != null && (wsUrl == null || !wsUrl.equals(url))) {
 			setupWSClient(url);
 		}
+		if (optionFlicker) {
+			PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+			PowerManager.WakeLock wl = pm.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    TAG);
+			 wl.acquire();
+		}
+			
 	}
 
 	protected Mat ImageBGRFromString(String dataB64) {
