@@ -67,11 +67,13 @@ func PupilServer(w http.ResponseWriter, req *http.Request) {
 	if err == nil {
 		pupilState, err := strconv.Atoi(pupilStateStr)
 		if err != nil || pupilState % 2 == 1 || pupilState > 8 {
+		    fmt.Println("pupil: Not saving sample: 0")
 			return
 		}
 		
 		sampleJS, err := json.Marshal([]float64{float64(pupilState) / 2., r.Values[0], r.Values[1]})
 		if err != nil {
+		    fmt.Println("pupil: Not saving sample: 1")
 			return
 		}
 		pushUserListTrim(userId, "control_samples", string(sampleJS), 1000)
