@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"io/ioutil"
 	"net/http"
 )
@@ -71,20 +72,24 @@ func ControlServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	action := req.URL.Query().Get(":action")
+	pupilState := 0
 	if action == "calibrate" {
 		setUserAttribute(userId, "control_state", "0")
 		deleteUserKey(userId, "control_samples")
 	} else if action == "calibrate_next" {
-		pupilState, err := incrUserAttribute(userId, "control_state", 1)
+		pupilState, err = incrUserAttribute(userId, "control_state", 1)
 		if err != nil {
 			LogPrintf("/control/: couldn't get pupil state")
 			w.WriteHeader(500)
 			return
 		}
-		fmt.Println(pupilState)
 	} else {
 		LogPrintf("/control/: bad action")
 		w.WriteHeader(400)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(map[string]string{"state": strconv.Itoa(pupilState)}); err != nil {
+		w.WriteHeader(500)
 		return
 	}
 }

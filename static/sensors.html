@@ -56,131 +56,6 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
 
-    
-    <script id="2d-vertex-shader" type="x-shader/x-vertex">
-      attribute vec2 a_position;
-      attribute vec2 a_texCoord;
-      
-      uniform vec2 u_resolution;
-      uniform mat3 u_h;
-      
-      varying vec2 v_texCoord;
-      
-      void main() {
-      // convert the rectangle from pixels to 0.0 to 1.0
-      
-      vec3 warped = u_h * vec3(a_position, 1);
-      
-      vec2 zeroToOne = warped.xy / u_resolution;
-      
-      // convert from 0->1 to 0->2
-      vec2 zeroToTwo = zeroToOne * 2.0;
-      
-      // convert from 0->2 to -1->+1 (clipspace)
-      vec2 clipSpace = zeroToTwo - 1.0;
-      
-      gl_Position = vec4(clipSpace * vec2(1, -1), 0, warped.z);
-      
-      // pass the texCoord to the fragment shader
-      // The GPU will interpolate this value between points.
-      v_texCoord = a_texCoord;
-      }
-    </script>
-    
-    <script id="2d-fragment-shader" type="x-shader/x-fragment">
-      precision mediump float;
-      
-      // our texture
-      uniform sampler2D u_image;
-      
-      // the texCoords passed in from the vertex shader.
-      varying vec2 v_texCoord;
-      
-      void main() {
-      // Look up a color from the texture.
-      gl_FragColor = texture2D(u_image, v_texCoord);
-      }
-    </script>
-    <script src="webgl-utils.js" type="text/javascript"></script>
-
-    <script type="text/javascript">
-    function setRectangle(gl,x,y,width,height){
-        var x1=x;
-        var x2=x+width;
-        var y1=y;
-        var y2=y+height;
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([x1,y1,x2,y1,x1,y2,x1,y2,x2,y1,x2,y2]),gl.STATIC_DRAW);
-    }
-
-    function invert_3x3(m) {
-        var a=m[0], b=m[1], c=m[2], d=m[3], e=m[4], f=m[5], g=m[6], h=m[7], i=m[8];
-        var s = a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g);
-        var g = [e*i-f*h, c*h-b*i, b*f-c*e, f*g-d*i, a*i-c*g, c*d-a*f, d*h-e*g, b*g-a*h, a*e-b*d];
-        return _.map(g, function (x) {
-            return x / s;
-        });
-    }
-
-    function render(image, h) {
-        h = [h[0], h[3], h[6], h[1], h[4], h[7], h[2], h[5], h[8]];
-        // Get A WebGL context
-        var canvas = document.getElementById("mosaic");
-        var gl = canvas.getContext("experimental-webgl");
-        
-        // setup a GLSL program
-        var vertexShader = createShaderFromScriptElement(gl, "2d-vertex-shader");
-        var fragmentShader = createShaderFromScriptElement(gl, "2d-fragment-shader");
-        var program = createProgram(gl, [vertexShader, fragmentShader]);
-        gl.useProgram(program);
-        
-        // look up where the vertex data needs to go.
-        var positionLocation = gl.getAttribLocation(program, "a_position");
-
-        // look up where the texture coordinates need to go.
-        var texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
-        
-        // provide texture coordinates for the rectangle.
-        var texCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-            0.0,  0.0,
-            1.0,  0.0,
-            0.0,  1.0,
-            0.0,  1.0,
-            1.0,  0.0,
-            1.0,  1.0]), gl.STATIC_DRAW);
-        gl.enableVertexAttribArray(texCoordLocation);
-        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-        
-        // Create a texture.
-        var texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        
-        // Set the parameters so we can render any size image.
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        
-        // Upload the image into the texture.
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-        var hLocation=gl.getUniformLocation(program,"u_h");
-        gl.uniformMatrix3fv(hLocation,false,new Float32Array(h));
-
-        var resolutionLocation=gl.getUniformLocation(program,"u_resolution");
-        gl.uniform2f(resolutionLocation,canvas.width,canvas.height);
-        var buffer=gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-        gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation,2,gl.FLOAT,false,0,0);
-        setRectangle(gl,0,0,image.width,image.height);
-        gl.drawArrays(gl.TRIANGLES,0,6);
-        console.log(image.width + " " + image.height + " " + canvas.width + " " + canvas.height);
-    }
-    </script>
-
-
     <script type="text/javascript">
       function buildChart(chart, seriesData) {
           // data: Lists of sensor data (each list is a list of values)
@@ -254,8 +129,7 @@
                       response_sensor = response;
                       _.each(response.sensors, function (x) {
                           if (x.type == 11) {
-                              // rotate_cube($('#cube'), -(x.values[1] + 180), -(x.values[2] + 180), x.values[0])
-                              rotate_cuber($glass.find('.cube'), getRotationMatrixFromVector(x.values));
+                              rotate_cuber($glass.find('.cube'), remap_coordinate_system(getRotationMatrixFromVector(x.values), 1, 3));
                           }
                           addGraphValues(response.glassID, $glass.find('.chart-' + x.type), x);
                           if (!$glass.find('.sensor-' + x.type).length) {
@@ -420,9 +294,9 @@
 
       function getRotationMatrixFromVector(rotationVector) {
           var q0;
-          var q1 = rotationVector[2];
+          var q1 = rotationVector[0];
           var q2 = rotationVector[1];
-          var q3 = rotationVector[0];
+          var q3 = rotationVector[2];
 
           R = new Array(16);
 
@@ -463,6 +337,68 @@
 
           return R;
       }
+      function remap_coordinate_system(inR, X, Y) {
+          // AXIS_X=1, AXIS_Y=2, AXIS_Z=3
+        /*
+         * X and Y define a rotation matrix 'r':
+         *
+         *  (X==1)?((X&0x80)?-1:1):0    (X==2)?((X&0x80)?-1:1):0    (X==3)?((X&0x80)?-1:1):0
+         *  (Y==1)?((Y&0x80)?-1:1):0    (Y==2)?((Y&0x80)?-1:1):0    (Y==3)?((X&0x80)?-1:1):0
+         *                              r[0] ^ r[1]
+         *
+         * where the 3rd line is the vector product of the first 2 lines
+         *
+         */
+              outR = _.range(16);
+
+              var length = outR.length;
+              if (inR.length != length)
+                  return;   // invalid parameter
+              if ((X & 0x7C)!=0 || (Y & 0x7C)!=0)
+                  return;   // invalid parameter
+              if (((X & 0x3)==0) || ((Y & 0x3)==0))
+                  return;   // no axis specified
+              if ((X & 0x3) == (Y & 0x3))
+                  return;   // same axis specified
+
+        // Z is "the other" axis, its sign is either +/- sign(X)*sign(Y)
+        // this can be calculated by exclusive-or'ing X and Y; except for
+        // the sign inversion (+/-) which is calculated below.
+        var Z = X ^ Y;
+
+        // extract the axis (remove the sign), offset in the range 0 to 2.
+              var x = (X & 0x3)-1;
+              var y = (Y & 0x3)-1;
+              var z = (Z & 0x3)-1;
+
+        // compute the sign of Z (whether it needs to be inverted)
+              var axis_y = (z+1)%3;
+              var axis_z = (z+2)%3;
+              if (((x^axis_y)|(y^axis_z)) != 0)
+                  Z ^= 0x80;
+
+              var sx = (X>=0x80);
+              var sy = (Y>=0x80);
+              var sz = (Z>=0x80);
+
+        // Perform R * r, in avoiding actual muls and adds.
+              var rowLength = ((length==16)?4:3);
+              _.each(_.range(3), function(j){
+                  var offset = j*rowLength;
+              _.each(_.range(3), function(i){
+                      if (x==i)   outR[offset+i] = sx ? -inR[offset+0] : inR[offset+0];
+                      if (y==i)   outR[offset+i] = sy ? -inR[offset+1] : inR[offset+1];
+                      if (z==i)   outR[offset+i] = sz ? -inR[offset+2] : inR[offset+2];
+              })
+              })
+
+              if (length == 16) {
+                  outR[3] = outR[7] = outR[11] = outR[12] = outR[13] = outR[14] = 0;
+                  outR[15] = 1;
+              }
+              return outR;
+          }
+
       function rotate_cuber($cube, mat) {
           mat_trans = [];
           _.each(_.range(4), function (i) {
@@ -476,12 +412,6 @@
               "transition-duration": '0s'
           });
           
-      }
-      function rotate_cube($cube, x, y, z) {
-          $cube.css({
-              transform: 'rotateZ(' + z + 'deg) rotateX(' + x + 'deg) rotateY(' + y + 'deg)',
-              "transition-duration": '0s'
-          });
       }
       function sensor_graph_click() {
           var $this = $(this);

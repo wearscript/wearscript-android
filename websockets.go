@@ -2,6 +2,7 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
+	"code.google.com/p/google-api-go-client/mirror/v1"
 	"encoding/json"
 	"fmt"
 	picarus "github.com/bwhite/picarus/go"
