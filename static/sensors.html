@@ -47,6 +47,10 @@
       </div>
       <div id="canvas_images"></div>
     </div> <!-- /container -->
+    <div class="row">
+        <h1>Control</h1>
+        <canvas id="controlCanvas" width="640" height="360"></canvas>
+    </div>
 
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="bootstrap.min.js"></script>
@@ -228,6 +232,7 @@
                           var $matchControl = $('#' + matchKey);
                           var $canvas = $matchControl.find('.matchCanvas')[0];
                           initCanvas($canvas, matchKey);
+	                  initControlCanvas($('#controlCanvas'));
                           var context = $canvas.getContext('2d');
                           context.clearRect(0, 0, $canvas.width, $canvas.height);
                           if ($('.flag-check').prop('checked')) {
@@ -326,7 +331,7 @@
           ws.send(JSON.stringify({action: 'resetMatch'}));
       }
 
-      function initCanvas($canvas, matchKey) {
+      function initControlCanvas($canvas) {
           var context = $canvas.getContext('2d');
           context.fillStyle = '#FFFFFF'; // set canvas background color
           context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
@@ -408,6 +413,41 @@
           };
 
       }
+
+      function initCanvas($canvas, matchKey) {
+          var context = $canvas.getContext('2d');
+          context.fillStyle = '#FFFFFF'; // set canvas background color
+          context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
+
+          tool = {};
+          function ev_canvas (ev) {
+              if (ev.layerX || ev.layerX == 0) { // Firefox
+                  ev._x = ev.layerX;
+                  ev._y = ev.layerY;
+              } else if (ev.offsetX || ev.offsetX == 0) { // Opera
+                  ev._x = ev.offsetX;
+                  ev._y = ev.offsetY;
+              }
+              var evtype = ev.type;
+              if (evtype.slice(0, 5) == "touch" && event.touches.length == 1) {
+                  console.log('Touch')
+                  ev._x = ev.touches[0].pageX;
+                  ev._y = ev.touches[0].pageY;
+              }
+              console.log(ev._x + " " + ev._y)
+              //console.log(ev.pageX + " " + ev.pageY)
+
+              var func = tool[evtype];
+              if (func) {
+                  func(ev);
+              }
+          }
+          $canvas.addEventListener('mousedown', ev_canvas, false);
+          tool.mousedown = function (ev) {
+	      console.log([ev._x, ev._y]);
+          };
+      }
+
 
       function render_image(image_data, div, success) {
           var image_id = _.uniqueId('image_');
