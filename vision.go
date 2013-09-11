@@ -27,6 +27,9 @@ func DecodeHomography(data string) ([]float64, error) {
 	}
 	return dec[0].([]float64), nil
 }
+func ImagePointsMatchFloat64(points0 float64, points1 float64) ([]float64, error)
+
+}
 
 func ImagePointsMatch(points0 string, points1 string) ([]float64, error) {
 	model := "kYKia3eDqG1heF9kaXN0eKttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMtAFAAAAAAAAKRuYW1l2gAkcGljYXJ1cy5JbWFnZUhvbW9ncmFwaHlSYW5zYWNIYW1taW5n"
