@@ -1,17 +1,17 @@
 package main
-import (
-	picarus "github.com/bwhite/picarus/go"
-	"code.google.com/p/google-api-go-client/mirror/v1"
-	"code.google.com/p/goauth2/oauth"
-	"net/http"
-	"fmt"
-	"encoding/json"
-	"strconv"
-	"html/template"
-	"time"
-	"io/ioutil"
-	)
 
+import (
+	"code.google.com/p/goauth2/oauth"
+	"code.google.com/p/google-api-go-client/mirror/v1"
+	"encoding/json"
+	"fmt"
+	picarus "github.com/bwhite/picarus/go"
+	"html/template"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+	"time"
+)
 
 func notifyMemento(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {
 	if !hasFlagSingle(userId, "flags", "user_memento") {
@@ -64,7 +64,6 @@ func notifyMemento(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transpo
 		return
 	}
 
-
 	// TODO: Create image features
 
 	//"bwhitememento;"
@@ -98,7 +97,6 @@ func reprocessMementoImages(conn *picarus.Conn) error {
 	return nil
 }
 
-
 func matchMementoImage(conn *picarus.Conn, queryRow string, userId string) (map[string]string, map[string]string, error) {
 	queryFeatures, err := PicarusApiModel(conn, queryRow, picarus.B64Dec(locationFeatureModel))
 	if err != nil {
@@ -112,7 +110,7 @@ func getMementoDB(conn *picarus.Conn, userId string) ([]string, []map[string]str
 	rows := []string{}
 	columnss := []map[string]string{}
 
-	ss := conn.Scanner("images", "bwhitememento:" + userId + ":", "bwhitememento:" + userId + ";", []string{"meta:", picarus.B64Dec(locationFeatureModel)}, map[string]string{})
+	ss := conn.Scanner("images", "bwhitememento:"+userId+":", "bwhitememento:"+userId+";", []string{"meta:", picarus.B64Dec(locationFeatureModel)}, map[string]string{})
 	for {
 		row, columns, err := ss.Next()
 		if err != nil {
@@ -136,12 +134,11 @@ func getMementoDB(conn *picarus.Conn, userId string) ([]string, []map[string]str
 	return rows, columnss, nil
 }
 
-
 func matchMementoFeatures(conn *picarus.Conn, queryFeatures string, userId string) (map[string]string, map[string]string, error) {
 	// TODO: Refactor to use getMementoDB to avoid reuse, features fit in memory
 	rowsMatched := map[string]string{}
 	rowsUnmatched := map[string]string{}
-	ss := conn.Scanner("images", "bwhitememento:" + userId + ":", "bwhitememento:" + userId + ";", []string{"meta:", picarus.B64Dec(locationFeatureModel)}, map[string]string{})
+	ss := conn.Scanner("images", "bwhitememento:"+userId+":", "bwhitememento:"+userId+";", []string{"meta:", picarus.B64Dec(locationFeatureModel)}, map[string]string{})
 	for {
 		row, columns, err := ss.Next()
 		if err != nil {
@@ -171,10 +168,9 @@ func matchMementoFeatures(conn *picarus.Conn, queryFeatures string, userId strin
 }
 
 type SearchTemplateData struct {
-	Query *ThumbnailTemplate
+	Query      *ThumbnailTemplate
 	Thumbnails []*ThumbnailTemplate
 }
-
 
 func getImageThumb(conn *picarus.Conn, row string) (string, error) {
 	m, err := conn.GetRow("images", row, []string{"thum:image_150sq"})
@@ -186,7 +182,7 @@ func getImageThumb(conn *picarus.Conn, row string) (string, error) {
 }
 
 func MementoSearchServer(w http.ResponseWriter, req *http.Request) {
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	userId, err := userID(req)
 	if err != nil {
 		http.Redirect(w, req, "auth", http.StatusFound)

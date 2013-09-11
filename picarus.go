@@ -26,7 +26,6 @@ func PicarusApiModelStore(conn *picarus.Conn, row string, model string) (string,
 	return v[model], nil
 }
 
-
 func PicarusApiRowThumb(conn *picarus.Conn, row string) (string, error) {
 	v, err := conn.PostRow("images", row, map[string]string{"action": "io/thumbnail"})
 	if err != nil {

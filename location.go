@@ -1,32 +1,32 @@
 package main
 
 import (
-	picarus "github.com/bwhite/picarus/go"
+	"code.google.com/p/google-api-go-client/mirror/v1"
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"net/http"
-	"io/ioutil"
-	"html/template"
+	picarus "github.com/bwhite/picarus/go"
 	"github.com/ugorji/go/codec"
-	"code.google.com/p/google-api-go-client/mirror/v1"
+	"html/template"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 )
 
 func LocationHandler(w http.ResponseWriter, r *http.Request) {
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	fmt.Println(conn)
 	fmt.Println("Got notify...")
-    not := new(mirror.Notification)
-    if err := json.NewDecoder(r.Body).Decode(not); err != nil {
-        fmt.Println(fmt.Errorf("Unable to decode notification: %v", err))
-        return
-    }
+	not := new(mirror.Notification)
+	if err := json.NewDecoder(r.Body).Decode(not); err != nil {
+		fmt.Println(fmt.Errorf("Unable to decode notification: %v", err))
+		return
+	}
 	fmt.Println(not)
 	if not.Operation != "UPDATE" {
 		fmt.Println("Not an update, quitting...")
 		return
 	}
-    userId := not.UserToken
+	userId := not.UserToken
 	if !hasFlagSingle(userId, "flags", "user_location") {
 		return
 	}
@@ -53,7 +53,7 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		pushUserListTrim(userId, "locations", string(locSer), maxLocations)
 	}
-	
+
 	//loc.Latitude
 	//fmt.Println(*loc)
 }
@@ -67,7 +67,6 @@ func locationOn(svc *mirror.Service, userId string) error {
 	_, err := svc.Subscriptions.Insert(s).Do()
 	return err
 }
-
 
 func locationOff(svc *mirror.Service) error {
 	subscriptions, err := svc.Subscriptions.List().Do()
@@ -91,21 +90,21 @@ type MapLatLon struct {
 }
 
 type ThumbnailTemplate struct {
-	Data string
+	Data  string
 	Title string
 	Class string
 }
 
 type MapTemplateData struct {
-	Center MapLatLon
-	Points []MapLatLon
-	Query *ThumbnailTemplate
+	Center     MapLatLon
+	Points     []MapLatLon
+	Query      *ThumbnailTemplate
 	Thumbnails []*ThumbnailTemplate
 }
 
 type SearchConfRow struct {
 	Conf float64
-	Row string
+	Row  string
 }
 
 func DecodeSearchResults(data string) (*[]SearchConfRow, error) {
@@ -123,7 +122,7 @@ func DecodeSearchResults(data string) (*[]SearchConfRow, error) {
 }
 
 func MapServer(w http.ResponseWriter, req *http.Request) {
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	userId, err := userID(req)
 	if err != nil {
 		http.Redirect(w, req, "auth", http.StatusFound)
@@ -133,7 +132,7 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
-	
+
 	locationSer, err := getUserListFront(userId, "locations")
 	if err != nil {
 		return
@@ -166,22 +165,22 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 	}
 
 	searchDataEnc, err := PicarusApiModel(&conn, queryRow, picarus.B64Dec(locationModel))
-			
+
 	if err != nil {
 		fmt.Println("Image search error")
 		return
 	}
 	/*
-	searchDataEnc, err := getUserAttribute(userId, "latest_image_search")
-	if err != nil {
-		return
-	}*/
+		searchDataEnc, err := getUserAttribute(userId, "latest_image_search")
+		if err != nil {
+			return
+		}*/
 	searchData, err := DecodeSearchResults(searchDataEnc)
 	if err != nil {
 		return
 	}
 
-	for _, v := range (*searchData) {//[:50]
+	for _, v := range *searchData { //[:50]
 		m, err := conn.GetRow("images", v.Row, []string{"meta:latitude", "meta:longitude", "meta:latlons", "thum:image_150sq"})
 		if err != nil {
 			fmt.Println("Getting lat/lon failed")
@@ -197,8 +196,8 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			thumbnails = append(thumbnails, &ThumbnailTemplate{Data: picarus.B64Enc(m["thum:image_150sq"]), Title: picarus.B64Enc(v.Row) + " " + strconv.FormatFloat(v.Conf, 'f', 16, 64) + " Unmatched", Class: "image-unmatched"})
 		} else {
-		latlonsSer := m["meta:latlons"]
-		latlons := [][]string{}
+			latlonsSer := m["meta:latlons"]
+			latlons := [][]string{}
 			err = json.Unmarshal([]byte(latlonsSer), &latlons)
 			if err != nil {
 				fmt.Println("Couldn't load latlons")
@@ -212,10 +211,10 @@ func MapServer(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	mapData := MapTemplateData{
-		Center: MapLatLon{Lat: strconv.FormatFloat(loc.Latitude, 'f', 16, 64), Lon: strconv.FormatFloat(loc.Longitude, 'f', 16, 64)},
-	    Points: points,
+		Center:     MapLatLon{Lat: strconv.FormatFloat(loc.Latitude, 'f', 16, 64), Lon: strconv.FormatFloat(loc.Longitude, 'f', 16, 64)},
+		Points:     points,
 		Thumbnails: thumbnails,
-	    Query: &queryImage,
+		Query:      &queryImage,
 	}
 
 	t := template.New("Map template")

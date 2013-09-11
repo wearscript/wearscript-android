@@ -1,27 +1,27 @@
 package main
 
 import (
+	"code.google.com/p/google-api-go-client/mirror/v1"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"code.google.com/p/google-api-go-client/mirror/v1"
 )
 
 type NotifyEvent struct {
-	Application string `json:"application"`
-	Message string `json:"message"`
-	Priority bool `json:"priority"`
-	Title string `json:"title"`
-	Key string `json:"key"`
-	Html string `json:"html"`
-	SpeakableText string `json:"speakableText"`
-	HtmlPages []string `json:"htmlPages"`
+	Application   string   `json:"application"`
+	Message       string   `json:"message"`
+	Priority      bool     `json:"priority"`
+	Title         string   `json:"title"`
+	Key           string   `json:"key"`
+	Html          string   `json:"html"`
+	SpeakableText string   `json:"speakableText"`
+	HtmlPages     []string `json:"htmlPages"`
 }
 
 func NotifyServer(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	fmt.Println("Got /notify/")	
+	fmt.Println("Got /notify/")
 
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -77,7 +77,7 @@ func NotifyServer(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	
+
 	nt := &mirror.TimelineItem{}
 	if r.Html == "" {
 		nt.Html = "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Title + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Application + "</p></div></section></article>"
