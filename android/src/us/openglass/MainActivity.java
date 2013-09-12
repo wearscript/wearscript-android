@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.ArrayList;
 
 import net.kencochrane.raven.DefaultRavenFactory;
 import net.kencochrane.raven.Raven;
@@ -29,6 +30,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
@@ -102,6 +104,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	protected double[] optionHSmallToBig;
 	protected double[] optionHSmallToGlass;
 	protected Mat optionHSmallToGlassMat;
+	
+	private Mat mEyeMat;
 
 	// Andrew's rotation
 	protected long senhackTime;
@@ -173,6 +177,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 				matchOverlays = new TreeMap<String, Mat>();
 				matchH = null;
 				overlay = null;
+				mEyeMat = new Mat(360, 640, CvType.CV_8UC4);
+				eyeMatDraw(testDrawDirectives());
 				view.enableView();
 			} break;
 			default:
@@ -181,6 +187,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 			} break;
 			}
 		}
+		
 	};
 
 	public MainActivity() {
@@ -385,6 +392,87 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_GAME);
 		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY), SensorManager.SENSOR_DELAY_GAME);
 		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_GAME);		
+		
+		
+		
+	}
+	
+	private JSONArray testDrawDirectives() {
+		JSONArray jsa = new JSONArray();
+		//jsa.add(new JSONArray() {{add("circle")}};		
+		jsa.add(new ArrayList<String>() {{ add("circle");}});
+		jsa.add(new ArrayList<String>() {{ add("clear");}});
+		jsa.add(new ArrayList<String>() {{ add("rect");}});
+		return jsa;
+	}
+	
+	private ArrayList<Integer> jsonIntTriple(final int a, final int b, final int c) {
+		ArrayList<Integer> out = 
+			new ArrayList<Integer>() {{
+				add(a);
+				add(b);
+				add(c);
+			}};
+		return out;
+	}
+	
+	private Scalar parseIntTriple(final JSONArray jsa) {
+		Scalar scalar = null;
+		boolean arrayIsProperlyTyped = true;
+		if (jsa != null && jsa.size() > 0 && jsa.size() >= 3) {
+			for (Object maybeInt : jsa.toArray()) {
+				if (!(maybeInt instanceof Integer)) {
+					arrayIsProperlyTyped = false;
+				}
+			}
+			if (arrayIsProperlyTyped) {
+				try {
+					scalar = new Scalar((Integer) jsa.get(0), 
+							(Integer) jsa.get(1), (Integer) jsa.get(2));
+				} catch (ClassCastException e) {
+					Log.e(TAG, "Bad int triple.");
+				}
+				
+			}
+		} 
+		return scalar;
+	}
+	
+	private JSONArray testDrawDirectives1() {
+		JSONArray jsa = new JSONArray();
+		//jsa.add(new JSONArray() {{add("circle")}};		
+		jsa.add(new ArrayList<String>() {{ 
+			add("circle");
+		}});
+		jsa.add(new ArrayList<Object>() {{ 
+			add("clear");
+			add(jsonIntTriple(0, 255, 127));
+		}});
+		jsa.add(new ArrayList<String>() {{ add("rect");}});
+		return jsa;
+	}
+
+	private void eyeMatDraw(JSONArray drawDirectives) {
+		Object[] drawDirectivesArray = drawDirectives.toArray();
+		for (Object drawDirective : drawDirectivesArray) {
+			ArrayList drawDirectiveTokens = (ArrayList) drawDirective;
+			String directive = (String) drawDirectiveTokens.get(0);
+			if ("clear".equals(directive)) {
+				mEyeMat.setTo(new Scalar(0, 0, 0));								
+			} else if ("circle".equals(directive)) {
+				Point center = new Point(25, 25);
+				Scalar color = new Scalar(255, 0, 0);
+				int radius = 10;
+				Core.circle(mEyeMat, center, radius, color);
+			} else if ("rect".equals(directive)) {
+				Point corner1 = new Point(10,10);
+				Point corner2 = new Point(40,40);
+				Scalar color = new Scalar(0,255, 0);
+				Core.rectangle(mEyeMat, corner1, corner2, color);
+			} else {
+				Log.w(TAG, "Unknown directive " + directive);
+			}
+		}
 	}
 
 	private void setupWSClient(String url) {
@@ -451,6 +539,38 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 						if (opts != null && !opts.containsKey("url"))
 							opts.put("url", wsUrl);
 						SaveData(o.toString().getBytes(), "", false, "config.js");
+					} else if (action.equals("draw")) {
+						JSONArray drawDirectives = (JSONArray) o.get("drawDirectives");
+						for (Object drawDirective : drawDirectives) {
+							Object[] drawDirectiveTokens = (Object[]) drawDirective;
+							String directive = (String) drawDirectiveTokens[0];
+							if ("clear".equals(directive)) {
+								Scalar color = null;
+								try {
+									color = parseIntTriple((JSONArray) 
+											drawDirectiveTokens[1]);
+								} catch (Exception e) {
+									Log.e(TAG, "Probably an indexoutofbounds", e);
+								}
+								if (color != null) {
+									mEyeMat.setTo(color);	
+								} else {
+									Log.w(TAG, "Got clear command with bad color.");
+								}
+							} else if ("circle".equals(directive)) {
+								Point center = new Point(25, 25);
+								Scalar color = new Scalar(255, 0, 0);
+								int radius = 10;
+								Core.circle(mEyeMat, center, radius, color);
+							} else if ("rect".equals(directive)) {
+								Point corner1 = new Point(10,10);
+								Point corner2 = new Point(40,40);
+								Scalar color = new Scalar(0,255, 0);
+								Core.rectangle(mEyeMat, corner1, corner2, color);
+							} else {
+								Log.w(TAG, "Unknown directive " + directive);
+							}
+						}
 					}
 					Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
 				} catch (Exception e) {
@@ -462,6 +582,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 				}
 			}
 
+			
 			@Override
 			public void onDisconnect(int code, String reason) {
 				Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
@@ -570,6 +691,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	}
 
 	public Mat mutateFrame(Mat frame, boolean mutable) {
+		if (mEyeMat != null) return mEyeMat;
 		Mat frameOut = frame;
 		if (optionFlicker) {
 			if (frame.channels() == 3) {
