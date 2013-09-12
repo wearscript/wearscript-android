@@ -1,12 +1,13 @@
 package main
 
 import (
+	"code.google.com/p/google-api-go-client/mirror/v1"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"code.google.com/p/google-api-go-client/mirror/v1"
 )
+
 /*
 {
     'id': '134343',
@@ -19,12 +20,12 @@ import (
 */
 
 type RavenEvent struct {
-	Id string `json:"id"`
+	Id      string `json:"id"`
 	Project string `json:"project"`
 	Message string `json:"message"`
 	Culprit string `json:"culprit"`
-	Logger string `json:logger"`
-	Level string `json:"level"`
+	Logger  string `json:logger"`
+	Level   string `json:"level"`
 }
 
 func RavenServer(w http.ResponseWriter, req *http.Request) {
@@ -73,10 +74,10 @@ func RavenServer(w http.ResponseWriter, req *http.Request) {
 
 	svc, _ := mirror.New(trans.Client())
 	nt := &mirror.TimelineItem{
-		Html: "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Project + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Culprit + "</p></div></section><footer><div>" + r.Level + "</div></footer></article>",
+		Html:          "<article><section><div class=\"text-x-large\" style=\"\"><p class=\"yellow\">" + r.Project + "</p><p class=\"text-small\">" + r.Message + "</p></div><p class=\"text-small\">" + r.Culprit + "</p></div></section><footer><div>" + r.Level + "</div></footer></article>",
 		SpeakableText: r.Project + " " + r.Level + " " + r.Message + " " + r.Culprit,
-		MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
-		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
+		MenuItems:     []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
+		Notification:  &mirror.NotificationConfig{Level: "DEFAULT"},
 	}
 	_, err = svc.Timeline.Insert(nt).Do()
 	if err != nil {

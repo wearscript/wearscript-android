@@ -5,10 +5,15 @@ a = redis.StrictRedis(port=6383)
 
 keys_touched = set()
 
-user_ids = []
-for x in a.keys():
-    if x.find(':') == -1:
-        user_ids.append(x)
+
+def get_user_ids():
+    user_ids = []
+    for x in a.keys():
+        if x.find(':') == -1:
+            user_ids.append(x)
+    return user_ids
+
+user_ids = get_user_ids()
 
 lists = ['locations', 'images']
 lists_big = ['glog_images']

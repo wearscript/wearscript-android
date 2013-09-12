@@ -52,9 +52,11 @@ import android.media.AudioRecord.OnRecordPositionUpdateListener;
 import android.media.MediaRecorder;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
@@ -75,6 +77,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	private LocationManager location;
 	private ByteBuffer audioBuffer;
 	private AudioRecord audio;
+	private boolean isGlass;
+	private boolean isPhone;
 	private String wsUrl;
 	private boolean isForeground;
 
@@ -177,9 +181,13 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 				matchOverlays = new TreeMap<String, Mat>();
 				matchH = null;
 				overlay = null;
+
 				mEyeMat = new Mat(360, 640, CvType.CV_8UC4);
 				eyeMatDraw(testDrawDirectives());
 				view.enableView();
+
+				if (isGlass)
+					view.enableView();
 			} break;
 			default:
 			{
@@ -199,6 +207,18 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		WifiInfo info = wm.getConnectionInfo();
 		return info.getMacAddress();
+	}
+	
+	public void setupWifiDirect() {
+		// TODO: Modify class for this
+	}
+	
+	public String detectDeviceType() {
+		Log.i(TAG, "Build.MODEL:" + Build.MODEL);
+		Log.i(TAG, "Build.PRODUCT:" + Build.PRODUCT);
+		if (Build.PRODUCT.equals("glass_1"))
+			return "glass";
+		return "phone";
 	}
 
 	@Override
@@ -289,6 +309,14 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		if (url != null && (wsUrl == null || !wsUrl.equals(url))) {
 			setupWSClient(url);
 		}
+		if (optionFlicker) {
+			PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+			PowerManager.WakeLock wl = pm.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    TAG);
+			 wl.acquire();
+		}
+			
 	}
 
 	protected Mat ImageBGRFromString(String dataB64) {
@@ -314,6 +342,15 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		String deviceType = detectDeviceType();
+		if (deviceType.equals("glass")) {
+			isGlass = true;
+			isPhone = false;
+		} else {
+			isGlass = false;
+			isPhone = true;
+		}
+		Log.i(TAG, "detectDeviceType: " + deviceType.toString());
 		lastImageSaveTime = lastSensorSaveTime = System.nanoTime();
 		lastSensorTime = new TreeMap<Integer, Long>();
 		location = (LocationManager)getSystemService(LOCATION_SERVICE);
@@ -624,7 +661,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	{
 		isForeground = false;
 		super.onPause();
-		if (view != null)
+		if (view != null && isGlass)
 			view.disableView();
 	}
 

@@ -1,22 +1,22 @@
 package main
 
 import (
-	picarus "github.com/bwhite/picarus/go"
-	"net/http"
-	"time"
+	"code.google.com/p/google-api-go-client/mirror/v1"
+	"encoding/json"
 	"fmt"
+	picarus "github.com/bwhite/picarus/go"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
-	"encoding/json"
-	"code.google.com/p/google-api-go-client/mirror/v1"
+	"time"
 )
 
 type UserData struct {
-	Text string `json:"text"`	
+	Text      string  `json:"text"`
 	Latitude  float64 `json:"latitude"`
-	Longitude  float64 `json:"longitude"`
-	ImageUrl string `json:"image_url"`
+	Longitude float64 `json:"longitude"`
+	ImageUrl  string  `json:"image_url"`
 }
 
 func download(url string) (io.ReadCloser, error) {
@@ -35,11 +35,11 @@ func download(url string) (io.ReadCloser, error) {
 }
 
 func pollAnnotations() {
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	prevTime := time.Now()
 	for {
 		time.Sleep(10000 * time.Millisecond)
-		v, err := conn.GetTable("annotation-results-" + annotationTask, []string{})
+		v, err := conn.GetTable("annotation-results-"+annotationTask, []string{})
 		if err != nil {
 			fmt.Println("Poll failed")
 			continue
@@ -89,18 +89,18 @@ func pollAnnotations() {
 			fmt.Println("Going to send a card!")
 			trans := authTransport(userId)
 			svc, _ := mirror.New(trans.Client())
-		    text := question + "? " + userData.Text
+			text := question + "? " + userData.Text
 			if !strings.HasSuffix(text, ".") {
 				text = text + "."
-			} 
+			}
 			fmt.Println(text)
 
 			nt := &mirror.TimelineItem{
-				Text: text,
-			    Html: "<article><section><p class=\"text-normal\" data-text-autosize=\"true\">" + text + "</p></section></article>",
+				Text:          text,
+				Html:          "<article><section><p class=\"text-normal\" data-text-autosize=\"true\">" + text + "</p></section></article>",
 				SpeakableText: text,
-				MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
-				Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
+				MenuItems:     []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
+				Notification:  &mirror.NotificationConfig{Level: "DEFAULT"},
 			}
 
 			if userData.ImageUrl != "" {

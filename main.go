@@ -1,32 +1,31 @@
 package main
 
 import (
-	picarus "github.com/bwhite/picarus/go"
-	"github.com/ugorji/go-msgpack"
+	"code.google.com/p/go.net/websocket"
+	"code.google.com/p/goauth2/oauth"
+	"code.google.com/p/google-api-go-client/mirror/v1"
+	"code.google.com/p/google-api-go-client/oauth2/v2"
 	"encoding/json"
 	"fmt"
+	picarus "github.com/bwhite/picarus/go"
 	"github.com/gorilla/pat"
+	"github.com/ugorji/go-msgpack"
 	"io"
-	"strconv"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
-	"code.google.com/p/goauth2/oauth"
-	"code.google.com/p/google-api-go-client/oauth2/v2"
-	"code.google.com/p/google-api-go-client/mirror/v1"
-	"code.google.com/p/go.net/websocket"
 )
 
 const revokeEndpointFmt = "https://accounts.google.com/o/oauth2/revoke?token=%s"
-
 
 func StaticServer(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Query().Get(":path")
 	if strings.ContainsAny(path, "/\\") {
 		return
 	}
-	http.ServeFile(w, req, "static/" + path)
+	http.ServeFile(w, req, "static/"+path)
 }
 
 func RootServer(w http.ResponseWriter, req *http.Request) {
@@ -38,12 +37,10 @@ func RootServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, string(content))
 }
 
-
 func DebugServer(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("Debug server")
 	fmt.Println(req)
 }
-
 
 func setupUser(r *http.Request, client *http.Client, userId string) {
 	m, _ := mirror.New(client)
@@ -72,7 +69,7 @@ func setupUser(r *http.Request, client *http.Client, userId string) {
 	for _, eventName := range eventNames {
 		menuItems = append(menuItems, &mirror.MenuItem{Action: "CUSTOM", Id: eventName + " 1", Values: []*mirror.MenuValue{&mirror.MenuValue{DisplayName: eventName, IconUrl: fullUrl + "/static/icon_plus.png"}}})
 		menuItems = append(menuItems, &mirror.MenuItem{Action: "CUSTOM", Id: eventName + " 0", Values: []*mirror.MenuValue{&mirror.MenuValue{DisplayName: eventName, IconUrl: fullUrl + "/static/icon_minus.png"}}})
-	}	
+	}
 
 	t := &mirror.TimelineItem{
 		Text:         "OpenGlass",
@@ -96,7 +93,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 // user after they have granted the appropriate permissions.
 func oauth2callbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Create an oauth transport with a urlfetch.Transport embedded inside.
-	t := &oauth.Transport{Config:config(r.Host)}
+	t := &oauth.Transport{Config: config(r.Host)}
 
 	// Exchange the code for access and refresh tokens.
 	tok, err := t.Exchange(r.FormValue("code"))
@@ -152,7 +149,7 @@ func SetupHandler(w http.ResponseWriter, r *http.Request) {
 // signout Revokes access for the user and removes the associated credentials from the datastore.
 func signoutHandler(w http.ResponseWriter, r *http.Request) {
 	userId, err := userID(r)
-	if err != nil || userId == ""{
+	if err != nil || userId == "" {
 		w.WriteHeader(400)
 		LogPrintf("signout: userid")
 		return
@@ -179,9 +176,9 @@ func signoutHandler(w http.ResponseWriter, r *http.Request) {
 func sendImageCard(image string, text string, svc *mirror.Service) {
 	nt := &mirror.TimelineItem{
 		SpeakableText: text,
-		MenuItems:    []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
-		Html: "<img src=\"attachment:0\" width=\"100%\" height=\"100%\">",
-		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
+		MenuItems:     []*mirror.MenuItem{&mirror.MenuItem{Action: "READ_ALOUD"}, &mirror.MenuItem{Action: "DELETE"}},
+		Html:          "<img src=\"attachment:0\" width=\"100%\" height=\"100%\">",
+		Notification:  &mirror.NotificationConfig{Level: "DEFAULT"},
 	}
 	req := svc.Timeline.Insert(nt)
 	req.Media(strings.NewReader(image))
@@ -217,7 +214,7 @@ func getImageAttachment(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Tr
 	return imageData, nil
 }
 
-func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {	
+func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Transport, t *mirror.TimelineItem, userId string) {
 	if !hasFlagSingle(userId, "flags", "user_openglass") {
 		LogPrintf("openglass: flag user_openglass")
 		return
@@ -259,7 +256,7 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 		if hasFlag(flags, "location") && hasFlag(flags, "location:streetview") {
 			//searchData, err := PicarusApiModel(conn, imageRow, picarus.B64Dec(locationModel))
 		}
-			
+
 		if err != nil {
 			LogPrintf("openglass: image search")
 		}
@@ -291,7 +288,7 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 							imageType = "augmented"
 						}
 					}
-					t.Text = t.Text[10:]  // Remove "augmented "
+					t.Text = t.Text[10:] // Remove "augmented "
 				}
 				_, err = conn.PatchRow("images", imageRow, map[string]string{"meta:question": t.Text, "meta:openglass_user": userId,
 					"meta:openglass_image_type": imageType}, map[string][]byte{})
@@ -329,9 +326,9 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 				menuItems = append(menuItems, &mirror.MenuItem{Action: "DELETE"})
 				confHTML = confHTML + "</ul></section><footer><p>Image Attributes</p></footer></article>"
 				nt := &mirror.TimelineItem{
-					Html: confHTML,
+					Html:         confHTML,
 					Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
-					HtmlPages: []string{"<img src=\"attachment:0\" width=\"100%\" height=\"100%\">"},
+					HtmlPages:    []string{"<img src=\"attachment:0\" width=\"100%\" height=\"100%\">"},
 					MenuItems:    menuItems,
 				}
 				imageThumbData, err := PicarusApiModel(conn, imageRow, picarus.B64Dec(glassImageModel))
@@ -346,7 +343,7 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 					LogPrintf("openglass: predictinsert")
 					return
 				}
-				setUserAttribute(userId, "tid_to_row:" + tiConf.Id, imageRow)
+				setUserAttribute(userId, "tid_to_row:"+tiConf.Id, imageRow)
 			}
 		}
 	} else {
@@ -373,13 +370,13 @@ func notifyOpenGlass(conn *picarus.Conn, svc *mirror.Service, trans *oauth.Trans
 }
 
 func notifyHandler(w http.ResponseWriter, r *http.Request) {
-    conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
-    not := new(mirror.Notification)
-    if err := json.NewDecoder(r.Body).Decode(not); err != nil {
+	conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	not := new(mirror.Notification)
+	if err := json.NewDecoder(r.Body).Decode(not); err != nil {
 		LogPrintf("notify: decode")
-        return
-    }
-    userId := not.UserToken
+		return
+	}
+	userId := not.UserToken
 	itemId := not.ItemId
 	fmt.Println(not)
 	if not.Operation == "UPDATE" {
@@ -398,7 +395,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 					LogPrintf("notify: payload")
 					continue
 				}
-				annotationJS, err := json.Marshal(BorgAnnotation{Timestamp: CurTime(), Name: vs[0], Polarity: vs[1] == "1"})
+				annotationJS, err := json.Marshal(WSAnnotation{Timestamp: CurTime(), Name: vs[0], Polarity: vs[1] == "1"})
 				if err != nil {
 					LogPrintf("notify: annotationJS")
 					return
@@ -412,7 +409,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		imageRow, err := getUserAttribute(userId, "tid_to_row:" + not.ItemId)
+		imageRow, err := getUserAttribute(userId, "tid_to_row:"+not.ItemId)
 		if err != nil {
 			LogPrintf("notify: tid_to_row")
 			return
@@ -446,7 +443,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 		LogPrintf("notify: mirror")
 		return
 	}
-	
+
 	t, err := svc.Timeline.Get(itemId).Do()
 	if err != nil {
 		LogPrintf("notify: timeline item")
@@ -465,10 +462,17 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func computePupilHomography(samples [][]float64) {
+	
+}
+
 func main() {
-    //conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
+	//conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	//reprocessMementoImages(&conn)
-	//ImageMatch("borg-serverdisk-219250584360_109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
+	//ImageMatch("109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
+	samples := [][]float64{[]float64{4,6,357}, []float64{4,5,354}, []float64{4,8,352}, []float64{3,627,350} ,[]float64{3,636,350} ,[]float64{3,628,356} ,[]float64{2,630,31} ,[]float64{2,637,17} ,[]float64{2,629,6} ,[]float64{1,7,6} ,[]float64{1,7,6} ,[]float64{1,7,4}}
+	fmt.Println(samples)
+
 	m := pat.New()
 	//m.Post("/", http.HandlerFunc(DebugServer))
 	m.Get("/map", http.HandlerFunc(MapServer))
@@ -476,6 +480,8 @@ func main() {
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/raven/{key}", http.HandlerFunc(RavenServer))
 	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
+	m.Post("/pupil/{key}", http.HandlerFunc(PupilServer))
+	m.Post("/control/{action}", http.HandlerFunc(ControlServer))
 	m.Post("/location", http.HandlerFunc(LocationHandler))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
@@ -491,8 +497,9 @@ func main() {
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/", http.HandlerFunc(RootServer))
 	go pollAnnotations()
-	http.Handle("/borg/glass/", websocket.Handler(BorgGlassHandler))
-	http.Handle("/borg/web", websocket.Handler(BorgWebHandler))
+	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
+	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
+	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))
 	http.Handle("/", m)
 	err := http.ListenAndServe(":16001", nil)
 	if err != nil {

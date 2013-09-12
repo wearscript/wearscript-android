@@ -17,6 +17,17 @@ def _unset_flag(db, args):
     db.srem(args.user_id + ':' + args.name, args.flag)
 
 
+def _list_users(db, args):
+    for user_id in db.keys():
+        if user_id.find(':') == -1:
+            print(user_id)
+            print(db.hget(user_id, 'user_info'))
+            for x in ['flags', 'uflags']:
+                skey = user_id + ':' + x
+                print((x, db.smembers(skey)))
+            print('')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Picarus user operations')
     parser.add_argument('--redis_host', help='Redis Host', default='localhost')
@@ -28,6 +39,9 @@ def main():
     subparser.add_argument('name', choices=['flags', 'uflags'])
     subparser.add_argument('flag')
     subparser.set_defaults(func=_set_flag)
+
+    subparser = subparsers.add_parser('list_users', help='List users')
+    subparser.set_defaults(func=_list_users)
 
     subparser = subparsers.add_parser('unset_flag', help='Unset a flag')
     subparser.add_argument('user_id')

@@ -2,10 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
 )
-
 
 func FlagsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Got /flags")
@@ -22,7 +21,7 @@ func FlagsHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(flags); err != nil {
 			w.WriteHeader(500)
 			return
-		}		
+		}
 	} else if r.Method == "POST" {
 		flags := []string{}
 		// TODO: Restrict # of flags that can be set and limit their size
@@ -30,7 +29,7 @@ func FlagsHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
 			return
 		}
-		for _, v:= range flags {
+		for _, v := range flags {
 			setUserFlag(userId, "uflags", v)
 		}
 	} else if r.Method == "DELETE" {
@@ -39,7 +38,7 @@ func FlagsHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
 			return
 		}
-		for _, v:= range flags {
+		for _, v := range flags {
 			unsetUserFlag(userId, "uflags", v)
 		}
 	} else {

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"net/http"
-	"crypto/sha1"
 	"crypto/rand"
-	"io"
+	"crypto/sha1"
 	"fmt"
 	picarus "github.com/bwhite/picarus/go"
+	"io"
+	"net/http"
 )
 
 func randString() (string, error) {
@@ -20,7 +20,7 @@ func randString() (string, error) {
 	return string(b), nil
 }
 
-func secretHash(secret string) (string) {
+func secretHash(secret string) string {
 	h := sha1.New()
 	io.WriteString(h, secret)
 	return picarus.UB64Enc(string(h.Sum(nil)))
@@ -41,12 +41,12 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	if !hasFlag(flags, "user") || (!hasFlag(flags, "user_notify") && !hasFlag(flags, "user_borg")) {
+	if !hasFlag(flags, "user") || (!hasFlag(flags, "user_notify") && !hasFlag(flags, "user_ws")) {
 		w.WriteHeader(401)
 		return
 	}
 	secretType := r.URL.Query().Get(":type")
-	if secretType != "raven" && secretType != "borg" && secretType != "notify" {
+	if secretType != "raven" && secretType != "pupil" && secretType != "ws" && secretType != "notify" {
 		w.WriteHeader(400)
 		return
 	}
@@ -56,13 +56,13 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Remove previous secret
-	prevSecretHash, err := getUserAttribute(userId, "secret_hash_" + secretType)
+	prevSecretHash, err := getUserAttribute(userId, "secret_hash_"+secretType)
 	if err == nil {
 		deleteSecretUser(secretType, prevSecretHash)
 	}
 	secret = picarus.UB64Enc(secret)
 	hash := secretHash(secret)
 	setSecretUser(secretType, hash, userId)
-	setUserAttribute(userId, "secret_hash_" + secretType, hash)
+	setUserAttribute(userId, "secret_hash_"+secretType, hash)
 	io.WriteString(w, secret)
 }
