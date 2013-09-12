@@ -499,6 +499,7 @@ func main() {
 	go pollAnnotations()
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
 	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
+	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))
 	http.Handle("/", m)
 	err := http.ListenAndServe(":16001", nil)
 	if err != nil {

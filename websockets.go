@@ -409,8 +409,16 @@ func WSWebHandler(c *websocket.Conn) {
 	defer c.Close()
 	userId, err := userID(c.Request())
 	if err != nil || userId == "" {
-		LogPrintf("ws: userid")
-		return
+		path := strings.Split(c.Request().URL.Path, "/")
+  	        if len(path) != 4 {
+		    fmt.Println("Bad path")
+		    return
+	        }
+	        userId, err = getSecretUser("ws", secretHash(path[len(path)-1]))
+	        if err != nil {
+		     fmt.Println(err)
+		     return
+	        }
 	}
 	fmt.Println("Websocket connected")
 	wsSendChan := make(chan *WSData, 1)
