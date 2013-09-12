@@ -24,8 +24,8 @@ d = [['rectangle', [0, 0], [r, h], [0, 0, 255]],
 #['clear', [255, 255, 255]],
 
 def render(directives):
-     image = np.ascontiguousarray(cv2.imread('input.jpg')[:360, :640, :])
-     #image = np.zeros((360, 640, 3), dtype=np.uint8)
+     #image = np.ascontiguousarray(cv2.imread('input.jpg')[:360, :640, :])
+     image = np.zeros((360, 640, 3), dtype=np.uint8)
      for d in directives:
          if d[0] == 'clear':
              image[:] = np.array(d[1])
@@ -36,8 +36,10 @@ def render(directives):
          else:
              raise ValueError
      return image
-b = np.array([0], dtype='uint8')
-f = tempfile.NamedTemporaryFile(suffix='.jpg')
-cv2.imwrite(f.name, render(d))
-cv2.imwrite("draw_out.jpg", render(d))
-print(base64.b64encode(f.read()))
+
+if __name__ == '__main__':
+     b = np.array([0], dtype='uint8')
+     f = tempfile.NamedTemporaryFile(suffix='.jpg')
+     cv2.imwrite(f.name, render(d))
+     cv2.imwrite("draw_out.jpg", render(d))
+     print(base64.b64encode(f.read()))
