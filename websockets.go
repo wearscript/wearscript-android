@@ -61,6 +61,7 @@ type WSData struct {
 	MatchKey  string     `json:"matchKey,omitempty"`
 	Options   *WSOptions `json:"options,omitempty"`
 	Say       *string    `json:"say,omitempty"`
+	Draw      [][]interface{} `json:"draw,omitempty"`
 }
 
 func WarpOverlay(wsSendChan chan *WSData, image string, h []float64, glassID string) {

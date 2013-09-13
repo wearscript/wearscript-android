@@ -183,7 +183,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 				overlay = null;
 
 				mEyeMat = new Mat(360, 640, CvType.CV_8UC4);
-				eyeMatDraw(testDrawDirectives());
+				//testDrawDirectives()
+				//String testData = "[[\"clear\", [0, 0, 0]], [\"circle\", [520, 295], 15, [0, 0, 255]], [\"rectangle\", [0, 195], [25, 265], [255, 0, 0]], [\"rectangle\", [615, 124], [640, 194], [0, 255, 0]]]";
+				//eyeMatDraw((JSONArray) JSONValue.parse(testData));
 				view.enableView();
 
 				if (isGlass)
@@ -495,17 +497,17 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 			ArrayList drawDirectiveTokens = (ArrayList) drawDirective;
 			String directive = (String) drawDirectiveTokens.get(0);
 			if ("clear".equals(directive)) {
-				mEyeMat.setTo(new Scalar(0, 0, 0));								
+				ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(1);
+				mEyeMat.setTo(new Scalar(color.get(0), color.get(1), color.get(2)));				
 			} else if ("circle".equals(directive)) {
-				Point center = new Point(25, 25);
-				Scalar color = new Scalar(255, 0, 0);
-				int radius = 10;
-				Core.circle(mEyeMat, center, radius, color);
-			} else if ("rect".equals(directive)) {
-				Point corner1 = new Point(10,10);
-				Point corner2 = new Point(40,40);
-				Scalar color = new Scalar(0,255, 0);
-				Core.rectangle(mEyeMat, corner1, corner2, color);
+				ArrayList<Long> center = (ArrayList<Long>)drawDirectiveTokens.get(1);
+				ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(3);
+				Core.circle(mEyeMat, new Point(center.get(0), center.get(1)), ((Long)drawDirectiveTokens.get(2)).intValue(), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
+			} else if ("rectangle".equals(directive)) {
+				ArrayList<Long> tl = (ArrayList<Long>)drawDirectiveTokens.get(1);
+				ArrayList<Long> br = (ArrayList<Long>)drawDirectiveTokens.get(2);
+				ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(3);
+				Core.rectangle(mEyeMat, new Point(tl.get(0), tl.get(1)), new Point(br.get(0), br.get(1)), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
 			} else {
 				Log.w(TAG, "Unknown directive " + directive);
 			}
@@ -561,6 +563,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 						} else {
 							Log.i(TAG, String.format("No overlay for H"));
 						}
+					} else if (action.equals("draw")) {
+						eyeMatDraw((JSONArray)o.get("draw"));
 					} else if (action.equals("say")) {
 						if (!tts.isSpeaking())
 							tts.speak((String)o.get("say"), TextToSpeech.QUEUE_FLUSH,
