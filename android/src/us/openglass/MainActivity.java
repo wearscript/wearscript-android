@@ -580,50 +580,16 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 						if (opts != null && !opts.containsKey("url"))
 							opts.put("url", wsUrl);
 						SaveData(o.toString().getBytes(), "", false, "config.js");
-					} else if (action.equals("draw")) {
-						JSONArray drawDirectives = (JSONArray) o.get("drawDirectives");
-						for (Object drawDirective : drawDirectives) {
-							Object[] drawDirectiveTokens = (Object[]) drawDirective;
-							String directive = (String) drawDirectiveTokens[0];
-							if ("clear".equals(directive)) {
-								Scalar color = null;
-								try {
-									color = parseIntTriple((JSONArray) 
-											drawDirectiveTokens[1]);
-								} catch (Exception e) {
-									Log.e(TAG, "Probably an indexoutofbounds", e);
-								}
-								if (color != null) {
-									mEyeMat.setTo(color);	
-								} else {
-									Log.w(TAG, "Got clear command with bad color.");
-								}
-							} else if ("circle".equals(directive)) {
-								Point center = new Point(25, 25);
-								Scalar color = new Scalar(255, 0, 0);
-								int radius = 10;
-								Core.circle(mEyeMat, center, radius, color);
-							} else if ("rect".equals(directive)) {
-								Point corner1 = new Point(10,10);
-								Point corner2 = new Point(40,40);
-								Scalar color = new Scalar(0,255, 0);
-								Core.rectangle(mEyeMat, corner1, corner2, color);
-							} else {
-								Log.w(TAG, "Unknown directive " + directive);
-							}
-						}
 					}
 					Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
 				} catch (Exception e) {
 					if (raven != null)
 						raven.sendException(e);
-					Log.e(TAG, e.toString());
 					Log.e(TAG, e.getMessage());
 
 				}
 			}
 
-			
 			@Override
 			public void onDisconnect(int code, String reason) {
 				Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
