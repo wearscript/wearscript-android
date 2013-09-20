@@ -3,8 +3,14 @@ package us.openglass;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -37,8 +43,10 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -53,6 +61,7 @@ import android.media.MediaRecorder;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -63,6 +72,9 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+
+import org.java_websocket.drafts.Draft_17;
+import org.java_websocket.server.WebSocketServer;
 
 import com.codebutler.android_websockets.WebSocketClient;
 
@@ -81,6 +93,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	private boolean isPhone;
 	private String wsUrl;
 	private boolean isForeground;
+	private WSServer wsServer;
 
 	// Transient data
 	protected Mat matchH;
@@ -115,6 +128,12 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	protected long senhackTime;
 	protected float senhackOldValues[];
 	protected float senhackNewValues[];
+	
+	// Wifi Direct
+	protected WifiP2pManager mManager;
+	protected Channel mChannel;
+	protected BroadcastReceiver mReceiver;
+	protected IntentFilter mIntentFilter;
 
 
 	protected double[] HMult(double a[], double b[]) {
@@ -212,7 +231,25 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	}
 	
 	public void setupWifiDirect() {
-		// TODO: Modify class for this
+	    mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+	    mChannel = mManager.initialize(this, getMainLooper(), null);
+	    mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
+	    mIntentFilter = new IntentFilter();
+	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+	    mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+	        @Override
+	        public void onSuccess() {
+	    		Log.i(TAG, "WIFIDirect: Discover Success");
+	        }
+
+	        @Override
+	        public void onFailure(int reasonCode) {
+	    		Log.i(TAG, "WIFIDirect: Discover Failure: " + Integer.toString(reasonCode));
+	        }
+	    });
 	}
 	
 	public String detectDeviceType() {
@@ -352,6 +389,27 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 			isGlass = false;
 			isPhone = true;
 		}
+		if (isPhone) {
+			try {
+				wsServer = new WSServer( 9003, new Draft_17() );
+				wsServer.start();
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			/*
+			// Experiment with server socket
+			// TODO: Implement using websocket
+			ServerSocket serverSocket;
+			try {
+				serverSocket = new ServerSocket(8888);
+	    		Log.i(TAG, "WIFI: Bind Success: " + serverSocket.getInetAddress().getHostAddress());
+	    		
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+	    		Log.i(TAG, "WIFI: Bind Failure");
+			}*/
+		}
 		Log.i(TAG, "detectDeviceType: " + deviceType.toString());
 		lastImageSaveTime = lastSensorSaveTime = System.nanoTime();
 		lastSensorTime = new TreeMap<Integer, Long>();
@@ -372,6 +430,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		saveDataThreadRunning = 0;
 		isForeground = true;
 		client = null;
+		//setupWifiDirect();
 
 		remoteImageAckCount = remoteImageCount = 0;
 		sensorBuffer = new JSONArray();
@@ -431,86 +490,30 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_GAME);
 		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY), SensorManager.SENSOR_DELAY_GAME);
 		mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_GAME);		
-		
-		
-		
-	}
-	
-	private JSONArray testDrawDirectives() {
-		JSONArray jsa = new JSONArray();
-		//jsa.add(new JSONArray() {{add("circle")}};		
-		jsa.add(new ArrayList<String>() {{ add("circle");}});
-		jsa.add(new ArrayList<String>() {{ add("clear");}});
-		jsa.add(new ArrayList<String>() {{ add("rect");}});
-		return jsa;
-	}
-	
-	private ArrayList<Integer> jsonIntTriple(final int a, final int b, final int c) {
-		ArrayList<Integer> out = 
-			new ArrayList<Integer>() {{
-				add(a);
-				add(b);
-				add(c);
-			}};
-		return out;
-	}
-	
-	private Scalar parseIntTriple(final JSONArray jsa) {
-		Scalar scalar = null;
-		boolean arrayIsProperlyTyped = true;
-		if (jsa != null && jsa.size() > 0 && jsa.size() >= 3) {
-			for (Object maybeInt : jsa.toArray()) {
-				if (!(maybeInt instanceof Integer)) {
-					arrayIsProperlyTyped = false;
-				}
-			}
-			if (arrayIsProperlyTyped) {
-				try {
-					scalar = new Scalar((Integer) jsa.get(0), 
-							(Integer) jsa.get(1), (Integer) jsa.get(2));
-				} catch (ClassCastException e) {
-					Log.e(TAG, "Bad int triple.");
-				}
-				
-			}
-		} 
-		return scalar;
-	}
-	
-	private JSONArray testDrawDirectives1() {
-		JSONArray jsa = new JSONArray();
-		//jsa.add(new JSONArray() {{add("circle")}};		
-		jsa.add(new ArrayList<String>() {{ 
-			add("circle");
-		}});
-		jsa.add(new ArrayList<Object>() {{ 
-			add("clear");
-			add(jsonIntTriple(0, 255, 127));
-		}});
-		jsa.add(new ArrayList<String>() {{ add("rect");}});
-		return jsa;
 	}
 
 	private void eyeMatDraw(JSONArray drawDirectives) {
+		Mat image = new Mat(360, 640, CvType.CV_8UC4);
 		Object[] drawDirectivesArray = drawDirectives.toArray();
 		for (Object drawDirective : drawDirectivesArray) {
 			ArrayList drawDirectiveTokens = (ArrayList) drawDirective;
 			String directive = (String) drawDirectiveTokens.get(0);
 			if ("clear".equals(directive)) {
 				ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(1);
-				mEyeMat.setTo(new Scalar(color.get(0), color.get(1), color.get(2)));				
+				image.setTo(new Scalar(color.get(0), color.get(1), color.get(2)));				
 			} else if ("circle".equals(directive)) {
 				ArrayList<Long> center = (ArrayList<Long>)drawDirectiveTokens.get(1);
 				ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(3);
-				Core.circle(mEyeMat, new Point(center.get(0), center.get(1)), ((Long)drawDirectiveTokens.get(2)).intValue(), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
+				Core.circle(image, new Point(center.get(0), center.get(1)), ((Long)drawDirectiveTokens.get(2)).intValue(), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
 			} else if ("rectangle".equals(directive)) {
 				ArrayList<Long> tl = (ArrayList<Long>)drawDirectiveTokens.get(1);
 				ArrayList<Long> br = (ArrayList<Long>)drawDirectiveTokens.get(2);
 				ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(3);
-				Core.rectangle(mEyeMat, new Point(tl.get(0), tl.get(1)), new Point(br.get(0), br.get(1)), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
+				Core.rectangle(image, new Point(tl.get(0), tl.get(1)), new Point(br.get(0), br.get(1)), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
 			} else {
 				Log.w(TAG, "Unknown directive " + directive);
 			}
+			mEyeMat = image;
 		}
 	}
 
@@ -633,6 +636,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		super.onPause();
 		if (view != null && isGlass)
 			view.disableView();
+	    //unregisterReceiver(mReceiver); // WIFI Direct
+
 	}
 
 	@Override
@@ -640,6 +645,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	{
 		isForeground = true;
 		super.onResume();
+	    //registerReceiver(mReceiver, mIntentFilter); // WIFI Direct
 		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
 	}
 
