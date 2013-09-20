@@ -15,6 +15,26 @@ func ImagePoints(image string) (string, error) {
 	return out, nil
 }
 
+func HomographyRansac(matches []float64) ([]float64, error) {
+	model := "kYKia3eCq21pbl9pbmxpZXJzCq1yZXByb2pfdGhyZXNoy0BZAAAAAAAApG5hbWW4cGljYXJ1cy5Ib21vZ3JhcGh5UmFuc2Fj"
+	var mh codec.MsgpackHandle
+	var w bytes.Buffer
+	var enc []interface{}
+	enc = append(enc, matches)
+	enc = append(enc, []int{len(matches) / 4, 4})
+
+	err := codec.NewEncoder(&w, &mh).Encode(enc)
+	if err != nil {
+		fmt.Println("Couldn't encode msgpack")
+		return nil, err
+	}
+	input := w.String()
+
+	out := picarusto.ModelChainProcessBinary(picarus.B64Dec(model), input)
+	// TODO: Error check
+	return DecodeHomography(out)
+}
+
 func DecodeHomography(data string) ([]float64, error) {
 	var dec []interface{}
 	dec = append(dec, make([]float64, 9))
@@ -27,9 +47,10 @@ func DecodeHomography(data string) ([]float64, error) {
 	}
 	return dec[0].([]float64), nil
 }
-func ImagePointsMatchFloat64(points0 float64, points1 float64) ([]float64, error)
 
-}
+/*func ImagePointsMatchFloat64(points0 float64, points1 float64) ([]float64, error){
+
+}*/
 
 func ImagePointsMatch(points0 string, points1 string) ([]float64, error) {
 	model := "kYKia3eDqG1heF9kaXN0eKttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMtAFAAAAAAAAKRuYW1l2gAkcGljYXJ1cy5JbWFnZUhvbW9ncmFwaHlSYW5zYWNIYW1taW5n"
@@ -74,6 +95,15 @@ func HMult(a, b []float64) []float64 {
 	c[6] = a[6]*b[0] + a[7]*b[3] + a[8]*b[6]
 	c[7] = a[6]*b[1] + a[7]*b[4] + a[8]*b[7]
 	c[8] = a[6]*b[2] + a[7]*b[5] + a[8]*b[8]
+	return c
+}
+
+func HWarp(a, b []float64) []float64 {
+	c := make([]float64, 3, 3)
+	c[2] = a[6]*b[0] + a[7]*b[1] + a[8]*b[2]
+	c[0] = (a[0]*b[0] + a[1]*b[1] + a[2]*b[2]) / c[2]
+	c[1] = (a[3]*b[0] + a[4]*b[1] + a[5]*b[2]) / c[2]
+	c[2] = 1.
 	return c
 }
 

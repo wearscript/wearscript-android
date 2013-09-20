@@ -146,6 +146,7 @@ func SetupHandler(w http.ResponseWriter, r *http.Request) {
 	setupUser(r, t.Client(), userId)
 }
 
+
 // signout Revokes access for the user and removes the associated credentials from the datastore.
 func signoutHandler(w http.ResponseWriter, r *http.Request) {
 	userId, err := userID(r)
@@ -462,22 +463,14 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func computePupilHomography(samples [][]float64) {
-	
-}
-
 func main() {
-	//conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
-	//reprocessMementoImages(&conn)
-	//ImageMatch("109113122718379096525-00031.jpg", "20130804_231641_375.jpg")
-	samples := [][]float64{[]float64{4,6,357}, []float64{4,5,354}, []float64{4,8,352}, []float64{3,627,350} ,[]float64{3,636,350} ,[]float64{3,628,356} ,[]float64{2,630,31} ,[]float64{2,637,17} ,[]float64{2,629,6} ,[]float64{1,7,6} ,[]float64{1,7,6} ,[]float64{1,7,4}}
-	fmt.Println(samples)
-
+	PupilCalibrate("219250584360_109113122718379096525")
 	m := pat.New()
 	//m.Post("/", http.HandlerFunc(DebugServer))
 	m.Get("/map", http.HandlerFunc(MapServer))
 	m.Get("/search", http.HandlerFunc(MementoSearchServer))
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
+
 	m.Post("/raven/{key}", http.HandlerFunc(RavenServer))
 	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
 	m.Post("/pupil/{key}", http.HandlerFunc(PupilServer))
@@ -489,8 +482,7 @@ func main() {
 	// /auth -> google -> /oauth2callback
 	m.Get("/auth", http.HandlerFunc(authHandler))
 	m.Get("/oauth2callback", http.HandlerFunc(oauth2callbackHandler))
-	m.Post("/notify", http.HandlerFunc(NotifyServer))
-	//m.Post("/notify", http.HandlerFunc(notifyHandler))
+	m.Post("/notify", http.HandlerFunc(notifyHandler))
 	m.Post("/signout", http.HandlerFunc(signoutHandler))
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))

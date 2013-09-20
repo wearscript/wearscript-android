@@ -82,6 +82,24 @@ func CurTime() float64 {
 	return float64(time.Now().UnixNano()) / 1000000000.
 }
 
+func WSSendWeb(userId string, data *WSData) error {
+	dataJS, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	userPublish(userId, "ws_server_to_web", string(dataJS))
+	return nil
+}
+
+func WSSendGlass(userId string, data *WSData) error {
+	dataJS, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	userPublish(userId, "ws_web_to_server", string(dataJS))
+	return nil
+}
+
 func WSGlassHandler(c *websocket.Conn) {
 	defer c.Close()
 	fmt.Println("Connected with glass")
