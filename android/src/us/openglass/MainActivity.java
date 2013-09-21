@@ -3,12 +3,7 @@ package us.openglass;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -57,11 +52,8 @@ import android.location.LocationManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioRecord.OnRecordPositionUpdateListener;
-import android.media.MediaRecorder;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.p2p.WifiP2pManager;
-import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -74,7 +66,6 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 
 import org.java_websocket.drafts.Draft_17;
-import org.java_websocket.server.WebSocketServer;
 
 import com.codebutler.android_websockets.WebSocketClient;
 
@@ -128,12 +119,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	protected long senhackTime;
 	protected float senhackOldValues[];
 	protected float senhackNewValues[];
-	
-	// Wifi Direct
-	protected WifiP2pManager mManager;
-	protected Channel mChannel;
-	protected BroadcastReceiver mReceiver;
-	protected IntentFilter mIntentFilter;
 
 
 	protected double[] HMult(double a[], double b[]) {
@@ -186,7 +171,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 			public void onStatusChanged(String provider, int status,
 					Bundle extras) {
 			}
-
+s
 		});
 	}
 
@@ -202,9 +187,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 				overlay = null;
 
 				mEyeMat = new Mat(360, 640, CvType.CV_8UC4);
-				//testDrawDirectives()
-				//String testData = "[[\"clear\", [0, 0, 0]], [\"circle\", [520, 295], 15, [0, 0, 255]], [\"rectangle\", [0, 195], [25, 265], [255, 0, 0]], [\"rectangle\", [615, 124], [640, 194], [0, 255, 0]]]";
-				//eyeMatDraw((JSONArray) JSONValue.parse(testData));
 				view.enableView();
 
 				if (isGlass)
@@ -228,28 +210,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		WifiInfo info = wm.getConnectionInfo();
 		return info.getMacAddress();
-	}
-	
-	public void setupWifiDirect() {
-	    mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-	    mChannel = mManager.initialize(this, getMainLooper(), null);
-	    mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
-	    mIntentFilter = new IntentFilter();
-	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-	    mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-	        @Override
-	        public void onSuccess() {
-	    		Log.i(TAG, "WIFIDirect: Discover Success");
-	        }
-
-	        @Override
-	        public void onFailure(int reasonCode) {
-	    		Log.i(TAG, "WIFIDirect: Discover Failure: " + Integer.toString(reasonCode));
-	        }
-	    });
 	}
 	
 	public String detectDeviceType() {
@@ -430,7 +390,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		saveDataThreadRunning = 0;
 		isForeground = true;
 		client = null;
-		//setupWifiDirect();
 
 		remoteImageAckCount = remoteImageCount = 0;
 		sensorBuffer = new JSONArray();
@@ -636,8 +595,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 		super.onPause();
 		if (view != null && isGlass)
 			view.disableView();
-	    //unregisterReceiver(mReceiver); // WIFI Direct
-
 	}
 
 	@Override
@@ -645,7 +602,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 	{
 		isForeground = true;
 		super.onResume();
-	    //registerReceiver(mReceiver, mIntentFilter); // WIFI Direct
 		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
 	}
 
