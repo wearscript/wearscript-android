@@ -24,10 +24,11 @@ Android Studio/IntelliJ
 * Import Project, select openglass/android
 * Import Module, select <OpenCV dir>/sdk
 	- deselect sample directories 
-* Project Structure->Modules->"android"->Dependencies-> + -> Module Dependency->"android"
+* File -> Project Structure->Modules->"android"->Dependencies-> + -> Module Dependency->"sdk"
 * Run -> Edit Configurations, add an Android Application run configuration for 
 module "android". Check "Deploy application" and "Show chooser dialog".
 * Run (either from Run menu or by clicking the "play" button in the toolbar)
+* If it gives OpenCV errors try Build -> Rebuild Project
 
 Post Install
 ============
