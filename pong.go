@@ -8,30 +8,30 @@ import (
  */
 
 type PongPlayer struct {
-    Y      int `json:"y"`
-    Score      int `json:"score"`
+	Y     int `json:"y"`
+	Score int `json:"score"`
 }
 
 type PongState struct {
-	BallX        int `json:"ballX"`
-	BallY        int `json:"ballY"`
-	BallDX       int `json:"ballDX"`
-	BallDY       int `json:"ballDY"`
+	BallX        int        `json:"ballX"`
+	BallY        int        `json:"ballY"`
+	BallDX       int        `json:"ballDX"`
+	BallDY       int        `json:"ballDY"`
 	PlayerL      PongPlayer `json:"playerL"`
 	PlayerR      PongPlayer `json:"playerR"`
-	Width        int `json:"width"`
-	Height       int `json:"height"`
-	PlayerRadius int `json:"playerRadius"`
-	PlayerWidth  int `json:"playerWidth"`
-	PlayerSpeed  int `json:"playerSpeed"`
-	BallRadius   int `json:"ballRadius"`
+	Width        int        `json:"width"`
+	Height       int        `json:"height"`
+	PlayerRadius int        `json:"playerRadius"`
+	PlayerWidth  int        `json:"playerWidth"`
+	PlayerSpeed  int        `json:"playerSpeed"`
+	BallRadius   int        `json:"ballRadius"`
 }
 
 func PongResetBall(state *PongState) {
 	state.BallX = state.Width / 2
 	state.BallY = state.Height / 2
-	state.BallDX = state.Width / (rand.Intn(14) + 50) * (rand.Intn(2) * 2 - 1)
-	state.BallDY = state.Width / (rand.Intn(14) + 50) * (rand.Intn(2) * 2 - 1)
+	state.BallDX = state.Width / (rand.Intn(14) + 50) * (rand.Intn(2)*2 - 1)
+	state.BallDY = state.Width / (rand.Intn(14) + 50) * (rand.Intn(2)*2 - 1)
 }
 
 func PongInit() (state *PongState) {
@@ -51,7 +51,7 @@ func PongMovePlayer(state *PongState, player *PongPlayer, moveUp bool) {
 		}
 	} else {
 		player.Y += state.PlayerSpeed
-		if state.Height - state.PlayerRadius < player.Y {
+		if state.Height-state.PlayerRadius < player.Y {
 			player.Y = state.Height - state.PlayerRadius
 		}
 	}
@@ -62,7 +62,7 @@ func PongSetPlayer(state *PongState, player *PongPlayer, y int) {
 	if player.Y < state.PlayerRadius {
 		player.Y = state.PlayerRadius
 	}
-	if state.Height - state.PlayerRadius < player.Y {
+	if state.Height-state.PlayerRadius < player.Y {
 		player.Y = state.Height - state.PlayerRadius
 	}
 }
@@ -75,7 +75,7 @@ func PongIter(state *PongState) {
 	}
 	if state.BallX < state.PlayerWidth {
 		// In PlayerL goal area
-		if state.PlayerL.Y - state.PlayerRadius - state.BallRadius < state.BallY && state.BallY < state.PlayerL.Y + state.PlayerRadius + state.BallRadius {
+		if state.PlayerL.Y-state.PlayerRadius-state.BallRadius < state.BallY && state.BallY < state.PlayerL.Y+state.PlayerRadius+state.BallRadius {
 			// Hit Player
 			state.BallDX *= -1
 		} else {
@@ -84,7 +84,7 @@ func PongIter(state *PongState) {
 		}
 	} else if state.Width-state.PlayerWidth < state.BallX {
 		// In PlayerR goal area
-		if state.PlayerR.Y - state.PlayerRadius - state.BallRadius < state.BallY && state.BallY < state.PlayerR.Y + state.PlayerRadius + state.BallRadius {
+		if state.PlayerR.Y-state.PlayerRadius-state.BallRadius < state.BallY && state.BallY < state.PlayerR.Y+state.PlayerRadius+state.BallRadius {
 			// Hit Player
 			state.BallDX *= -1
 		} else {

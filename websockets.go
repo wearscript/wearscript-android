@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	picarus "github.com/bwhite/picarus/go"
-	"github.com/garyburd/redigo/redis"
 	"math"
 	"strings"
 	"time"
@@ -49,21 +48,24 @@ type WSOptions struct {
 
 type WSData struct {
 	// See Hacking.md for details
-	Tsave     float64    `json:"Tsave,omitempty"` // Time packet data is final
-	Tg0       float64    `json:"Tg0,omitempty"`   // Time packet is saved
-	Ts0       float64    `json:"Ts0,omitempty"`
-	Tg1       float64    `json:"Tg1,omitempty"`
-	Sensors   []WSSensor `json:"sensors"`
-	Imageb64  *string    `json:"imageb64,omitempty"`
-	Action    string     `json:"action,omitempty"`
-	Timestamp float64    `json:"timestamp,omitempty"`
-	GlassID   string     `json:"glassID,omitempty"`
-	H         []float64  `json:"H,omitempty"`
-	MatchKey  string     `json:"matchKey,omitempty"`
-	Options   *WSOptions `json:"options,omitempty"`
-	Say       *string    `json:"say,omitempty"`
+	Tsave     float64         `json:"Tsave,omitempty"` // Time packet data is final
+	Tg0       float64         `json:"Tg0,omitempty"`   // Time packet is saved
+	Ts0       float64         `json:"Ts0,omitempty"`
+	Tg1       float64         `json:"Tg1,omitempty"`
+	Sensors   []WSSensor      `json:"sensors"`
+	Imageb64  *string         `json:"imageb64,omitempty"`
+	Action    string          `json:"action,omitempty"`
+	Timestamp float64         `json:"timestamp,omitempty"`
+	GlassID   string          `json:"glassID,omitempty"`
+	H         []float64       `json:"H,omitempty"`
+	MatchKey  string          `json:"matchKey,omitempty"`
+	Options   *WSOptions      `json:"options,omitempty"`
+	Say       *string         `json:"say,omitempty"`
 	Draw      [][]interface{} `json:"draw,omitempty"`
 }
+
+var DeviceChannels = map[string][]chan *WSData{} // [user]
+var WebChannels = map[string][]chan *WSData{}    // [user]
 
 func WarpOverlay(wsSendChan chan *WSData, image string, h []float64, glassID string) {
 	st := time.Now()
@@ -84,20 +86,26 @@ func CurTime() float64 {
 }
 
 func WSSendWeb(userId string, data *WSData) error {
-	dataJS, err := json.Marshal(data)
-	if err != nil {
-		return err
+	for _, c := range WebChannels[userId] {
+		select {
+		case c <- data:
+		default:
+			// TODO: return an error
+			fmt.Println("Data skipped, web client too slow...")
+		}
 	}
-	userPublish(userId, "ws_server_to_web", string(dataJS))
 	return nil
 }
 
-func WSSendGlass(userId string, data *WSData) error {
-	dataJS, err := json.Marshal(data)
-	if err != nil {
-		return err
+func WSSendDevice(userId string, data *WSData) error {
+	for _, c := range DeviceChannels[userId] {
+		select {
+		case c <- data:
+		default:
+			// TODO: return an error
+			fmt.Println("Data skipped, device too slow...")
+		}
 	}
-	userPublish(userId, "ws_web_to_server", string(dataJS))
 	return nil
 }
 
@@ -120,7 +128,6 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
-	fmt.Println("Glass: 0")
 	if !hasFlag(flags, "user_ws") {
 		return
 	}
@@ -129,12 +136,14 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
-	fmt.Println("Glass: 1")
+	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
+	wsSendChan := make(chan *WSData, 10)
+	DeviceChannels[userId] = append(DeviceChannels[userId], wsSendChan)
+
 	// Initialize delays
 	die := false
 	matchAnnotatedDelay := 0.
 	matchMementoDelay := 0.
-	wsSendChan := make(chan *WSData, 1)
 	matchMementoChan := make(chan *WSData)
 	matchAnnotatedChan := make(chan *WSData)
 	annotationPoints := map[string]string{}
@@ -152,6 +161,8 @@ func WSGlassHandler(c *websocket.Conn) {
 				die = true
 				break
 			}
+			fmt.Println("Sending to glass")
+			fmt.Println(request)
 			err = websocket.JSON.Send(c, *request)
 			if err != nil {
 				die = true
@@ -296,11 +307,11 @@ func WSGlassHandler(c *websocket.Conn) {
 				}
 				fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
 				if hasFlag(uflags, "match_annotated_web") {
-					matchJS, err := json.Marshal(WSData{Action: "match", MatchKey: matchKey, Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, Options: &WSOptions{HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}})
+					matchData := WSData{Action: "match", MatchKey: matchKey, Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, Options: &WSOptions{HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}}
 					if err != nil {
 						fmt.Println(err)
 					} else {
-						userPublish(userId, "ws_server_to_web", string(matchJS))
+						WSSendWeb(userId, &matchData)
 					}
 				}
 				fmt.Println(fmt.Sprintf("Match delay: %f", CurTime()-request.Timestamp))
@@ -308,35 +319,6 @@ func WSGlassHandler(c *websocket.Conn) {
 				fmt.Println("Finished computing homography")
 			}
 			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
-		}
-	}()
-
-	// Data from web loop
-	go func() {
-		psc, err := userSubscribe(userId, "ws_web_to_server")
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		for {
-			if die {
-				break
-			}
-			switch n := psc.Receive().(type) {
-			case redis.Message:
-				fmt.Printf("Message: %s\n", n.Channel)
-				response := WSData{}
-				err := json.Unmarshal(n.Data, &response)
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-				wsSendChan <- &response
-			case error:
-				die = true
-				fmt.Printf("error: %v\n", n)
-				break
-			}
 		}
 	}()
 
@@ -403,12 +385,7 @@ func WSGlassHandler(c *websocket.Conn) {
 				sensorCache[sensor.Type] = &sensor
 			}
 			if hasFlag(uflags, "ws_web") {
-				requestJS, err := json.Marshal(request)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				userPublish(userId, "ws_server_to_web", string(requestJS))
+				WSSendWeb(userId, &request)
 			}
 			if request.Imageb64 != nil {
 				wsSendChan <- &WSData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
@@ -446,18 +423,20 @@ func WSWebHandler(c *websocket.Conn) {
 	userId, err := userID(c.Request())
 	if err != nil || userId == "" {
 		path := strings.Split(c.Request().URL.Path, "/")
-  	        if len(path) != 4 {
-		    fmt.Println("Bad path")
-		    return
-	        }
-	        userId, err = getSecretUser("ws", secretHash(path[len(path)-1]))
-	        if err != nil {
-		     fmt.Println(err)
-		     return
-	        }
+		if len(path) != 4 {
+			fmt.Println("Bad path")
+			return
+		}
+		userId, err = getSecretUser("ws", secretHash(path[len(path)-1]))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 	fmt.Println("Websocket connected")
-	wsSendChan := make(chan *WSData, 1)
+	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
+	wsSendChan := make(chan *WSData, 10)
+	WebChannels[userId] = append(WebChannels[userId], wsSendChan)
 	// Websocket sender
 	go func() {
 		for {
@@ -471,33 +450,6 @@ func WSWebHandler(c *websocket.Conn) {
 			}
 		}
 	}()
-	// Data from server loop
-	go func() {
-		psc, err := userSubscribe(userId, "ws_server_to_web")
-		if err != nil {
-			fmt.Println(err)
-			return // TODO: Need to kill everything
-		}
-		for {
-			switch n := psc.Receive().(type) {
-			case redis.Message:
-				response := WSData{}
-				err := json.Unmarshal(n.Data, &response)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				select {
-				case wsSendChan <- &response:
-				default:
-					fmt.Println("Image skipping sending to webapp, too slow...")
-				}
-			case error:
-				fmt.Printf("error: %v\n", n)
-				return
-			}
-		}
-	}()
 	// Data from web loop
 	for {
 		request := WSData{}
@@ -507,11 +459,6 @@ func WSWebHandler(c *websocket.Conn) {
 			return
 		}
 		fmt.Println(request.Action)
-		requestJS, err := json.Marshal(request)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
 		if request.Action == "setMatchImage" {
 			image := picarus.B64Dec(*request.Imageb64)
 			points, err := ImagePoints(image)
@@ -521,24 +468,26 @@ func WSWebHandler(c *websocket.Conn) {
 			}
 			setUserMap(userId, "match_points", request.MatchKey, points)
 			// NOTE(brandyn): We won't publish this to glass, it isn't needed
-	        } else if request.Action == "sendTimelineImage" {
-		    	trans := authTransport(userId)
-	if trans == nil {
-		LogPrintf("notify: auth")
-		return
-	}
+		} else if request.Action == "sendTimelineImage" {
+			trans := authTransport(userId)
+			if trans == nil {
+				LogPrintf("notify: auth")
+				return
+			}
 
-	svc, err := mirror.New(trans.Client())
-	if err != nil {
-		LogPrintf("notify: mirror")
-		return
-	}
-	sendImageCard(picarus.B64Dec(*request.Imageb64), "", svc)
+			svc, err := mirror.New(trans.Client())
+			if err != nil {
+				LogPrintf("notify: mirror")
+				return
+			}
+			sendImageCard(picarus.B64Dec(*request.Imageb64), "", svc)
+		} else if request.Action == "pupil" {
+			PupilUpdate(userId, &request.Sensors[0])
 		} else if request.Action == "resetMatch" {
 			deleteUserMapAll(userId, "match_points")
-			userPublish(userId, "ws_web_to_server", string(requestJS))
+			WSSendDevice(userId, &request)
 		} else {
-			userPublish(userId, "ws_web_to_server", string(requestJS))
+			WSSendDevice(userId, &request)
 		}
 	}
 }
