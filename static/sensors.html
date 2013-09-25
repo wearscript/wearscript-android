@@ -443,19 +443,37 @@
               return outR;
           }
 
-      function rotate_cuber($cube, mat) {
+      function mult_matrix(m1, m2) {
+          var m = [];
+          _.each(_.range(4), function (i) {
+              _.each(_.range(4), function (j) {
+                  var x = 0;
+                  _.each(_.range(4), function (k) {
+                      x += m1[i * 4 + k] * m[k * 4 + j];
+                  });
+                  m[i * 4 + j] = x;
+              });
+          });
+      }
+ 
+ 
+      function transpose_matrix(mat) {
           mat_trans = [];
           _.each(_.range(4), function (i) {
               _.each(_.range(4), function (j) {
                   mat_trans.push(mat[j * 4 + i]);
               });
           });
-          
+          return mat_trans;
+      }
+ 
+      function rotate_cuber($cube, mat) {
+          var mat_trans = transpose_matrix(mat);
+          mat_trans = remap_coordinate_system(mat_trans, 3, 1);
           $cube.css({
               transform: 'matrix3d(' + mat_trans.join(',') + ')',
               "transition-duration": '0s'
           });
-          
       }
       function sensor_graph_click() {
           var $this = $(this);

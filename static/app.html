@@ -83,7 +83,7 @@
           }
       }
       function main () {
-          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_annotated_web', 'match_annotated_flipper', 'match_memento_ws', 'data_local', 'data_serverdisk', 'ws_server', 'ws_web', 'image', 'sensor_gps', 'slow', 'sensor_accelerometer', 'sensor_magneticfield', 'sensor_orientation', 'sensor_gyroscope', 'sensor_light', 'sensor_gravity', 'sensor_linearacceleration', 'sensor_rotationvector', 'warp', 'warp_sensor', 'predict', 'location_flickr', 'location_streetview', 'glass_flicker', 'glass_preview_warp', 'glass_overlay', 'pupil', 'control', 'control_pupil']};
+          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_annotated_web', 'match_annotated_flipper', 'match_memento_ws', 'data_local', 'data_serverdisk', 'ws_server', 'ws_web', 'image', 'sensor_gps', 'slow', 'sensor_accelerometer', 'sensor_magneticfield', 'sensor_orientation', 'sensor_gyroscope', 'sensor_light', 'sensor_gravity', 'sensor_linearacceleration', 'sensor_rotationvector', 'warp', 'warp_sensor', 'predict', 'location_flickr', 'location_streetview', 'glass_flicker', 'glass_preview_warp', 'glass_overlay', 'pupil', 'pupil_draw', 'draw', 'pong', 'phone_ws']};
 
           $('#switches').html(Mustache.render('{{#names}}<div class="control-group switch-wrap"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
           $('.make-switch').bootstrapSwitch();

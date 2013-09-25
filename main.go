@@ -146,7 +146,6 @@ func SetupHandler(w http.ResponseWriter, r *http.Request) {
 	setupUser(r, t.Client(), userId)
 }
 
-
 // signout Revokes access for the user and removes the associated credentials from the datastore.
 func signoutHandler(w http.ResponseWriter, r *http.Request) {
 	userId, err := userID(r)
@@ -464,7 +463,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	PupilCalibrate("219250584360_109113122718379096525")
+	fmt.Println(PupilCalibrateMeans("219250584360_109113122718379096525"))
 	m := pat.New()
 	//m.Post("/", http.HandlerFunc(DebugServer))
 	m.Get("/map", http.HandlerFunc(MapServer))
@@ -473,7 +472,6 @@ func main() {
 
 	m.Post("/raven/{key}", http.HandlerFunc(RavenServer))
 	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
-	m.Post("/pupil/{key}", http.HandlerFunc(PupilServer))
 	m.Post("/control/{action}", http.HandlerFunc(ControlServer))
 	m.Post("/location", http.HandlerFunc(LocationHandler))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
