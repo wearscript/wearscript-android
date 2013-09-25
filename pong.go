@@ -1,16 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"math/rand"
 )
-
-/*
-"encoding/json"
-
-	"strconv"
-	"io/ioutil"
-	"net/http"
-*/
 
 /* A set of scripts that are called when Pong is enabled.  When a control input is sent and the input is calibrated, if pong is enabled we send the appropriate draw commands.
  */
@@ -38,12 +30,12 @@ type PongState struct {
 func PongResetBall(state *PongState) {
 	state.BallX = state.Width / 2
 	state.BallY = state.Height / 2
-	state.BallDX = -state.Width / 16 // TODO: random -w/16 or w/16
-	state.BallDY = -state.Width / 16 // TODO: random [-w/16, w/16]
+	state.BallDX = state.Width / (rand.Intn(14) + 50) * (rand.Intn(2) * 2 - 1)
+	state.BallDY = state.Width / (rand.Intn(14) + 50) * (rand.Intn(2) * 2 - 1)
 }
 
 func PongInit() (state *PongState) {
-	state = &PongState{Width: 640, Height: 360, PlayerRadius: 35, PlayerWidth: 25, BallRadius: 15, PlayerSpeed: 10}
+	state = &PongState{Width: 640, Height: 360, PlayerRadius: 35, PlayerWidth: 25, BallRadius: 15, PlayerSpeed: 360 / 10}
 	state.PlayerR.Y = state.Height / 2
 	state.PlayerL.Y = state.Height / 2
 	PongResetBall(state)
@@ -62,6 +54,16 @@ func PongMovePlayer(state *PongState, player *PongPlayer, moveUp bool) {
 		if state.Height - state.PlayerRadius < player.Y {
 			player.Y = state.Height - state.PlayerRadius
 		}
+	}
+}
+
+func PongSetPlayer(state *PongState, player *PongPlayer, y int) {
+	player.Y = y
+	if player.Y < state.PlayerRadius {
+		player.Y = state.PlayerRadius
+	}
+	if state.Height - state.PlayerRadius < player.Y {
+		player.Y = state.Height - state.PlayerRadius
 	}
 }
 
@@ -99,11 +101,11 @@ func PongRender(state *PongState) (draw [][]interface{}) {
 	draw = append(draw, []interface{}{"clear", []int{0, 0, 0}})
 	draw = append(draw, []interface{}{"circle", []int{state.BallX, state.BallY}, state.BallRadius, []int{0, 0, 255}})
 	draw = append(draw, []interface{}{"rectangle", []int{0, state.PlayerL.Y - state.PlayerRadius}, []int{state.PlayerWidth, state.PlayerL.Y + state.PlayerRadius}, []int{255, 0, 0}})
-	draw = append(draw, []interface{}{"rectangle", []int{0, state.PlayerR.Y - state.PlayerRadius}, []int{state.PlayerWidth, state.PlayerR.Y + state.PlayerRadius}, []int{0, 255, 0}})
+	draw = append(draw, []interface{}{"rectangle", []int{state.Width - state.PlayerWidth, state.PlayerR.Y - state.PlayerRadius}, []int{state.Width, state.PlayerR.Y + state.PlayerRadius}, []int{0, 255, 0}})
 	return draw
 }
 
-func main() {
+/*func main() {
 	state := PongInit()
 	for x := 0; x < 20; x++ {
 		fmt.Println(state)
@@ -112,10 +114,10 @@ func main() {
 		PongAI(state, &state.PlayerL)
 		PongAI(state, &state.PlayerR)
 	}
-}
+}*/
 
 func PongAI(state *PongState, player *PongPlayer) {
-	PongMovePlayer(state, player, player.Y < state.BallY)
+	PongMovePlayer(state, player, player.Y > state.BallY)
 }
 
 /*

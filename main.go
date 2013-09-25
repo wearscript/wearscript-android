@@ -464,7 +464,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	PupilCalibrate("219250584360_109113122718379096525")
+	PupilCalibrateMeans("219250584360_109113122718379096525")
 	m := pat.New()
 	//m.Post("/", http.HandlerFunc(DebugServer))
 	m.Get("/map", http.HandlerFunc(MapServer))

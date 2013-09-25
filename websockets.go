@@ -37,6 +37,7 @@ type WSOptions struct {
 	SensorDelay      float64   `json:"sensorDelay"`
 	DataRemote       bool      `json:"dataRemote"`
 	DataLocal        bool      `json:"dataLocal"`
+	PhoneWS          bool      `json:"phoneWS"`
 	PreviewWarp      bool      `json:"previewWarp"`
 	WarpSensor       bool      `json:"warpSensor"`
 	Overlay          bool      `json:"overlay"`
@@ -195,7 +196,7 @@ func WSGlassHandler(c *websocket.Conn) {
 				sensorDelay = .25
 				imageResolution = 2.
 			}
-			opt := WSOptions{ImageResolution: math.Max(imageResolution, math.Max(matchAnnotatedDelay, matchMementoDelay)), DataLocal: hasFlag(uflags, "data_local"), DataRemote: hasFlag(uflags, "ws_server") || hasFlag(uflags, "data_serverdisk") || hasFlag(uflags, "ws_web"), Sensors: sensors, Image: hasFlag(uflags, "image"), SensorResolution: sensorResolution, SensorDelay: sensorDelay, PreviewWarp: hasFlag(uflags, "glass_preview_warp"), Flicker: hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay: hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
+			opt := WSOptions{ImageResolution: math.Max(imageResolution, math.Max(matchAnnotatedDelay, matchMementoDelay)), PhoneWS: hasFlag(uflags, "phoneWS"), DataLocal: hasFlag(uflags, "data_local"), DataRemote: hasFlag(uflags, "ws_server") || hasFlag(uflags, "data_serverdisk") || hasFlag(uflags, "ws_web"), Sensors: sensors, Image: hasFlag(uflags, "image"), SensorResolution: sensorResolution, SensorDelay: sensorDelay, PreviewWarp: hasFlag(uflags, "glass_preview_warp"), Flicker: hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay: hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
 			if hasFlag(flags, "debug") {
 				opt.RavenDSN = ravenDSN
 			}
@@ -339,6 +340,30 @@ func WSGlassHandler(c *websocket.Conn) {
 		}
 	}()
 
+	// Pong!
+	if hasFlag(uflags, "pong") {
+		go func() {
+			state := PongInit()
+			for hasFlag(uflags, "pong") {
+				if die {
+					break
+				}
+				PongIter(state)
+				yxJS, err := getUserAttribute(userId, "pupil_yx")
+				if err == nil {
+					var yx []float64
+					err = json.Unmarshal([]byte(yxJS), &yx)
+					if err == nil {
+						fmt.Println(yx[0])
+						PongSetPlayer(state, &state.PlayerL, int(yx[0]))
+					}
+				}
+				PongAI(state, &state.PlayerR)
+				wsSendChan <- &WSData{Action: "draw", Draw: PongRender(state)}
+				time.Sleep(time.Millisecond * 250)
+			}
+		}()
+	}
 	// Data from glass loop
 	skew := 0.
 	delay := 0.
@@ -376,14 +401,6 @@ func WSGlassHandler(c *websocket.Conn) {
 			request.Timestamp = request.Tsave - skew
 			for _, sensor := range request.Sensors {
 				sensorCache[sensor.Type] = &sensor
-			}
-			if hasFlag(uflags, "control") {
-			    // TODO: Add flag forb
-			    if hasFlag(uflags, "control_pupil") {
-			        // TODO: This is if we are using pupil for control
-			    } else {
-			        // TODO: If head rotation is for control
-			    }
 			}
 			if hasFlag(uflags, "ws_web") {
 				requestJS, err := json.Marshal(request)
