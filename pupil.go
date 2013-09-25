@@ -23,68 +23,37 @@ func PupilUpdate(userId string, r *WSSensor) {
 		return
 	}
 	if hasFlag(flags, "pupil_draw") {
-		yx := []float64{0, 0}
+		yx := []float64{0., 0.}
 		color := []int{255, 0, 0}
 		yxValid := false
-		if false {
-			meansJS, err := getUserAttribute(userId, "pupil_means")
-			if err == nil {
-				minDist := 1000000.
+
+		meansJS, err := getUserAttribute(userId, "pupil_means")
+		if err == nil {
+			minDist := 1000000.
 				minInd := 1000000
-				var means [9][]float64
-				err = json.Unmarshal([]byte(meansJS), &means)
-				if err != nil {
-					LogPrintf("/pupil/: couldn't unjson means")
-				} else {
-					for k, v := range means {
-						fmt.Println(v)
-						if v == nil || len(v) == 0 {
-							continue
-						}
-						dist := (v[0]-r.Values[0])*(v[0]-r.Values[0]) + (v[1]-r.Values[1])*(v[1]-r.Values[1])
-						if dist < minDist {
-							minDist = dist
-							minInd = k
-						}
+			means := [][]float64{}
+			err = json.Unmarshal([]byte(meansJS), &means)
+			if err != nil {
+				LogPrintf("/pupil/: couldn't unjson means")
+			} else {
+				for k, v := range means {
+					fmt.Println(v)
+					if v == nil || len(v) == 0 {
+						continue
+					}
+					dist := (v[0]-r.Values[0])*(v[0]-r.Values[0]) + (v[1]-r.Values[1])*(v[1]-r.Values[1])
+					if dist < minDist {
+						minDist = dist
+						minInd = k
 					}
 				}
-				yx = PupilPointToYX(minInd)
-				yxValid = true
 			}
+			yxInt := PupilPointToYX(minInd)
+			yx[0] = float64(yxInt[0])
+			yx[1] = float64(yxInt[1])
+			yxValid = true
 		}
-		if true {
-			hpupilJS, err := getUserAttribute(userId, "pupil_homography")
-			if err == nil {
-				var hpupil []float64
-				err = json.Unmarshal([]byte(hpupilJS), &hpupil)
-				if err != nil {
-					LogPrintf("/pupil/: couldn't unjson homography")
-				} else {
-					fmt.Println(r)
-					pt := HWarp(hpupil, []float64{r.Values[0], r.Values[1], 1.})
-					fmt.Println(pt)
-					if pt[1] < 0 {
-						pt[1] = 0
-						color[1] = 255
-					}
-					if pt[1] > 640 {
-						pt[1] = 640
-						color[1] = 255
-					}
-					if pt[0] < 0 {
-						pt[0] = 0
-						color[1] = 255
-					}
-					if pt[0] > 360 {
-						pt[0] = 360
-						color[2] = 255
-					}
-					yx[0] = pt[0]
-					yx[1] = pt[1]
-					yxValid = true
-				}
-			}
-		}
+
 		if yxValid {
 			yxJS, err := json.Marshal(yx)
 			if err != nil {
@@ -123,8 +92,21 @@ func PupilUpdate(userId string, r *WSSensor) {
 	}
 }
 
-func PupilPointToYX(state int) []float64 {
-	return []float64{float64((state / 3) * 180.), float64((state % 3) * 320.)}
+func PupilStep(steps int, sz int) int {
+	// 1: middle: 0
+	// 2: sides: 0, w
+	// 3: 0, w/2, w
+	// 4: 0, w/3, 2w/3, w
+	// 5: 0, w/4, w/2, 3w/4, w
+	if steps <= 1 {
+		return 0
+	} else {
+		return sz / (steps - 1)
+	}
+}
+
+func PupilPointToYX(state int) []int {
+	return []int{(state / pupilCalibX) * PupilStep(pupilCalibY, 360), (state % pupilCalibX) * PupilStep(pupilCalibX, 640)}
 }
 
 func PupilMatches(samples [][]float64) []float64 {
@@ -135,50 +117,30 @@ func PupilMatches(samples [][]float64) []float64 {
 		matches = append(matches, v[1])
 		matches = append(matches, v[2])
 		yx := PupilPointToYX(state)
-		matches = append(matches, yx[0])
-		matches = append(matches, yx[1])
+		matches = append(matches, float64(yx[0]))
+		matches = append(matches, float64(yx[1]))
 	}
 	return matches
 }
 
-func PupilCalibrate(userId string) bool {
-	controlSamples, err := getUserList(userId, "control_samples")
+func PupilCalibrateMeans(userId string) bool {
+	means, counts := PupilComputeMeans(userId)
+	fmt.Println(means)
+	fmt.Println(counts)
+	meansJS, err := json.Marshal(means)
 	if err != nil {
+		LogPrintf("/pupil/: calibrate json pupil")
 		return false
 	}
-	samples := [][]float64{}
-	for _, v := range controlSamples {
-		var sample []float64
-		err := json.Unmarshal([]byte(v), &sample)
-		if err != nil {
-			LogPrintf("pupil: unmarshal")
-			return false
-		}
-		samples = append(samples, sample)
-	}
-	if len(samples) < 4 {
-		return false
-	}
-	matches := PupilMatches(samples)
-	fmt.Println(matches)
-	hpupil, err := HomographyRansac(matches)
-	if err == nil {
-		hpupilJS, err := json.Marshal(hpupil)
-		if err != nil {
-			LogPrintf("/pupil/: calibrate json pupil")
-			return false
-		}
-		fmt.Println(hpupilJS)
-		setUserAttribute(userId, "pupil_homography", string(hpupilJS))
-		return true
-	}
-	return false
+	fmt.Println(meansJS)
+	setUserAttribute(userId, "pupil_means", string(meansJS))
+	return true
 }
 
-func PupilCalibrateMeans(userId string) bool {
+func PupilComputeMeans(userId string) ([][]float64, map[int]float64) {
 	controlSamples, err := getUserList(userId, "control_samples")
 	if err != nil {
-		return false
+		return nil, nil
 	}
 	samples := [][]float64{}
 	for _, v := range controlSamples {
@@ -186,14 +148,11 @@ func PupilCalibrateMeans(userId string) bool {
 		err := json.Unmarshal([]byte(v), &sample)
 		if err != nil {
 			LogPrintf("pupil: unmarshal")
-			return false
+			return nil, nil
 		}
 		samples = append(samples, sample)
 	}
-	if len(samples) < 4 {
-		return false
-	}
-	means := [9][]float64{}
+	means := make([][]float64, pupilCalibX * pupilCalibY)
 	counts := map[int]float64{}
 	for _, v := range samples {
 		// num, y, x
@@ -210,17 +169,7 @@ func PupilCalibrateMeans(userId string) bool {
 		means[k][0] /= v
 		means[k][1] /= v
 	}
-	fmt.Println(samples)
-	fmt.Println(means)
-	fmt.Println(counts)
-	meansJS, err := json.Marshal(means)
-	if err != nil {
-		LogPrintf("/pupil/: calibrate json pupil")
-		return false
-	}
-	fmt.Println(meansJS)
-	setUserAttribute(userId, "pupil_means", string(meansJS))
-	return true
+	return means, counts
 }
 
 func ControlServer(w http.ResponseWriter, req *http.Request) {
@@ -238,16 +187,18 @@ func ControlServer(w http.ResponseWriter, req *http.Request) {
 		deleteUserAttribute(userId, "pupil_means")
 		setUserAttribute(userId, "control_state", "1")
 		draw := [][]interface{}{[]interface{}{"clear", []int{255, 0, 255}}}
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 3; j++ {
-				draw = append(draw, []interface{}{"circle", []int{j * 320, i * 180}, 25, []int{0, 255, 0}})
+		for i := 0; i < pupilCalibY; i++ {
+			for j := 0; j < pupilCalibX; j++ {
+				yx := PupilPointToYX(i * pupilCalibX + j)
+				draw = append(draw, []interface{}{"circle", []int{yx[1], yx[0]}, 25, []int{0, 255, 0}})
 			}
 		}
 		WSSendDevice(userId, &WSData{Action: "draw", Draw: draw})
 		time.Sleep(time.Second * 10)
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 3; j++ {
-				draw := [][]interface{}{[]interface{}{"clear", []int{0, 0, 0}}, []interface{}{"circle", []int{j * 320, i * 180}, 25, []int{0, 0, 255}}}
+		for i := 0; i < pupilCalibY; i++ {
+			for j := 0; j < pupilCalibX; j++ {
+				yx := PupilPointToYX(i * pupilCalibX + j)
+				draw := [][]interface{}{[]interface{}{"clear", []int{0, 0, 0}}, []interface{}{"circle", []int{yx[1], yx[0]}, 25, []int{0, 0, 255}}}
 				WSSendDevice(userId, &WSData{Action: "draw", Draw: draw})
 				time.Sleep(time.Second * 3)
 				pupilStateCheckStr, _ := getUserAttribute(userId, "control_state")
@@ -257,9 +208,16 @@ func ControlServer(w http.ResponseWriter, req *http.Request) {
 					return
 				}
 				pupilState, err = incrUserAttribute(userId, "control_state", 1)
-				draw = [][]interface{}{[]interface{}{"clear", []int{0, 0, 0}}, []interface{}{"circle", []int{j * 320, i * 180}, 25, []int{0, 255, 0}}}
+				draw = [][]interface{}{[]interface{}{"clear", []int{0, 0, 0}}, []interface{}{"circle", []int{yx[1], yx[0]}, 25, []int{0, 255, 0}}}
 				WSSendDevice(userId, &WSData{Action: "draw", Draw: draw})
-				time.Sleep(time.Second * 6)
+				for {
+					_, counts := PupilComputeMeans(userId)
+					if counts[pupilState / 2 - 1] >= 10  {
+						break
+					}
+					fmt.Println(counts[pupilState / 2 - 1])
+					time.Sleep(time.Millisecond * 100)
+				}
 				pupilStateCheckStr, _ = getUserAttribute(userId, "control_state")
 				pupilStateCheck, err = strconv.Atoi(pupilStateCheckStr)
 				if err != nil || pupilStateCheck != pupilState {
@@ -270,8 +228,8 @@ func ControlServer(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 		WSSendDevice(userId, &WSData{Action: "draw", Draw: [][]interface{}{[]interface{}{"clear", []int{255, 0, 0}}}})
-		PupilCalibrateMeans(userId)
-		if PupilCalibrate(userId) {
+		
+		if PupilCalibrateMeans(userId) {
 			WSSendDevice(userId, &WSData{Action: "draw", Draw: [][]interface{}{[]interface{}{"clear", []int{0, 255, 0}}}})
 		} else {
 			WSSendDevice(userId, &WSData{Action: "draw", Draw: [][]interface{}{[]interface{}{"clear", []int{0, 0, 255}}}})
