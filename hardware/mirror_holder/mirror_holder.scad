@@ -1,7 +1,7 @@
 thickness = 1;
 prismHeight = 11.8;
 prismWidth = 5;
-prismDepth = 14.3;
+prismDepth = 14.5;
 mirrorSide = 25.7;
 mirrorSideEdge = 4;
 mirrorDepth = 2.5;
