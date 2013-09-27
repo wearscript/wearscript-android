@@ -1,18 +1,33 @@
 package us.openglass;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.ArrayList;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.AudioRecord.OnRecordPositionUpdateListener;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.PowerManager;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
+import android.util.Base64;
+import android.util.Log;
+import android.view.SurfaceView;
+import android.view.WindowManager;
+import android.webkit.WebView;
+
+import com.codebutler.android_websockets.WebSocketClient;
 
 import net.kencochrane.raven.DefaultRavenFactory;
 import net.kencochrane.raven.Raven;
@@ -37,38 +52,19 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.webkit.WebView;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.AudioRecord.OnRecordPositionUpdateListener;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.os.PowerManager;
-import android.speech.tts.TextToSpeech;
-import android.speech.tts.TextToSpeech.OnInitListener;
-import android.util.Base64;
-import android.util.Log;
-import android.view.SurfaceView;
-import android.view.WindowManager;
-
-import org.java_websocket.drafts.Draft_17;
-
-import com.codebutler.android_websockets.WebSocketClient;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class MainActivity extends Activity implements CvCameraViewListener2, SensorEventListener, OnInitListener, OnRecordPositionUpdateListener {
     private static final String TAG = "OpenGlass";
@@ -86,18 +82,22 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
     private String wsUrl;
     private boolean isForeground;
     private WSServer wsServer;
+    private WebView webview;
+
 
     // Transient data
+    protected TreeMap<String, Mat> scriptImages;
     protected Mat matchH;
     protected TreeMap<String, Mat> matchOverlays;
-    private Mat overlay;
+    public Mat overlay;
     private long lastImageSaveTime, lastSensorSaveTime;
     private TreeMap<Integer, Long> lastSensorTime;
     private int remoteImageAckCount, remoteImageCount;
     private int saveDataThreadRunning;
-    private JSONArray sensorBuffer;
+    public JSONArray sensorBuffer;
 
     // Options
+    public TreeSet<String> optionFlags;
     protected TreeSet<Integer> optionSensors;
     protected Boolean optionDataRemote;
     protected Boolean optionDataLocal;
@@ -113,12 +113,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
     protected double[] optionHSmallToBig;
     protected double[] optionHSmallToGlass;
     protected Mat optionHSmallToGlassMat;
-
-    // Andrew's rotation
-    protected long senhackTime;
-    protected float senhackOldValues[];
-    protected float senhackNewValues[];
-
 
     protected double[] HMult(double a[], double b[]) {
         if (a == null || b == null)
@@ -178,21 +172,22 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                {
+                case LoaderCallbackInterface.SUCCESS: {
                     Log.i(TAG, "OpenCV loaded successfully");
                     matchOverlays = new TreeMap<String, Mat>();
+                    scriptImages = new TreeMap<String, Mat>();
                     matchH = null;
                     overlay = null;
                     view.enableView();
 
                     if (isGlass)
                         view.enableView();
-                } break;
-                default:
-                {
+                }
+                break;
+                default: {
                     super.onManagerConnected(status);
-                } break;
+                }
+                break;
             }
         }
 
@@ -232,9 +227,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         double out[] = new double[a.size()];
         for (int i = 0; i < a.size(); ++i) {
             try {
-                out[i] = (Double)a.get(i);
+                out[i] = (Double) a.get(i);
             } catch (ClassCastException e) {
-                out[i] = ((Long)a.get(i)).doubleValue();
+                out[i] = ((Long) a.get(i)).doubleValue();
             }
         }
         return out;
@@ -253,32 +248,30 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         JSONObject opts = (JSONObject) o.get("options");
         if (opts == null)
             return;
-        optionImage = (Boolean)opts.get("image");
-        JSONArray newSensors = (JSONArray)opts.get("sensors");
+        optionImage = (Boolean) opts.get("image");
+        JSONArray newSensors = (JSONArray) opts.get("sensors");
         TreeSet<Integer> newSensorsSet = new TreeSet<Integer>();
         for (int i = 0; i < newSensors.size(); ++i) {
-            newSensorsSet.add(((Long)newSensors.get(i)).intValue());
+            newSensorsSet.add(((Long) newSensors.get(i)).intValue());
         }
+        optionFlags = new TreeSet<String>((List<String>)opts.get("flags"));
         optionSensors = newSensorsSet;
-        optionOverlay = (Boolean)opts.get("overlay");
-        optionPreviewWarp = (Boolean)opts.get("previewWarp");
-        optionFlicker = (Boolean)opts.get("previewWarp");
-        optionWarpSensor = (Boolean)opts.get("warpSensor");
+        optionOverlay = (Boolean) opts.get("overlay");
+        optionPreviewWarp = (Boolean) opts.get("previewWarp");
+        optionFlicker = (Boolean) opts.get("previewWarp");
+        optionWarpSensor = (Boolean) opts.get("warpSensor");
 
-        optionDataRemote = (Boolean)opts.get("dataRemote");
-        optionDataLocal = (Boolean)opts.get("dataLocal");
-        optionHBigToGlass = ParseJSONDoubleArray((JSONArray)opts.get("HBigToGlass"));
-        optionHSmallToBig = ParseJSONDoubleArray((JSONArray)opts.get("HSmallToBig"));
+        optionDataRemote = (Boolean) opts.get("dataRemote");
+        optionDataLocal = (Boolean) opts.get("dataLocal");
+        optionHBigToGlass = ParseJSONDoubleArray((JSONArray) opts.get("HBigToGlass"));
+        optionHSmallToBig = ParseJSONDoubleArray((JSONArray) opts.get("HSmallToBig"));
         optionHSmallToGlass = HMult(optionHBigToGlass, optionHSmallToBig);
         if (optionHSmallToGlass != null) {
             optionHSmallToGlassMat = HMatFromArray(optionHSmallToGlass);
         }
-        senhackTime = 0;
-        senhackOldValues = null;
-        senhackNewValues = null;
 
         if (raven == null) {
-            String ravenDSN = (String)opts.get("ravenDSN");
+            String ravenDSN = (String) opts.get("ravenDSN");
             // NOTE(brandyn): This doesn't allow switching ravenDSNs
             if (ravenDSN != null && !ravenDSN.equals("")) {
                 raven = RavenFactory.ravenInstance(ravenDSN);
@@ -286,27 +279,27 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         }
         Double delayNew;
         try {
-            delayNew = (Double)opts.get("sensorDelay");
+            delayNew = (Double) opts.get("sensorDelay");
         } catch (ClassCastException e) {
-            delayNew = ((Long)opts.get("sensorDelay")).doubleValue();
+            delayNew = ((Long) opts.get("sensorDelay")).doubleValue();
         }
         optionSensorDelay = Math.round(Math.max(delayNew, .25) * 1000000000.);
         try {
-            optionSensorResolution = Math.round((Double)opts.get("sensorResolution") * 1000000000.);
+            optionSensorResolution = Math.round((Double) opts.get("sensorResolution") * 1000000000.);
         } catch (ClassCastException e) {
-            optionSensorResolution = Math.round(((Long)opts.get("sensorResolution")).doubleValue() * 1000000000.);
+            optionSensorResolution = Math.round(((Long) opts.get("sensorResolution")).doubleValue() * 1000000000.);
         }
         try {
-            optionImageResolution = Math.round((Double)opts.get("imageResolution") * 1000000000.);
+            optionImageResolution = Math.round((Double) opts.get("imageResolution") * 1000000000.);
         } catch (ClassCastException e) {
-            optionImageResolution = Math.round(((Long)opts.get("imageResolution")).doubleValue() * 1000000000.);
+            optionImageResolution = Math.round(((Long) opts.get("imageResolution")).doubleValue() * 1000000000.);
         }
-        String url = (String)opts.get("url");
+        String url = (String) opts.get("url");
         if (url != null && (wsUrl == null || !wsUrl.equals(url))) {
             setupWSClient(url);
         }
         if (optionFlicker) {
-            PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             PowerManager.WakeLock wl = pm.newWakeLock(
                     PowerManager.PARTIAL_WAKE_LOCK,
                     TAG);
@@ -318,7 +311,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
     protected Mat ImageBGRFromString(String dataB64) {
         byte[] data = Base64.decode(dataB64, Base64.NO_WRAP);
         Mat frame = new Mat(1, data.length, CvType.CV_8UC1);
-        frame.put(0,  0, data);
+        frame.put(0, 0, data);
         return Highgui.imdecode(frame, 1);
     }
 
@@ -335,7 +328,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         return new Mat(image.rows(), image.cols(), CvType.CV_8UC3);
     }
 
-    /** Called when the activity is first created. */
+    /**
+     * Called when the activity is first created.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         String deviceType = detectDeviceType();
@@ -348,18 +343,18 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         }
         if (isPhone) {
             // TODO: Add ws_phone switch
-            try {
-                wsServer = new WSServer( 9003, new Draft_17() );
+            /*try {
+                wsServer = new WSServer(9003, new Draft_17());
                 wsServer.start();
             } catch (UnknownHostException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-            }
+            }*/
         }
         Log.i(TAG, "detectDeviceType: " + deviceType.toString());
         lastImageSaveTime = lastSensorSaveTime = System.nanoTime();
         lastSensorTime = new TreeMap<Integer, Long>();
-        location = (LocationManager)getSystemService(LOCATION_SERVICE);
+        location = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         optionDataLocal = optionDataRemote = optionImage = false;
         optionSensors = new TreeSet<Integer>();
@@ -384,7 +379,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         Log.i(TAG, "called onCreate");
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		/*
+        /*
 		WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
 		layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL;
 		getWindow().setAttributes(layoutParams);
@@ -413,16 +408,11 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         	Log.i(TAG, "Audio: bad size");
         }
 		 */
-        // Webview test
-        /*WebView webview = new WebView(this);
-        webview.getSettings().setJavaScriptEnabled(true);
-        webview.addJavascriptInterface(new OpenGlassScript(this), "OG");
-        webview.loadUrl("http://api0.picar.us:16000/glass/test_js.html");
-*/
+
         Intent intent = new Intent("com.google.zxing.client.android.SCAN");
         startActivityForResult(intent, 0);
         setContentView(R.layout.surface_view);
-        view = (JavaCameraView)findViewById(R.id.activity_java_surface_view);
+        view = (JavaCameraView) findViewById(R.id.activity_java_surface_view);
 
         tts = new TextToSpeech(this, this);
 
@@ -430,9 +420,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
 
         view.setCvCameraViewListener(this);
 
-        SensorManager mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        Sensor accel = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mSensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME);
+        SensorManager mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_GAME);
@@ -450,22 +439,33 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
             ArrayList drawDirectiveTokens = (ArrayList) drawDirective;
             String directive = (String) drawDirectiveTokens.get(0);
             if ("clear".equals(directive)) {
-                ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(1);
+                ArrayList<Long> color = (ArrayList<Long>) drawDirectiveTokens.get(1);
                 image.setTo(new Scalar(color.get(0), color.get(1), color.get(2)));
             } else if ("circle".equals(directive)) {
-                ArrayList<Long> center = (ArrayList<Long>)drawDirectiveTokens.get(1);
-                ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(3);
-                Core.circle(image, new Point(center.get(0), center.get(1)), ((Long)drawDirectiveTokens.get(2)).intValue(), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
+                ArrayList<Long> center = (ArrayList<Long>) drawDirectiveTokens.get(1);
+                ArrayList<Long> color = (ArrayList<Long>) drawDirectiveTokens.get(3);
+                Core.circle(image, new Point(center.get(0), center.get(1)), ((Long) drawDirectiveTokens.get(2)).intValue(), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
             } else if ("rectangle".equals(directive)) {
-                ArrayList<Long> tl = (ArrayList<Long>)drawDirectiveTokens.get(1);
-                ArrayList<Long> br = (ArrayList<Long>)drawDirectiveTokens.get(2);
-                ArrayList<Long> color = (ArrayList<Long>)drawDirectiveTokens.get(3);
+                ArrayList<Long> tl = (ArrayList<Long>) drawDirectiveTokens.get(1);
+                ArrayList<Long> br = (ArrayList<Long>) drawDirectiveTokens.get(2);
+                ArrayList<Long> color = (ArrayList<Long>) drawDirectiveTokens.get(3);
                 Core.rectangle(image, new Point(tl.get(0), tl.get(1)), new Point(br.get(0), br.get(1)), new Scalar(color.get(0), color.get(1), color.get(2)), -1);
             } else {
                 Log.w(TAG, "Unknown directive " + directive);
             }
             overlay = image;
         }
+    }
+
+    public void setupWebView(String script) {
+        webview = new WebView(this);
+        webview.getSettings().setJavaScriptEnabled(true);
+        webview.addJavascriptInterface(new OpenGlassScript(this), "OG");
+        Log.i(TAG, "WebView:" + script);
+        String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
+        webview.loadUrl("file://" + path);
+
+        Log.i(TAG, "WebView Ran");
     }
 
     private void setupWSClient(String url) {
@@ -477,6 +477,15 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
             public void onConnect() {
                 Log.i(TAG, "WS Connected!");
                 remoteImageAckCount = remoteImageCount = 0;
+                /*JSONObject data = new JSONObject();
+                data.put("text", "OG Test");
+                data.put("title", "OG Title");
+                timeline(data);*/
+                /*runOnUiThread(new Runnable() {
+                    public void run() {
+                setupWebView();
+                    }
+                });*/
             }
 
             @Override
@@ -484,25 +493,25 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
                 try {
                     JSONObject o = (JSONObject) JSONValue.parse(message);
 
-                    String action = (String)o.get("action");
+                    String action = (String) o.get("action");
                     Log.i(TAG, String.format("Got %s", action));
                     // TODO: String to Mat, save and display in the loopback thread
                     if (action.equals("setOverlay")) {
-                        overlay = ImageRGBAFromString((String)o.get("imageb64"));
+                        overlay = ImageRGBAFromString((String) o.get("imageb64"));
                     } else if (action.equals("setMatchOverlay")) {
-                        String matchKey = (String)o.get("matchKey");
+                        String matchKey = (String) o.get("matchKey");
                         if (matchKey == null) {
                             Log.w(TAG, String.format("No match key"));
                             return;
                         }
-                        matchOverlays.put(matchKey, ImageRGBAFromString((String)o.get("imageb64")));
+                        matchOverlays.put(matchKey, ImageRGBAFromString((String) o.get("imageb64")));
                         Log.i(TAG, String.format("Got match overlay"));
 
                     } else if (action.equals("resetMatch")) {
                         matchOverlays = new TreeMap<String, Mat>();
                     } else if (action.equals("setMatchH")) {
-                        matchH = HMatFromArray(HMult(optionHSmallToGlass, ParseJSONDoubleArray((JSONArray)o.get("H"))));
-                        String matchKey = (String)o.get("matchKey");
+                        matchH = HMatFromArray(HMult(optionHSmallToGlass, ParseJSONDoubleArray((JSONArray) o.get("H"))));
+                        String matchKey = (String) o.get("matchKey");
                         if (matchKey == null) {
                             Log.w(TAG, String.format("No match key"));
                             return;
@@ -518,9 +527,17 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
                             Log.i(TAG, String.format("No overlay for H"));
                         }
                     } else if (action.equals("draw")) {
-                        eyeMatDraw((JSONArray)o.get("draw"));
+                        eyeMatDraw((JSONArray) o.get("draw"));
                     } else if (action.equals("say")) {
-                        say((String)o.get("say"));
+                        say((String) o.get("say"));
+                    } else if (action.equals("startScript")) {
+                        final String script = (String)o.get("script");
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                setupWebView(script);
+                            }
+                        });
+
                     } else if (action.equals("ping")) {
                         remoteImageAckCount++;
                         o.put("action", "pong");
@@ -528,7 +545,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
                         client.send(o.toJSONString());
                     } else if (action.equals("options")) {
                         parseOptions(o);
-                        JSONObject opts = (JSONObject)o.get("options");
+                        JSONObject opts = (JSONObject) o.get("options");
                         if (opts != null && !opts.containsKey("url"))
                             opts.put("url", wsUrl);
                         SaveData(o.toString().getBytes(), "", false, "config.js");
@@ -574,6 +591,14 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
                     null);
     }
 
+    public void timeline(JSONObject ti) {
+        Log.i(TAG, "Timeline: " + ti.toJSONString());
+        JSONObject data = new JSONObject();
+        data.put("action", "timeline");
+        data.put("ti", ti);
+        client.send(data.toJSONString());
+    }
+
     private boolean clientConnected() {
         if (client == null)
             return false;
@@ -585,8 +610,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
     }
 
     @Override
-    public void onPause()
-    {
+    public void onPause() {
         isForeground = false;
         super.onPause();
         if (view != null && isGlass)
@@ -594,8 +618,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         isForeground = true;
         super.onResume();
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
@@ -627,7 +650,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         if (frame != null) {
             Log.i(TAG, "Got frame:" + frame.size().toString());
             MatOfByte jpgFrame = new MatOfByte();
-            Highgui.imencode(".jpg",  frame, jpgFrame);
+            Highgui.imencode(".jpg", frame, jpgFrame);
             final byte[] out = jpgFrame.toArray();
             data.put("imageb64", Base64.encodeToString(out, Base64.NO_WRAP));
         }
@@ -675,6 +698,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         boolean sendData = !optionImage || (!optionDataLocal && !optionDataRemote) || (optionDataRemote && remoteImageCount - remoteImageAckCount > 0) || System.nanoTime() - lastImageSaveTime < optionImageResolution;
         sendData = !sendData;
         Mat frame = null;
+        if (webview != null) {
+            webview.loadUrl("javascript:callback();");
+        }
         if (sendData) {
             remoteImageCount++;
             lastSensorSaveTime = lastImageSaveTime = System.nanoTime();
@@ -682,15 +708,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
             saveDataPacket(frame);
         }
 
-        if (optionWarpSensor && senhackOldValues != null && senhackNewValues != null) {
-            frame = inputFrame.rgba();
-            double hSensor[] = homographyFromRotations(senhackNewValues, senhackOldValues);
-            double hWarp[] = HMult(hSensor, optionHSmallToGlass);
-            Log.i(TAG, String.format("BRAN: Sensor %s %s -> %s -> %s", Arrays.toString(senhackOldValues), Arrays.toString(senhackNewValues), Arrays.toString(hSensor), Arrays.toString(hWarp)));
-            Mat frameWarp = ImageLike(frame);
-            Imgproc.warpPerspective(frame, frameWarp, HMatFromArray(hWarp), new Size(640, 360));
-            return mutateFrame(frameWarp, true);
-        }
         if (optionOverlay && overlay != null)
             return mutateFrame(overlay, false);
         if (optionPreviewWarp && optionHSmallToGlassMat != null) {
@@ -719,15 +736,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         if (!isForeground)
             return;
         Integer type = event.sensor.getType();
-		/*
-		if (type == 11) {
-			if (System.nanoTime() - senhackTime > 10000000000L) {
-				senhackTime = System.nanoTime();
-				senhackOldValues = event.values.clone();
-			} else {
-				senhackNewValues = event.values.clone();
-			}
-		}*/
+
         if (!sampleSensor(type))
             return;
         JSONObject sensor = new JSONObject();
@@ -752,7 +761,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
             saveDataPacket(null);
         }
     }
-    protected void SaveData(byte[] data, String path, boolean timestamp, String suffix) {
+
+    protected String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
         try {
             try {
                 File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/openglass/" + path);
@@ -766,20 +776,20 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
                 FileOutputStream outputStream = new FileOutputStream(file);
                 outputStream.write(data);
                 outputStream.close();
+                return file.getAbsolutePath();
             } catch (Exception e) {
                 if (raven != null)
                     raven.sendException(e);
-                return;
+                return null;
             }
         } catch (Exception e) {
             if (raven != null)
                 raven.sendException(e);
             Log.e(TAG, "Bad disc");
-            return;
+            return null;
         }
-        return;
-
     }
+
     protected byte[] LoadData(String path, String suffix) {
         try {
             try {
@@ -804,6 +814,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
         }
 
     }
+
     protected void ReconnectClient(WebSocketClient client) {
         if (client == null)
             return;
@@ -848,42 +859,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2, Sen
                 }
             }
         }
-    }
-
-    protected double[] homographyFromRotations(float[] rotOld, float[] rotNew) {
-		/* Let R0 be a base rotation, and h0 a homography,
-           such that cv.WarpPerspective(src, dst, h0) renders a frame
-           in the glass display. Then let R1 be a new rotation. Then
-           h1 = M * R1 * R0' * invM * h0 
-           is a homography that renders a frame in the new display.
-		 */
-
-        final double[] M = {
-                3.200e+02,   2.968e+03,   0.000e+00,
-                1.800e+02,   0.000e+00,  -2.968e+03,
-                1.000e+00,   0.000e+00,   0.000e+00};
-        final double[] invM = {
-                0.000e+00,  -4.451e-19,   1.000e+00,
-                3.369e-04,   4.798e-20,  -1.078e-01,
-                -3.287e-21,  -3.369e-04,   6.064e-02};
-
-        float[] rOldF = new float[9], rNewF = new float[9];
-        SensorManager.getRotationMatrixFromVector((float[])rOldF, rotOld);
-        SensorManager.getRotationMatrixFromVector((float[])rNewF, rotNew);
-
-        double[] rOld = new double[9], rNew = new double[9];
-        for (int i = 0; i < 9; i++) { rOld[i] = rOldF[i]; rNew[i] = rNewF[i]; }
-
-        // transpose
-        double tmp;
-        for (int i = 0; i < 3; i++)
-            for (int j = i+1; j < 3; j++) {
-                tmp = rOld[i*3+j];
-                rOld[i*3+j] = rOld[j*3+i];
-                rOld[j*3+i] = tmp;
-            }
-
-        return HMult(HMult(M, rNew), HMult(rOld, invM));
     }
 
     @Override

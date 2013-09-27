@@ -33,6 +33,7 @@ translate([thickness + glassTouchpadWidth / 2 - gapWidth / 2, 0, 0]) cube([gapWi
 translate([thickness + glassTouchpadWidth, 0, length / 2]) {
 rotate([(asin(barDrop /barLength)), atan(barOffset/barLength), 0]) {
 cube([thickness, thickness, barLength]);
+
 // Make Wire holder
 translate([0, 0, barLength / 8]) {
 cube([wireHolderWidth /2 + thickness, thickness, thickness]);
