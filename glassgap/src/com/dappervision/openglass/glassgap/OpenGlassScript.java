@@ -50,6 +50,7 @@ public class OpenGlassScript {
 
     public void log(String msg) {
         Log.i(TAG, "log: " + msg);
+        bs.log(msg);
     }
 
 

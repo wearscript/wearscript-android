@@ -504,6 +504,15 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         client.send(data.toJSONString());
     }
 
+    public void log(String m) {
+        if (client != null) {
+            JSONObject data = new JSONObject();
+            data.put("action", "log");
+            data.put("message", m);
+            client.send(data.toJSONString());
+        }
+    }
+
     @Override
     public void onMarkerReached(AudioRecord arg0) {
         // TODO Auto-generated method stub
