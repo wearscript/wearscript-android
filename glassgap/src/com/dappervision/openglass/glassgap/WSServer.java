@@ -1,4 +1,4 @@
-package us.openglass;
+package com.dappervision.openglass.glassgap;
 
 import android.util.Log;
 
