@@ -10,7 +10,7 @@
 <script>
 
 function cb(data) {
-    if (data.type != 4)
+    if (data.type != 1)
         return;
     if (_.has(window, 'prevValue')) {
         var a = data.values;
@@ -35,7 +35,7 @@ $(function () {
         GG = new GlassGapSimulator();
     GG.displayWebView();
     randomColor();
-    GG.sensorOn();
+    GG.sensorOn(1);
     GG.sensorCallback('cb');
 });
 </script>
