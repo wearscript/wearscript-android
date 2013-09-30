@@ -14,7 +14,9 @@ function cb(data) {
         return;
     if (_.has(window, 'prevValue')) {
         var d = data.values;
-        if (d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > .001)
+        d = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+        GG.log(String(d));
+        if (d > .001)
             randomColor();
     }
     prevValue = data.values;
