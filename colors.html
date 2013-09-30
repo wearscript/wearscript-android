@@ -13,7 +13,7 @@ function cb(data) {
     if (data.type != 4)
         return;
     if (_.has(window, 'prevValue')) {
-        var d = data.values[0];
+        var d = data.values;
         if (d[0] * d[0] + d[1] * d[1] + d[2] * d[2] > .01)
             randomColor();
     }
