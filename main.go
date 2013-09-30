@@ -37,6 +37,14 @@ func RootServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, string(content))
 }
 
+func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
+	content, err := ioutil.ReadFile("static/playground.html")
+	if err != nil {
+		return
+	}
+	io.WriteString(w, string(content))
+}
+
 func DebugServer(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("Debug server")
 	fmt.Println(req)
@@ -485,6 +493,7 @@ func main() {
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
+	m.Get("/playground", http.HandlerFunc(PlaygroundServer))
 	m.Get("/", http.HandlerFunc(RootServer))
 	go pollAnnotations()
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))

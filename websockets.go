@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	picarus "github.com/bwhite/picarus/go"
-	"math"
 	"strings"
 	"time"
 )
@@ -14,9 +13,6 @@ import (
 type WSSensor struct {
 	Timestamp    float64   `json:"timestamp"`
 	TimestampRaw int64     `json:"timestampRaw"`
-	Accuracy     float64   `json:"accuracy"`
-	Resolution   float32   `json:"resolution"`
-	MaximumRange float32   `json:"maximumRange"`
 	Type         int       `json:"type"`
 	Name         string    `json:"name"`
 	Values       []float64 `json:"values"`
@@ -28,24 +24,6 @@ type WSAnnotation struct {
 	Polarity  bool    `json:"polarity"`
 }
 
-type WSOptions struct {
-	Image            bool      `json:"image"`
-	Sensors          []int     `json:"sensors"`
-	ImageResolution  float64   `json:"imageResolution"`
-	SensorResolution float64   `json:"sensorResolution"`
-	SensorDelay      float64   `json:"sensorDelay"`
-	DataRemote       bool      `json:"dataRemote"`
-	DataLocal        bool      `json:"dataLocal"`
-	PhoneWS          bool      `json:"phoneWS"`
-	PreviewWarp      bool      `json:"previewWarp"`
-	WarpSensor       bool      `json:"warpSensor"`
-	Overlay          bool      `json:"overlay"`
-	Flicker          bool      `json:"flicker"`
-	RavenDSN         string    `json:"ravenDSN"`
-	HSmallToBig      []float64 `json:"HSmallToBig"`
-	HBigToGlass      []float64 `json:"HBigToGlass"`
-}
-
 type WSData struct {
 	// See Hacking.md for details
 	Tsave     float64         `json:"Tsave,omitempty"` // Time packet data is final
@@ -53,15 +31,19 @@ type WSData struct {
 	Ts0       float64         `json:"Ts0,omitempty"`
 	Tg1       float64         `json:"Tg1,omitempty"`
 	Sensors   []WSSensor      `json:"sensors"`
+	Script    string          `json:"script"`
+	ScriptUrl string          `json:"scriptUrl"`
+	Message   string          `json:"message"`
 	Imageb64  *string         `json:"imageb64,omitempty"`
 	Action    string          `json:"action,omitempty"`
 	Timestamp float64         `json:"timestamp,omitempty"`
 	GlassID   string          `json:"glassID,omitempty"`
 	H         []float64       `json:"H,omitempty"`
 	MatchKey  string          `json:"matchKey,omitempty"`
-	Options   *WSOptions      `json:"options,omitempty"`
+	Flags     []string        `json:"flags,omitempty"`
 	Say       *string         `json:"say,omitempty"`
 	Draw      [][]interface{} `json:"draw,omitempty"`
+	Ti *mirror.TimelineItem   `json:"ti,omitempty"`
 }
 
 var DeviceChannels = map[string][]chan *WSData{} // [user]
@@ -136,6 +118,11 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
+	svc, err := mirror.New(authTransport(userId).Client())
+	if err != nil {
+		LogPrintf("ws: mirror")
+		return
+	}
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
 	wsSendChan := make(chan *WSData, 10)
 	DeviceChannels[userId] = append(DeviceChannels[userId], wsSendChan)
@@ -149,9 +136,9 @@ func WSGlassHandler(c *websocket.Conn) {
 	annotationPoints := map[string]string{}
 	sensorCache := map[int]*WSSensor{}
 	hFlip := []float64{-1., 0., float64(wsWidth), 0., -1., float64(wsHeight), 0., 0., 1.}
-	hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
-	hBigToGlass := []float64{1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0}
-	sensorLUT := map[string]int{"sensor_gps": -1, "sensor_accelerometer": 1, "sensor_magneticfield": 2, "sensor_orientation": 3, "sensor_gyroscope": 4, "sensor_light": 5, "sensor_gravity": 9, "sensor_linearacceleration": 10, "sensor_rotationvector": 11}
+	//hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
+	//hBigToGlass := []float64{1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0}
+	//sensorLUT := map[string]int{"sensor_gps": -1, "sensor_accelerometer": 1, "sensor_magneticfield": 2, "sensor_orientation": 3, "sensor_gyroscope": 4, "sensor_light": 5, "sensor_gravity": 9, "sensor_linearacceleration": 10, "sensor_rotationvector": 11}
 
 	// Websocket sender
 	go func() {
@@ -171,12 +158,13 @@ func WSGlassHandler(c *websocket.Conn) {
 		}
 	}()
 
-	// Option sender
+	// Flags sender
 	go func() {
 		for {
 			if die {
 				break
 			}
+			// TODO: Make a subscription and have this repeated only when things change
 			uflags, err = getUserFlags(userId, "uflags")
 			if err != nil {
 				fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
@@ -189,30 +177,8 @@ func WSGlassHandler(c *websocket.Conn) {
 				time.Sleep(time.Millisecond * 2000)
 				continue
 			}
-			fmt.Println("Sending options")
-
-			// TODO: have it send this based on a subscription
-			sensors := []int{}
-			for _, flag := range uflags {
-				ind := sensorLUT[flag]
-				if ind != 0 {
-					sensors = append(sensors, ind)
-				}
-			}
-			sensorResolution := .1
-			sensorDelay := .1
-			imageResolution := .25
-			if hasFlag(uflags, "slow") {
-				sensorResolution = .25
-				sensorDelay = .25
-				imageResolution = 2.
-			}
-			opt := WSOptions{ImageResolution: math.Max(imageResolution, math.Max(matchAnnotatedDelay, matchMementoDelay)), PhoneWS: hasFlag(uflags, "phoneWS"), DataLocal: hasFlag(uflags, "data_local"), DataRemote: hasFlag(uflags, "ws_server") || hasFlag(uflags, "data_serverdisk") || hasFlag(uflags, "ws_web"), Sensors: sensors, Image: hasFlag(uflags, "image"), SensorResolution: sensorResolution, SensorDelay: sensorDelay, PreviewWarp: hasFlag(uflags, "glass_preview_warp"), Flicker: hasFlag(uflags, "glass_flicker"), WarpSensor: hasFlag(uflags, "warp_sensor"), Overlay: hasFlag(uflags, "glass_overlay"), HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}
-			if hasFlag(flags, "debug") {
-				opt.RavenDSN = ravenDSN
-			}
-			fmt.Println(opt)
-			wsSendChan <- &WSData{Action: "options", Options: &opt}
+			fmt.Println("Sending flags")
+			wsSendChan <- &WSData{Action: "flags", Flags: uflags}
 			annotationPoints, err = getUserMapAll(userId, "match_points")
 			if err != nil {
 				fmt.Println(err)
@@ -307,7 +273,7 @@ func WSGlassHandler(c *websocket.Conn) {
 				}
 				fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
 				if hasFlag(uflags, "match_annotated_web") {
-					matchData := WSData{Action: "match", MatchKey: matchKey, Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors, Options: &WSOptions{HSmallToBig: hSmallToBig, HBigToGlass: hBigToGlass}}
+					matchData := WSData{Action: "match", MatchKey: matchKey, Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors}
 					if err != nil {
 						fmt.Println(err)
 					} else {
@@ -365,6 +331,19 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Sprintf("Send Delay[%f] (not deskewed)", CurTime()-request.Tg0))
 		cnt += 1
 		fmt.Println(request.Action)
+		if request.Action == "timeline" {
+			fmt.Println(request)
+			req := svc.Timeline.Insert(request.Ti)
+			//req.Media(strings.NewReader(image))
+			_, err := req.Do()
+			if err != nil {
+				LogPrintf("ws: timeline")
+				continue
+			}
+		}
+		if request.Action == "log" {
+			WSSendWeb(userId, &request)
+		}
 		if request.Action == "pong" {
 			Ts1 := CurTime()
 			delay = .5 * (Ts1 - request.Ts0)
@@ -435,6 +414,7 @@ func WSWebHandler(c *websocket.Conn) {
 	}
 	fmt.Println("Websocket connected")
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
+	// TODO: This needs the "die" code added, look into glass side also
 	wsSendChan := make(chan *WSData, 10)
 	WebChannels[userId] = append(WebChannels[userId], wsSendChan)
 	// Websocket sender

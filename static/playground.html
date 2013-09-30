@@ -4,10 +4,10 @@
     <title>OpenGlass: Live Sensors</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
-    <link href="bootstrap.min.css" rel="stylesheet" media="screen">
-    <link href="bootstrap-switch.css" rel="stylesheet" media="screen">
-    <link href="cube.css" rel="stylesheet" media="screen">
-    <link href="rickshaw.min.css" rel="stylesheet" media="screen">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="static/bootstrap-switch.css" rel="stylesheet" media="screen">
+    <link href="static/cube.css" rel="stylesheet" media="screen">
+    <link href="static/rickshaw.min.css" rel="stylesheet" media="screen">
 <style type="text/css">
 .outsideWrapper{ 
     width:640px; height:360px;}
@@ -49,16 +49,25 @@
         <h1>Control</h1>
         <canvas id="controlCanvas" width="640" height="360"></canvas>
     </div>
+    <div class="row">
+      <h1>Scripting</h1>
+      <textarea id="script" rows="4" cols="50">
+      </textarea>
+      <div id="scriptQR"></div>
+      <button class="btn btn-primary" type="button" id="scriptButton">Script Button</button>
+      <button class="btn btn-primary" type="button" id="scriptUrlButton">Script Url Button</button>
+      <button class="btn btn-primary" type="button" id="scriptQRButton">Script QR</button>
+    </div>
 
       <div id="canvas_images"></div>
 
     </div> <!-- /container -->
 
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script src="bootstrap.min.js"></script>
-    <script src="bootstrap-switch.min.js"></script>
-    <script src="d3.v3.min.js"></script>
-    <script src="rickshaw.min.js"></script>
+    <script src="static/bootstrap.min.js"></script>
+    <script src="static/bootstrap-switch.min.js"></script>
+    <script src="static/d3.v3.min.js"></script>
+    <script src="static/rickshaw.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
 
@@ -93,7 +102,10 @@
           }
           ws.onmessage = function (event) {
               var response = JSON.parse(event.data);
-              if (response.action == "data") {
+              if (response.action == "log") {
+                  console.log(response.message);
+              }
+              else if (response.action == "data") {
                   if (!_.has(glassIdToNum, response.glassID)) {
                       var glassNum = _.uniqueId('glass-');
                       var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
@@ -186,10 +198,14 @@
           var ys = sensor.values;
           var colors = ['red', 'green', 'blue'];
           var type = sensor.type;
+          var domain = domains[type];
           if (!_.has(graphs[glassID], type) || seriesDatas[type]['0'].data.length > 1000) {
               // Sensor graph
               chart.html('');
-              seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: sensor.timestamp, y: y}], color: colors[z], name: String(z), scale: d3.scale.linear().domain(domains[type]).nice()}});
+              if (_.isUndefined(domain))
+                  seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: sensor.timestamp, y: y}], color: colors[z], name: String(z)}});
+              else
+                  seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: sensor.timestamp, y: y}], color: colors[z], name: String(z), scale: d3.scale.linear().domain(domains[type]).nice()}});
               graphs[glassID][type] = buildChart(chart, seriesDatas[type]);
           } else {
               _.each(ys, function (y, z) {
@@ -509,6 +525,15 @@
           seriesDatas = {};
           $('#resetMatches').click(resetMatches);
           $('#controlCanvas').hide();
+          $('#scriptButton').click(function () {
+              ws.send(JSON.stringify({action: 'startScript', script: $('#script').val()}));
+          });
+          $('#scriptUrlButton').click(function () {
+              ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script').val()}));
+          });
+          $('#scriptQRButton').click(function () {
+              $('#scriptQR').html(Mustache.render('<img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{data}}&chld=H|4&choe=UTF-8"\>', {data: btoa($('#script').val())}))
+          })
       }
       $(main);
     </script>
