@@ -35,7 +35,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="com.dappervision.openglass.BackgroundService"/>
+        <service android:name="com.dappervision.openglass.glassgap.BackgroundService"/>
     </application>
     <supports-screens android:resizeable="true"
                       android:smallScreens="true"
