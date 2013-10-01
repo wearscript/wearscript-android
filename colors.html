@@ -17,7 +17,7 @@ function cb(data) {
         var b = prevValue;
         var c = [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
         var d = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
-        GG.log('4:' + String(d) + JSON.stringify(a));
+        GG.log(String(d) + ':' +  JSON.stringify(a));
         if (d > 1.5)
             randomColor();
     }
