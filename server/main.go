@@ -40,9 +40,18 @@ type PlaygroundTemplate struct {
 }
 
 func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
-	t := template.New("Playground Template")
-	t, _ = t.ParseFiles("static/playground.html")
-	t.Execute(w, PlaygroundTemplate{WSUrl: wsUrl + "/ws/web"})
+	t, err := template.ParseFiles("static/playground.html")
+	if err != nil {
+		w.WriteHeader(500)
+		LogPrintf("playground: template parse")
+		return
+	}
+	err = t.Execute(w, &PlaygroundTemplate{WSUrl: wsUrl + "/ws/web"})
+	if err != nil {
+		w.WriteHeader(500)
+		LogPrintf("playground: template execute")
+		return
+	}
 }
 
 func setupUser(r *http.Request, client *http.Client, userId string) {

@@ -23,6 +23,22 @@ func B64Dec(s string) string {
 	return string(decoded)
 }
 
+func B64Enc(s string) string {
+	return base64.StdEncoding.EncodeToString([]byte(s))
+}
+
+func UB64Dec(s string) string {
+	decoded, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return string(decoded)
+}
+
+func UB64Enc(s string) string {
+	return base64.URLEncoding.EncodeToString([]byte(s))
+}
+
 // OAuth2.0 configuration variables.
 func config(host string) *oauth.Config {
 	r := &oauth.Config{
