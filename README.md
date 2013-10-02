@@ -6,11 +6,12 @@ For demos of this code see openglass.us (this readme would be out of data in ter
 Code Organization
 -----------------
 
-* Server: /
-* Server admin tools (authorize users, permissions, etc.): /tools
+* Server: /server
+* Server admin tools (authorize users, permissions, etc.): /admin
 * Webapps: /static/{app.html, playground.html}
 * GlassGap (Android app): /glassgap
-* GlassGap (useful utils, log data scripts, viewing server): /glassgap/tools/
+* GlassGap Prereqs (launchy/opencv/zxing): /glassgap/thirdparty
+* Useful tools (log data scripts, android adb helper, data visualization server): /tools/
 
 License
 -------
@@ -33,7 +34,7 @@ Install OpenGlass
 * Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this if possible
 * Ubuntu packages: apt-get install mercurial
 * Setup a config.go file (look at config.go.example)
-* Run install.sh (this does basic dependencies and such)
+* Run /server/install.sh (this does basic dependencies and such)
 
 Hacking
 -------

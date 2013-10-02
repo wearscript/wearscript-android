@@ -7,6 +7,7 @@ These are helpful for development
 
 * https://code.google.com/p/google-api-go-client/source/browse/mirror/v1/mirror-gen.go
 * http://golang.org/doc/effective_go.html
+* https://developers.google.com/glass/playground
 
 
 Clock deskew and latency estimation
@@ -24,13 +25,7 @@ Tg1 <- D1 -  Ts0
 Tg1 -  D2 -> Ts1
 ```
 
-Notification Clients
---------------------
-These are clients for the /notify/ endpoint
-
-* Ruby CLI and irssi plugin: https://gist.github.com/kurtisnelson/6188982
-* Python CLI: https://gist.github.com/aeroevan/6197254
-
 Timeline Item Styling
 ---------------------
-For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot https://developers.google.com/glass/playground
+
+For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot (link above).
