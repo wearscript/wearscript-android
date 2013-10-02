@@ -238,8 +238,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         final String script = (String) o.get("script");
                         runScript(script);
                     } else if (action.equals("startScriptUrl")) {
-                            final String url = (String) o.get("scriptUrl");
-                            runScriptUrl(url);
+                        final String url = (String) o.get("scriptUrl");
+                        runScriptUrl(url);
                     } else if (action.equals("data")) {
                         for (Object sensor : (JSONArray) o.get("sensors")) {
                             JSONObject s = (JSONObject) sensor;
@@ -387,7 +387,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         registerReceiver(new ScreenBroadcastReceiver(this), intentFilter);
         tts = new TextToSpeech(this, this);
-        wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
@@ -470,6 +470,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         if (s != null)
             sensorManager.unregisterListener(this, s);
     }
+
     public void sensorRedo() {
         for (Integer type : sensors.navigableKeySet()) {
             if (type > 0) {
@@ -558,9 +559,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     class ScreenBroadcastReceiver extends BroadcastReceiver {
         BackgroundService bs;
+
         public ScreenBroadcastReceiver(BackgroundService bs) {
             this.bs = bs;
         }
+
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
