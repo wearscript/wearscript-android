@@ -93,9 +93,6 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
-	if !hasFlag(flags, "user_ws") {
-		return
-	}
 	uflags, err := getUserFlags(userId, "uflags")
 	if err != nil {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
@@ -214,9 +211,7 @@ func WSGlassHandler(c *websocket.Conn) {
 			for _, sensor := range request.Sensors {
 				sensorCache[sensor.Type] = &sensor
 			}
-			if hasFlag(uflags, "ws_web") {
-				WSSendWeb(userId, &request)
-			}
+			WSSendWeb(userId, &request)
 			if request.Imageb64 != nil {
 				wsSendChan <- &WSData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
 			}

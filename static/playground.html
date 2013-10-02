@@ -28,27 +28,9 @@
   </head>
   <body>
     <div class="container">
-      <div class="row">
-        <h1>Match Image/sensor</h1>
-        <button id="resetMatches" class="btn btn-primary" type="button">Reset Matches</button>
-        <div class="control-group"><label class="control-label" for="switch-wrap-overlayimage">Overlay Image</label><div class="controls"><div id="switch-wrap-overlayimage" name="overlayimage" class="make-switch"><input class="flag-check" type="checkbox" name="overlayimage"></div></div></div>
-        <div id="matchControls"></div>
-      </div>
       <div id="glasses">
         <h1>Glasses</h1>
       </div>
-      <!--<div class="row">
-        <h1>Mosaic</h1>
-        <canvas id="mosaic" width="640" height="360"></canvas>
-      </div>-->
-      <div class="row">
-        <h1>Matches</h1>
-        <div id="matches"></div>
-      </div>
-    <div class="row">
-        <h1>Control</h1>
-        <canvas id="controlCanvas" width="640" height="360"></canvas>
-    </div>
     <div class="row">
       <h1>Scripting</h1>
       <textarea id="script" rows="4" cols="50">
@@ -92,9 +74,7 @@
           }));
       }
       function connectWebsocket() {
-          var ws = new WebSocket("wss://api.picar.us/openglass/ws/web");
-          var scale = (3.14159265359 / 2) / 360;
-          var shift = 3.14159265359 / 4;
+          var ws = new WebSocket("{{.WSUrl}}");
           ws.onopen = function () {
           }
           ws.onclose = function () {
@@ -111,28 +91,7 @@
                       var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
 
 
-                      $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><button class="matchButton btn btn-primary" type="button">Match Image</button><div class="charts"></div><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
-                      $('#' + glassNum).find('.matchButton').click(function () {
-                          var matchKey = String('m' + (new Date).getTime());
-                          var latestImage = latestImages[response.glassID];
-                          if (_.isUndefined(latestImage))
-                              return;
-                          $('#matchControls').append(Mustache.render('<div id="{{matchKey}}"><div class="outsideWrapper"><div class="insideWrapper"><img class="coveredImage"\><canvas class="matchCanvas" width="640" height="360"></canvas></div></div><div class="matchSensor">{{sensor}}</div></div>', {matchKey: matchKey, sensor: JSON.stringify(sensorLatest(latestSensors[response.glassID], 11))}));
-                          var $matchControl = $('#' + matchKey);
-                          var $canvas = $matchControl.find('.matchCanvas')[0];
-                          initCanvas($canvas, matchKey);
-                          var context = $canvas.getContext('2d');
-                          context.clearRect(0, 0, $canvas.width, $canvas.height);
-                          if ($('.flag-check').prop('checked')) {
-                              render_image('data:image/jpeg;base64,' + latestImage, $('#canvas_images'), function (image_id) {
-                                  context.drawImage($('#' + image_id)[0], 0, 0);
-                              });
-                          } else {
-                              $matchControl.find('.coveredImage').attr('src', 'data:image/jpeg;base64,' + latestImage);
-                          }
-                          ws.send(JSON.stringify({action: 'setMatchImage', imageb64: latestImage, matchKey: matchKey}));
-                          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: latestImage, matchKey: matchKey}));
-                      });
+                      $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><div class="charts"></div><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
                       glassIdToNum[response.glassID] = glassNum;
 	              graphs[response.glassID] = {};
                   }
@@ -162,28 +121,6 @@
                           $sensor.find('.sensor-graph-button').click(sensor_graph_click);
                       });
                   }
-              }
-              if (response.action == 'match') {
-                  response_match = response;
-                  if (_.has(response, 'imageb64')) {
-                      var id = _.uniqueId('match');
-                      $('#matches').append($('<img>').attr('src', 'data:image/jpeg;base64,' + response.imageb64).attr('id', id));
-                      if (_.has(response, 'H')) {
-                          debug_hinv = invert_3x3(response.H);
-                          debug_h = response.H;
-                          render($('#' + id)[0], debug_hinv);
-                      }
-                  }
-                  if (_.has(response, 'sensors')) {
-                      $('#matches').append(JSON.stringify(sensorLatest(response.sensors, 11)));
-                  }
-                  if (_.has(response, 'H')) {
-                      $('#matches').append(JSON.stringify(_.omit(response, ['sensors', 'imageb64'])));
-                  }
-                  var children = $('#matches').children();
-                  var maxChildren = 10;
-                  if (children.length > maxChildren)
-                      children.slice(children.length - maxChildren);
               }
           }
           ws.onclose = function (event) {
@@ -216,141 +153,6 @@
       }
 
       ws = connectWebsocket();
-      function resetMatches() {
-          $('#matches').html('');
-          $('#matchControls').html('');
-          ws.send(JSON.stringify({action: 'resetMatch'}));
-      }
-
-      function initCanvas($canvas, matchKey) {
-          var context = $canvas.getContext('2d');
-          context.fillStyle = '#FFFFFF'; // set canvas background color
-          context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
-
-          var tool = {};
-          function ev_canvas (ev) {
-              if (ev.layerX || ev.layerX == 0) { // Firefox
-                  ev._x = ev.layerX;
-                  ev._y = ev.layerY;
-              } else if (ev.offsetX || ev.offsetX == 0) { // Opera
-                  ev._x = ev.offsetX;
-                  ev._y = ev.offsetY;
-              }
-              var evtype = ev.type;
-              if (evtype.slice(0, 5) == "touch" && event.touches.length == 1) {
-                  console.log('Touch')
-                  ev._x = ev.touches[0].pageX;
-                  ev._y = ev.touches[0].pageY;
-              }
-              console.log(ev._x + " " + ev._y)
-              //console.log(ev.pageX + " " + ev.pageY)
-
-              var func = tool[evtype];
-              if (func) {
-                  func(ev);
-              }
-          }
-
-          $canvas.addEventListener('mousedown', ev_canvas, false);
-          $canvas.addEventListener('mousemove', ev_canvas, false);
-          $canvas.addEventListener('mouseup', ev_canvas, false);
-          $canvas.addEventListener('touchmove', ev_canvas, false);
-          $canvas.addEventListener('touchstart', ev_canvas, false);
-          $canvas.addEventListener('touchend', ev_canvas, false);
-          tool.drawing = false;
-          tool.mousemove = function (ev) {
-              if (this.drawing) {
-                  context.lineTo(ev._x, ev._y);
-                  context.strokeStyle = '#0b61a4';
-
-                  context.stroke();
-              }
-          };
-          tool.mousedown = function (ev) {
-              context.beginPath();
-              context.moveTo(ev._x, ev._y);
-              this.drawing = true;
-          };
-          tool.mouseup = function (ev) {
-              if (this.drawing) {
-                  tool.mousemove(ev);
-                  this.drawing = false;
-                  var datauri = $canvas.toDataURL();
-                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1], matchKey: matchKey}));
-              }
-          };
-
-          tool.touchmove = function (ev) {
-              console.log('Touch move')
-              if (this.drawing) {
-                  context.lineTo(ev.pageX, ev.pageY);
-                  context.stroke();
-              }
-          };
-          tool.touchstart = function (ev) {
-              console.log('Touch start');
-              context.beginPath();
-              context.moveTo(ev.pageX, ev.pageY);
-              this.drawing = true;
-          };
-          tool.touchend = function (ev) {
-              console.log('Touch end')
-              if (this.drawing) {
-                  tool.touchmove(ev);
-                  this.drawing = false;
-                  var datauri = $canvas.toDataURL();//"image/jpeg", .2
-                  ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: datauri.split(',')[1], matchKey: matchKey}));
-              }
-          };
-
-      }
-
-      function initControlCanvas(key) {
-          var $canvas = $('#controlCanvas');
-          $canvas.show();
-          $canvas = $canvas[0];
-          var context = $canvas.getContext('2d');
-          context.fillStyle = '#00FFFF'; // set canvas background color
-          context.fillRect(0, 0, $canvas.width, $canvas.height);  // now fill the canvas        
-
-          var tool = {};
-          function ev_canvas (ev) {
-              if (ev.layerX || ev.layerX == 0) { // Firefox
-                  ev._x = ev.layerX;
-                  ev._y = ev.layerY;
-              } else if (ev.offsetX || ev.offsetX == 0) { // Opera
-                  ev._x = ev.offsetX;
-                  ev._y = ev.offsetY;
-              }
-              var evtype = ev.type;
-              if (evtype.slice(0, 5) == "touch" && event.touches.length == 1) {
-                  console.log('Touch')
-                  ev._x = ev.touches[0].pageX;
-                  ev._y = ev.touches[0].pageY;
-              }
-              console.log(ev._x + " " + ev._y)
-              //console.log(ev.pageX + " " + ev.pageY)
-
-              var func = tool[evtype];
-              if (func) {
-                  func(ev);
-              }
-          }
-          $canvas.addEventListener('mousedown', ev_canvas, false);
-          tool.mousedown = function (ev) {
-              $.ajax({url: 'https://api.picar.us/openglass/pupil/' + key, type: 'POST', data: JSON.stringify({values: [ev.offsetX, ev.offsetY], 'type': -2, 'name': 'Pupil Eyetracker (fake)', 'timestamp': (new Date).getTime() / 1000})});
-          };
-      }
-
-
-      function render_image(image_data, div, success) {
-          var image_id = _.uniqueId('image_');
-          var image_tag = $('<img>').css('visibility', 'hidden').css('display', 'none').attr('id', image_id);
-          image_tag.load(function () {
-              success(image_id);
-          });
-          div.append(image_tag.attr('src', image_data));
-      }
 
       function getRotationMatrixFromVector(rotationVector) {
           var q0;
@@ -458,20 +260,6 @@
               }
               return outR;
           }
-
-      function mult_matrix(m1, m2) {
-          var m = [];
-          _.each(_.range(4), function (i) {
-              _.each(_.range(4), function (j) {
-                  var x = 0;
-                  _.each(_.range(4), function (k) {
-                      x += m1[i * 4 + k] * m[k * 4 + j];
-                  });
-                  m[i * 4 + j] = x;
-              });
-          });
-      }
- 
  
       function transpose_matrix(mat) {
           mat_trans = [];
@@ -500,31 +288,16 @@
               $glass.find('.charts').html($glass.find('.charts').children().sort(function (x, y) {return Number($(x).attr('name')) - Number($(y).attr('name'))}));
           }
       }
-      function say(msg) {
-          ws.send(JSON.stringify({say: msg, action: "say"}));
-      }
-      function setOverlay(imageb64, glassID) {
-          var out = {action: 'setOverlay', imageb64: imageb64};
-          if (!_.isUndefined(glassID))
-              out['glassID'] = glassID;
-          ws.send(JSON.stringify(out));
-      }
       function sendTimelineImage(imageb64) {
           var out = {action: 'sendTimelineImage', imageb64: imageb64};
           ws.send(JSON.stringify(out));
       }
-      function setMatchOverlay(imageb64, matchKey) {
-          ws.send(JSON.stringify({action: 'setMatchOverlay', imageb64: imageb64, matchKey: matchKey}));
-      }
-
       function main () {
           glassIdToNum = {};
           latestImages = {};
           latestSensors = {};
           graphs = {};
           seriesDatas = {};
-          $('#resetMatches').click(resetMatches);
-          $('#controlCanvas').hide();
           $('#scriptButton').click(function () {
               ws.send(JSON.stringify({action: 'startScript', script: $('#script').val()}));
           });

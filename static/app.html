@@ -35,22 +35,13 @@
             <div>
               <button id="buttonRaven" class="btn btn-large btn-primary" type="button">Raven</button>
               <button id="buttonNotify" class="btn btn-large btn-primary" type="button">Notify</button>
-              <button id="buttonPupil" class="btn btn-large btn-primary" type="button">Pupil</button>
               <button id="buttonWS" class="btn btn-large btn-primary" type="button">WS</button>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <h2>Control Calibration</h2>
-            <div>
-              <button id="buttonCalibrate" class="btn btn-large btn-primary" type="button">Calibrate</button>
-              <button id="buttonCalibrateNext" class="btn btn-large btn-primary" type="button">Calibrate Next</button>
             </div>
           </div>
         </div>
         <div class="row">
           <span id="secret-raven"></span>
           <span id="secret-notify"></span>
-          <span id="secret-pupil"></span>
           <span id="secret-ws"></span>
         </div>
       <div class="row" id="switches">
@@ -83,7 +74,7 @@
           }
       }
       function main () {
-          c = {names: ['location', 'match_memento', 'raven', 'notify', 'crowdqa', 'match_annotated', 'match_annotated_web', 'match_annotated_flipper', 'match_memento_ws', 'data_local', 'data_serverdisk', 'ws_server', 'ws_web', 'image', 'sensor_gps', 'slow', 'sensor_accelerometer', 'sensor_magneticfield', 'sensor_orientation', 'sensor_gyroscope', 'sensor_light', 'sensor_gravity', 'sensor_linearacceleration', 'sensor_rotationvector', 'warp', 'warp_sensor', 'predict', 'location_flickr', 'location_streetview', 'glass_flicker', 'glass_preview_warp', 'glass_overlay', 'pupil', 'pupil_draw', 'draw', 'pong', 'phone_ws']};
+          c = {names: ['notify']};
 
           $('#switches').html(Mustache.render('{{#names}}<div class="control-group switch-wrap"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
           $('.make-switch').bootstrapSwitch();
@@ -96,12 +87,6 @@
 
           $('#buttonSetup').click(function () {
               $.post('setup').error(function () {alert("Could not setup")});
-          });
-          $('#buttonCalibrate').click(function () {
-              $.post('control/calibrate').error(function () {alert("Could not calibrate")}).success(function (x) {console.log(x)});
-          });
-          $('#buttonCalibrateNext').click(function () {
-              $.post('control/calibrate_next').error(function () {alert("Could not calibrate next")}).success(function (x) {console.log(x)});
           });
 
           $('#buttonRaven').click(function () {

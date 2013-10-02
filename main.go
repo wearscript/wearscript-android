@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/pat"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -34,12 +35,14 @@ func RootServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, string(content))
 }
 
+type PlaygroundTemplate struct {
+	WSUrl string
+}
+
 func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
-	content, err := ioutil.ReadFile("static/playground.html")
-	if err != nil {
-		return
-	}
-	io.WriteString(w, string(content))
+	t := template.New("Playground Template")
+	t, _ = t.ParseFiles("static/playground.html")
+	t.Execute(w, PlaygroundTemplate{WSUrl: wsUrl + "/ws/web"})
 }
 
 func setupUser(r *http.Request, client *http.Client, userId string) {
@@ -185,9 +188,10 @@ func main() {
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
 
-	// /auth -> google -> /oauth2callback
+	// Control flow is: /auth -> google -> /oauth2callback
 	m.Get("/auth", http.HandlerFunc(authHandler))
 	m.Get("/oauth2callback", http.HandlerFunc(oauth2callbackHandler))
+
 	m.Post("/signout", http.HandlerFunc(signoutHandler))
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
@@ -198,7 +202,7 @@ func main() {
 	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
 	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))
 	http.Handle("/", m)
-	err := http.ListenAndServe(":16001", nil)
+	err := http.ListenAndServe(":"+servePort, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
