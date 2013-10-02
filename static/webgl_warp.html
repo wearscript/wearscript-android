@@ -1,0 +1,139 @@
+<html>
+<head>
+<script id="2d-vertex-shader" type="x-shader/x-vertex">
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+uniform vec2 u_resolution;
+uniform mat3 u_h;
+
+varying vec2 v_texCoord;
+
+void main() {
+   // convert the rectangle from pixels to 0.0 to 1.0
+
+   vec3 warped = u_h * vec3(a_position, 1);
+
+   vec2 zeroToOne = warped.xy / u_resolution;
+
+   // convert from 0->1 to 0->2
+   vec2 zeroToTwo = zeroToOne * 2.0;
+
+   // convert from 0->2 to -1->+1 (clipspace)
+   vec2 clipSpace = zeroToTwo - 1.0;
+
+   gl_Position = vec4(clipSpace * vec2(1, -1), 0, warped.z);
+
+   // pass the texCoord to the fragment shader
+   // The GPU will interpolate this value between points.
+   v_texCoord = a_texCoord;
+}
+</script>
+
+<script id="2d-fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+
+// our texture
+uniform sampler2D u_image;
+
+// the texCoords passed in from the vertex shader.
+varying vec2 v_texCoord;
+
+void main() {
+   // Look up a color from the texture.
+   gl_FragColor = texture2D(u_image, v_texCoord);
+}
+</script>
+<script src="webgl-utils.js" type="text/javascript"></script>
+<script type="text/javascript">
+    window.onload = function() {
+        var image = document.getElementById("img");
+        image.src = "clock.png";
+        image.onload = function() {
+            var h = [1,0,0,  0,1,0, 0,0,1];
+            var h = [ 0.98364515, -0.01003037,  0.0043232 ,  0.00519268,  0.98073437,
+                      0.00275084, -0.00461241, -0.02089223,  0.99992149]; // h0;
+            var h = [ 1.01655165,  0.01030246, -0.00442344, -0.00539516,  1.01952966,
+                      -0.00278145,  0.00457639,  0.02134944,  1.        ]; // inv(h0);
+            var h = [ 0.98364515,  0.00519268, -0.00461241, -0.01003037,  0.98073437,
+                      -0.02089223,  0.0043232 ,  0.00275084,  0.99992149]; // h0.T;
+            var h = [ 1.01655165, -0.00539516,  0.00457639,  0.01030246,  1.01952966,
+                      0.02134944, -0.00442344, -0.00278145,  1.        ]; // inv(h0).T;
+            render(image, h);
+        }
+    }
+    
+    function setRectangle(gl,x,y,width,height){
+        var x1=x;
+        var x2=x+width;
+        var y1=y;
+        var y2=y+height;
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([x1,y1,x2,y1,x1,y2,x1,y2,x2,y1,x2,y2]),gl.STATIC_DRAW);
+    }
+
+    function render(image, h) {
+        h = [h[0], h[1], h[6], h[3], h[4], h[7], h[2], h[5], h[8]];
+        // Get A WebGL context
+        var canvas = document.getElementById("canvas");
+        var gl = canvas.getContext("experimental-webgl");
+        
+        // setup a GLSL program
+        var vertexShader = createShaderFromScriptElement(gl, "2d-vertex-shader");
+        var fragmentShader = createShaderFromScriptElement(gl, "2d-fragment-shader");
+        var program = createProgram(gl, [vertexShader, fragmentShader]);
+        gl.useProgram(program);
+        
+        // look up where the vertex data needs to go.
+        var positionLocation = gl.getAttribLocation(program, "a_position");
+
+        // look up where the texture coordinates need to go.
+        var texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+        
+        // provide texture coordinates for the rectangle.
+        var texCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            0.0,  0.0,
+            1.0,  0.0,
+            0.0,  1.0,
+            0.0,  1.0,
+            1.0,  0.0,
+            1.0,  1.0]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(texCoordLocation);
+        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+        
+        // Create a texture.
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        
+        // Set the parameters so we can render any size image.
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        
+        // Upload the image into the texture.
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+        var hLocation=gl.getUniformLocation(program,"u_h");
+        gl.uniformMatrix3fv(hLocation,false,new Float32Array(h));
+
+        var resolutionLocation=gl.getUniformLocation(program,"u_resolution");
+        gl.uniform2f(resolutionLocation,canvas.width,canvas.height);
+        var buffer=gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation,2,gl.FLOAT,false,0,0);
+        setRectangle(gl,0,0,image.width,image.height);
+        gl.drawArrays(gl.TRIANGLES,0,6);
+        console.log(image.width + " " + image.height + " " + canvas.width + " " + canvas.height);
+    }
+</script>
+</head>
+<body>
+<canvas id="canvas" width="640" height="360"></canvas>
+<p>
+<img id="img" src=""/></p>
+</canvas>
+</body>
+</html>
