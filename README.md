@@ -1,7 +1,7 @@
 OpenGlass
 =========
 
-It's a work in progress but we wanted to get it out as early as possible.  For demos of this code see openglass.us (this readme would be out of data in terms of capabilities).  It is not expected that you will be able to run this yourself easily, it is primarily to share ideas and collaborate.
+For demos of this code see openglass.us (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.
 
 License
 -------
@@ -16,12 +16,11 @@ Go Install
 
 Install
 -------
-If you want access to our demo server contact us, if you want to run this yourself definitely contact us (some features requires a http://picar.us cluster).
 
 * Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this if possible
 * Ubuntu packages: apt-get install mercurial
 * Setup a config.go file (look at config.go.example)
-* Run install.sh (this does basic dependencies and such, it is not expected to automatically install everything at this point)
+* Run install.sh (this does basic dependencies and such)
 
 Hacking
 -------

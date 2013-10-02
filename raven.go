@@ -46,15 +46,9 @@ func RavenServer(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(401)
 		return
 	}
-	flags, err := getUserFlags(userId, "uflags")
 	if err != nil {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		w.WriteHeader(500)
-		return
-	}
-	if !hasFlag(flags, "raven") {
-		fmt.Println("User not flagged")
-		w.WriteHeader(400)
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)

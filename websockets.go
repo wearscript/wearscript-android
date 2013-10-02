@@ -24,24 +24,24 @@ type WSAnnotation struct {
 
 type WSData struct {
 	// See Hacking.md for details
-	Tsave     float64         `json:"Tsave,omitempty"` // Time packet data is final
-	Tg0       float64         `json:"Tg0,omitempty"`   // Time packet is saved
-	Ts0       float64         `json:"Ts0,omitempty"`
-	Tg1       float64         `json:"Tg1,omitempty"`
-	Sensors   []WSSensor      `json:"sensors"`
-	Script    string          `json:"script"`
-	ScriptUrl string          `json:"scriptUrl"`
-	Message   string          `json:"message"`
-	Imageb64  *string         `json:"imageb64,omitempty"`
-	Action    string          `json:"action,omitempty"`
-	Timestamp float64         `json:"timestamp,omitempty"`
-	GlassID   string          `json:"glassID,omitempty"`
-	H         []float64       `json:"H,omitempty"`
-	MatchKey  string          `json:"matchKey,omitempty"`
-	Flags     []string        `json:"flags,omitempty"`
-	Say       *string         `json:"say,omitempty"`
-	Draw      [][]interface{} `json:"draw,omitempty"`
-	Ti *mirror.TimelineItem   `json:"ti,omitempty"`
+	Tsave     float64              `json:"Tsave,omitempty"` // Time packet data is final
+	Tg0       float64              `json:"Tg0,omitempty"`   // Time packet is saved
+	Ts0       float64              `json:"Ts0,omitempty"`
+	Tg1       float64              `json:"Tg1,omitempty"`
+	Sensors   []WSSensor           `json:"sensors"`
+	Script    string               `json:"script"`
+	ScriptUrl string               `json:"scriptUrl"`
+	Message   string               `json:"message"`
+	Imageb64  *string              `json:"imageb64,omitempty"`
+	Action    string               `json:"action,omitempty"`
+	Timestamp float64              `json:"timestamp,omitempty"`
+	GlassID   string               `json:"glassID,omitempty"`
+	H         []float64            `json:"H,omitempty"`
+	MatchKey  string               `json:"matchKey,omitempty"`
+	Flags     []string             `json:"flags,omitempty"`
+	Say       *string              `json:"say,omitempty"`
+	Draw      [][]interface{}      `json:"draw,omitempty"`
+	Ti        *mirror.TimelineItem `json:"ti,omitempty"`
 }
 
 var DeviceChannels = map[string][]chan *WSData{} // [user]
@@ -265,7 +265,7 @@ func WSWebHandler(c *websocket.Conn) {
 			fmt.Println(err)
 			return
 		}
-         if request.Action == "sendTimelineImage" {
+		if request.Action == "sendTimelineImage" {
 			trans := authTransport(userId)
 			if trans == nil {
 				LogPrintf("notify: auth")

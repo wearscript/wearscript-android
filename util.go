@@ -2,9 +2,9 @@ package main
 
 import (
 	"code.google.com/p/goauth2/oauth"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"encoding/base64"
 	"github.com/gorilla/sessions"
 	"io"
 	"net/http"
