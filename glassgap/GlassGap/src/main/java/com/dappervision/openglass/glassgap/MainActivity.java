@@ -11,9 +11,6 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
-import net.kencochrane.raven.DefaultRavenFactory;
-import net.kencochrane.raven.RavenFactory;
-
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
@@ -52,7 +49,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     public MainActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
-        RavenFactory.registerFactory(new DefaultRavenFactory());
     }
 
     /**

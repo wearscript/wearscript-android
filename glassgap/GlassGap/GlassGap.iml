@@ -70,21 +70,10 @@
     <orderEntry type="jdk" jdkName="Android 4.2.2 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="opencv-android" exported="" />
-    <orderEntry type="library" exported="" name="android-support-v4" level="project" />
-    <orderEntry type="library" exported="" name="classes" level="project" />
     <orderEntry type="library" exported="" name="commons-codec-1.6" level="project" />
     <orderEntry type="library" exported="" name="java_websocket" level="project" />
-    <orderEntry type="library" exported="" name="raven-4.1-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="guava-14.0.1" level="project" />
-    <orderEntry type="library" exported="" name="httpcore-4.2.4" level="project" />
-    <orderEntry type="library" exported="" name="httpclient-cache-4.2.5" level="project" />
-    <orderEntry type="library" exported="" name="jackson-core-2.2.2" level="project" />
     <orderEntry type="library" exported="" name="json-simple-1.1.1" level="project" />
-    <orderEntry type="library" exported="" name="httpclient-4.2.5" level="project" />
-    <orderEntry type="library" exported="" name="httpmime-4.2.5" level="project" />
-    <orderEntry type="library" exported="" name="slf4j-android-1.6.1-RC1" level="project" />
-    <orderEntry type="library" exported="" name="fluent-hc-4.2.5" level="project" />
-    <orderEntry type="library" exported="" name="commons-logging-1.1.1" level="project" />
+    <orderEntry type="library" exported="" name="android-websockets" level="project" />
   </component>
 </module>
 
