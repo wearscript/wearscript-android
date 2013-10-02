@@ -1,0 +1,42 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.5.+'
+    }
+}
+apply plugin: 'android'
+
+repositories {
+    mavenCentral()
+}
+
+android {
+    compileSdkVersion 17
+    buildToolsVersion "17.0.0"
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 15
+    }
+}
+
+dependencies {
+    compile files('libs/android-support-v4.jar')
+    compile files('libs/classes.jar')
+    compile files('libs/commons-codec-1.6.jar')
+    compile files('libs/commons-logging-1.1.1.jar')
+    compile files('libs/fluent-hc-4.2.5.jar')
+    compile files('libs/guava-14.0.1.jar')
+    compile files('libs/httpclient-4.2.5.jar')
+    compile files('libs/httpclient-cache-4.2.5.jar')
+    compile files('libs/httpcore-4.2.4.jar')
+    compile files('libs/httpmime-4.2.5.jar')
+    compile files('libs/jackson-core-2.2.2.jar')
+    compile files('libs/java_websocket.jar')
+    compile files('libs/json-simple-1.1.1.jar')
+    compile files('libs/raven-4.1-SNAPSHOT.jar')
+    compile files('libs/slf4j-android-1.6.1-RC1.jar')
+    compile project(':opencv-android')
+}
