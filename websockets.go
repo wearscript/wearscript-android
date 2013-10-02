@@ -3,9 +3,7 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"code.google.com/p/google-api-go-client/mirror/v1"
-	"encoding/json"
 	"fmt"
-	picarus "github.com/bwhite/picarus/go"
 	"strings"
 	"time"
 )
@@ -49,20 +47,6 @@ type WSData struct {
 var DeviceChannels = map[string][]chan *WSData{} // [user]
 var WebChannels = map[string][]chan *WSData{}    // [user]
 
-func WarpOverlay(wsSendChan chan *WSData, image string, h []float64, glassID string) {
-	st := time.Now()
-	imageWarped, err := WarpImage(image, h, 360, 640)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(fmt.Sprintf("[%s][%f]", "WarpImage", float64(time.Now().Sub(st).Seconds())))
-	st = time.Now()
-	imageWarpedB64 := picarus.B64Enc(imageWarped)
-	wsSendChan <- &WSData{Imageb64: &imageWarpedB64, Action: "setOverlay", GlassID: glassID}
-	fmt.Println(fmt.Sprintf("[%s][%f]", "SendImage", time.Now().Sub(st).Seconds()))
-}
-
 func CurTime() float64 {
 	return float64(time.Now().UnixNano()) / 1000000000.
 }
@@ -94,7 +78,6 @@ func WSSendDevice(userId string, data *WSData) error {
 func WSGlassHandler(c *websocket.Conn) {
 	defer c.Close()
 	fmt.Println("Connected with glass")
-	conn := picarus.Conn{Email: picarusEmail, ApiKey: picarusApiKey, Server: "https://api.picar.us"}
 	path := strings.Split(c.Request().URL.Path, "/")
 	if len(path) != 4 {
 		fmt.Println("Bad path")
@@ -129,16 +112,8 @@ func WSGlassHandler(c *websocket.Conn) {
 
 	// Initialize delays
 	die := false
-	matchAnnotatedDelay := 0.
-	matchMementoDelay := 0.
-	matchMementoChan := make(chan *WSData)
-	matchAnnotatedChan := make(chan *WSData)
 	annotationPoints := map[string]string{}
 	sensorCache := map[int]*WSSensor{}
-	hFlip := []float64{-1., 0., float64(wsWidth), 0., -1., float64(wsHeight), 0., 0., 1.}
-	//hSmallToBig := []float64{3., 0., 304., 0., 3., 388., 0., 0., 1.}
-	//hBigToGlass := []float64{1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0}
-	//sensorLUT := map[string]int{"sensor_gps": -1, "sensor_accelerometer": 1, "sensor_magneticfield": 2, "sensor_orientation": 3, "sensor_gyroscope": 4, "sensor_light": 5, "sensor_gravity": 9, "sensor_linearacceleration": 10, "sensor_rotationvector": 11}
 
 	// Websocket sender
 	go func() {
@@ -188,130 +163,6 @@ func WSGlassHandler(c *websocket.Conn) {
 		}
 	}()
 
-	// Match memento loop
-	go func() {
-		locFeat := picarus.B64Dec(locationFeatureModel)
-		_, columnss, err := getMementoDB(&conn, userId)
-		if err != nil {
-			fmt.Println(err)
-			fmt.Println("Unable to perform matches, can't load db")
-			return
-		}
-		for {
-			request, ok := <-matchMementoChan
-			if !ok {
-				break
-			}
-			requestTime := time.Now()
-			points1, err := ImagePoints(picarus.B64Dec(*(*request).Imageb64))
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			for _, columns := range columnss {
-				_, err := ImagePointsMatch(columns[locFeat], points1)
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-				note := columns["meta:note"]
-				wsSendChan <- &WSData{Say: &note}
-			}
-			fmt.Println("Finished matching memento")
-			matchMementoDelay = time.Now().Sub(requestTime).Seconds()
-		}
-	}()
-
-	// Match AR loop
-	go func() {
-		for {
-			request, ok := <-matchAnnotatedChan
-			if !ok {
-				break
-			}
-			requestTime := time.Now()
-			st := time.Now()
-			if len(annotationPoints) == 0 {
-				continue
-			}
-			image := picarus.B64Dec(*(*request).Imageb64)
-			fmt.Println(fmt.Sprintf("[%s][%f]", "GetMatchFeat", float64(time.Now().Sub(st).Seconds())))
-			flipImage := false
-			if hasFlag(uflags, "match_annotated_flipper") {
-				lastGravityVector := sensorCache[9]
-				if lastGravityVector != nil && lastGravityVector.Values[1] < -5 {
-					flipImage = true
-				}
-				if flipImage {
-					imageWarped, err := WarpImage(image, hFlip, 360, 640)
-					if err != nil {
-						LogPrintf("ws: match_annotated_flipper warp")
-						flipImage = false
-					} else {
-						fmt.Println("Image flipped")
-						image = imageWarped
-					}
-				}
-			}
-			st = time.Now()
-			points1, err := ImagePoints(image)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			fmt.Println(fmt.Sprintf("[%s][%f]", "ComputePoints", float64(time.Now().Sub(st).Seconds())))
-			for matchKey, points0 := range annotationPoints {
-				st = time.Now()
-				h, err := ImagePointsMatch(points0, points1)
-				if h == nil || err != nil {
-					fmt.Println("No match")
-					fmt.Println(err)
-					continue
-				}
-				if flipImage {
-					h = HMult(hFlip, h)
-				}
-				fmt.Println(fmt.Sprintf("[%s][%f]", "ImageMatch", float64(time.Now().Sub(st).Seconds())))
-				if hasFlag(uflags, "match_annotated_web") {
-					matchData := WSData{Action: "match", MatchKey: matchKey, Imageb64: (*request).Imageb64, H: h, Sensors: (*request).Sensors}
-					if err != nil {
-						fmt.Println(err)
-					} else {
-						WSSendWeb(userId, &matchData)
-					}
-				}
-				fmt.Println(fmt.Sprintf("Match delay: %f", CurTime()-request.Timestamp))
-				wsSendChan <- &WSData{H: h, Action: "setMatchH", MatchKey: matchKey}
-				fmt.Println("Finished computing homography")
-			}
-			matchAnnotatedDelay = time.Now().Sub(requestTime).Seconds()
-		}
-	}()
-
-	// Pong!
-	if hasFlag(uflags, "pong") {
-		go func() {
-			state := PongInit()
-			for hasFlag(uflags, "pong") {
-				if die {
-					break
-				}
-				PongIter(state)
-				yxJS, err := getUserAttribute(userId, "pupil_yx")
-				if err == nil {
-					var yx []float64
-					err = json.Unmarshal([]byte(yxJS), &yx)
-					if err == nil {
-						fmt.Println(yx[0])
-						PongSetPlayer(state, &state.PlayerL, int(yx[0]))
-					}
-				}
-				PongAI(state, &state.PlayerR)
-				wsSendChan <- &WSData{Action: "draw", Draw: PongRender(state)}
-				time.Sleep(time.Millisecond * 250)
-			}
-		}()
-	}
 	// Data from glass loop
 	skew := 0.
 	delay := 0.
@@ -368,30 +219,6 @@ func WSGlassHandler(c *websocket.Conn) {
 			}
 			if request.Imageb64 != nil {
 				wsSendChan <- &WSData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
-				if hasFlag(uflags, "data_serverdisk") {
-					requestJS, err := json.Marshal(request)
-					if err != nil {
-						fmt.Println(err)
-					} else {
-						go func() {
-							WriteFile(fmt.Sprintf("ws-serverdisk-%s-%.5d.js", userId, cnt), string(requestJS))
-						}()
-					}
-				}
-				if hasFlag(uflags, "match_annotated") {
-					select {
-					case matchAnnotatedChan <- &request:
-					default:
-						fmt.Println("Image skipping match annotated, too slow...")
-					}
-				}
-				if hasFlag(uflags, "match_memento_ws") {
-					select {
-					case matchMementoChan <- &request:
-					default:
-						fmt.Println("Image skipping match memento, too slow...")
-					}
-				}
 			}
 		}
 	}
@@ -438,34 +265,18 @@ func WSWebHandler(c *websocket.Conn) {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println(request.Action)
-		if request.Action == "setMatchImage" {
-			image := picarus.B64Dec(*request.Imageb64)
-			points, err := ImagePoints(image)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			setUserMap(userId, "match_points", request.MatchKey, points)
-			// NOTE(brandyn): We won't publish this to glass, it isn't needed
-		} else if request.Action == "sendTimelineImage" {
+         if request.Action == "sendTimelineImage" {
 			trans := authTransport(userId)
 			if trans == nil {
 				LogPrintf("notify: auth")
 				return
 			}
-
 			svc, err := mirror.New(trans.Client())
 			if err != nil {
 				LogPrintf("notify: mirror")
 				return
 			}
-			sendImageCard(picarus.B64Dec(*request.Imageb64), "", svc)
-		} else if request.Action == "pupil" {
-			PupilUpdate(userId, &request.Sensors[0])
-		} else if request.Action == "resetMatch" {
-			deleteUserMapAll(userId, "match_points")
-			WSSendDevice(userId, &request)
+			sendImageCard(B64Dec(*request.Imageb64), "", svc)
 		} else {
 			WSSendDevice(userId, &request)
 		}

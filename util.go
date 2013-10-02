@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"fmt"
+	"encoding/base64"
 	"github.com/gorilla/sessions"
 	"io"
 	"net/http"
@@ -12,6 +13,15 @@ import (
 
 // Cookie store used to store the user's ID in the current session.
 var store = sessions.NewCookieStore([]byte(secret))
+
+func B64Dec(s string) string {
+	decoded, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		fmt.Println(s)
+		panic(err)
+	}
+	return string(decoded)
+}
 
 // OAuth2.0 configuration variables.
 func config(host string) *oauth.Config {
