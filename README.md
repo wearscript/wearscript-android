@@ -3,6 +3,15 @@ OpenGlass
 
 For demos of this code see openglass.us (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.
 
+Code Organization
+-----------------
+
+* Server: /
+* Server admin tools (authorize users, permissions, etc.): /tools
+* Webapps: /static/{app.html, playground.html}
+* GlassGap (Android app): /glassgap
+* GlassGap (useful utils, log data scripts, viewing server): /glassgap/tools/
+
 License
 -------
 Apache 2.0
@@ -30,7 +39,10 @@ Hacking
 -------
 See the HACKING.md file for help.
 
-Contact
--------
+Contact/Info
+-------------
 * Brandyn White (bwhite dappervision com)
-* IRC freenode #openglass (if you want to collaborate or chat that's the place to be)
+* IRC freenode #openglass (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
+* G+ Community: https://plus.google.com/communities/101102785351379725742 (we post pictures/videos as we go here)
+* Website: http://openglass.us (overall project info, video links)
+* Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
