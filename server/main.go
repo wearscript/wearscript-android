@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"github.com/gorilla/pat"
 	"html/template"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -24,15 +22,6 @@ func StaticServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	http.ServeFile(w, req, "static/"+path)
-}
-
-func RootServer(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("Got /")
-	content, err := ioutil.ReadFile("static/app.html")
-	if err != nil {
-		return
-	}
-	io.WriteString(w, string(content))
 }
 
 type PlaygroundTemplate struct {
@@ -53,6 +42,23 @@ func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
+
+func PlaygroundGlassServer(w http.ResponseWriter, req *http.Request) {
+	key := req.URL.Query().Get(":key")
+	t, err := template.ParseFiles("static/playground_glass.html")
+	if err != nil {
+		w.WriteHeader(500)
+		LogPrintf("playgroundglass: template parse")
+		return
+	}
+	err = t.Execute(w, &PlaygroundTemplate{WSUrl: wsUrl + "/ws/glass/" + key})
+	if err != nil {
+		w.WriteHeader(500)
+		LogPrintf("playgroundglass: template execute")
+		return
+	}
+}
+
 
 func setupUser(r *http.Request, client *http.Client, userId string) {
 	m, _ := mirror.New(client)
@@ -205,13 +211,13 @@ func main() {
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
-	m.Get("/playground", http.HandlerFunc(PlaygroundServer))
-	m.Get("/", http.HandlerFunc(RootServer))
+	m.Get("/playground/glass/{key}", http.HandlerFunc(PlaygroundGlassServer))
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
 	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
 	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))
+	m.Get("/", http.HandlerFunc(PlaygroundServer))
 	http.Handle("/", m)
-	err := http.ListenAndServe(":"+servePort, nil)
+	err := http.ListenAndServe(":" + servePort, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

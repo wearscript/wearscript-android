@@ -1,0 +1,27 @@
+<html style="width:100%; height:100%; overflow:hidden">
+<head>
+<script src="//cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+<script src="glassgap.js"></script>
+</head>
+<body style="width:100%; height:100%; overflow:hidden; margin:0">
+<canvas id="canvas" width="427" height="240" style="display:block">
+</canvas>
+<script>
+
+function cb(data) {
+    GG.log(JSON.stringify(data));
+}
+function server() {
+_.each([1, 2, 3, 4, 5, 9, 10, 11], function (x) {GG.sensorOn(x)});
+//GG.sensorCallback("cb");
+GG.cameraOn(2);
+//GG.wifiListenOn()
+GG.dataLog(false, true, .1);
+}
+$(function () {
+GG.serverConnect({{.WSUrl}}, 'server');
+});
+</script>
+</body>
+</html>

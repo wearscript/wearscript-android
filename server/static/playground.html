@@ -7,11 +7,44 @@
     <link href="static/bootstrap-switch.css" rel="stylesheet" media="screen">
     <link href="static/cube.css" rel="stylesheet" media="screen">
     <link href="static/rickshaw.min.css" rel="stylesheet" media="screen">
-    <style type="text/css">
-    </style>
+<style type="text/css">
+.switch-wrap{ 
+      float: left;
+      padding: 10px;
+      width: 175px;
+}
+.control-label {
+      font-size:10px;
+}
+</style>
+
   </head>
   <body>
     <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <h2>Mirror API</h2>
+            <div>
+              <button id="buttonAuth" class="btn btn-large btn-primary" type="button">Authenticate</button>
+              <button id="buttonSignout" class="btn btn-large" type="button">Sign Out</button>
+              <button id="buttonSetup" class="btn btn-large btn-primary" type="button">Setup</button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h2>Endpoints</h2>
+            <div>
+              <button id="buttonRaven" class="btn btn-large btn-primary" type="button">Raven</button>
+              <button id="buttonNotify" class="btn btn-large btn-primary" type="button">Notify</button>
+              <button class="btn btn-primary" type="button" id="qrButton">QR</button>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <span id="secret-raven"></span>
+          <span id="secret-notify"></span>
+          <div class="row" id="qr"></div>
+        </div>
+      <div class="row" id="switches"></div>
       <div class="row">
         <h1>Glass Data</h1>
         <div id="glasses"></div>

@@ -143,19 +143,8 @@ func WSGlassHandler(c *websocket.Conn) {
 				time.Sleep(time.Millisecond * 2000)
 				continue
 			}
-			flags, err = getUserFlags(userId, "flags")
-			if err != nil {
-				fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
-				time.Sleep(time.Millisecond * 2000)
-				continue
-			}
 			fmt.Println("Sending flags")
 			wsSendChan <- &WSData{Action: "flags", Flags: uflags}
-			annotationPoints, err = getUserMapAll(userId, "match_points")
-			if err != nil {
-				fmt.Println(err)
-				annotationPoints = map[string]string{}
-			}
 			time.Sleep(time.Millisecond * 2000)
 		}
 	}()

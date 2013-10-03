@@ -17,6 +17,11 @@ function sensorLatest(sensors, type) {
         return x.type == type;
     }));
 }
+
+function createQR() {
+    createKey("ws", function (x) {$('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}/playground/glass/{{secret}}&chld=H|4&choe=UTF-8"\>', {url: document.URL, secret: x}))}, function () {alert("Could not get ws")})
+}
+
 function connectWebsocket(WSUrl) {
     console.log(WSUrl);
     var ws = new WebSocket(WSUrl);
@@ -236,12 +241,31 @@ function sendTimelineImage(imageb64) {
     ws.send(JSON.stringify(out));
 }
 
+function createKey(type, success, error) {
+    var xhr = $.ajax({url: 'user/key/' + type, type: 'POST', success: success});
+    if (!_.isUndefined(error)) {
+        xhr.error(error);
+    }
+}
+
+function setFlags(flags, success) {
+    $.ajax({url: 'flags', type: 'POST', data: JSON.stringify(flags), success: success});
+}
+function getFlags(success) {
+    $.ajax({url: 'flags', type: 'GET', success: success});
+}
+function unsetFlags(flags, success) {
+    $.ajax({url: 'flags', type: 'DELETE', data: JSON.stringify(flags), success: success});
+}
+
+
 function main(WSUrl) {
     glassIdToNum = {};
     latestImages = {};
     latestSensors = {};
     graphs = {};
     seriesDatas = {};
+    $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
         ws.send(JSON.stringify({action: 'startScript', script: $('#script').val()}));
     });
@@ -250,6 +274,47 @@ function main(WSUrl) {
     });
     $('#scriptQRButton').click(function () {
         $('#scriptQR').html(Mustache.render('<img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{data}}&chld=H|4&choe=UTF-8"\>', {data: btoa($('#script').val())}))
+    });
+    c = {names: ['notify']};
+
+    $('#switches').html(Mustache.render('{{#names}}<div class="control-group switch-wrap"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
+    $('.make-switch').bootstrapSwitch();
+    $('#buttonAuth').click(function () {
+        window.location.replace('auth');
+    });
+    $('#buttonSignout').click(function () {
+        $.post('signout', {success: function () {location.reload()}}).error(function () {alert("Could not signout")});
+    });
+
+    $('#buttonSetup').click(function () {
+        $.post('setup').error(function () {alert("Could not setup")});
+    });
+
+    $('#buttonRaven').click(function () {
+        createKey("raven", function (x) {$('#secret-raven').html(_.escape(x))}, function () {alert("Could not get raven")})
+    });
+    $('#buttonNotify').click(function () {
+        createKey("notify", function (x) {$('#secret-notify').html(_.escape(x))}, function () {alert("Could not get notify")})
+    });
+    $('#buttonPupil').click(function () {
+        createKey("pupil", function (x) {$('#secret-pupil').html(_.escape(x))}, function () {alert("Could not get pupil")});
+    });
+    $('#buttonWS').click(function () {
+        createKey("ws", function (x) {$('#secret-ws').html(_.escape(x))}, function () {alert("Could not get ws")});
+    });
+
+    $('.make-switch').on('switch-change', function () {
+        var $this = $(this);
+        if ($this.bootstrapSwitch('status')) {
+            setFlags([$this.attr('name')]);
+        } else {
+            unsetFlags([$this.attr('name')]);
+        }
+    });
+    getFlags(function (x) {
+        _.each(JSON.parse(x), function (y) {
+            $('.make-switch[name=' + y + ']').bootstrapSwitch('setState', true);
+        });
     });
     ws = connectWebsocket(WSUrl);
 }
