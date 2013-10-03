@@ -1,7 +1,7 @@
-OpenGlasses
+WearScript
 ===========
 
-For demos of this code see http://openglasses.com (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.
+For demos of this code see http://wearscript.com (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.
 
 Code Organization
 -----------------
@@ -9,9 +9,9 @@ Code Organization
 * Server: /server
 * Server admin tools (authorize users, permissions, etc.): /admin
 * Webapps: /static/{app.html, playground.html}
-* GlassGap (Android app): /glassgap
+* WearScript (Android app): /wearscript
 * 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
-* GlassGap Prereqs (launchy/opencv/zxing): /glassgap/thirdparty
+* WearScript Prereqs (launchy/opencv/zxing): /wearscript/thirdparty
 * Useful tools (log data scripts, android adb helper, data visualization server): /tools/
 
 License
@@ -29,8 +29,8 @@ Install Redis
 ------------------
 * Follow instructions here http://redis.io/download (tested on 2.6.*)
 
-Install OpenGlasses
-------------------
+Install Server
+--------------
 
 * Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this if possible
 * Ubuntu packages: apt-get install mercurial
@@ -41,9 +41,9 @@ Contact/Info
 ============
 
 * Brandyn White (bwhite dappervision com)
-* IRC freenode #openglasses (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
+* IRC freenode #wearscript (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
 * G+ Community: https://plus.google.com/communities/101102785351379725742 (we post pictures/videos as we go here)
-* Website: http://openglasses.com (overall project info, video links)
+* Website: http://wearscript.com (overall project info, video links)
 * Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
 
 Hacking
