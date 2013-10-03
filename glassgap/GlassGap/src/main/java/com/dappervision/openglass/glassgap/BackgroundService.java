@@ -171,7 +171,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             SaveData(dataStr.getBytes(), "data/", true, ".js");
         }
         if (dataRemote) {
-            remoteImageCount++;
+            if (frame != null)
+                remoteImageCount++;
             if (clientConnected())
                 client.send(dataStr);
         }
