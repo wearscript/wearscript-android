@@ -1,7 +1,7 @@
 OpenGlasses
 ===========
 
-For demos of this code see openglasses.org (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.
+For demos of this code see http://openglasses.com (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.
 
 Code Organization
 -----------------
@@ -43,7 +43,7 @@ Contact/Info
 * Brandyn White (bwhite dappervision com)
 * IRC freenode #openglasses (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
 * G+ Community: https://plus.google.com/communities/101102785351379725742 (we post pictures/videos as we go here)
-* Website: http://openglasses.org (overall project info, video links)
+* Website: http://openglasses.com (overall project info, video links)
 * Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
 
 Hacking
