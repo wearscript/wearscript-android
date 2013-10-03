@@ -1,4 +1,4 @@
-package com.dappervision.openglass.glassgap;
+package com.dappervision.wearscript;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -23,7 +23,7 @@ import org.opencv.imgproc.Imgproc;
 import java.lang.ref.WeakReference;
 
 public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
-    protected static final String TAG = "OpenGlass";
+    protected static final String TAG = "WearScript";
     protected JavaCameraView view;
     protected boolean isGlass = true, isForeground = true;
     protected BackgroundService bs;

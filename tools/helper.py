@@ -20,17 +20,17 @@ def load_images(input_dir, **kw):
 
 
 def adb_pull(output_dir, **kw):
-    c = 'adb pull sdcard/openglass/data/ %s' % output_dir
+    c = 'adb pull sdcard/wearscript/data/ %s' % output_dir
     subprocess.call(c.split())
 
 
 def adb_rmr(**kw):
-    c = 'adb shell rm -r sdcard/openglass/data/'
+    c = 'adb shell rm -r sdcard/wearscript/data/'
     subprocess.call(c.split())
 
 
 def adb_ls(**kw):
-    c = 'adb shell ls -l sdcard/openglass/data/'
+    c = 'adb shell ls -l sdcard/wearscript/data/'
     subprocess.call(c.split())
 
 

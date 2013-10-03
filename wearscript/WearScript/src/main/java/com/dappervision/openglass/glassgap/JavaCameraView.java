@@ -1,4 +1,4 @@
-package com.dappervision.openglass.glassgap;
+package com.dappervision.wearscript;
 
 import android.content.Context;
 import android.graphics.ImageFormat;

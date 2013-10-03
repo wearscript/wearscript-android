@@ -1,4 +1,4 @@
-package com.dappervision.openglass.glassgap;
+package com.dappervision.wearscript;
 
 import android.util.Log;
 
@@ -8,12 +8,12 @@ import org.json.simple.JSONValue;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-public class OpenGlassScript {
+public class WearScript {
     BackgroundService bs;
-    String TAG = "OpenGlassScript";
+    String TAG = "WearScript";
 
 
-    OpenGlassScript(BackgroundService bs) {
+    WearScript(BackgroundService bs) {
         this.bs = bs;
     }
 

@@ -28,7 +28,7 @@ def main():
     subparser.add_argument('items', nargs='+')
     subparser.set_defaults(func=_send_list)
 
-    parser.add_argument('--endpoint', default='https://api.picar.us/openglass/notify/')
+    parser.add_argument('--endpoint', default='https://api.picar.us/wearscript/notify/')
     parser.add_argument('--priority', action='store_true')
     args = parser.parse_args()
     args.func(args)

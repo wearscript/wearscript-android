@@ -1,0 +1,1 @@
+include ':WearScript', ':opencv-android'

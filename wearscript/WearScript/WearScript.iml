@@ -17,7 +17,7 @@
     </facet>
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
-        <option name="GRADLE_PROJECT_PATH" value=":GlassGap" />
+        <option name="GRADLE_PROJECT_PATH" value=":WearScript" />
       </configuration>
     </facet>
   </component>

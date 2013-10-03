@@ -3,7 +3,7 @@ package main
 const (
     // You can leave these
 	debug       = true // Set to false to turn off logging every API request.
-	sessionName = "openglass"
+	sessionName = "wearscript"
 	scopes       = "https://www.googleapis.com/auth/glass.timeline " +
 		"https://www.googleapis.com/auth/glass.location " +
 		"https://www.googleapis.com/auth/userinfo.profile"

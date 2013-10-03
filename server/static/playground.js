@@ -19,23 +19,27 @@ function sensorLatest(sensors, type) {
 }
 
 function createQR() {
-    createKey("ws", function (x) {$('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}/playground/glass/{{secret}}&chld=H|4&choe=UTF-8"\>', {url: document.URL, secret: x}))}, function () {alert("Could not get ws")})
+    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}/playground/glass/{{secret}}&chld=H|4&choe=UTF-8"\>', {url: document.URL, secret: x}))}, function () {alert("Could not get ws")});
 }
 
 function connectWebsocket(WSUrl) {
-    console.log(WSUrl);
-    var ws = new WebSocket(WSUrl);
+    var url = WSUrl + "/ws/web";
+    console.log(url);
+    var ws = new WebSocket(url);
     ws.onopen = function () {
     }
     ws.onclose = function () {
 
     }
     ws.onmessage = function (event) {
+        if (scriptRowDisabled && _.has(window, 'glassSecret')) {
+            scriptRowDisabled = false;
+            $("#scriptRow").children().prop('disabled', false);
+        }
         var response = JSON.parse(event.data);
         if (response.action == "log") {
             console.log(response.message);
-        }
-        else if (response.action == "data") {
+        } else if (response.action == "data") {
             if (!_.has(glassIdToNum, response.glassID)) {
                 var glassNum = _.uniqueId('glass-');
                 var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
@@ -265,9 +269,11 @@ function main(WSUrl) {
     latestSensors = {};
     graphs = {};
     seriesDatas = {};
+    scriptRowDisabled = true;
+    $("#scriptRow").children().prop('disabled', true);
     $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScript', script: $('#script').val()}));
+        ws.send(JSON.stringify({action: 'startScript', script: $('#script').val().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
     });
     $('#scriptUrlButton').click(function () {
         ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script').val()}));

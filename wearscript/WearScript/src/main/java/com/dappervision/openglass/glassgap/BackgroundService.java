@@ -1,4 +1,4 @@
-package com.dappervision.openglass.glassgap;
+package com.dappervision.wearscript;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -64,7 +64,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public String sensorCallback, imageCallback;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
-    protected String TAG = "OpenGlass";
+    protected String TAG = "WearScript";
     protected TreeMap<String, Mat> scriptImages;
     protected TreeMap<Integer, Sensor> sensors;
     protected TextToSpeech tts;
@@ -303,7 +303,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
         try {
             try {
-                File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/openglass/" + path);
+                File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/wearscript/" + path);
                 dir.mkdirs();
                 File file;
                 if (timestamp)
@@ -327,7 +327,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected byte[] LoadData(String path, String suffix) {
         try {
             try {
-                File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/openglass/" + path);
+                File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/wearscript/" + path);
                 File file;
                 file = new File(dir, suffix);
                 FileInputStream inputStream = new FileInputStream(file);
@@ -348,7 +348,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void runScript(String script) {
         webview = new WebView(this);
         webview.getSettings().setJavaScriptEnabled(true);
-        webview.addJavascriptInterface(new OpenGlassScript(this), "GG");
+        webview.addJavascriptInterface(new WearScript(this), "GG");
         Log.i(TAG, "WebView:" + script);
         String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
         webview.loadUrl("file://" + path);
@@ -358,7 +358,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void runScriptUrl(String url) {
         webview = new WebView(this);
         webview.getSettings().setJavaScriptEnabled(true);
-        webview.addJavascriptInterface(new OpenGlassScript(this), "GG");
+        webview.addJavascriptInterface(new WearScript(this), "GG");
         Log.i(TAG, "WebView:" + url);
         webview.loadUrl(url);
         Log.i(TAG, "WebView Ran");
@@ -380,7 +380,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.i(TAG, "Service onCreate");
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         //PowerManager.PARTIAL_WAKE_LOCK
-        //wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "OpenGlass Background");
+        //wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "WearScript Background");
         //wakeLock.acquire(); // TODO: Should only do this if necessary
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>OpenGlass: Playground</title>
+    <title>WearScript: Playground</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="static/bootstrap-switch.css" rel="stylesheet" media="screen">
@@ -23,7 +23,7 @@
     <div class="container">
         <div class="row">
           <div class="col-md-6">
-            <h2>Mirror API</h2>
+            <h2>User</h2>
             <div>
               <button id="buttonAuth" class="btn btn-large btn-primary" type="button">Authenticate</button>
               <button id="buttonSignout" class="btn btn-large" type="button">Sign Out</button>
@@ -49,9 +49,11 @@
         <h1>Glass Data</h1>
         <div id="glasses"></div>
       </div>
-      <div class="row">
+      <div class="row" id="scriptRow">
         <h1>Scripting</h1>
-        <textarea id="script" rows="4" cols="50"></textarea>        
+        <textarea id="script" rows="4" cols="50">
+          {{.GlassBody}}
+        </textarea>
         <div id="scriptQR"></div>
         <button class="btn btn-primary" type="button" id="scriptButton">Script Button</button>
         <button class="btn btn-primary" type="button" id="scriptUrlButton">Script Url Button</button>

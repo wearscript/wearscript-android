@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/gorilla/pat"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -25,6 +26,11 @@ func StaticServer(w http.ResponseWriter, req *http.Request) {
 }
 
 type PlaygroundTemplate struct {
+	WSUrl     string
+	GlassBody string
+}
+
+type PlaygroundGlassTemplate struct {
 	WSUrl string
 }
 
@@ -35,7 +41,13 @@ func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 		LogPrintf("playground: template parse")
 		return
 	}
-	err = t.Execute(w, &PlaygroundTemplate{WSUrl: wsUrl + "/ws/web"})
+	glassBody, err := ioutil.ReadFile("static/playground_glass.html")
+	if err != nil {
+		w.WriteHeader(500)
+		LogPrintf("playground: glass")
+		return
+	}
+	err = t.Execute(w, PlaygroundTemplate{WSUrl: wsUrl, GlassBody: string(glassBody)})
 	if err != nil {
 		w.WriteHeader(500)
 		LogPrintf("playground: template execute")
@@ -45,20 +57,19 @@ func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 
 func PlaygroundGlassServer(w http.ResponseWriter, req *http.Request) {
 	key := req.URL.Query().Get(":key")
-	t, err := template.ParseFiles("static/playground_glass.html")
+	t, err := template.New("bios").Parse("<script>function s() {GG.log('Connected')};window.onload=function () {GG.serverConnect('{{.WSUrl}}', 's')}</script>")
 	if err != nil {
 		w.WriteHeader(500)
 		LogPrintf("playgroundglass: template parse")
 		return
 	}
-	err = t.Execute(w, &PlaygroundTemplate{WSUrl: wsUrl + "/ws/glass/" + key})
+	err = t.Execute(w, &PlaygroundGlassTemplate{WSUrl: wsUrl + "/ws/glass/" + key})
 	if err != nil {
 		w.WriteHeader(500)
 		LogPrintf("playgroundglass: template execute")
 		return
 	}
 }
-
 
 func setupUser(r *http.Request, client *http.Client, userId string) {
 	m, _ := mirror.New(client)
@@ -70,8 +81,8 @@ func setupUser(r *http.Request, client *http.Client, userId string) {
 	m.Subscriptions.Insert(s).Do()
 
 	c := &mirror.Contact{
-		Id:          "OpenGlass",
-		DisplayName: "OpenGlass",
+		Id:          "WearScript",
+		DisplayName: "WearScript",
 		ImageUrls:   []string{fullUrl + "/static/oglogo.png"},
 	}
 	m.Contacts.Insert(c).Do()
@@ -79,7 +90,7 @@ func setupUser(r *http.Request, client *http.Client, userId string) {
 	menuItems := []*mirror.MenuItem{&mirror.MenuItem{Action: "REPLY"}, &mirror.MenuItem{Action: "TOGGLE_PINNED"}}
 
 	t := &mirror.TimelineItem{
-		Text:         "OpenGlass",
+		Text:         "WearScript",
 		Creator:      c,
 		MenuItems:    menuItems,
 		Notification: &mirror.NotificationConfig{Level: "DEFAULT"},
@@ -217,7 +228,7 @@ func main() {
 	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))
 	m.Get("/", http.HandlerFunc(PlaygroundServer))
 	http.Handle("/", m)
-	err := http.ListenAndServe(":" + servePort, nil)
+	err := http.ListenAndServe(":"+servePort, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

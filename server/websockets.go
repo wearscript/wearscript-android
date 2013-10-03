@@ -173,6 +173,7 @@ func WSGlassHandler(c *websocket.Conn) {
 			}
 		}
 		if request.Action == "log" {
+			fmt.Println(request)
 			WSSendWeb(userId, &request)
 		}
 		if request.Action == "pong" {
