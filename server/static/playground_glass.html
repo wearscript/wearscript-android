@@ -15,9 +15,9 @@ function cb(data) {
 function server() {
 _.each([1, 2, 3, 4, 5, 9, 10, 11], function (x) {GG.sensorOn(x)});
 //GG.sensorCallback("cb");
-GG.cameraOn(2);
+GG.cameraOn(1);
 //GG.wifiListenOn()
-GG.dataLog(false, true, .1);
+GG.dataLog(false, true, .2);
 }
 $(function () {
 GG.serverConnect({{.WSUrl}}, 'server');

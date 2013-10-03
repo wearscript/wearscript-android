@@ -88,11 +88,6 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(err)
 		return
 	}
-	flags, err := getUserFlags(userId, "flags")
-	if err != nil {
-		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
-		return
-	}
 	uflags, err := getUserFlags(userId, "uflags")
 	if err != nil {
 		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
@@ -104,12 +99,11 @@ func WSGlassHandler(c *websocket.Conn) {
 		return
 	}
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
-	wsSendChan := make(chan *WSData, 10)
+	wsSendChan := make(chan *WSData, 5)
 	DeviceChannels[userId] = append(DeviceChannels[userId], wsSendChan)
 
 	// Initialize delays
 	die := false
-	annotationPoints := map[string]string{}
 	sensorCache := map[int]*WSSensor{}
 
 	// Websocket sender
@@ -226,7 +220,7 @@ func WSWebHandler(c *websocket.Conn) {
 	fmt.Println("Websocket connected")
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
 	// TODO: This needs the "die" code added, look into glass side also
-	wsSendChan := make(chan *WSData, 10)
+	wsSendChan := make(chan *WSData, 5)
 	WebChannels[userId] = append(WebChannels[userId], wsSendChan)
 	// Websocket sender
 	go func() {
