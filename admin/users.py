@@ -30,8 +30,8 @@ def _list_users(db, args):
 
 def main():
     parser = argparse.ArgumentParser(description='Picarus user operations')
-    parser.add_argument('--redis_host', help='Redis Host', default='localhost')
-    parser.add_argument('--redis_port', type=int, help='Redis Port', default=6383)
+    parser.add_argument('--host', help='Redis Host', default='localhost')
+    parser.add_argument('--port', type=int, help='Redis Port', default=6379)
     subparsers = parser.add_subparsers(help='Commands')
 
     subparser = subparsers.add_parser('set_flag', help='Set a flag')
@@ -50,7 +50,7 @@ def main():
     subparser.set_defaults(func=_unset_flag)
     
     args = parser.parse_args()
-    db = redis.StrictRedis(args.redis_host, port=args.redis_port)
+    db = redis.StrictRedis(args.host, port=args.port)
     args.func(db, args)
 
 if __name__ == '__main__':
