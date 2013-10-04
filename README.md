@@ -1,12 +1,8 @@
 WearScript
 ===========
 
-For demos of this code see http://openshades.com (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.
+For demos of this code see http://openshades.com (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.  OpenShades (the new OpenGlass) is our community name that we use when hacking together, WearScript is this project specifically.
 
-OpenShades and WearScript
--------------------------
-
-OpenShades (the new OpenGlass) is our community name that we use when hacking together, WearScript is this project specifically.
 
 Code Organization
 -----------------
