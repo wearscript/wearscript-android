@@ -8,8 +8,8 @@ Code Organization
 -----------------
 
 * Server: /server
+* Webapp: /server/static/playground.html
 * Server admin tools (authorize users, permissions, etc.): /admin
-* Webapps: /static/{app.html, playground.html}
 * Glass Client (Android app): /glass
 * Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty
 * 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
@@ -52,8 +52,14 @@ Troubleshooting
 ===============
 * "adb: command not found" - Android Dev Tools need to be in your path
 
-Admin
-=====
+Admin Operations
+=================
+All of these should be run in the /admin folder
+
+* List users:  python users.py list_users
+  *  Each user gets for rows (userid, info, flags, uflags)
+  *  You'll need userid for the other commands
+* Add a user (only needed if config.go has allowAllUsers = false): python users.py <userid> set_flag flags user
 
 Contact/Info
 ============
