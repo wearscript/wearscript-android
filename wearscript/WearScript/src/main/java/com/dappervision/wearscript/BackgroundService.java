@@ -272,11 +272,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         o.put("Tg1", new Double(System.currentTimeMillis() / 1000.));
                         client.send(o.toJSONString());
                     } else if (action.equals("flags")) {
-                        flags = new TreeSet<String>((List<String>) o.get("flags"));
+                        JSONArray a = (JSONArray)o.get("flags");
+                        if (a != null)
+                            flags = new TreeSet<String>((List<String>) a);
                     }
                     Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
                 } catch (Exception e) {
-                    Log.e(TAG, e.getMessage());
+                    Log.e(TAG, e.toString());
                 }
             }
 
