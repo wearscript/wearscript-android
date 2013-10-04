@@ -1,79 +1,123 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="WearScript : " />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>WearScript by bwhite</title>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>WearScript</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
-
   <body>
+    <div class="wrapper">
+      <header>
+        <h1>WearScript</h1>
+        <p></p>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/bwhite/wearscript">View on GitHub</a>
+        <p class="view"><a href="https://github.com/bwhite/wearscript">View the Project on GitHub <small>bwhite/wearscript</small></a></p>
 
-          <h1 id="project_title">WearScript</h1>
-          <h2 id="project_tagline"></h2>
 
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/bwhite/wearscript/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/bwhite/wearscript/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
+        <ul>
+          <li><a href="https://github.com/bwhite/wearscript/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/bwhite/wearscript/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/bwhite/wearscript">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="wearscript" class="anchor" href="#wearscript"><span class="octicon octicon-link"></span></a>WearScript</h1>
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+<p>For demos of this code see <a href="http://openshades.com">http://openshades.com</a> (this readme would be out of data in terms of capabilities).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.</p>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<h2>
+<a name="code-organization" class="anchor" href="#code-organization"><span class="octicon octicon-link"></span></a>Code Organization</h2>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<ul>
+<li>Server: /server</li>
+<li>Server admin tools (authorize users, permissions, etc.): /admin</li>
+<li>Webapps: /static/{app.html, playground.html}</li>
+<li>WearScript (Android app): /wearscript</li>
+<li>3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware</li>
+<li>WearScript Prereqs (launchy/opencv/zxing): /wearscript/thirdparty</li>
+<li>Useful tools (log data scripts, android adb helper, data visualization server): /tools/</li>
+</ul><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Apache 2.0</p>
+
+<h2>
+<a name="installing-go" class="anchor" href="#installing-go"><span class="octicon octicon-link"></span></a>Installing Go</h2>
+
+<ul>
+<li>wget <a href="https://go.googlecode.com/files/go1.1.1.linux-amd64.tar.gz">https://go.googlecode.com/files/go1.1.1.linux-amd64.tar.gz</a>
+</li>
+<li>tar -xzf go1.1.1.linux-amd64.tar.gz</li>
+<li>Put "export GOROOT=/go" and "export GOPATH=/gocode" in your .bashrc</li>
+<li>The "gocode" is where packages will be stored and "go" is the location of the extracted folder.</li>
+</ul><h2>
+<a name="install-redis" class="anchor" href="#install-redis"><span class="octicon octicon-link"></span></a>Install Redis</h2>
+
+<ul>
+<li>Follow instructions here <a href="http://redis.io/download">http://redis.io/download</a> (tested on 2.6.*)</li>
+</ul><h2>
+<a name="install-server" class="anchor" href="#install-server"><span class="octicon octicon-link"></span></a>Install Server</h2>
+
+<ul>
+<li>Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this if possible</li>
+<li>Ubuntu packages: apt-get install mercurial</li>
+<li>Setup a config.go file (look at config.go.example)</li>
+<li>Run /server/install.sh (this does basic dependencies and such)</li>
+</ul><h1>
+<a name="contactinfo" class="anchor" href="#contactinfo"><span class="octicon octicon-link"></span></a>Contact/Info</h1>
+
+<ul>
+<li>Brandyn White (bwhite dappervision com)</li>
+<li>IRC freenode #wearscript (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)</li>
+<li>G+ Community: <a href="https://plus.google.com/communities/101102785351379725742">https://plus.google.com/communities/101102785351379725742</a> (we post pictures/videos as we go here)</li>
+<li>Website: <a href="http://wearscript.com">http://wearscript.com</a> (overall project info, video links)</li>
+<li>Youtube: <a href="https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ">https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ</a> (all videos)</li>
+</ul><h1>
+<a name="hacking" class="anchor" href="#hacking"><span class="octicon octicon-link"></span></a>Hacking</h1>
+
+<h2>
+<a name="resources" class="anchor" href="#resources"><span class="octicon octicon-link"></span></a>Resources</h2>
+
+<p>These are helpful for development</p>
+
+<ul>
+<li><a href="https://code.google.com/p/google-api-go-client/source/browse/mirror/v1/mirror-gen.go">https://code.google.com/p/google-api-go-client/source/browse/mirror/v1/mirror-gen.go</a></li>
+<li><a href="http://golang.org/doc/effective_go.html">http://golang.org/doc/effective_go.html</a></li>
+<li><a href="https://developers.google.com/glass/playground">https://developers.google.com/glass/playground</a></li>
+</ul><h2>
+<a name="clock-deskew-and-latency-estimation" class="anchor" href="#clock-deskew-and-latency-estimation"><span class="octicon octicon-link"></span></a>Clock deskew and latency estimation</h2>
+
+<ul>
+<li>Glass sends data to server (potentially big) and includes a timestamp (Tg0)</li>
+<li>Server sends ack to glass with its own timestamp (Ts0) and the previous timestamp (Tg0)</li>
+<li>Glass computes new timestamp (Tg1) and sends back (Tg0, Tg1, Ts0, Tg1)</li>
+<li>Server computes k = Tg - Ts (skew), D = D1 = D2  (delay, assuming last two equal), and data delay D0.</li>
+<li>D = .5 * (Ts1 - Ts0), k = Tg1 - Ts1 + D, and D0 = Ts0 + k - tg0</li>
+</ul><pre><code>Glass        Server
+Tg0  - D0 -&gt; Ts0
+Tg1 &lt;- D1 -  Ts0
+Tg1 -  D2 -&gt; Ts1
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<h2>
+<a name="timeline-item-styling" class="anchor" href="#timeline-item-styling"><span class="octicon octicon-link"></span></a>Timeline Item Styling</h2>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
-
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot (link above).</p>
       </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">WearScript maintained by <a href="https://github.com/bwhite">bwhite</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/bwhite">bwhite</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
-
+    <script src="javascripts/scale.fix.js"></script>
     
-
   </body>
 </html>
