@@ -222,7 +222,7 @@ func main() {
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
-	m.Get("/playground/glass/{key}", http.HandlerFunc(PlaygroundGlassServer))
+	m.Get("/playground/{key}", http.HandlerFunc(PlaygroundGlassServer))
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
 	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
 	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))

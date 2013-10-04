@@ -19,7 +19,7 @@ function sensorLatest(sensors, type) {
 }
 
 function createQR() {
-    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}/playground/glass/{{secret}}&chld=H|4&choe=UTF-8"\>', {url: document.URL, secret: x}))}, function () {alert("Could not get ws")});
+    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}playground/{{secret}}&chld=H|4&choe=UTF-8"\>', {url: document.URL, secret: x}))}, function () {alert("Could not get ws")});
 }
 
 function connectWebsocket(WSUrl) {
