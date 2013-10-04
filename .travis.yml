@@ -1,0 +1,8 @@
+language: python
+
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install golang git mercurial redis-server
+
+install:
+ - cd server && sudo bash install.sh
