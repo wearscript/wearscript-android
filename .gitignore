@@ -6,4 +6,8 @@ wearscript/WearScript/build/
 wearscript/.idea/
 wearscript/wearscript.iml
 wearscript/opencv-android/build/
+wearscript/local.properties
+wearscript/.gradle/
+wearscript/WearScript/WearScript.iml
+wearscript/opencv-android/opencv-android.iml
 server/server
