@@ -40,7 +40,7 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	if !hasFlag(flags, "user") {
+	if !allowAllUsers && !hasFlag(flags, "user") {
 		w.WriteHeader(401)
 		return
 	}
