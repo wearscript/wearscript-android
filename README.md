@@ -10,9 +10,9 @@ Code Organization
 * Server: /server
 * Server admin tools (authorize users, permissions, etc.): /admin
 * Webapps: /static/{app.html, playground.html}
-* WearScript (Android app): /wearscript
+* Glass Client (Android app): /glass
+* Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty
 * 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
-* WearScript Prereqs (launchy/opencv/zxing): /wearscript/thirdparty
 * Useful tools (log data scripts, android adb helper, data visualization server): /tools/
 
 License
@@ -46,6 +46,14 @@ Install Server
 * Ubuntu packages: apt-get install mercurial
 * Setup a config.go file (look at config.go.example)
 * Run /server/install.sh (this does basic dependencies and such)
+
+
+Troubleshooting
+===============
+* "adb: command not found" - Android Dev Tools need to be in your path
+
+Admin
+=====
 
 Contact/Info
 ============
