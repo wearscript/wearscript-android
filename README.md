@@ -20,7 +20,6 @@ Apache 2.0
 
 Client Installation Video
 -------------------------
-YT("WIl90-86HRk", print = TRUE)
 [![client install](http://img.youtube.com/vi/WIl90-86HRk/0.jpg)](http://www.youtube.com/watch?v=WIl90-86HRk)
 
 Server Installation Video
