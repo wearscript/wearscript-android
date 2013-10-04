@@ -1,8 +1,9 @@
 config.go
 *.class
 *~
-glassgap/gen
-glassgap/GlassGap/build
-glassgap/.idea
-glassgap/opencv-android/build
+wearscript/gen/
+wearscript/WearScript/build/
+wearscript/.idea/
+wearscript/wearscript.iml
+wearscript/opencv-android/build/
 server/server
