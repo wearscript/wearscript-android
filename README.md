@@ -20,8 +20,8 @@ Apache 2.0
 
 Installation Videos
 --------------------
-* [![client install](http://img.youtube.com/vi/WIl90-86HRk/0.jpg)](http://www.youtube.com/watch?v=WIl90-86HRk)
-* [![server install](http://img.youtube.com/vi/vdbE87oJja4/0.jpg)](http://www.youtube.com/watch?v=vdbE87oJja4)
+[![client install](http://img.youtube.com/vi/WIl90-86HRk/0.jpg)](http://www.youtube.com/watch?v=WIl90-86HRk)
+[![server install](http://img.youtube.com/vi/vdbE87oJja4/0.jpg)](http://www.youtube.com/watch?v=vdbE87oJja4)
 
 
 Installing Go
