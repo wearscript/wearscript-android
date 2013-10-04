@@ -78,7 +78,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String wsUrl;
     protected PowerManager.WakeLock wakeLock;
     protected WifiManager wifiManager;
-
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -237,10 +236,29 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     // TODO: String to Mat, save and display in the loopback thread
                     if (action.equals("startScript")) {
                         final String script = (String) o.get("script");
-                        runScript(script);
+                        Log.i(TAG, "WebView:" + Integer.toString(script.length()));
+                        if (activity == null)
+                            return;
+                        final MainActivity a = activity.get();
+                        if (a == null)
+                            return;
+                        a.runOnUiThread(new Thread() {
+                            public void run() {
+                                runScript(script);
+                            }
+                        });
                     } else if (action.equals("startScriptUrl")) {
                         final String url = (String) o.get("scriptUrl");
-                        runScriptUrl(url);
+                        if (activity == null)
+                            return;
+                        final MainActivity a = activity.get();
+                        if (a == null)
+                            return;
+                        a.runOnUiThread(new Thread() {
+                            public void run() {
+                                runScriptUrl(url);
+                            }
+                        });
                     } else if (action.equals("data")) {
                         for (Object sensor : (JSONArray) o.get("sensors")) {
                             JSONObject s = (JSONObject) sensor;
