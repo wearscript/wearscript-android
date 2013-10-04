@@ -40,7 +40,7 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	if !hasFlag(flags, "user") || (!hasFlag(flags, "user_notify") && !hasFlag(flags, "user_ws")) {
+	if !hasFlag(flags, "user") {
 		w.WriteHeader(401)
 		return
 	}
