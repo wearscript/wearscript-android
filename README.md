@@ -8,8 +8,8 @@ Code Organization
 -----------------
 
 * Server: /server
+* Webapp: /server/static/playground.html
 * Server admin tools (authorize users, permissions, etc.): /admin
-* Webapps: /static/{app.html, playground.html}
 * Glass Client (Android app): /glass
 * Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty
 * 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
