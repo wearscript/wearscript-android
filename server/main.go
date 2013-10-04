@@ -57,7 +57,7 @@ func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 
 func PlaygroundGlassServer(w http.ResponseWriter, req *http.Request) {
 	key := req.URL.Query().Get(":key")
-	t, err := template.New("bios").Parse("<script>function s() {GG.log('Connected')};window.onload=function () {GG.serverConnect('{{.WSUrl}}', 's')}</script>")
+	t, err := template.New("bios").Parse("<script>function s() {WS.log('Connected')};window.onload=function () {WS.serverConnect('{{.WSUrl}}', 's')}</script>")
 	if err != nil {
 		w.WriteHeader(500)
 		LogPrintf("playgroundglass: template parse")

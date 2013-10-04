@@ -8,16 +8,16 @@
 </canvas>
 <script>
 function cb(data) {
-    GG.log(JSON.stringify(data));
+    WS.log(JSON.stringify(data));
 }
 function server() {
-    _.each([1, 2, 3, 4, 5, 9, 10, 11], function (x) {GG.sensorOn(x)});
-    GG.cameraOn(1);
-    GG.dataLog(false, true, .2);
-    //GG.sensorCallback("cb");
+    _.each([1, 2, 3, 4, 5, 9, 10, 11], function (x) {WS.sensorOn(x)});
+    WS.cameraOn(1);
+    WS.dataLog(false, true, .2);
+    //WS.sensorCallback("cb");
 }
 $(function () {
-    GG.serverConnect('{{WSUrl}}', 'server');
+    WS.serverConnect('{{WSUrl}}', 'server');
 });
 </script>
 </body>
