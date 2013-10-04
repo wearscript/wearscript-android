@@ -95,7 +95,7 @@ func storeCredential(userId string, token *oauth.Token, userInfo string) error {
 }
 
 func authTransport(userId string) *oauth.Transport {
-	if !hasFlagSingle(userId, "flags", "user") {
+	if allowAllUsers || !hasFlagSingle(userId, "flags", "user") {
 		return nil
 	}
 	val, err := getUserAttribute(userId, "oauth_token")
