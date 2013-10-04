@@ -37,7 +37,7 @@ function isIndoors(data) {
     indoorCount += indoors * 2 - 1;
     if (indoorCount >= minSamples) {
         indoorCount = minSamples
-        GG.log("Indoors");
+        WS.log("Indoors");
         return true;
     }
     if (-indoorCount >= minSamples)
@@ -52,15 +52,15 @@ function nearGrocery(data) {
         return grocery;
     // If you're near a specific whole foods
     d = getDistanceFromLatLonInKm(data.values[0], data.values[1], 38.90969, -77.033134);
-    GG.log(d);
+    WS.log(d);
     grocery = d < .1;
     if (grocery)
-        GG.log("Near grocery");
+        WS.log("Near grocery");
     return grocery;
 }
 
 function sendList() {
-    GG.serverTimeline(JSON.stringify({"html": "<article style='left: 0px; visibility: visible;'><section><ul class='text-x-small'><li>Gingerbread</li><li>Chocolate Chip Cookies</li><li>Tiramisu</li><li>Donuts</li><li>Sugar Plum Gummies</li></ul></section><footer><p>Grocery list</p></footer></article>",
+    WS.serverTimeline(JSON.stringify({"html": "<article style='left: 0px; visibility: visible;'><section><ul class='text-x-small'><li>Gingerbread</li><li>Chocolate Chip Cookies</li><li>Tiramisu</li><li>Donuts</li><li>Sugar Plum Gummies</li></ul></section><footer><p>Grocery list</p></footer></article>",
         "notification": {
             "level": "DEFAULT"
         }
@@ -69,18 +69,18 @@ function sendList() {
 
 function cb(data) {
     if (nearGrocery(data) && isIndoors(data)) {
-        GG.say('Sending grocery list');
+        WS.say('Sending grocery list');
         sendList();
-        _.each([-1, 5], function (x) {GG.sensorOff(x)});
+        _.each([-1, 5], function (x) {WS.sensorOff(x)});
     }
 }
 
 function server() {
-    _.each([-1, 5], function (x) {GG.sensorOn(x)});
-    GG.sensorCallback("cb");
+    _.each([-1, 5], function (x) {WS.sensorOn(x)});
+    WS.sensorCallback("cb");
 }
 $(function () {
-    GG.serverConnect('PUT_SERVER_HERE', 'server');
+    WS.serverConnect('PUT_SERVER_HERE', 'server');
 });
 </script>
 </body>

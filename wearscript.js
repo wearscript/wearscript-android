@@ -36,7 +36,7 @@ function Pupil(rows, columns, delay, height, width, canvas) {
             _.delay(_.bind(function () {this.safe = true}, this), this.delay);
         } else {
             this.calibrated = true;
-            GG.log(JSON.stringify(this.centers));
+            WS.log(JSON.stringify(this.centers));
         }
     }
 
@@ -62,7 +62,7 @@ function Pupil(rows, columns, delay, height, width, canvas) {
     }
 }
 
-function GlassGapSimulator() {
+function WearScriptSimulator() {
     this.log = function (x) {console.log(x)};
     this.displayWebView = function () {};
     this.serverConnect = function (server, cb) {window[cb]()};

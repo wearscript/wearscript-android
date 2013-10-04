@@ -2,7 +2,7 @@
 <head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
-<script src="glassgap.js"></script>
+<script src="wearscript.js"></script>
 </head>
 <body style="width:100%; height:100%; overflow:hidden; margin:0">
 <canvas id="canvas" width="427" height="240" style="display:block">
@@ -17,7 +17,7 @@ function cb(data) {
         var b = prevValue;
         var c = [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
         var d = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
-        GG.log(String(d) + ':' +  JSON.stringify(a));
+        WS.log(String(d) + ':' +  JSON.stringify(a));
         if (d > 1.5)
             randomColor();
     }
@@ -31,12 +31,12 @@ function randomColor() {
 }
 
 $(function () {
-    if (!_.has(window, 'GG'))
-        GG = new GlassGapSimulator();
-    GG.displayWebView();
+    if (!_.has(window, 'WS'))
+        WS = new WearScriptSimulator();
+    WS.displayWebView();
     randomColor();
-    GG.sensorOn(1);
-    GG.sensorCallback('cb');
+    WS.sensorOn(1);
+    WS.sensorCallback('cb');
 });
 </script>
 </body>
