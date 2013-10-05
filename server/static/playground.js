@@ -273,10 +273,10 @@ function main(WSUrl) {
     $("#scriptRow").children().prop('disabled', true);
     $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScript', script: $('#script').val().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
+        ws.send(JSON.stringify({action: 'startScript', script: $('#script').innerHTML().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
     });
     $('#scriptUrlButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script').val()}));
+        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val()}));
     });
     $('#scriptQRButton').click(function () {
         $('#scriptQR').html(Mustache.render('<img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{data}}&chld=H|4&choe=UTF-8"\>', {data: btoa($('#script').val())}))

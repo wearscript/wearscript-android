@@ -16,6 +16,16 @@
 .control-label {
       font-size:10px;
 }
+
+#script {
+        resize:vertical;
+        overflow:auto;
+        border:1px solid silver;
+        border-radius:5px;
+        min-height:100px;
+        box-shadow: inset 0 0 10px silver;
+        padding:1em;
+}
 </style>
 
   </head>
@@ -51,12 +61,14 @@
       </div>
       <div class="row" id="scriptRow">
         <h1>Scripting</h1>
-        <textarea id="script" rows="4" cols="50">
+        <div id="script" contenteditable>
           {{.GlassBody}}
-        </textarea>
+        </div>
         <div id="scriptQR"></div>
-        <button class="btn btn-primary" type="button" id="scriptButton">Script Button</button>
-        <button class="btn btn-primary" type="button" id="scriptUrlButton">Script Url Button</button>
+        <button class="btn btn-primary" type="button" id="scriptButton">Wear My Script</button>
+        <br/>
+        <input type="text" name="script-url" id="script-url" placeholder="http://wearscript.com/color.html"/>
+        <button class="btn btn-primary" type="button" id="scriptUrlButton">Wear Script From URL</button>
       </div>
     </div>
 </div> <!-- /container -->
