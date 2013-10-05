@@ -1,1 +1,4 @@
 /build
+/src/main/gen
+/src/main/main.iml
+.idea
