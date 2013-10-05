@@ -1,7 +1,9 @@
 WearScript
 ===========
 
-WearScript is a scripting language for wearable computing (currently Google Glass).  This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.  OpenShades (the new OpenGlass) is our community name (join us at #openshades on freenode) that we use when hacking together, WearScript is this project specifically.  For demos see http://openshades.com.
+WearScript is a scripting language for wearable computing (currently Google Glass).  Wearables are personal devices and each user is likely to find value from them in a different way.  With this project we hope to make personalization and hacking as easy as possible so you can make your device do what you want and get on with your life.  We have a long ways to go but with your help we can get there and have some fun in the process.
+
+This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.  
 
 
 Code Organization
@@ -69,6 +71,11 @@ Contact/Info
 * G+ Community: https://plus.google.com/communities/101102785351379725742 (we post pictures/videos as we go here)
 * Website: http://wearscript.com (overall project info, video links)
 * Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
+
+
+OpenShades
+==========
+OpenShades (the new OpenGlass) is our community name (join us at #openshades on freenode) that we use when hacking together, WearScript is this project specifically.  For demos see http://openshades.com.  Dapper Vision, Inc. (by Brandyn and Andrew) is the sponsor of this project.
 
 Hacking
 =======
