@@ -1,0 +1,30 @@
+<html style="width:100%; height:100%; overflow:hidden">
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://mirror-api-playground.appspot.com/assets/css/base_style.css" />
+</head>
+<body>
+<article>
+  <section>
+    <ul class="text-x-small">
+      <li>Gingerbread</li>
+      <li>Chocolate Chip Cookies</li>
+      <li>Tiramisu</li>
+      <li>Donuts</li>
+      <li>Sugar Plum Gummies</li>
+    </ul>
+  </section>
+  <footer>
+    <p>Grocery list</p>
+  </footer>
+</article>
+ 
+<script>
+$(function () {
+    WS.displayWebView();
+    WS.serverConnect('{{WSUrl}}', 'server');
+});
+</script>
+</body>
+</html>
