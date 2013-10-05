@@ -76,7 +76,7 @@ function cb(data) {
 }
 
 function server() {
-    _.each([-1, 5], function (x) {WS.sensorOn(x)});
+    _.each([-1, 5], function (x) {WS.sensorOn(x, 2)});
     WS.sensorCallback("cb");
 }
 $(function () {
