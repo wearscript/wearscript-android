@@ -1,7 +1,7 @@
 WearScript
 ===========
 
-WearScript is a scripting language for wearable computing (currently Google Glass).  Wearables are personal devices and each user is likely to find value from them in a different way.  With this project we hope to make personalization and hacking as easy as possible so you can make your device do what you want and get on with your life.  We have a long ways to go but with your help we can get there and have some fun in the process.
+WearScript is a scripting language for wearable computing (currently Google Glass).  Wearables are personal devices and each user is likely to find value from them in a different way.  With this project we hope to make personalization and hacking as easy as possible so you can make your device do what you want.
 
 This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.  
 
