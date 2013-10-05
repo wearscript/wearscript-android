@@ -11,8 +11,8 @@ function cb(data) {
     WS.log(JSON.stringify(data));
 }
 function server() {
-    _.each([1, 2, 3, 4, 5, 9, 10, 11], function (x) {WS.sensorOn(x)});
-    WS.cameraOn(1);
+    _.each([1, 2, 3, 4, 5, 9, 10, 11], function (x) {WS.sensorOn(x, .1)});
+    //WS.cameraOn(1);
     WS.dataLog(false, true, .2);
     //WS.sensorCallback("cb");
 }
