@@ -67,6 +67,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String TAG = "WearScript";
     protected TreeMap<String, Mat> scriptImages;
     protected TreeMap<Integer, Sensor> sensors;
+    protected TreeMap<Integer, Long> sensorSampleTimesLast;
+    protected TreeMap<Integer, Long> sensorSampleTimes;
     protected TextToSpeech tts;
     protected String glassID;
     protected WebSocketClient client;
@@ -127,6 +129,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onSensorChanged(SensorEvent event) {
         Integer type = event.sensor.getType();
+        if (event.timestamp - sensorSampleTimesLast.get(type) < sensorSampleTimes.get(type))
+            return;
+        sensorSampleTimesLast.put(type, event.timestamp);
         JSONObject sensor = new JSONObject();
         // NOTE(brandyn): The light sensor's timestampRaw is incorrect, this has been reported
         // TODO(brandyn): Look into removing extra boxing, keep in mind we are buffering
@@ -201,6 +206,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         wifiBuffer = new JSONArray();
         overlay = null;
         webview = null;
+        sensorSampleTimes = new TreeMap<Integer, Long>();
+        sensorSampleTimesLast = new TreeMap<Integer, Long>();
         dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
         sensorCallback = null;
         lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
@@ -433,9 +440,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         wifiManager.startScan();
     }
 
-    public void sensorOn(int type) {
+    public void sensorOn(int type, long sampleTime) {
         if (sensors.containsKey(type))
             return;
+        sensorSampleTimes.put(type, sampleTime);
+        sensorSampleTimesLast.put(type, 0L);
         if (type < -1) // Custom
             sensors.put(type, null);
         if (type == -1) { // GPS
@@ -490,16 +499,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
         if (s != null)
             sensorManager.unregisterListener(this, s);
-    }
-
-    public void sensorRedo() {
-        for (Integer type : sensors.navigableKeySet()) {
-            if (type > 0) {
-                Log.i(TAG, "Reregistering sensor: " + type.toString());
-                sensorOff(type);
-                sensorOn(type);
-            }
-        }
     }
 
     @Override

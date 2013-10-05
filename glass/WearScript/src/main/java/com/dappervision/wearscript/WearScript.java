@@ -38,9 +38,9 @@ public class WearScript {
         bs.scriptImages.put(key, new Mat(height, width, CvType.CV_8UC4));
     }
 
-    public void sensorOn(int type) {
+    public void sensorOn(int type, double sampleTime) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type));
-        bs.sensorOn(type);
+        bs.sensorOn(type, Math.round(sampleTime * 1000000000L));
     }
 
     public void sensorCallback(String callback) {
