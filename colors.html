@@ -35,7 +35,7 @@ $(function () {
         WS = new WearScriptSimulator();
     WS.displayWebView();
     randomColor();
-    WS.sensorOn(1);
+    WS.sensorOn(1, .05);
     WS.sensorCallback('cb');
 });
 </script>
