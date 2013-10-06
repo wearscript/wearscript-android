@@ -10,3 +10,5 @@ before_install:
 
 install:
  - cd server && cp .config.go.travis config.go && sudo bash install.sh
+
+script:
