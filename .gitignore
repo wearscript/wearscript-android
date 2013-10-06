@@ -1,6 +1,7 @@
 config.go
 *.class
 *~
+*.pyc
 glass/gen/
 glass/Glass/build/
 glass/.idea/

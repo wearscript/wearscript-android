@@ -7,11 +7,8 @@ go:
 
 env:
   global:
-    #- secure: "G9JEcJCHpKmDCZRTGqqgEKHYrwWGJu14Lf3mMeCTyYmvjVwUVRhgs36trQTit0aRKmggv2yiwGDp01iCDb0J4C+YAsqSMLP2gWoCRV2pPowCRNtoJOQ4KX0qkFUj3Qdv8Qlrc8P/cYzPYAQ0xNL0uJldF5Ak9aFShV3nEy/M/XY="
-    #- secure: "jg3OsYR9BZohxRFwAuXV5jTmBX7FAWKpGe+LvAfyQPAN5WmEDIiHaHsyrykH8hg4GP5MpENv01kZNaB/WKP0CsKAmu0axJLc2cWtniBRq5yozCCbhRF57wFaA+ZUDALDJdmCzZVFQxilDlu8TKKgVh/Tm03I1QEMgaGRt/gFX6I="
-    - CLIENT_ID='const clientId = "blah0"'
-    - CLIENT_SECRET='const clientSecret = "blah1"'
-
+    - secure: "G9JEcJCHpKmDCZRTGqqgEKHYrwWGJu14Lf3mMeCTyYmvjVwUVRhgs36trQTit0aRKmggv2yiwGDp01iCDb0J4C+YAsqSMLP2gWoCRV2pPowCRNtoJOQ4KX0qkFUj3Qdv8Qlrc8P/cYzPYAQ0xNL0uJldF5Ak9aFShV3nEy/M/XY="
+    - secure: "jg3OsYR9BZohxRFwAuXV5jTmBX7FAWKpGe+LvAfyQPAN5WmEDIiHaHsyrykH8hg4GP5MpENv01kZNaB/WKP0CsKAmu0axJLc2cWtniBRq5yozCCbhRF57wFaA+ZUDALDJdmCzZVFQxilDlu8TKKgVh/Tm03I1QEMgaGRt/gFX6I="
 
 before_install:
  - sudo apt-get update -qq
@@ -23,7 +20,6 @@ install:
  - cp .config.go.travis config.go
  - echo $CLIENT_ID >> config.go
  - echo $CLIENT_SECRET >> config.go
- - cat config.go
  - bash install.sh
 
 script:
