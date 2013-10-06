@@ -1,10 +1,9 @@
 import gevent
 from gevent import monkey
 monkey.patch_all()
-from picarus_event_model import _local_data, _picarus_data
+from event_model_create import _local_data, _picarus_data
 import bottle
 import argparse
-import picarus
 import bisect
 import cPickle as pickle
 from events import get_row_bounds, get_event_sensors
@@ -51,7 +50,6 @@ def thumb(auth_key, event, t):
     times = EVENT_ROW_TIMES[event]
     # >= time
     i = bisect.bisect_left(times, float(t))
-    print(i)
     if i != len(times):
         bottle.response.headers['Content-Type'] = 'image/jpeg'
         bottle.response.headers['Cache-Control'] = 'max-age=2592000'
@@ -74,7 +72,6 @@ def thumb_range(auth_key, event, t0, t1, num, off):
     times = EVENT_ROW_TIMES[event]
     # Left: >= time Right: <= time
     i, j = get_row_bounds(times, t0f, t1f)
-    print((i, j))
     if i != len(times) and j:
         rows = rows[i:j - 1]
         skip = 1
@@ -95,7 +92,7 @@ def event(auth_key, event):
     chart_values = {}
     rows = EVENT_ROWS[event]
     times = EVENT_ROW_TIMES[event]
-    event_sensors, sensor_names = get_event_sensors(rows, ROW_COLUMNS, times[0], times[-1])
+    event_sensors, sensor_names = get_event_sensors(rows, ROW_COLUMNS, times[0], times[-1], max_samples=1000)
     out += ['<div class="event">'] + generate_event(auth_key, event)
     for chart_num in [1, 2, 3, 4, 5, 9, 10, 11]:
         chart_id = 'chart_%d' % chart_count
@@ -143,7 +140,6 @@ if __name__ == "__main__":
         for _, _, classification in classifications:
             for c, v in classification.items():
                 agg[c][v] += 1
-    print(EVENT_CLASSIFICATIONS_AGGREGATE)
     if ARGS.func == _local_data:
         THUMB_COLUMN = 'data:image'
     else:

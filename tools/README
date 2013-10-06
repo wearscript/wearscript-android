@@ -1,8 +1,6 @@
-Generally Useful
 helper: Pull locally logged data from glass, remove it, push it to picarus
+
+LogViz
 picarus_event_model: Creates an event model from data that has be previously uploaded to picarus.
 local_event_model: Creates an event model from a local directory. 
 event_model_server: Launch a server to explore an existing event model.
-
-Work in progress/Hacks
-event_classification: Pull annotated slices from picarus and classify then (used for feature engineering), expose the classifiers for more general use.

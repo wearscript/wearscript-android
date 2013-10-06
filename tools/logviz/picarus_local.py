@@ -1,5 +1,7 @@
 import os
 import base64
+import bisect
+
 
 class PicarusClientLocal(object):
     
@@ -17,7 +19,6 @@ class PicarusClientLocal(object):
         return os.path.join(self._row_dir(table, row), base64.urlsafe_b64encode(column))
     
     def get_row(self, table, row, columns):
-        row_dir = self._row_dir(table, row)
         out = {}
         for column in columns:
             column_file = self._column_file(table, row, column)
