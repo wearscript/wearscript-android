@@ -80,6 +80,11 @@ OpenShades (the new OpenGlass) is our community name (join us at #openshades on 
 Hacking
 =======
 
+Travis-CI
+---------
+The current test setup just builds the server after each commit.
+[![Build Status](https://travis-ci.org/bwhite/wearscript.png?branch=master)](https://travis-ci.org/bwhite/wearscript)
+
 Resources
 ---------
 These are helpful for development
