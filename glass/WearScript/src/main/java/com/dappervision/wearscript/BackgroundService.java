@@ -55,10 +55,10 @@ import java.util.TreeSet;
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SensorEventListener {
     private final IBinder mBinder = new LocalBinder();
+    private final Object lock = new Object(); // All calls to webview, sensorSampleTimes, sensors, sensorSampleTimesLast, client must acquire lock
     public WeakReference<MainActivity> activity;
     public boolean previewWarp = false, displayWeb = false;
     public Mat overlay;
-    private final Object lock = new Object(); // All calls to webview/client must acquire lock
     public JSONArray sensorBuffer;
     public JSONArray wifiBuffer;
     public TreeSet<String> flags;
@@ -72,6 +72,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected TreeMap<Integer, Long> sensorSampleTimes;
     protected TextToSpeech tts;
     protected String glassID;
+    protected String scriptWSUrl;
     protected WebSocketClient client;
     protected WebView webview;
     protected LocationManager locationManager;
@@ -132,9 +133,15 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onSensorChanged(SensorEvent event) {
         Integer type = event.sensor.getType();
-        if (event.timestamp - sensorSampleTimesLast.get(type) < sensorSampleTimes.get(type))
-            return;
-        sensorSampleTimesLast.put(type, event.timestamp);
+        synchronized (lock) {
+            if (sensorSampleTimes == null || sensorSampleTimesLast == null)
+                return;
+            Long sampleTimeLast = sensorSampleTimesLast.get(type);
+            Long sampleTime = sensorSampleTimes.get(type);
+            if (sampleTimeLast == null || sampleTime == null || event.timestamp - sampleTimeLast < sampleTime)
+                return;
+            sensorSampleTimesLast.put(type, event.timestamp);
+        }
         JSONObject sensor = new JSONObject();
         // NOTE(brandyn): The light sensor's timestampRaw is incorrect, this has been reported
         // TODO(brandyn): Look into removing extra boxing, keep in mind we are buffering
@@ -214,28 +221,37 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview.stopLoading();
                 webview = null;
             }
+            flags = new TreeSet<String>();
+            scriptImages = new TreeMap<String, Mat>();
+            TreeMap<Integer, Sensor> sensorsPrev = sensors;
+            if (sensors != null) {
+                for (Integer type : (new TreeSet<Integer>(sensors.navigableKeySet()))) {
+                    sensorOff(type);
+                }
+            }
+            sensors = new TreeMap<Integer, Sensor>();
+            sensorBuffer = new JSONArray();
+            wifiBuffer = new JSONArray();
+            overlay = null;
+            scriptWSUrl = null;
+            sensorSampleTimes = new TreeMap<Integer, Long>();
+            sensorSampleTimesLast = new TreeMap<Integer, Long>();
+            dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
+            sensorCallback = null;
+            lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
+            sensorManager.unregisterListener(this);
+            remoteImageAckCount = remoteImageCount = 0;
+            wsUrl = null;
         }
-        flags = new TreeSet<String>();
-        scriptImages = new TreeMap<String, Mat>();
-        sensors = new TreeMap<Integer, Sensor>();
-        sensorBuffer = new JSONArray();
-        wifiBuffer = new JSONArray();
-        overlay = null;
-        sensorSampleTimes = new TreeMap<Integer, Long>();
-        sensorSampleTimesLast = new TreeMap<Integer, Long>();
-        dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
-        sensorCallback = null;
-        lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
-        sensorManager.unregisterListener(this);
-        remoteImageAckCount = remoteImageCount = 0;
-        wsUrl = null;
     }
 
     public void serverConnect(String url, final String callback) {
         Log.i(TAG, "WS Setup");
-        wsUrl = url;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
         synchronized (lock) {
+            if (url.equals("{{WSUrl}}"))
+                url = scriptWSUrl;
+            wsUrl = url;
             client = new WebSocketClient(URI.create(url), new WebSocketClient.Listener() {
                 private String cb = callback;
 
@@ -261,6 +277,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         // TODO: String to Mat, save and display in the loopback thread
                         if (action.equals("startScript")) {
                             final String script = (String) o.get("script");
+                            final String scriptWSUrl = (String) o.get("scriptWSUrl");
                             Log.i(TAG, "WebView:" + Integer.toString(script.length()));
                             if (activity == null)
                                 return;
@@ -269,11 +286,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 return;
                             a.runOnUiThread(new Thread() {
                                 public void run() {
-                                    runScript(script);
+                                    runScript(script, scriptWSUrl);
                                 }
                             });
                         } else if (action.equals("startScriptUrl")) {
                             final String url = (String) o.get("scriptUrl");
+                            final String scriptWSUrl = (String) o.get("scriptWSUrl");
+
                             if (activity == null)
                                 return;
                             final MainActivity a = activity.get();
@@ -281,15 +300,17 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 return;
                             a.runOnUiThread(new Thread() {
                                 public void run() {
-                                    runScriptUrl(url);
+                                    runScriptUrl(url, scriptWSUrl);
                                 }
                             });
                         } else if (action.equals("data")) {
                             for (Object sensor : (JSONArray) o.get("sensors")) {
                                 JSONObject s = (JSONObject) sensor;
                                 int sensorType = ((Long) s.get("type")).intValue();
-                                if (sensorType < 0 && sensors.containsKey(sensorType))
-                                    handleSensor(s);
+                                synchronized (lock) {
+                                    if (sensorType < 0 && sensors.containsKey(sensorType))
+                                       handleSensor(s);
+                                }
                             }
                         } else if (action.equals("ping")) {
                             remoteImageAckCount++;
@@ -403,26 +424,30 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     }
 
-    public void runScript(String script) {
+    public void runScript(String script, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + script);
             String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
+            webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
             Log.i(TAG, "WebView Ran");
         }
     }
 
-    public void runScriptUrl(String url) {
+    public void runScriptUrl(String url, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + url);
+            webview.setInitialScale(100);
             webview.loadUrl(url);
             Log.i(TAG, "WebView Ran");
         }
@@ -478,64 +503,70 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void sensorOn(int type, long sampleTime) {
-        if (sensors.containsKey(type))
-            return;
-        sensorSampleTimes.put(type, sampleTime);
-        sensorSampleTimesLast.put(type, 0L);
-        if (type < -1) // Custom
-            sensors.put(type, null);
-        if (type == -1) { // GPS
-            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            locationListener = new LocationListener() {
-                @Override
-                public void onLocationChanged(Location l) {
-                    JSONObject sensor = new JSONObject();
-                    sensor.put("timestamp", System.currentTimeMillis() / 1000.);
-                    sensor.put("type", new Integer(-1));
-                    sensor.put("name", "GPS");
-                    JSONArray values = new JSONArray();
-                    values.add(new Float(l.getLatitude()));
-                    values.add(new Float(l.getLongitude()));
-                    values.add(new Float(l.getBearing()));
-                    values.add(new Float(l.getSpeed()));
-                    sensor.put("values", values);
-                    handleSensor(sensor);
-                }
+        synchronized (lock) {
+            if (sensors.containsKey(type))
+                return;
 
-                @Override
-                public void onProviderDisabled(String provider) {
-                }
+            sensorSampleTimes.put(type, sampleTime);
+            sensorSampleTimesLast.put(type, 0L);
 
-                @Override
-                public void onProviderEnabled(String provider) {
-                }
+            if (type < -1) // Custom
+                sensors.put(type, null);
+            if (type == -1) { // GPS
+                locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                locationListener = new LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location l) {
+                        JSONObject sensor = new JSONObject();
+                        sensor.put("timestamp", System.currentTimeMillis() / 1000.);
+                        sensor.put("type", new Integer(-1));
+                        sensor.put("name", "GPS");
+                        JSONArray values = new JSONArray();
+                        values.add(new Float(l.getLatitude()));
+                        values.add(new Float(l.getLongitude()));
+                        values.add(new Float(l.getBearing()));
+                        values.add(new Float(l.getSpeed()));
+                        sensor.put("values", values);
+                        handleSensor(sensor);
+                    }
 
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-                }
-            };
-            for (String provider : locationManager.getAllProviders())
-                if (locationManager.isProviderEnabled(provider))
-                    locationManager.requestLocationUpdates(provider, 10000, 0, locationListener);
-        } else { // Standard Android Sensors
-            Sensor s = sensorManager.getDefaultSensor(type);
-            sensors.put(type, s);
-            sensorManager.registerListener(this, s, SensorManager.SENSOR_DELAY_GAME);
+                    @Override
+                    public void onProviderDisabled(String provider) {
+                    }
+
+                    @Override
+                    public void onProviderEnabled(String provider) {
+                    }
+
+                    @Override
+                    public void onStatusChanged(String provider, int status, Bundle extras) {
+                    }
+                };
+                for (String provider : locationManager.getAllProviders())
+                    if (locationManager.isProviderEnabled(provider))
+                        locationManager.requestLocationUpdates(provider, 10000, 0, locationListener);
+            } else { // Standard Android Sensors
+                Sensor s = sensorManager.getDefaultSensor(type);
+                sensors.put(type, s);
+                sensorManager.registerListener(this, s, SensorManager.SENSOR_DELAY_GAME);
+            }
         }
     }
 
     public void sensorOff(int type) {
-        if (!sensors.containsKey(type))
-            return;
-        Sensor s = sensors.get(type);
-        sensors.remove(type);
-        if (type == -1) {  // GPS
-            locationManager.removeUpdates(locationListener);
-            locationManager = null;
-            locationListener = null;
+        synchronized (lock) {
+            if (!sensors.containsKey(type))
+                return;
+            Sensor s = sensors.get(type);
+            sensors.remove(type);
+            if (type == -1) {  // GPS
+                locationManager.removeUpdates(locationListener);
+                locationManager = null;
+                locationListener = null;
+            }
+            if (s != null)
+                sensorManager.unregisterListener(this, s);
         }
-        if (s != null)
-            sensorManager.unregisterListener(this, s);
     }
 
     @Override
