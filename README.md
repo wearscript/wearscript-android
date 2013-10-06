@@ -110,8 +110,8 @@ Timeline Item Styling
 For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot (link above).
 
 
-Developers
-----------------
+Contributors
+------------
 See commit history for details.
 
 * Brandyn White
