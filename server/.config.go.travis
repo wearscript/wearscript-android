@@ -12,14 +12,10 @@ const (
 
     // You need to fill in the rest
 	secret      = "@9'fSt^(`a}a7f" // Make it a random string
-
-	// Created at http://code.google.com/apis/console, these identify our app for the OAuth protocol.
-	clientId     = ""
-	clientSecret = ""
-
     // Server info
 	fullUrl      = "http://localhost:8080"  // Url to the server (e.g., https://example.com) for mirror api
     wsUrl        = "ws://localhost:8080"  // Url websocket clients use (e.g., wss://example.com or ws://example.com)
 	redisServerPort = "localhost:6379" // Fill in with your host:port
 	servePort = "8080"  // Fill in with the port you want to host on
 )
+
