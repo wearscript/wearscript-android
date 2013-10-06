@@ -18,8 +18,12 @@ function sensorLatest(sensors, type) {
     }));
 }
 
+function biosScriptUrl(x) {
+    return document.URL + 'playground/' + x;
+}
+
 function createQR() {
-    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}playground/{{secret}}&chld=H|4&choe=UTF-8"\>', {url: document.URL, secret: x}))}, function () {alert("Could not get ws")});
+    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: biosScriptUrl(x)}))}, function () {alert("Could not get ws")});
 }
 
 function connectWebsocket(WSUrl) {
@@ -269,13 +273,13 @@ function main(WSUrl) {
     $(".scriptel").prop('disabled', true);
     $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScript', script: $('#script').val().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
+        ws.send(JSON.stringify({action: 'startScript', script: editor.getValue().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
     });
     $('#scriptUrlButton').click(function () {
         ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val()}));
     });
-    $('#scriptQRButton').click(function () {
-        $('#scriptQR').html(Mustache.render('<img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{data}}&chld=H|4&choe=UTF-8"\>', {data: btoa($('#script').val())}))
+    $('#resetButton').click(function () {
+        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: biosScriptUrl(glassSecret)}));
     });
     c = {names: ['notify']};
 
@@ -318,11 +322,10 @@ function main(WSUrl) {
             $('.make-switch[name=' + y + ']').bootstrapSwitch('setState', true);
         });
     });
-    var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
+    editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         theme: 'default',
         mode: "htmlmixed",
-        keyMap: "emacs",
         indentUnit: 4
     });
     ws = connectWebsocket(WSUrl);

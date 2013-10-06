@@ -216,6 +216,7 @@ func main() {
 	m := pat.New()
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
+	m.Post("/notify/", http.HandlerFunc(NotifyServer))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
 
