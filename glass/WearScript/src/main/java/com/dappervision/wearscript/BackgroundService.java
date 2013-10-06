@@ -213,10 +213,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void reset() {
         synchronized (lock) {
-            if (client != null) {
-                client.disconnect();
-                client = null;
-            }
             if (webview != null) {
                 webview.stopLoading();
                 webview = null;
@@ -241,7 +237,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             sensorManager.unregisterListener(this);
             remoteImageAckCount = remoteImageCount = 0;
-            wsUrl = null;
         }
     }
 
@@ -251,6 +246,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             if (url.equals("{{WSUrl}}"))
                 url = scriptWSUrl;
+            if (client != null && client.isConnected() && wsUrl.equals(url)) {
+                Log.i(TAG, "WS Reusing client");
+                return;
+            }
+            if (client != null) {
+                client.disconnect();
+                client = null;
+            }
             wsUrl = url;
             client = new WebSocketClient(URI.create(url), new WebSocketClient.Listener() {
                 private String cb = callback;
@@ -309,7 +312,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 int sensorType = ((Long) s.get("type")).intValue();
                                 synchronized (lock) {
                                     if (sensorType < 0 && sensors.containsKey(sensorType))
-                                       handleSensor(s);
+                                        handleSensor(s);
                                 }
                             }
                         } else if (action.equals("ping")) {
@@ -427,6 +430,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void runScript(String script, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            // TODO(brandyn): Refactor these as they are similar
             this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
@@ -442,6 +446,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void runScriptUrl(String url, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            // TODO(brandyn): Refactor these as they are similar
             this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
