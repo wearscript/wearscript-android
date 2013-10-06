@@ -1,7 +1,9 @@
 language: go
 
 go:
+  - 1.0
   - 1.1
+  - tip
 
 env:
   global:
@@ -22,6 +24,6 @@ install:
  - echo $CLIENT_ID >> config.go
  - echo $CLIENT_SECRET >> config.go
  - cat config.go
- - sudo bash install.sh
+ - bash install.sh
 
 script:
