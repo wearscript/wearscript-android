@@ -3,6 +3,7 @@
   <head>
     <title>WearScript: Playground</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/codemirror.css" rel="stylesheet" media="screen">
     <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="static/bootstrap-switch.css" rel="stylesheet" media="screen">
     <link href="static/cube.css" rel="stylesheet" media="screen">
@@ -15,16 +16,6 @@
 }
 .control-label {
       font-size:10px;
-}
-
-#script {
-        resize:vertical;
-        overflow:auto;
-        border:1px solid silver;
-        border-radius:5px;
-        min-height:100px;
-        box-shadow: inset 0 0 10px silver;
-        padding:1em;
 }
 </style>
 
@@ -61,24 +52,34 @@
       </div>
       <div class="row" id="scriptRow">
         <h1>Scripting</h1>
-        <div id="script" contenteditable>
-          {{.GlassBody}}
+        <div>
+          <form class="form-inline" role="form">
+            <button class="btn btn-primary" type="button" id="scriptButton">Wear This Script</button>
+            <button class="btn btn-primary" type="button" id="scriptUrlButton">Wear Script From URL</button>
+             <div class="form-group">
+               <input type="text" name="script-url" class="form-control" id="script-url" value="http://wearscript.com/color.html"/>
+             </div>
+        </form>
         </div>
-        <div id="scriptQR"></div>
-        <button class="btn btn-primary" type="button" id="scriptButton">Wear My Script</button>
-        <br/>
-        <input type="text" name="script-url" id="script-url" placeholder="http://wearscript.com/color.html"/>
-        <button class="btn btn-primary" type="button" id="scriptUrlButton">Wear Script From URL</button>
+        <form><textarea id="script" name="code">
+          {{.GlassBody}}
+        </textarea></form>
       </div>
     </div>
 </div> <!-- /container -->
 
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="static/bootstrap.min.js"></script>
+<script src="static/codemirror.js"></script>
 <script src="static/bootstrap-switch.min.js"></script>
 <script src="static/d3.v3.min.js"></script>
 <script src="static/rickshaw.min.js"></script>
 <script src="static/playground.js"></script>
+<script src="static/emacs.js"></script>
+<script src="static/css.js"></script>
+<script src="static/javascript.js"></script>
+<script src="static/xml.js"></script>
+<script src="static/htmlmixed.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
 <script type="text/javascript">

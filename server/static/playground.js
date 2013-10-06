@@ -270,10 +270,10 @@ function main(WSUrl) {
     graphs = {};
     seriesDatas = {};
     scriptRowDisabled = true;
-    $("#scriptRow").children().prop('disabled', true);
+    //$("#scriptRow").children().prop('disabled', true);
     $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScript', script: $('#script').innerHTML().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
+        ws.send(JSON.stringify({action: 'startScript', script: $('#script').val().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
     });
     $('#scriptUrlButton').click(function () {
         ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val()}));
@@ -321,6 +321,13 @@ function main(WSUrl) {
         _.each(JSON.parse(x), function (y) {
             $('.make-switch[name=' + y + ']').bootstrapSwitch('setState', true);
         });
+    });
+    var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
+        lineNumbers: true,
+        theme: 'default',
+        mode: "htmlmixed",
+        keyMap: "emacs",
+        indentUnit: 4
     });
     ws = connectWebsocket(WSUrl);
 }
