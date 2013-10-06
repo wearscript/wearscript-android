@@ -1,8 +1,10 @@
 <html style="width:100%; height:100%; overflow:hidden">
 <head>
+<meta name="viewport" content="initial-scale = .67, maximum-scale = .67, minimum-scale = .67" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://mirror-api-playground.appspot.com/assets/css/base_style.css" />
+<link rel="stylesheet" type="text/css" href="https://mirror-api-playground.appspot.com/assets/css/demo.css" />
 </head>
 <body>
 <article>
@@ -19,8 +21,13 @@
     <p>Grocery list</p>
   </footer>
 </article>
- 
+
 <script>
+    function server() {
+	    //WS.log('' + $(window).width());
+      //WS.log('' + $(window).height());
+
+    }
 $(function () {
     WS.displayWebView();
     WS.serverConnect('{{WSUrl}}', 'server');
