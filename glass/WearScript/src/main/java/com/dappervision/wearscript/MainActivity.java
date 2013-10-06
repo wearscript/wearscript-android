@@ -109,6 +109,8 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             view.disableView();
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
+        if (mConnection != null)
+            unbindService(mConnection);
 
     }
 

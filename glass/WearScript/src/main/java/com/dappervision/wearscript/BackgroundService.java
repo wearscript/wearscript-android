@@ -71,6 +71,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected TreeMap<Integer, Long> sensorSampleTimesLast;
     protected TreeMap<Integer, Long> sensorSampleTimes;
     protected TextToSpeech tts;
+    protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
     protected String scriptWSUrl;
     protected WebSocketClient client;
@@ -211,6 +212,29 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     }
 
+    public void shutdown() {
+        synchronized (lock) {
+            reset();
+            if (client != null) {
+                client.disconnect();
+                client = null;
+            }
+            if (activity == null)
+                return;
+            final MainActivity a = activity.get();
+            if (a == null) {
+                stopSelf();
+                return;
+            }
+            a.runOnUiThread(new Thread() {
+                public void run() {
+                    a.bs.stopSelf();
+                    a.finish();
+                }
+            });
+        }
+    }
+
     public void reset() {
         synchronized (lock) {
             if (webview != null) {
@@ -318,6 +342,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                         handleSensor(s);
                                 }
                             }
+                        } else if (action.equals("shutdown")) {
+                            Log.i(TAG, "Shutting down!");
+                            shutdown();
                         } else if (action.equals("ping")) {
                             remoteImageAckCount++;
                             o.put("action", "pong");
@@ -483,7 +510,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-        registerReceiver(new ScreenBroadcastReceiver(this), intentFilter);
+        broadcastReceiver = new ScreenBroadcastReceiver(this);
+        registerReceiver(broadcastReceiver, intentFilter);
         tts = new TextToSpeech(this, this);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
@@ -586,6 +614,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onDestroy() {
         Log.i(TAG, "Service onDestroy");
+        if (broadcastReceiver != null)
+            unregisterReceiver(broadcastReceiver);
         //wakeLock.release();
         if (tts != null) {
             tts.stop();

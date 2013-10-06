@@ -38,6 +38,10 @@ public class WearScript {
         return this.sensors.get(name);
     }
 
+    public void shutdown() {
+        bs.shutdown();
+    }
+
     public String sensors() {
         return this.sensorsJS;
     }
