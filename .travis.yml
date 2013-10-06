@@ -7,8 +7,10 @@ go:
 
 env:
   global:
-    - secure: "G9JEcJCHpKmDCZRTGqqgEKHYrwWGJu14Lf3mMeCTyYmvjVwUVRhgs36trQTit0aRKmggv2yiwGDp01iCDb0J4C+YAsqSMLP2gWoCRV2pPowCRNtoJOQ4KX0qkFUj3Qdv8Qlrc8P/cYzPYAQ0xNL0uJldF5Ak9aFShV3nEy/M/XY="
-    - secure: "jg3OsYR9BZohxRFwAuXV5jTmBX7FAWKpGe+LvAfyQPAN5WmEDIiHaHsyrykH8hg4GP5MpENv01kZNaB/WKP0CsKAmu0axJLc2cWtniBRq5yozCCbhRF57wFaA+ZUDALDJdmCzZVFQxilDlu8TKKgVh/Tm03I1QEMgaGRt/gFX6I="
+    #- secure: "G9JEcJCHpKmDCZRTGqqgEKHYrwWGJu14Lf3mMeCTyYmvjVwUVRhgs36trQTit0aRKmggv2yiwGDp01iCDb0J4C+YAsqSMLP2gWoCRV2pPowCRNtoJOQ4KX0qkFUj3Qdv8Qlrc8P/cYzPYAQ0xNL0uJldF5Ak9aFShV3nEy/M/XY="
+    #- secure: "jg3OsYR9BZohxRFwAuXV5jTmBX7FAWKpGe+LvAfyQPAN5WmEDIiHaHsyrykH8hg4GP5MpENv01kZNaB/WKP0CsKAmu0axJLc2cWtniBRq5yozCCbhRF57wFaA+ZUDALDJdmCzZVFQxilDlu8TKKgVh/Tm03I1QEMgaGRt/gFX6I="
+    - secure: "LS1x/f/rXCLw6XU+ekAE4a6J/q+6ZBxKnYIQivhM0C1ov92PfsnQjyouOueIrqAajMQiVZfN/MLAkGMb7G07XWYqtTwwv97jC6w4cbw8modPA/0EfNE6jFilovgBVVuHmG8ZFxJlKZ8s06KDS4r2c3ViSUdHQc6k2OlnY4rfko8="
+    - secure: "eRUiR23dkybnTJEpvswgQbFn/qU0mt4p4Lyqb+jHB0PCwyszGekvzqwMbr+PkH+HFCgISaIOUdeE6YthDT0C7uXDrdLuZG7z95bYglbpYF6Th7t/o2ZE8k6Riu7/2mNtw2jJS6BpX0gzhawkxBQVaS6riD7XJUOMUUvOlIcsmRo="
 
 before_install:
  - sudo apt-get update -qq
@@ -20,6 +22,7 @@ install:
  - cp .config.go.travis config.go
  - echo $CLIENT_ID >> config.go
  - echo $CLIENT_SECRET >> config.go
+ - cat config.go
  - bash install.sh
 
 script:
