@@ -109,3 +109,12 @@ Timeline Item Styling
 
 For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot (link above).
 
+
+Contributors
+------------
+See [contributors](https://github.com/bwhite/wearscript/graphs/contributors) for details.
+
+* Brandyn White
+* Andrew Miller
+* Scott Greenwald
+* Kurtis Nelson
