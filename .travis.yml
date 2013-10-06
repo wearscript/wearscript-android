@@ -6,6 +6,7 @@ go:
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install golang git mercurial redis-server
+ 
 
 install:
- - cd server && sudo bash install.sh
+ - cd server && cp .config.go.travis config.go && sudo bash install.sh
