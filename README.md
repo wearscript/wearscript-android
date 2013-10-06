@@ -112,7 +112,7 @@ For glassware the timeline items are styled using HTML/CSS.  The dev playground 
 
 Contributors
 ------------
-See commit history for details.
+See [contributors](https://github.com/bwhite/wearscript/graphs/contributors) for details.
 
 * Brandyn White
 * Andrew Miller
