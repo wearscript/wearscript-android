@@ -58,6 +58,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public WeakReference<MainActivity> activity;
     public boolean previewWarp = false, displayWeb = false;
     public Mat overlay;
+    private final Object lock = new Object(); // All calls to webview/client must acquire lock
     public JSONArray sensorBuffer;
     public JSONArray wifiBuffer;
     public TreeSet<String> flags;
@@ -114,8 +115,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void handleSensor(JSONObject sensor) {
-        if (sensorCallback != null && webview != null) {
-            webview.loadUrl(String.format("javascript:%s(%s);", sensorCallback, sensor.toJSONString()));
+        synchronized (lock) {
+            if (sensorCallback != null && webview != null) {
+                webview.loadUrl(String.format("javascript:%s(%s);", sensorCallback, sensor.toJSONString()));
+            }
         }
         if (dataRemote || dataLocal) {
             sensorBuffer.add(sensor);
@@ -178,18 +181,22 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (frame != null)
                 remoteImageCount++;
             if (clientConnected())
-                client.send(dataStr);
+                synchronized (lock) {
+                    client.send(dataStr);
+                }
         }
     }
 
     private boolean clientConnected() {
-        if (client == null)
-            return false;
-        if (!client.isConnected()) {
-            remoteImageAckCount = remoteImageCount = 0;
-            client.connect();
+        synchronized (lock) {
+            if (client == null)
+                return false;
+            if (!client.isConnected()) {
+                remoteImageAckCount = remoteImageCount = 0;
+                client.connect();
+            }
+            return client.isConnected();
         }
-        return client.isConnected();
     }
 
     @Override
@@ -198,14 +205,22 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void reset() {
-        client = null; // TODO: Should we shutdown?
+        synchronized (lock) {
+            if (client != null) {
+                client.disconnect();
+                client = null;
+            }
+            if (webview != null) {
+                webview.stopLoading();
+                webview = null;
+            }
+        }
         flags = new TreeSet<String>();
         scriptImages = new TreeMap<String, Mat>();
         sensors = new TreeMap<Integer, Sensor>();
         sensorBuffer = new JSONArray();
         wifiBuffer = new JSONArray();
         overlay = null;
-        webview = null;
         sensorSampleTimes = new TreeMap<Integer, Long>();
         sensorSampleTimesLast = new TreeMap<Integer, Long>();
         dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
@@ -220,106 +235,122 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.i(TAG, "WS Setup");
         wsUrl = url;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
-        client = new WebSocketClient(URI.create(url), new WebSocketClient.Listener() {
-            private String cb = callback;
+        synchronized (lock) {
+            client = new WebSocketClient(URI.create(url), new WebSocketClient.Listener() {
+                private String cb = callback;
 
-            @Override
-            public void onConnect() {
-                Log.i(TAG, "WS Connected!");
-                remoteImageAckCount = remoteImageCount = 0;
-                if (cb != null && webview != null) {
-                    webview.loadUrl(String.format("javascript:%s();", cb));
-                    cb = null;
-                }
-            }
-
-            @Override
-            public void onMessage(String message) {
-                try {
-                    JSONObject o = (JSONObject) JSONValue.parse(message);
-
-                    String action = (String) o.get("action");
-                    Log.i(TAG, String.format("Got %s", action));
-                    // TODO: String to Mat, save and display in the loopback thread
-                    if (action.equals("startScript")) {
-                        final String script = (String) o.get("script");
-                        Log.i(TAG, "WebView:" + Integer.toString(script.length()));
-                        if (activity == null)
-                            return;
-                        final MainActivity a = activity.get();
-                        if (a == null)
-                            return;
-                        a.runOnUiThread(new Thread() {
-                            public void run() {
-                                runScript(script);
-                            }
-                        });
-                    } else if (action.equals("startScriptUrl")) {
-                        final String url = (String) o.get("scriptUrl");
-                        if (activity == null)
-                            return;
-                        final MainActivity a = activity.get();
-                        if (a == null)
-                            return;
-                        a.runOnUiThread(new Thread() {
-                            public void run() {
-                                runScriptUrl(url);
-                            }
-                        });
-                    } else if (action.equals("data")) {
-                        for (Object sensor : (JSONArray) o.get("sensors")) {
-                            JSONObject s = (JSONObject) sensor;
-                            int sensorType = ((Long) s.get("type")).intValue();
-                            if (sensorType < 0 && sensors.containsKey(sensorType))
-                                handleSensor(s);
+                @Override
+                public void onConnect() {
+                    Log.i(TAG, "WS Connected!");
+                    remoteImageAckCount = remoteImageCount = 0;
+                    synchronized (lock) {
+                        if (cb != null && webview != null) {
+                            webview.loadUrl(String.format("javascript:%s();", cb));
+                            cb = null;
                         }
-                    } else if (action.equals("ping")) {
-                        remoteImageAckCount++;
-                        o.put("action", "pong");
-                        o.put("Tg1", new Double(System.currentTimeMillis() / 1000.));
-                        client.send(o.toJSONString());
-                    } else if (action.equals("flags")) {
-                        JSONArray a = (JSONArray)o.get("flags");
-                        if (a != null)
-                            flags = new TreeSet<String>((List<String>) a);
                     }
-                    Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
-                } catch (Exception e) {
-                    Log.e(TAG, e.toString());
                 }
-            }
 
-            @Override
-            public void onDisconnect(int code, String reason) {
-                Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
-                remoteImageAckCount = remoteImageCount = 0;
-                new Thread(new Runnable() {
-                    public void run() {
-                        ReconnectClient(client);
+                @Override
+                public void onMessage(String message) {
+                    try {
+                        JSONObject o = (JSONObject) JSONValue.parse(message);
+
+                        String action = (String) o.get("action");
+                        Log.i(TAG, String.format("Got %s", action));
+                        // TODO: String to Mat, save and display in the loopback thread
+                        if (action.equals("startScript")) {
+                            final String script = (String) o.get("script");
+                            Log.i(TAG, "WebView:" + Integer.toString(script.length()));
+                            if (activity == null)
+                                return;
+                            final MainActivity a = activity.get();
+                            if (a == null)
+                                return;
+                            a.runOnUiThread(new Thread() {
+                                public void run() {
+                                    runScript(script);
+                                }
+                            });
+                        } else if (action.equals("startScriptUrl")) {
+                            final String url = (String) o.get("scriptUrl");
+                            if (activity == null)
+                                return;
+                            final MainActivity a = activity.get();
+                            if (a == null)
+                                return;
+                            a.runOnUiThread(new Thread() {
+                                public void run() {
+                                    runScriptUrl(url);
+                                }
+                            });
+                        } else if (action.equals("data")) {
+                            for (Object sensor : (JSONArray) o.get("sensors")) {
+                                JSONObject s = (JSONObject) sensor;
+                                int sensorType = ((Long) s.get("type")).intValue();
+                                if (sensorType < 0 && sensors.containsKey(sensorType))
+                                    handleSensor(s);
+                            }
+                        } else if (action.equals("ping")) {
+                            remoteImageAckCount++;
+                            o.put("action", "pong");
+                            o.put("Tg1", new Double(System.currentTimeMillis() / 1000.));
+                            synchronized (lock) {
+                                client.send(o.toJSONString());
+                            }
+                        } else if (action.equals("flags")) {
+                            JSONArray a = (JSONArray) o.get("flags");
+                            if (a != null)
+                                flags = new TreeSet<String>((List<String>) a);
+                        }
+                        Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
+                    } catch (Exception e) {
+                        Log.e(TAG, e.toString());
                     }
-                }).start();
-            }
+                }
 
-            @Override
-            public void onError(Exception error) {
-                Log.e(TAG, "WS: Error!", error);
-            }
+                @Override
+                public void onDisconnect(int code, String reason) {
+                    Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
+                    synchronized (lock) {
+                        if (client == null || client.getListener() != this)
+                            return;
+                    }
+                    remoteImageAckCount = remoteImageCount = 0;
+                    new Thread(new Runnable() {
+                        public void run() {
+                            ReconnectClient(client);
+                        }
+                    }).start();
+                }
 
-            @Override
-            public void onMessage(byte[] arg0) {
-                // TODO Auto-generated method stub
+                @Override
+                public void onError(Exception error) {
+                    Log.e(TAG, "WS: Error!", error);
+                }
 
-            }
+                @Override
+                public void onMessage(byte[] arg0) {
+                    // TODO Auto-generated method stub
 
-        }, extraHeaders);
-        client.connect();
+                }
+
+            }, extraHeaders);
+            client.connect();
+        }
     }
 
     protected void ReconnectClient(WebSocketClient client) {
-        if (client == null)
-            return;
-        while (!client.isConnected()) {
-            client.connect();
+        synchronized (lock) {
+            if (client == null)
+                return;
+        }
+        while (true) {
+            synchronized (lock) {
+                if (client.isConnected())
+                    break;
+                client.connect();
+            }
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
@@ -373,22 +404,28 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void runScript(String script) {
-        webview = new WebView(this);
-        webview.getSettings().setJavaScriptEnabled(true);
-        webview.addJavascriptInterface(new WearScript(this), "WS");
-        Log.i(TAG, "WebView:" + script);
-        String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
-        webview.loadUrl("file://" + path);
-        Log.i(TAG, "WebView Ran");
+        reset();
+        synchronized (lock) {
+            webview = new WebView(this);
+            webview.getSettings().setJavaScriptEnabled(true);
+            webview.addJavascriptInterface(new WearScript(this), "WS");
+            Log.i(TAG, "WebView:" + script);
+            String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
+            webview.loadUrl("file://" + path);
+            Log.i(TAG, "WebView Ran");
+        }
     }
 
     public void runScriptUrl(String url) {
-        webview = new WebView(this);
-        webview.getSettings().setJavaScriptEnabled(true);
-        webview.addJavascriptInterface(new WearScript(this), "WS");
-        Log.i(TAG, "WebView:" + url);
-        webview.loadUrl(url);
-        Log.i(TAG, "WebView Ran");
+        reset();
+        synchronized (lock) {
+            webview = new WebView(this);
+            webview.getSettings().setJavaScriptEnabled(true);
+            webview.addJavascriptInterface(new WearScript(this), "WS");
+            Log.i(TAG, "WebView:" + url);
+            webview.loadUrl(url);
+            Log.i(TAG, "WebView Ran");
+        }
     }
 
     @Override
@@ -522,15 +559,19 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         JSONObject data = new JSONObject();
         data.put("action", "timeline");
         data.put("ti", ti);
-        client.send(data.toJSONString());
+        synchronized (lock) {
+            client.send(data.toJSONString());
+        }
     }
 
     public void log(String m) {
-        if (client != null) {
-            JSONObject data = new JSONObject();
-            data.put("action", "log");
-            data.put("message", m);
-            client.send(data.toJSONString());
+        synchronized (lock) {
+            if (client != null && client.isConnected()) {
+                JSONObject data = new JSONObject();
+                data.put("action", "log");
+                data.put("message", m);
+                client.send(data.toJSONString());
+            }
         }
     }
 
