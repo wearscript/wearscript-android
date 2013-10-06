@@ -425,6 +425,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + script);
             String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
+            webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
             Log.i(TAG, "WebView Ran");
         }
@@ -437,6 +438,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + url);
+            webview.setInitialScale(100);
             webview.loadUrl(url);
             Log.i(TAG, "WebView Ran");
         }
