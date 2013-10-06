@@ -9,8 +9,8 @@ env:
   global:
     #- secure: "G9JEcJCHpKmDCZRTGqqgEKHYrwWGJu14Lf3mMeCTyYmvjVwUVRhgs36trQTit0aRKmggv2yiwGDp01iCDb0J4C+YAsqSMLP2gWoCRV2pPowCRNtoJOQ4KX0qkFUj3Qdv8Qlrc8P/cYzPYAQ0xNL0uJldF5Ak9aFShV3nEy/M/XY="
     #- secure: "jg3OsYR9BZohxRFwAuXV5jTmBX7FAWKpGe+LvAfyQPAN5WmEDIiHaHsyrykH8hg4GP5MpENv01kZNaB/WKP0CsKAmu0axJLc2cWtniBRq5yozCCbhRF57wFaA+ZUDALDJdmCzZVFQxilDlu8TKKgVh/Tm03I1QEMgaGRt/gFX6I="
-    - secure: "LS1x/f/rXCLw6XU+ekAE4a6J/q+6ZBxKnYIQivhM0C1ov92PfsnQjyouOueIrqAajMQiVZfN/MLAkGMb7G07XWYqtTwwv97jC6w4cbw8modPA/0EfNE6jFilovgBVVuHmG8ZFxJlKZ8s06KDS4r2c3ViSUdHQc6k2OlnY4rfko8="
-    - secure: "eRUiR23dkybnTJEpvswgQbFn/qU0mt4p4Lyqb+jHB0PCwyszGekvzqwMbr+PkH+HFCgISaIOUdeE6YthDT0C7uXDrdLuZG7z95bYglbpYF6Th7t/o2ZE8k6Riu7/2mNtw2jJS6BpX0gzhawkxBQVaS6riD7XJUOMUUvOlIcsmRo="
+    - secure: "mv1BL4pnCTg4HwIJ7vSCl8ny1OchCoplduw10soMq/fTK4QEiDA7Lm/PQGExkJYDdnxpU88F5J5xT035WkA4M79FWtJlYyxpvpViNqVBb6ww7bsrHCP/ZDmGJEeZ65GCzeqWcVA5S4YlfJucSJIdeaP4KvRXCdk0rD8e3k443Ms="
+    - secure: "IgozFBsTL2S9dmYvaKJMxqh/Z8UrPTronnl0w+XyNPuYmLfh7S0pisu4WlTu3ItiG/GdmWbAoftEeS9TiTlxopH2Yz8FTsqt+t8boH8cm1d3DcygbatsHnwqbfIDn5iNal/zxyNYTwYD919UT1kqaFLP3qckdzJb2Gnbk7oq0Pg="
 
 before_install:
  - sudo apt-get update -qq
