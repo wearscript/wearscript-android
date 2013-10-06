@@ -31,6 +31,7 @@ type WSData struct {
 	Sensors   []WSSensor           `json:"sensors"`
 	Script    string               `json:"script"`
 	ScriptUrl string               `json:"scriptUrl"`
+	ScriptWSUrl string             `json:"scriptWSUrl"`
 	Message   string               `json:"message"`
 	Imageb64  *string              `json:"imageb64,omitempty"`
 	Action    string               `json:"action,omitempty"`

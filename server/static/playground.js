@@ -273,13 +273,13 @@ function main(WSUrl) {
     $(".scriptel").prop('disabled', true);
     $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScript', script: editor.getValue().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));
+        ws.send(JSON.stringify({action: 'startScript', script: editor.getValue(), scriptWSUrl: WSUrl + '/ws/glass/' + glassSecret}));
     });
     $('#scriptUrlButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val()}));
+        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val(), scriptWSUrl: WSUrl + '/ws/glass/' + glassSecret}));
     });
     $('#resetButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: biosScriptUrl(glassSecret)}));
+        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: biosScriptUrl(glassSecret), scriptWSUrl: WSUrl + '/ws/glass/' + glassSecret}));
     });
     c = {names: ['notify']};
 
