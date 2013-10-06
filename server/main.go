@@ -35,9 +35,9 @@ type PlaygroundGlassTemplate struct {
 }
 
 func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
-	_, err := userID(req)
-	if err != nil {
-		http.Redirect(w, req, "auth", http.StatusFound)
+	userId, err := userID(req)
+	if userId == "" || err != nil {
+		http.Redirect(w, req, fullUrl + "/auth", http.StatusFound)
 		return
 	}
 	t, err := template.ParseFiles("static/playground.html")
