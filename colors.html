@@ -5,7 +5,7 @@
 <script src="wearscript.js"></script>
 </head>
 <body style="width:100%; height:100%; overflow:hidden; margin:0">
-<canvas id="canvas" width="427" height="240" style="display:block">
+<canvas id="canvas" width="640" height="360" style="display:block">
 </canvas>
 <script>
 
@@ -27,7 +27,7 @@ function cb(data) {
 function randomColor() {
     var ctx = $('#canvas')[0].getContext("2d");
     ctx.fillStyle = _.sample(["#E9003a", "#FF5300", "#00AB6F", "#58E000"])
-    ctx.fillRect(0, 0, 427, 240);
+    ctx.fillRect(0, 0, 640, 360);
 }
 
 $(function () {
