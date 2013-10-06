@@ -247,7 +247,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (url.equals("{{WSUrl}}"))
                 url = scriptWSUrl;
             if (client != null && client.isConnected() && wsUrl.equals(url)) {
-                Log.i(TAG, "WS Reusing client");
+                Log.i(TAG, "WS Reusing client and calling callback");
+                if (callback != null && webview != null) {
+                    webview.loadUrl(String.format("javascript:%s();", callback));
+                }
                 return;
             }
             if (client != null) {
