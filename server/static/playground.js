@@ -324,6 +324,8 @@ function main(WSUrl) {
     });
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
+        styleActiveLine: true,
+        matchBrackets: true,
         theme: 'default',
         mode: "htmlmixed",
         indentUnit: 4
