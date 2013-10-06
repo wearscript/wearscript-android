@@ -25,16 +25,15 @@ function createQR() {
 function connectWebsocket(WSUrl) {
     var url = WSUrl + "/ws/web";
     console.log(url);
-    var ws = new WebSocket(url);
+    var ws = new ReconnectingWebSocket(url);
     ws.onopen = function () {
     }
     ws.onclose = function () {
-
     }
     ws.onmessage = function (event) {
         if (scriptRowDisabled && _.has(window, 'glassSecret')) {
             scriptRowDisabled = false;
-            $("#scriptRow").children().prop('disabled', false);
+            $(".scriptel").prop('disabled', false);
         }
         var response = JSON.parse(event.data);
         if (response.action == "log") {
@@ -76,9 +75,6 @@ function connectWebsocket(WSUrl) {
                 });
             }
         }
-    }
-    ws.onclose = function (event) {
-        //alert("Websocket closed");
     }
     return ws;
 }
@@ -270,7 +266,7 @@ function main(WSUrl) {
     graphs = {};
     seriesDatas = {};
     scriptRowDisabled = true;
-    //$("#scriptRow").children().prop('disabled', true);
+    $(".scriptel").prop('disabled', true);
     $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
         ws.send(JSON.stringify({action: 'startScript', script: $('#script').val().replace('{{WSUrl}}', WSUrl + '/ws/glass/' + glassSecret)}));

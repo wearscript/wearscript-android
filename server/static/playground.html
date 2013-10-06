@@ -54,12 +54,12 @@
         <h1>Scripting</h1>
         <div>
           <form class="form-inline" role="form">
-            <button class="btn btn-primary" type="button" id="scriptButton">Wear This Script</button>
-            <button class="btn btn-primary" type="button" id="scriptUrlButton">Wear Script From URL</button>
-             <div class="form-group">
-               <input type="text" name="script-url" class="form-control" id="script-url" value="http://wearscript.com/color.html"/>
-             </div>
-        </form>
+            <button class="btn btn-primary scriptel" type="button" id="scriptButton">Wear This Script</button>
+            <button class="btn btn-primary scriptel" type="button" id="scriptUrlButton">Wear Script From URL</button>
+            <div class="form-group">
+              <input type="text" name="script-url" class="form-control" id="script-url" value="http://wearscript.com/color.html"/>
+            </div>
+          </form>
         </div>
         <form><textarea id="script" name="code">{{.GlassBody}}</textarea></form>
       </div>
@@ -67,6 +67,7 @@
 </div> <!-- /container -->
 
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="static/reconnecting-websocket.min.js"></script>
 <script src="static/bootstrap.min.js"></script>
 <script src="static/codemirror.js"></script>
 <script src="static/bootstrap-switch.min.js"></script>
