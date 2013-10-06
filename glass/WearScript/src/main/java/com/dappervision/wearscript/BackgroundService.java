@@ -72,6 +72,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected TreeMap<Integer, Long> sensorSampleTimes;
     protected TextToSpeech tts;
     protected String glassID;
+    protected String scriptWSUrl;
     protected WebSocketClient client;
     protected WebView webview;
     protected LocationManager locationManager;
@@ -232,6 +233,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             sensorBuffer = new JSONArray();
             wifiBuffer = new JSONArray();
             overlay = null;
+            scriptWSUrl = null;
             sensorSampleTimes = new TreeMap<Integer, Long>();
             sensorSampleTimesLast = new TreeMap<Integer, Long>();
             dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
@@ -245,9 +247,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void serverConnect(String url, final String callback) {
         Log.i(TAG, "WS Setup");
-        wsUrl = url;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
         synchronized (lock) {
+            if (url.equals("{{WSUrl}}"))
+                url = scriptWSUrl;
+            wsUrl = url;
             client = new WebSocketClient(URI.create(url), new WebSocketClient.Listener() {
                 private String cb = callback;
 
@@ -273,6 +277,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         // TODO: String to Mat, save and display in the loopback thread
                         if (action.equals("startScript")) {
                             final String script = (String) o.get("script");
+                            final String scriptWSUrl = (String) o.get("scriptWSUrl");
                             Log.i(TAG, "WebView:" + Integer.toString(script.length()));
                             if (activity == null)
                                 return;
@@ -281,11 +286,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 return;
                             a.runOnUiThread(new Thread() {
                                 public void run() {
-                                    runScript(script);
+                                    runScript(script, scriptWSUrl);
                                 }
                             });
                         } else if (action.equals("startScriptUrl")) {
                             final String url = (String) o.get("scriptUrl");
+                            final String scriptWSUrl = (String) o.get("scriptWSUrl");
+
                             if (activity == null)
                                 return;
                             final MainActivity a = activity.get();
@@ -293,7 +300,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 return;
                             a.runOnUiThread(new Thread() {
                                 public void run() {
-                                    runScriptUrl(url);
+                                    runScriptUrl(url, scriptWSUrl);
                                 }
                             });
                         } else if (action.equals("data")) {
@@ -417,9 +424,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     }
 
-    public void runScript(String script) {
+    public void runScript(String script, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
@@ -431,9 +439,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void runScriptUrl(String url) {
+    public void runScriptUrl(String url, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");

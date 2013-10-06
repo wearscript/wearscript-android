@@ -177,7 +177,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             if (contents.startsWith("ws"))
                 bs.serverConnect(contents, null);
             else
-                bs.runScriptUrl(contents);
+                bs.runScriptUrl(contents, null);
         }
     }
 
