@@ -18,4 +18,3 @@ const (
 	redisServerPort = "localhost:6379" // Fill in with your host:port
 	servePort = "8080"  // Fill in with the port you want to host on
 )
-
