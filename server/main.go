@@ -213,6 +213,7 @@ func sendImageCard(image string, text string, svc *mirror.Service) {
 }
 
 func main() {
+	SignatureCreateKey()
 	m := pat.New()
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
@@ -229,6 +230,7 @@ func main() {
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/playground/{key}", http.HandlerFunc(PlaygroundGlassServer))
+	m.Post("/signature", http.HandlerFunc(SignatureVerifyHandler))
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
 	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
 	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))

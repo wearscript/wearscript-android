@@ -47,6 +47,14 @@ func setUserAttribute(userId string, attribute string, data string) error {
 	return err
 }
 
+func hasUserAttribute(userId string, attribute string) (bool, error) {
+	c, err := getRedisConnection()
+	if err != nil {
+		return false, err
+	}
+	return redis.Bool(c.Do("HEXISTS", userId, attribute))
+}
+
 func getUserAttribute(userId string, attribute string) (string, error) {
 	c, err := getRedisConnection()
 	if err != nil {
