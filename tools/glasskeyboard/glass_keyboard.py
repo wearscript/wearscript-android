@@ -91,6 +91,7 @@ SCREENSHOT = 7
 LAUNCHY = 8
 PICTURE = 9
 WEARSCRIPT = 10
+COLORS = 11
 
 # rooted command, e.g.:
 #  adb shell simulated_input TAP ON
@@ -109,7 +110,8 @@ event_name_dict = {
     SETTINGS: 'SETTINGS',
     LAUNCHY: 'LAUNCHY',
     PICTURE: 'PICTURE',
-    WEARSCRIPT: 'WEARSCRIPT'
+    WEARSCRIPT: 'WEARSCRIPT',
+    COLORS: 'COLORS'
 }
 
 user_dict = {
@@ -128,7 +130,8 @@ launch_components = {
     SETTINGS: 'com.android.settings',
     LAUNCHY: 'com.mikedg.android.glass.launchy/.MainActivity',
     PICTURE: '-a com.google.glass.action.TAKE_PICTURE com.google.glass.camera',
-    WEARSCRIPT: 'com.dappervision.wearscript/.MainActivity'
+    WEARSCRIPT: 'com.dappervision.wearscript/.MainActivity',
+    COLORS: '--es wsurl "http://wearscript.com/colors.html" com.dappervision.wearscript/.MainActivity'
 }
 cmd = "adb shell am start "
 for key, value in launch_components.items():
@@ -140,7 +143,8 @@ key_bindings = {
     'p': PICTURE,
     'l': LAUNCHY,
     'h': HOME,
-    'w': WEARSCRIPT
+    'w': WEARSCRIPT,
+    'c': COLORS
 }
 
 root_overrides = {
