@@ -25,7 +25,7 @@ import java.lang.ref.WeakReference;
 public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     protected static final String TAG = "WearScript";
     protected JavaCameraView view;
-    protected boolean isGlass = true, isForeground = true;
+    public boolean isGlass = true, isForeground = true;
     protected BackgroundService bs;
     protected Mat hSmallToGlassMat;
     ServiceConnection mConnection;
@@ -88,7 +88,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     @Override
     public void onPause() {
-        //isForeground = false;
+        isForeground = false;
         super.onPause();
         if (view != null && isGlass) {
             view.disableView();
@@ -109,6 +109,8 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             view.disableView();
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
+        if (mConnection != null)
+            unbindService(mConnection);
 
     }
 

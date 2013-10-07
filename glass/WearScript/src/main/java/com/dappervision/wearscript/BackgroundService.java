@@ -25,6 +25,7 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.webkit.WebView;
 
 import com.codebutler.android_websockets.WebSocketClient;
@@ -71,6 +72,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected TreeMap<Integer, Long> sensorSampleTimesLast;
     protected TreeMap<Integer, Long> sensorSampleTimes;
     protected TextToSpeech tts;
+    protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
     protected String scriptWSUrl;
     protected WebSocketClient client;
@@ -109,8 +111,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             public void run() {
                 if (displayWeb && webview != null)
                     a.setContentView(webview);
-                else
+                else {
                     a.setContentView(R.layout.surface_view);
+                    a.view = (JavaCameraView) a.findViewById(R.id.activity_java_surface_view);
+                    a.view.setVisibility(SurfaceView.VISIBLE);
+                    a.view.setCvCameraViewListener(a);
+                    a.view.enableView();
+                }
             }
         });
     }
@@ -211,12 +218,31 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     }
 
-    public void reset() {
+    public void shutdown() {
         synchronized (lock) {
+            reset();
             if (client != null) {
                 client.disconnect();
                 client = null;
             }
+            if (activity == null)
+                return;
+            final MainActivity a = activity.get();
+            if (a == null) {
+                stopSelf();
+                return;
+            }
+            a.runOnUiThread(new Thread() {
+                public void run() {
+                    a.bs.stopSelf();
+                    a.finish();
+                }
+            });
+        }
+    }
+
+    public void reset() {
+        synchronized (lock) {
             if (webview != null) {
                 webview.stopLoading();
                 webview = null;
@@ -236,12 +262,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             scriptWSUrl = null;
             sensorSampleTimes = new TreeMap<Integer, Long>();
             sensorSampleTimesLast = new TreeMap<Integer, Long>();
-            dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
+            displayWeb = dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
             sensorCallback = null;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             sensorManager.unregisterListener(this);
             remoteImageAckCount = remoteImageCount = 0;
-            wsUrl = null;
+            updateActivityView();
         }
     }
 
@@ -251,6 +277,17 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             if (url.equals("{{WSUrl}}"))
                 url = scriptWSUrl;
+            if (client != null && client.isConnected() && wsUrl.equals(url)) {
+                Log.i(TAG, "WS Reusing client and calling callback");
+                if (callback != null && webview != null) {
+                    webview.loadUrl(String.format("javascript:%s();", callback));
+                }
+                return;
+            }
+            if (client != null) {
+                client.disconnect();
+                client = null;
+            }
             wsUrl = url;
             client = new WebSocketClient(URI.create(url), new WebSocketClient.Listener() {
                 private String cb = callback;
@@ -303,15 +340,26 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                     runScriptUrl(url, scriptWSUrl);
                                 }
                             });
+                        } else if (action.equals("pingStatus")) {
+                            o.put("action", "pongStatus");
+                            o.put("glassID", glassID);
+                            // Display: On/Off  Activity Visible: True/False, Sensor Count (Raw): Map<Integer, Integer>, Sensor Count (Saved): Map<Integer, Integer>
+                            // Javascript: ?
+                            synchronized (lock) {
+                                client.send(o.toJSONString());
+                            }
                         } else if (action.equals("data")) {
                             for (Object sensor : (JSONArray) o.get("sensors")) {
                                 JSONObject s = (JSONObject) sensor;
                                 int sensorType = ((Long) s.get("type")).intValue();
                                 synchronized (lock) {
                                     if (sensorType < 0 && sensors.containsKey(sensorType))
-                                       handleSensor(s);
+                                        handleSensor(s);
                                 }
                             }
+                        } else if (action.equals("shutdown")) {
+                            Log.i(TAG, "Shutting down!");
+                            shutdown();
                         } else if (action.equals("ping")) {
                             remoteImageAckCount++;
                             o.put("action", "pong");
@@ -427,6 +475,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void runScript(String script, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            // TODO(brandyn): Refactor these as they are similar
             this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
@@ -442,6 +491,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void runScriptUrl(String url, String scriptWSUrl) {
         reset();
         synchronized (lock) {
+            // TODO(brandyn): Refactor these as they are similar
             this.scriptWSUrl = scriptWSUrl;
             webview = new WebView(this);
             webview.getSettings().setJavaScriptEnabled(true);
@@ -475,7 +525,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-        registerReceiver(new ScreenBroadcastReceiver(this), intentFilter);
+        broadcastReceiver = new ScreenBroadcastReceiver(this);
+        registerReceiver(broadcastReceiver, intentFilter);
         tts = new TextToSpeech(this, this);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
@@ -578,6 +629,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onDestroy() {
         Log.i(TAG, "Service onDestroy");
+        if (broadcastReceiver != null)
+            unregisterReceiver(broadcastReceiver);
         //wakeLock.release();
         if (tts != null) {
             tts.stop();

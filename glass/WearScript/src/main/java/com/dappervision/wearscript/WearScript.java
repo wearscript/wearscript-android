@@ -8,13 +8,42 @@ import org.json.simple.JSONValue;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
+import java.util.TreeMap;
+
 public class WearScript {
     BackgroundService bs;
     String TAG = "WearScript";
+    TreeMap<String, Integer> sensors;
+    String sensorsJS;
 
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
+        this.sensors = new TreeMap<String, Integer>();
+        // Sensor Types
+        this.sensors.put("pupil", -2);
+        this.sensors.put("gps", -1);
+        this.sensors.put("accelerometer", 1);
+        this.sensors.put("magneticField", 2);
+        this.sensors.put("orientation", 3);
+        this.sensors.put("gyroscope", 4);
+        this.sensors.put("light", 5);
+        this.sensors.put("gravity", 9);
+        this.sensors.put("linearAcceleration", 10);
+        this.sensors.put("rotationVector", 11);
+        this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
+    }
+
+    public int sensor(String name) {
+        return this.sensors.get(name);
+    }
+
+    public void shutdown() {
+        bs.shutdown();
+    }
+
+    public String sensors() {
+        return this.sensorsJS;
     }
 
     public void say(String text) {
