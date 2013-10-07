@@ -172,12 +172,10 @@ func WSGlassHandler(c *websocket.Conn) {
 				LogPrintf("ws: timeline")
 				continue
 			}
-		}
-		if request.Action == "log" {
+		} else if request.Action == "log" {
 			fmt.Println(request)
 			WSSendWeb(userId, &request)
-		}
-		if request.Action == "pong" {
+		} else if request.Action == "pong" {
 			Ts1 := CurTime()
 			delay = .5 * (Ts1 - request.Ts0)
 			skew = request.Tg1 - Ts1 + delay
@@ -190,8 +188,7 @@ func WSGlassHandler(c *websocket.Conn) {
 			fmt.Println(fmt.Sprintf("Tg0[%f] -> D0[%f] -> Ts0[%f]", request.Tg0-skew-origin, delayData, request.Ts0-origin))
 			fmt.Println(fmt.Sprintf("Tg1[%f] <- D[%f] <- Ts0[%f]", request.Tg1-skew-origin, delay, request.Ts0-origin))
 			fmt.Println(fmt.Sprintf("Tg1[%f] -> D[%f] -> Ts1[%f]", request.Tg1-skew-origin, delay, Ts1-origin))
-		}
-		if request.Action == "data" {
+		} else if request.Action == "data" {
 			request.Timestamp = request.Tsave - skew
 			for _, sensor := range request.Sensors {
 				sensorCache[sensor.Type] = &sensor
@@ -200,6 +197,8 @@ func WSGlassHandler(c *websocket.Conn) {
 			if request.Imageb64 != nil {
 				wsSendChan <- &WSData{Action: "ping", Tg0: request.Tg0, Ts0: CurTime()}
 			}
+		} else {
+			WSSendWeb(userId, &request)
 		}
 	}
 }

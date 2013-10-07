@@ -26,11 +26,25 @@ function createQR() {
     createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: biosScriptUrl(x)}))}, function () {alert("Could not get ws")});
 }
 
+function pingStatus() {
+    if (!_.has(window, 'glassStatus')) {
+        glassStatus = {}
+    }
+    _.each($('.pingLabel'), function (x) {
+        if ((new Date).getTime() - Number($(x).attr('updateTime')) > 4000)
+            $(x).removeClass('label-success').addClass('label-danger');
+    });
+    var out = {action: 'pingStatus'};
+    ws.send(JSON.stringify(out));
+    _.delay(pingStatus, 4000);
+}
+
 function connectWebsocket(WSUrl) {
     var url = WSUrl + "/ws/web";
     console.log(url);
     var ws = new ReconnectingWebSocket(url);
     ws.onopen = function () {
+        pingStatus();
     }
     ws.onclose = function () {
     }
@@ -42,17 +56,19 @@ function connectWebsocket(WSUrl) {
         var response = JSON.parse(event.data);
         if (response.action == "log") {
             console.log(response.message);
-        } else if (response.action == "data") {
+        } else if (response.action == "data" || response.action == "pongStatus") {
             if (!_.has(glassIdToNum, response.glassID)) {
                 var glassNum = _.uniqueId('glass-');
                 var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
 
 
-                $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><div class="charts"></div><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet}));
+                $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><div class="charts"></div><span class="pingLabel label label-success" updateTime="{{time}}">Status</span><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet, time: (new Date).getTime()}));
                 glassIdToNum[response.glassID] = glassNum;
 	            graphs[response.glassID] = {};
             }
             var $glass = $('#' + glassIdToNum[response.glassID]);
+            $glass.find('.pingLabel').removeClass('label-danger').addClass('label-success').attr('updateTime', (new Date).getTime());
+
             if (_.has(response, 'imageb64')) {
                 latestImages[response.glassID] = response.imageb64;
                 $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response.imageb64);
@@ -280,6 +296,9 @@ function main(WSUrl) {
     });
     $('#resetButton').click(function () {
         ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: biosScriptUrl(glassSecret), scriptWSUrl: WSUrl + '/ws/glass/' + glassSecret}));
+    });
+    $('#shutdownButton').click(function () {
+        ws.send(JSON.stringify({action: 'shutdown'}));
     });
     c = {names: ['notify']};
 
