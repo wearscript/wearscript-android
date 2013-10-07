@@ -25,6 +25,7 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.webkit.WebView;
 
 import com.codebutler.android_websockets.WebSocketClient;
@@ -110,8 +111,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             public void run() {
                 if (displayWeb && webview != null)
                     a.setContentView(webview);
-                else
+                else {
                     a.setContentView(R.layout.surface_view);
+                    a.view = (JavaCameraView) a.findViewById(R.id.activity_java_surface_view);
+                    a.view.setVisibility(SurfaceView.VISIBLE);
+                    a.view.setCvCameraViewListener(a);
+                    a.view.enableView();
+                }
             }
         });
     }
@@ -256,11 +262,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             scriptWSUrl = null;
             sensorSampleTimes = new TreeMap<Integer, Long>();
             sensorSampleTimesLast = new TreeMap<Integer, Long>();
-            dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
+            displayWeb = dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
             sensorCallback = null;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             sensorManager.unregisterListener(this);
             remoteImageAckCount = remoteImageCount = 0;
+            updateActivityView();
         }
     }
 
@@ -333,6 +340,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                     runScriptUrl(url, scriptWSUrl);
                                 }
                             });
+                        } else if (action.equals("pingStatus")) {
+                            o.put("action", "pongStatus");
+                            o.put("glassID", glassID);
+                            // Display: On/Off  Activity Visible: True/False, Sensor Count (Raw): Map<Integer, Integer>, Sensor Count (Saved): Map<Integer, Integer>
+                            // Javascript: ?
+                            synchronized (lock) {
+                                client.send(o.toJSONString());
+                            }
                         } else if (action.equals("data")) {
                             for (Object sensor : (JSONArray) o.get("sensors")) {
                                 JSONObject s = (JSONObject) sensor;
