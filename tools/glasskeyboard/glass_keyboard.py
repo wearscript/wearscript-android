@@ -11,7 +11,7 @@ import time
 
 startMessage = \
 """
-GlassKeyoard: control your Glass with key events from Python
+GlassKeyboard: control your Glass with key events from Python
 =========================================================
 
 exit with ^C or ^D
@@ -120,7 +120,6 @@ user_dict = {
 cmd = "adb shell input keyevent "
 for key, value in user_dict.items():
     user_dict[key] = cmd + value
-    #print user_dict[key]
 
 launch_components = {
     GLASS_SETTINGS: 'com.google.glass.home/.settings.SettingsTimelineActivity',
@@ -130,7 +129,7 @@ launch_components = {
 }
 cmd = "adb shell am start "
 for key, value in launch_components.items():
-    launch_components[key] = cmd + value
+    launch_components[key] = user_dict[HOME] + " && " + cmd + value
 
 key_bindings = {
     'g': GLASS_SETTINGS,
@@ -149,7 +148,6 @@ root_overrides = {
 rcmd = 'adb shell simulated_input %s ON'
 for key, value in root_overrides.items():
     root_overrides[key] = rcmd % value
-    #print root_overrides[key]
 root_dict = dict(user_dict, **root_overrides)
 
 class Command(object):
@@ -188,29 +186,21 @@ def raw_mode(file):
 def doc_string(event_name_key):
     if event_name_key in full_event_dict.keys():
         return event_name_dict[event_name_key] + ": " + full_event_dict[event_name_key]
-    # if event_name_key in event_dict.keys():
-    #     return event_name_dict[event_name_key] + ": " + event_dict[event_name_key]
-    # elif event_name_key in launch_components.keys():
-    #     return event_name_dict[event_name_key] + ": " + launch_components[event_name_key]
     else:
         return "Unrecognize event_name_key " + str(event_name_key)
 
 def main(**kw):
     print "GlassKeyboard. Press i for intro"
-    #ROOT = user_has_root()
     print "User " + ("has" if ROOT else "does not have") + " root privileges."
-    #event_dict = root_dict if ROOT else user_dict
     for key, value in event_dict.items():
         print event_name_dict[key] + ": " + event_dict[key]
     for key, value in launch_components.items():
         print event_name_dict[key] + ": " + launch_components[key]
     print 'exit with ^C or ^D'
-    #print startMessage
     with raw_mode(sys.stdin):
         try:
             multiByte = []
             chHex = '0a'
-            #cmd = "adb shell input keyevent "
             while True:
                 chPrev = chHex
                 ch = sys.stdin.read(1)
