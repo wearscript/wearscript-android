@@ -76,6 +76,11 @@ WearScript Usage Notes
 * When using scripts in the Playground editor, make sure to specify http:// or https:// and NOT use refer to links like <script type="text/javascript" src="//example.com/test.js"></script>.  The script you put in the editor will be saved locally on Glass, and links of that form will not work.
 * If you are connected to a server and use WS.log('Hi!'), that message will show up in the Android logs and the javascript console in the Playground.
 
+Syntax
+======
+
+The code is under rapid development and instead of making a list of supported commands (which will be constantly out of sync), look at the Java class that implements the WS variable http://goo.gl/eYFyTO.
+
 Troubleshooting
 ===============
 * "adb: command not found" - Android Dev Tools need to be in your path
