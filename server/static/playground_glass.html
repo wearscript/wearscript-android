@@ -4,17 +4,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
 </head>
 <body style="width:100%; height:100%; overflow:hidden; margin:0">
-<canvas id="canvas" width="640" height="360" style="display:block">
-</canvas>
+<canvas id="canvas" width="640" height="360" style="display:block"></canvas>
 <script>
 function cb(data) {
     WS.log(JSON.stringify(data));
+    // Changes canvas color with head rotation
+    if (data['type'] == 3) {
+        var ctx = $('#canvas')[0].getContext("2d");
+        ctx.fillStyle = 'hsl(' + data['values'][0] + ', 90%, 50%)'
+        ctx.fillRect(0, 0, 640, 360);
+    }
 }
 function server() {
-    _.each([1, 2, 3, 4, 5, 9, 10, 11], function (x) {WS.sensorOn(x, .1)});
-    WS.cameraOn(1);
+    WS.say('Welcome to WearScript');
+    _.each(['gps', 'accelerometer', 'magneticField', 'orientation', 'gyroscope',
+            'light', 'gravity', 'linearAcceleration', 'rotationVector'], function (x) {WS.sensorOn(WS.sensor(x), .1)});
     WS.dataLog(false, true, .1);
-    //WS.sensorCallback("cb");
+    //WS.serverTimeline(JSON.stringify({'text': 'Welcome to WearScript'}));
+    //WS.sensorCallback('cb');
 }
 $(function () {
     WS.serverConnect('{{WSUrl}}', 'server');

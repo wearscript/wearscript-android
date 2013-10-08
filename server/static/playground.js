@@ -294,6 +294,9 @@ function main(WSUrl) {
     $('#scriptButton').click(function () {
         ws.send(JSON.stringify({action: 'startScript', script: editor.getValue()}));
     });
+    $('#scriptDefaultButton').click(function () {
+        ws.send(JSON.stringify({action: 'defaultScript', script: editor.getValue()}));
+    });
     $('#scriptUrlButton').click(function () {
         ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val()}));
     });
