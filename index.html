@@ -3,7 +3,6 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="google-site-verification" content="CE-asJ0d3of1cTPBrR1hFbn8plZX9vy1t5bly_p2HF4" />
     <title>WearScript by bwhite</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
@@ -80,10 +79,39 @@
 <a name="install-server" class="anchor" href="#install-server"><span class="octicon octicon-link"></span></a>Install Server</h2>
 
 <ul>
+<li>The video above gives a step by step guide</li>
 <li>Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this if possible</li>
 <li>Ubuntu packages: apt-get install mercurial</li>
 <li>Setup a config.go file (look at config.go.example)</li>
 <li>Run /server/install.sh (this does basic dependencies and such)</li>
+</ul><h2>
+<a name="using-the-playground" class="anchor" href="#using-the-playground"><span class="octicon octicon-link"></span></a>Using the Playground</h2>
+
+<p>The playground is a webapp that connects with WearScript while it is running on Glass.  It allows you to execute scripts and visualize the sensors/images from Glass.</p>
+
+<ul>
+<li>Go to the playground page for the server you'd like to use (if it's your first time, you'll sign into your Google account)</li>
+<li>After authorizing the webapp with Google, click the QR button the top right</li>
+<li>Ensure that Glass has an internet connection, WiFi is highly recommended</li>
+<li>On Glass, open up Launchy (go to the far left, tap settings, now you are in Launchy)</li>
+<li>Select WearScript</li>
+<li>It will show a QR code reader, scan the QR code</li>
+<li>If successfull, the buttons on the bottom of the Playground will enable and the Javascript console will show "Connected"</li>
+<li>You may now send scripts, two examples are provided (you can click Wear This Scriot or Wear Script From URL)</li>
+</ul><h2>
+<a name="wearscript-usage-notes" class="anchor" href="#wearscript-usage-notes"><span class="octicon octicon-link"></span></a>WearScript Usage Notes</h2>
+
+<ul>
+<li>If you swipe down the script will continue to run in the background, to reset to a blank script press the "Reset" button</li>
+<li>At this point the easiest way to turn off WearScript is to reset Glass (hold power button), we are working on this</li>
+<li>When calling WS.connect, if the argument passed is exactly '{{WSUrl}}' then it will be replaced with the websocket url corresponding to the server the playground is running on and the last QR code generated.</li>
+<li>If you use a script that doesn't make a server connection (i.e., WS.connect('{{WSUrl}}')) then you won't be able to control WearScript from the webapp</li>
+<li>More interesting uses of WS.connect include making a custom server for your application and then Glass will connect to it and stream data while your app can continue to control Glass.</li>
+<li>If you want to reconnect to the webapp, you can swipe down to exit WearScript and re-enter through Launchy (if the QR doesn't pop up do it again).  When the QR comes up you can swipe down to dismiss it and it'll reuse the last scan.</li>
+<li>Every time you press the QR button on the webapp you get a unique scan, while the page is open you may reuse the scan (either by rescanning or the previous downswipe trick) but if you reload the page you must rescan.</li>
+<li>Only the last generated QR code is valid.</li>
+<li>When using scripts in the Playground editor, make sure to specify http:// or https:// and NOT use refer to links like .  The script you put in the editor will be saved locally on Glass, and links of that form will not work.</li>
+<li>If you are connected to a server and use WS.log('Hi!'), that message will show up in the Android logs and the javascript console in the Playground.</li>
 </ul><h1>
 <a name="troubleshooting" class="anchor" href="#troubleshooting"><span class="octicon octicon-link"></span></a>Troubleshooting</h1>
 
@@ -102,7 +130,7 @@
 <li> You'll need userid for the other commands</li>
 </ul>
 </li>
-<li>Add a user (only needed if config.go has allowAllUsers = false): python users.py  set_flag flags user</li>
+<li>Add a user (only needed if config.go has allowAllUsers = false): python users.py {{userid}} set_flag flags user</li>
 </ul><h1>
 <a name="contactinfo" class="anchor" href="#contactinfo"><span class="octicon octicon-link"></span></a>Contact/Info</h1>
 
@@ -119,6 +147,13 @@
 
 <h1>
 <a name="hacking" class="anchor" href="#hacking"><span class="octicon octicon-link"></span></a>Hacking</h1>
+
+<h2>
+<a name="travis-ci" class="anchor" href="#travis-ci"><span class="octicon octicon-link"></span></a>Travis-CI</h2>
+
+<p>The current test setup just builds the server after each commit.</p>
+
+<p><a href="https://travis-ci.org/bwhite/wearscript"><img src="https://travis-ci.org/bwhite/wearscript.png?branch=master" alt="Build Status"></a></p>
 
 <h2>
 <a name="resources" class="anchor" href="#resources"><span class="octicon octicon-link"></span></a>Resources</h2>
@@ -148,6 +183,18 @@ Tg1 -  D2 -&gt; Ts1
 <a name="timeline-item-styling" class="anchor" href="#timeline-item-styling"><span class="octicon octicon-link"></span></a>Timeline Item Styling</h2>
 
 <p>For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot (link above).</p>
+
+<h2>
+<a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h2>
+
+<p>See <a href="https://github.com/bwhite/wearscript/graphs/contributors">contributors</a> for details.</p>
+
+<ul>
+<li>Brandyn White</li>
+<li>Andrew Miller</li>
+<li>Scott Greenwald</li>
+<li>Kurtis Nelson</li>
+</ul>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/bwhite">bwhite</a></p>
