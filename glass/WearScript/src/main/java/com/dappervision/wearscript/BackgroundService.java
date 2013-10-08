@@ -271,6 +271,19 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
+    public void directStartScriptUrl(final String url) {
+        if (activity == null)
+            return;
+        final MainActivity a = activity.get();
+        if (a == null)
+            return;
+        a.runOnUiThread(new Thread() {
+            public void run() {
+                runScriptUrl(url, scriptWSUrl);
+            }
+        });
+    }
+
     public void serverConnect(String url, final String callback) {
         Log.i(TAG, "WS Setup");
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
