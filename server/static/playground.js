@@ -22,8 +22,8 @@ function biosScriptUrl(x) {
     return document.URL + 'playground/' + x;
 }
 
-function createQR() {
-    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: biosScriptUrl(x)}))}, function () {alert("Could not get ws")});
+function createQR(WSUrl) {
+    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: WSUrl + '/ws/glass/' + x}))}, function () {alert("Could not get ws")});
 }
 
 function pingStatus() {
@@ -56,6 +56,9 @@ function connectWebsocket(WSUrl) {
         var response = JSON.parse(event.data);
         if (response.action == "log") {
             console.log(response.message);
+        } else if (response.action == 'signScript') {
+            var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response.script}}});
+            $.post('https://api.github.com/gists', data, function (result) {console.log(result)});
         } else if (response.action == "data" || response.action == "pongStatus") {
             if (!_.has(glassIdToNum, response.glassID)) {
                 var glassNum = _.uniqueId('glass-');
@@ -287,7 +290,7 @@ function main(WSUrl) {
     seriesDatas = {};
     scriptRowDisabled = true;
     $(".scriptel").prop('disabled', true);
-    $('#qrButton').click(createQR);
+    $('#qrButton').click(function () {createQR(WSUrl)});
     $('#scriptButton').click(function () {
         ws.send(JSON.stringify({action: 'startScript', script: editor.getValue()}));
     });
@@ -296,6 +299,9 @@ function main(WSUrl) {
     });
     $('#resetButton').click(function () {
         ws.send(JSON.stringify({action: 'startScript', script: "<script>function s() {WS.log('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>"}));
+    });
+    $('#gistButton').click(function () {
+        ws.send(JSON.stringify({action: 'signScript', script: editor.getValue()}));
     });
     $('#shutdownButton').click(function () {
         ws.send(JSON.stringify({action: 'shutdown'}));

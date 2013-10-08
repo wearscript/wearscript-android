@@ -247,14 +247,22 @@ func WSWebHandler(c *websocket.Conn) {
 			trans := authTransport(userId)
 			if trans == nil {
 				LogPrintf("notify: auth")
-				return
+				continue
 			}
 			svc, err := mirror.New(trans.Client())
 			if err != nil {
 				LogPrintf("notify: mirror")
-				return
+				continue
 			}
 			sendImageCard(B64Dec(*request.Imageb64), "", svc)
+		} else if request.Action == "signScript" {
+			scriptBytes, err := SignatureSignScript(userId, []byte(request.Script))
+			if err != nil {
+				LogPrintf("notify: request")
+				continue
+			}
+			request.Script = string(scriptBytes)
+			wsSendChan <- &request
 		} else {
 			WSSendDevice(userId, &request)
 		}
