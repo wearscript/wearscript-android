@@ -24,7 +24,6 @@ import java.lang.ref.WeakReference;
 
 public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     protected static final String TAG = "WearScript";
-    private static final boolean DBG = false;
     private static final String EXTRA_NAME = "extra";
     protected JavaCameraView view;
     public boolean isGlass = true, isForeground = true;
@@ -179,7 +178,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
                 Log.i(TAG, "QR: " + contents + " Format: " + format);
                 bs.SaveData(contents.getBytes(), "", false, "qr.txt");
-
             } else if (resultCode == RESULT_CANCELED) {
                 // Reuse local config
                 Log.i(TAG, "QR: Canceled, using previous scan");
@@ -189,14 +187,13 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             if (contents != null)
                 bs.reset();
             if (contents.startsWith("ws")) {
-                if (DBG) Log.v(TAG, "Running serverConnect.");
                 bs.serverConnect(contents, null);
             } else {
-                if (DBG) Log.v(TAG, "Running runScriptUrl.");
-                bs.runScriptUrl(contents, null);
                 if (mHadUrlExtra) {
                     Log.v(TAG, "Starting custom script from extras: " + extra);
                     bs.directStartScriptUrl(extra);
+                } else {
+                    bs.runScriptUrl(contents, null);
                 }
             }
         }
