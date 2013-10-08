@@ -24,11 +24,15 @@ import java.lang.ref.WeakReference;
 
 public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     protected static final String TAG = "WearScript";
+    private static final boolean DBG = false;
+    private static final String EXTRA_NAME = "extra";
     protected JavaCameraView view;
     public boolean isGlass = true, isForeground = true;
     protected BackgroundService bs;
     protected Mat hSmallToGlassMat;
     ServiceConnection mConnection;
+    private String extra;
+    private boolean mHadUrlExtra = false;
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -84,6 +88,14 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         view.setCvCameraViewListener(this);
         Intent intent = new Intent("com.google.zxing.client.android.SCAN");
         startActivityForResult(intent, 0);
+        Intent thisIntent = getIntent();
+        if (thisIntent.getStringExtra(EXTRA_NAME) != null) {
+            mHadUrlExtra = true;
+            extra = thisIntent.getStringExtra(EXTRA_NAME);
+            Log.v(TAG, "Found extra: " + extra);
+        } else {
+            Log.v(TAG, "Did not find extra.");
+        }
     }
 
     @Override
@@ -176,11 +188,17 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             }
             if (contents != null)
                 bs.reset();
-            if (contents.startsWith("ws"))
+            if (contents.startsWith("ws")) {
+                if (DBG) Log.v(TAG, "Running serverConnect.");
                 bs.serverConnect(contents, null);
-            else
+            } else {
+                if (DBG) Log.v(TAG, "Running runScriptUrl.");
                 bs.runScriptUrl(contents, null);
+                if (mHadUrlExtra) {
+                    Log.v(TAG, "Starting custom script from extras: " + extra);
+                    bs.directStartScriptUrl(extra);
+                }
+            }
         }
     }
-
 }
