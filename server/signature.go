@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/dsa"
 	"crypto/rand"
+	"encoding/base64"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -25,26 +26,21 @@ func SignatureSign(hash []byte, priv *dsa.PrivateKey) (r, s []byte, err error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	r, err = ri.MarshalJSON()
-	if err != nil {
-		return nil, nil, err
-	}
-	s, err = si.MarshalJSON()
-	if err != nil {
-		return nil, nil, err
-	}
-	return r, s, nil
+	return []byte(base64.StdEncoding.EncodeToString(ri.Bytes())), []byte(base64.StdEncoding.EncodeToString(si.Bytes())), nil
 }
 
 func SignatureVerify(hash []byte, priv *dsa.PrivateKey, r []byte, s []byte) bool {
-	var ri, si big.Int
-	if ri.UnmarshalJSON(r) != nil {
+	ri := big.Int{}
+	si := big.Int{}
+	rb, err := base64.StdEncoding.DecodeString(string(r))
+	if err != nil {
 		return false
 	}
-	if si.UnmarshalJSON(s) != nil {
+	sb, err := base64.StdEncoding.DecodeString(string(s))
+	if err != nil {
 		return false
 	}
-	return dsa.Verify(&priv.PublicKey, hash, &ri, &si)
+	return dsa.Verify(&priv.PublicKey, hash, ri.SetBytes(rb), si.SetBytes(sb))
 }
 
 func hashScript(script []byte) []byte {
@@ -68,7 +64,7 @@ func SignatureCreateKey() error {
 	if has {
 		return nil
 	}
-	fmt.Println("Generating DSA Script Key (takes 5-30 sec)")
+	fmt.Println("Generating DSA Script Key (takes ~30-60 sec)")
 	priv := SignatureGenerateServerKey()
 	privJS, err := json.Marshal(priv)
 	if err != nil {
@@ -135,7 +131,7 @@ func SignatureVerifyHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	// <!--data-->\n
+	// Parse data in the form of: <!--data-->\n
 	splits[0] = splits[0][4 : len(splits[0])-4]
 	ss := ScriptSignature{}
 	err := json.Unmarshal(splits[0], &ss)
@@ -163,22 +159,3 @@ func SignatureVerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
-/*
-func main() {
-	priv := SignatureGenerateServerKey()
-	hash := []byte("this is a message")
-	r, s, err := SignatureSign(hash, priv)
-		if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(string(r))
-	fmt.Println(string(s))
-	if SignatureVerify(hash, priv, r, s) {
-		fmt.Println("Signature pass")
-	} else {
-		fmt.Println("Signature fail")
-	}
-}
-*/
