@@ -54,7 +54,7 @@ import java.util.Locale;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SensorEventListener {
+public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview, sensorSampleTimes, sensors, sensorSampleTimesLast, client must acquire lock
     public WeakReference<MainActivity> activity;
@@ -78,7 +78,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected WebView webview;
     protected LocationManager locationManager;
     protected LocationListener locationListener;
-    protected SensorManager sensorManager;
+    protected DataManager dataManager;
     protected int remoteImageAckCount, remoteImageCount;
     protected String wsUrl;
     protected PowerManager.WakeLock wakeLock;
@@ -137,33 +137,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        Integer type = event.sensor.getType();
-        synchronized (lock) {
-            if (sensorSampleTimes == null || sensorSampleTimesLast == null)
-                return;
-            Long sampleTimeLast = sensorSampleTimesLast.get(type);
-            Long sampleTime = sensorSampleTimes.get(type);
-            if (sampleTimeLast == null || sampleTime == null || event.timestamp - sampleTimeLast < sampleTime)
-                return;
-            sensorSampleTimesLast.put(type, event.timestamp);
-        }
-        JSONObject sensor = new JSONObject();
-        // NOTE(brandyn): The light sensor's timestampRaw is incorrect, this has been reported
-        // TODO(brandyn): Look into removing extra boxing, keep in mind we are buffering
-        sensor.put("timestamp", System.currentTimeMillis() / 1000.);
-        sensor.put("timestampRaw", new Long(event.timestamp));
-        sensor.put("type", new Integer(event.sensor.getType()));
-        sensor.put("name", event.sensor.getName());
-        JSONArray values = new JSONArray();
-        for (int i = 0; i < event.values.length; i++) {
-            values.add(new Float(event.values[i]));
-        }
-        sensor.put("values", values);
-        handleSensor(sensor);
-    }
-
     public void saveDataPacket(final Mat frame) {
         final JSONArray curSensorBuffer = sensorBuffer;
         final JSONArray curWifiBuffer = wifiBuffer;
@@ -213,11 +186,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
-
     public void shutdown() {
         synchronized (lock) {
             reset();
@@ -265,7 +233,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             displayWeb = true;
             sensorCallback = null;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
-            sensorManager.unregisterListener(this);
+            dataManager.unregister();
             remoteImageAckCount = remoteImageCount = 0;
             updateActivityView();
         }
@@ -552,7 +520,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         tts = new TextToSpeech(this, this);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE));
+
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
@@ -619,9 +588,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     if (locationManager.isProviderEnabled(provider))
                         locationManager.requestLocationUpdates(provider, 10000, 0, locationListener);
             } else { // Standard Android Sensors
-                Sensor s = sensorManager.getDefaultSensor(type);
-                sensors.put(type, s);
-                sensorManager.registerListener(this, s, SensorManager.SENSOR_DELAY_GAME);
+                dataManager.registerProvider(type);
             }
         }
     }
@@ -638,7 +605,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 locationListener = null;
             }
             if (s != null)
-                sensorManager.unregisterListener(this, s);
+                dataManager.unregister(s.getName());
         }
     }
 
