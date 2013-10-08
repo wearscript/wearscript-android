@@ -181,21 +181,18 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             } else if (resultCode == RESULT_CANCELED) {
                 // Reuse local config
                 Log.i(TAG, "QR: Canceled, using previous scan");
-                contents = new String(bs.LoadData("", "qr.txt"));
+                byte [] contentsArray = bs.LoadData("", "qr.txt");
+                if (contentsArray == null) {
+                    bs.say("Please exit and scan the QR code");
+                    return;
+                }
+                contents = (new String(contentsArray)).trim();
                 // TODO: We want to allow reentry into a running app
             }
-            if (contents != null)
-                bs.reset();
-            if (contents.startsWith("ws")) {
-                bs.serverConnect(contents, null);
-            } else {
-                if (mHadUrlExtra) {
-                    Log.v(TAG, "Starting custom script from extras: " + extra);
-                    bs.directStartScriptUrl(extra);
-                } else {
-                    bs.runScriptUrl(contents, null);
-                }
-            }
+            // TODO(brandyn): Handle case where we want to re-enter webview and not reset it
+            bs.reset();
+            bs.wsUrl = contents;
+            bs.runScript("<script>function s() {WS.say('Server connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
         }
     }
 }
