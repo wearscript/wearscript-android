@@ -49,7 +49,7 @@ function connectWebsocket(WSUrl) {
     ws.onclose = function () {
     }
     ws.onmessage = function (event) {
-        if (scriptRowDisabled && _.has(window, 'glassSecret')) {
+        if (scriptRowDisabled) {
             scriptRowDisabled = false;
             $(".scriptel").prop('disabled', false);
         }
@@ -289,13 +289,13 @@ function main(WSUrl) {
     $(".scriptel").prop('disabled', true);
     $('#qrButton').click(createQR);
     $('#scriptButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScript', script: editor.getValue(), scriptWSUrl: WSUrl + '/ws/glass/' + glassSecret}));
+        ws.send(JSON.stringify({action: 'startScript', script: editor.getValue()}));
     });
     $('#scriptUrlButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val(), scriptWSUrl: WSUrl + '/ws/glass/' + glassSecret}));
+        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: $('#script-url').val()}));
     });
     $('#resetButton').click(function () {
-        ws.send(JSON.stringify({action: 'startScriptUrl', scriptUrl: biosScriptUrl(glassSecret), scriptWSUrl: WSUrl + '/ws/glass/' + glassSecret}));
+        ws.send(JSON.stringify({action: 'startScript', script: "<script>function s() {WS.log('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>"}));
     });
     $('#shutdownButton').click(function () {
         ws.send(JSON.stringify({action: 'shutdown'}));

@@ -30,10 +30,6 @@ type PlaygroundTemplate struct {
 	GlassBody string
 }
 
-type PlaygroundGlassTemplate struct {
-	WSUrl string
-}
-
 func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 	userId, err := userID(req)
 	if userId == "" || err != nil {
@@ -56,22 +52,6 @@ func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 		LogPrintf("playground: template execute")
-		return
-	}
-}
-
-func PlaygroundGlassServer(w http.ResponseWriter, req *http.Request) {
-	key := req.URL.Query().Get(":key")
-	t, err := template.New("bios").Parse("<script>function s() {WS.log('Connected')};window.onload=function () {WS.serverConnect('{{.WSUrl}}', 's')}</script>")
-	if err != nil {
-		w.WriteHeader(500)
-		LogPrintf("playgroundglass: template parse")
-		return
-	}
-	err = t.Execute(w, &PlaygroundGlassTemplate{WSUrl: wsUrl + "/ws/glass/" + key})
-	if err != nil {
-		w.WriteHeader(500)
-		LogPrintf("playgroundglass: template execute")
 		return
 	}
 }
@@ -229,7 +209,6 @@ func main() {
 	m.Post("/flags", http.HandlerFunc(FlagsHandler))
 	m.Get("/flags", http.HandlerFunc(FlagsHandler))
 	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
-	m.Get("/playground/{key}", http.HandlerFunc(PlaygroundGlassServer))
 	m.Post("/signature", http.HandlerFunc(SignatureVerifyHandler))
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
 	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
