@@ -1,41 +1,62 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>WearScript by bwhite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
+    <title>WearScript by bwhite</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
+    <header>
+      <div class="inner">
         <h1>WearScript</h1>
-        <p></p>
+        <h2></h2>
+        <a href="https://github.com/bwhite/wearscript" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
 
-        <p class="view"><a href="https://github.com/bwhite/wearscript">View the Project on GitHub <small>bwhite/wearscript</small></a></p>
-
-
-        <ul>
-          <li><a href="https://github.com/bwhite/wearscript/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/bwhite/wearscript/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/bwhite/wearscript">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h1>
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
 <a name="wearscript" class="anchor" href="#wearscript"><span class="octicon octicon-link"></span></a>WearScript</h1>
 
-<p>WearScript is a scripting language for wearable computing (currently Google Glass).  Wearables are personal devices and each user is likely to find value from them in a different way.  With this project we hope to make personalization and hacking as easy as possible so you can make your device do what you want.</p>
+<p>WearScript is a library that allows you to execute Javascript on Glass that can interact with the underlying device (e.g., control/sample sensors/camera, send timeline items, draw on the screen).  We have gone through many iterations to develop a streamlined user experience to write code and execute it on Glass, and I think we are very close.   This is much simpler than Android development, but more powerful than the built-in browser.  The features we are releasing today are sufficient to make a wide range of applications, but if you've seen our previous videos you can be sure there is more to come.   With your help we can build an open ecosystem around Glass.</p>
 
 <p>This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.  </p>
 
 <h2>
+<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<ul>
+<li>To use our server
+
+<ul>
+<li>Visit <a href="https://api.picar.us/wearscript/">https://api.picar.us/wearscript/</a>, auth using your google acccount</li>
+<li>Contact brandyn in #openshades on IRC freenode to be white listed (please introduce yourself)</li>
+<li>You can perform all the steps in the Client Installation Video (below) except for the one that requires the auth code (in the terminal using adb)</li>
+<li>After being whitelisted you can go to the server, click QR, and paste the adb command to auth your device</li>
+<li>Open WearScript using Launchy while you have the webapp open, you should see the cube/table pop up and buttons enable on the bottom.</li>
+</ul>
+</li>
+<li>To use your own server (recommended if you can)
+
+<ul>
+<li>Follow the server installation video</li>
+<li>Follow the above instructions but for your server</li>
+</ul>
+</li>
+</ul><h2>
 <a name="code-organization" class="anchor" href="#code-organization"><span class="octicon octicon-link"></span></a>Code Organization</h2>
 
 <ul>
@@ -47,11 +68,6 @@
 <li>3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware</li>
 <li>Useful tools (log data scripts, android adb helper, data visualization server): /tools/</li>
 </ul><h2>
-<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
-
-<p>Apache 2.0</p>
-
-<h2>
 <a name="intro-video" class="anchor" href="#intro-video"><span class="octicon octicon-link"></span></a>Intro Video</h2>
 
 <p><a href="http://www.youtube.com/watch?v=tOUgybfQp4A"><img src="http://img.youtube.com/vi/tOUgybfQp4A/0.jpg" alt="intro video"></a></p>
@@ -85,8 +101,8 @@
 
 <ul>
 <li>The video above gives a step by step guide</li>
-<li>Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this if possible</li>
-<li>Ubuntu packages: apt-get install mercurial</li>
+<li>Tested on Ubuntu 12.04 LTS, if you want support it helps if you stick with this or a new Ubuntu if possible</li>
+<li>Ubuntu packages: apt-get install golang git mercurial redis-server</li>
 <li>Setup a config.go file (look at config.go.example)</li>
 <li>Run /server/install.sh (this does basic dependencies and such)</li>
 </ul><h2>
@@ -98,23 +114,22 @@
 <li>Go to the playground page for the server you'd like to use (if it's your first time, you'll sign into your Google account)</li>
 <li>After authorizing the webapp with Google, click the QR button the top right</li>
 <li>Ensure that Glass has an internet connection, WiFi is highly recommended</li>
+<li>An ADB command will be shown, paste that into our console (it adds the server/auth key you need)</li>
 <li>On Glass, open up Launchy (go to the far left, tap settings, now you are in Launchy)</li>
 <li>Select WearScript</li>
-<li>It will show a QR code reader, scan the QR code</li>
-<li>If successfull, the buttons on the bottom of the Playground will enable and the Javascript console will show "Connected"</li>
+<li>If successfull, the buttons on the bottom of the Playground will enable.</li>
 <li>You may now send scripts, two examples are provided (you can click Wear This Scriot or Wear Script From URL)</li>
 </ul><h2>
 <a name="wearscript-usage-notes" class="anchor" href="#wearscript-usage-notes"><span class="octicon octicon-link"></span></a>WearScript Usage Notes</h2>
 
 <ul>
 <li>If you swipe down the script will continue to run in the background, to reset to a blank script press the "Reset" button</li>
-<li>At this point the easiest way to turn off WearScript is to reset Glass (hold power button), we are working on this</li>
+<li>To turn off WearScript open the webapp and press shutdown.</li>
 <li>When calling WS.connect, if the argument passed is exactly '{{WSUrl}}' then it will be replaced with the websocket url corresponding to the server the playground is running on and the last QR code generated.</li>
 <li>If you use a script that doesn't make a server connection (i.e., WS.connect('{{WSUrl}}')) then you won't be able to control WearScript from the webapp</li>
 <li>More interesting uses of WS.connect include making a custom server for your application and then Glass will connect to it and stream data while your app can continue to control Glass.</li>
-<li>If you want to reconnect to the webapp, you can swipe down to exit WearScript and re-enter through Launchy (if the QR doesn't pop up do it again).  When the QR comes up you can swipe down to dismiss it and it'll reuse the last scan.</li>
-<li>Every time you press the QR button on the webapp you get a unique scan, while the page is open you may reuse the scan (either by rescanning or the previous downswipe trick) but if you reload the page you must rescan.</li>
-<li>Only the last generated QR code is valid.</li>
+<li>Every time you press the QR button on the webapp you get a unique auth key which replaces the previous.</li>
+<li>You only need to auth once and then again anytime you want to change servers (using the adb command provided when you press the QR button).</li>
 <li>When using scripts in the Playground editor, make sure to specify http:// or https:// and NOT use refer to links like .  The script you put in the editor will be saved locally on Glass, and links of that form will not work.</li>
 <li>If you are connected to a server and use WS.log('Hi!'), that message will show up in the Android logs and the javascript console in the Playground.</li>
 </ul><h1>
@@ -190,9 +205,9 @@ Tg1 -  D2 -&gt; Ts1
 </code></pre>
 
 <h2>
-<a name="timeline-item-styling" class="anchor" href="#timeline-item-styling"><span class="octicon octicon-link"></span></a>Timeline Item Styling</h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
 
-<p>For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot (link above).</p>
+<p>Apache 2.0</p>
 
 <h2>
 <a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h2>
@@ -205,14 +220,26 @@ Tg1 -  D2 -&gt; Ts1
 <li>Scott Greenwald</li>
 <li>Kurtis Nelson</li>
 </ul>
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/bwhite">bwhite</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/bwhite/wearscript/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/bwhite/wearscript/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/bwhite/wearscript"></a> is maintained by <a href="https://github.com/bwhite">bwhite</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
     </div>
-    <script src="javascripts/scale.fix.js"></script>
-              <script type="text/javascript">
+
+            <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
