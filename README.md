@@ -23,7 +23,7 @@ Apache 2.0
 
 Client Installation Video
 -------------------------
-[![client install](http://img.youtube.com/vi/WIl90-86HRk/0.jpg)](http://www.youtube.com/watch?v=WIl90-86HRk)
+[![client install](http://img.youtube.com/vi/lUCiqhWnRjg/0.jpg)](http://www.youtube.com/watch?v=lUCiqhWnRjg)
 
 Server Installation Video
 -------------------------
