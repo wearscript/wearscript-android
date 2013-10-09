@@ -114,8 +114,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     a.setContentView(R.layout.surface_view);
                     a.view = (JavaCameraView) a.findViewById(R.id.activity_java_surface_view);
                     a.view.setVisibility(SurfaceView.VISIBLE);
-                    a.view.setCvCameraViewListener(a);
-                    a.view.enableView();
+                    // NOTE(brandyn): Disabled due to XE10 camera break
+                    /*a.view.setCvCameraViewListener(a);
+                    a.view.enableView();*/
                 }
             }
         });
@@ -260,12 +261,22 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             overlay = null;
             sensorSampleTimes = new TreeMap<Integer, Long>();
             sensorSampleTimesLast = new TreeMap<Integer, Long>();
-            displayWeb = dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
+            dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
+            displayWeb = true;
             sensorCallback = null;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             sensorManager.unregisterListener(this);
             remoteImageAckCount = remoteImageCount = 0;
             updateActivityView();
+        }
+    }
+
+    public void startDefaultScript() {
+        byte [] defaultScriptArray = LoadData("", "default.html");
+        if (defaultScriptArray == null) {
+            runScript("<script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
+        } else {
+            runScript(new String(defaultScriptArray));
         }
     }
 
@@ -323,7 +334,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         String action = (String) o.get("action");
                         Log.i(TAG, String.format("Got %s", action));
                         // TODO: String to Mat, save and display in the loopback thread
-                        if (action.equals("startScript")) {
+                        if (action.equals("startScript") || action.equals("defaultScript")) {
                             final String script = (String) o.get("script");
                             Log.i(TAG, "WebView:" + Integer.toString(script.length()));
                             if (activity == null)
@@ -331,6 +342,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                             final MainActivity a = activity.get();
                             if (a == null)
                                 return;
+                            if (action.equals("defaultScript"))
+                                SaveData(script.getBytes(), "", false, "default.html");
                             a.runOnUiThread(new Thread() {
                                 public void run() {
                                     runScript(script);
@@ -493,6 +506,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
             Log.i(TAG, "WebView Ran");
+            updateActivityView();
         }
     }
 
@@ -507,6 +521,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.setInitialScale(100);
             webview.loadUrl(url);
             Log.i(TAG, "WebView Ran");
+            updateActivityView();
         }
     }
 

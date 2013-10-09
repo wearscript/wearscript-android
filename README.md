@@ -21,9 +21,13 @@ License
 -------
 Apache 2.0
 
+Intro Video
+-------------------------
+[![intro video](http://img.youtube.com/vi/tOUgybfQp4A/0.jpg)](http://www.youtube.com/watch?v=tOUgybfQp4A)
+
 Client Installation Video
 -------------------------
-[![client install](http://img.youtube.com/vi/WIl90-86HRk/0.jpg)](http://www.youtube.com/watch?v=WIl90-86HRk)
+[![client install](http://img.youtube.com/vi/lUCiqhWnRjg/0.jpg)](http://www.youtube.com/watch?v=lUCiqhWnRjg)
 
 Server Installation Video
 -------------------------
