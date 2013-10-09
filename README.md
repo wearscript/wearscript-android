@@ -55,8 +55,8 @@ Install Redis
 Install Server
 --------------
 * The video above gives a step by step guide
-* Tested on ubuntu 12.04 LTS, if you want support it helps if you stick with this or a new Ubuntu if possible
-* Ubuntu packages: apt-get install mercurial
+* Tested on Ubuntu 12.04 LTS, if you want support it helps if you stick with this or a new Ubuntu if possible
+* Ubuntu packages: apt-get install golang git mercurial redis-server
 * Setup a config.go file (look at config.go.example)
 * Run /server/install.sh (this does basic dependencies and such)
 
