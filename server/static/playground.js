@@ -23,7 +23,7 @@ function biosScriptUrl(x) {
 }
 
 function createQR(WSUrl) {
-    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: WSUrl + '/ws/glass/' + x}))}, function () {alert("Could not get ws")});
+    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div class="col-md-9"><pre>adb shell \"mkdir -p /sdcard/wearscript && echo \'{{url}}\' > /sdcard/wearscript/qr.txt\"</pre></div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: WSUrl + '/ws/glass/' + x}))}, function () {alert("Could not get ws")});
 }
 
 function pingStatus() {
@@ -58,7 +58,7 @@ function connectWebsocket(WSUrl) {
             console.log(response.message);
         } else if (response.action == 'signScript') {
             var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response.script}}});
-            $.post('https://api.github.com/gists', data, function (result) {console.log(result)});
+            $.post('https://api.github.com/gists', data, function (result) {console.log(result);$('#script-url').val(result.files['wearscript.html'].raw_url)});
         } else if (response.action == "data" || response.action == "pongStatus") {
             if (!_.has(glassIdToNum, response.glassID)) {
                 var glassNum = _.uniqueId('glass-');
