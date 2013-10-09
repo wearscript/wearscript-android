@@ -5,6 +5,17 @@ WearScript is a library that allows you to execute Javascript on Glass that can 
 
 This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "unstable" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.  
 
+Getting Started
+----------------
+* To use our server
+  * Visit https://api.picar.us/wearscript/, auth using your google acccount
+  * Contact brandyn in #openshades on IRC freenode to be white listed (please introduce yourself)
+  * You can perform all the steps in the Client Installation Video (below) except for the one that requires the auth code (in the terminal using adb)
+  * After being whitelisted you can go to the server, click QR, and paste the adb command to auth your device
+  * Open WearScript using Launchy while you have the webapp open, you should see the cube/table pop up and buttons enable on the bottom.
+* To use your own server (recommended if you can)
+  * Follow the server installation video
+  * Follow the above instructions but for your server
 
 Code Organization
 -----------------
@@ -16,10 +27,6 @@ Code Organization
 * Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty
 * 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
 * Useful tools (log data scripts, android adb helper, data visualization server): /tools/
-
-License
--------
-Apache 2.0
 
 Intro Video
 -------------------------
@@ -144,11 +151,9 @@ Tg1 <- D1 -  Ts0
 Tg1 -  D2 -> Ts1
 ```
 
-Timeline Item Styling
----------------------
-
-For glassware the timeline items are styled using HTML/CSS.  The dev playground helps a lot (link above).
-
+License
+-------
+Apache 2.0
 
 Contributors
 ------------
