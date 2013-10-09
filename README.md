@@ -87,16 +87,16 @@ WearScript Usage Notes
 * If you are connected to a server and use WS.log('Hi!'), that message will show up in the Android logs and the javascript console in the Playground.
 
 Syntax
-======
+------
 
 The code is under rapid development and instead of making a list of supported commands (which will be constantly out of sync), look at the Java class that implements the WS variable http://goo.gl/eYFyTO.
 
 Troubleshooting
-===============
+----------------
 * "adb: command not found" - Android Dev Tools need to be in your path
 
 Admin Operations
-=================
+----------------
 All of these should be run in the /admin folder
 
 * List users:  python users.py list_users
@@ -106,6 +106,7 @@ All of these should be run in the /admin folder
 
 Contact/Info
 ============
+OpenShades (the new OpenGlass) is our community name (join us at #openshades on freenode) that we use when hacking together, WearScript is this project specifically.  For demos see http://openshades.com.  Dapper Vision, Inc. (by Brandyn and Andrew) is the sponsor of this project and unless otherwise specified is the copyright owner of the files listed.
 
 * Brandyn White (bwhite dappervision com)
 * IRC freenode #openshades (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
@@ -114,9 +115,6 @@ Contact/Info
 * Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
 
 
-OpenShades
-==========
-OpenShades (the new OpenGlass) is our community name (join us at #openshades on freenode) that we use when hacking together, WearScript is this project specifically.  For demos see http://openshades.com.  Dapper Vision, Inc. (by Brandyn and Andrew) is the sponsor of this project and unless otherwise specified is the copyright owner of the files listed.
 
 Hacking
 =======
