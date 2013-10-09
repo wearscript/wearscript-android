@@ -46,6 +46,10 @@ public class DataManager {
         return data.poll();
     }
 
+    public boolean hasData() {
+        return !data.isEmpty();
+    }
+
     public String buildCallbackString(String name, DataPoint dp){
         return String.format("javascript:%s(%s);", jsCallbacks.get(name), dp);
     }
