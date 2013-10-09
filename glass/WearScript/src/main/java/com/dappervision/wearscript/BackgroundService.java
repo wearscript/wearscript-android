@@ -122,17 +122,20 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         });
     }
 
-    public void handleSensor(JSONObject sensor) {
-        synchronized (lock) {
-            if (sensorCallback != null && webview != null) {
-                webview.loadUrl(String.format("javascript:%s(%s);", sensorCallback, sensor.toJSONString()));
+    public void handleSensors() {
+
+        while(dataManager.hasData()){
+            DataPoint dp = dataManager.poll();
+            if(sensorCallback != null && webview != null){
+                webview.loadUrl(dp.toJSONString());
             }
-        }
-        if (dataRemote || dataLocal) {
-            sensorBuffer.add(sensor);
-            if (System.nanoTime() - lastSensorSaveTime > sensorDelay) {
-                lastSensorSaveTime = System.nanoTime();
-                saveDataPacket(null);
+
+            if (dataRemote || dataLocal) {
+                sensorBuffer.add(dp.toJSONString());
+                if (System.nanoTime() - lastSensorSaveTime > sensorDelay) {
+                    lastSensorSaveTime = System.nanoTime();
+                    saveDataPacket(null);
+                }
             }
         }
     }
@@ -339,14 +342,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 client.send(o.toJSONString());
                             }
                         } else if (action.equals("data")) {
-                            for (Object sensor : (JSONArray) o.get("sensors")) {
-                                JSONObject s = (JSONObject) sensor;
-                                int sensorType = ((Long) s.get("type")).intValue();
-                                synchronized (lock) {
-                                    if (sensorType < 0 && sensors.containsKey(sensorType))
-                                        handleSensor(s);
-                                }
-                            }
+                            handleSensors();
                         } else if (action.equals("shutdown")) {
                             Log.i(TAG, "Shutting down!");
                             shutdown();
@@ -555,6 +551,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (type < -1) // Custom
                 sensors.put(type, null);
             if (type == -1) { // GPS
+                //TODO(kurtisnelson) this stuff needs to move to an object
                 locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
                 locationListener = new LocationListener() {
                     @Override
@@ -569,7 +566,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         values.add(new Float(l.getBearing()));
                         values.add(new Float(l.getSpeed()));
                         sensor.put("values", values);
-                        handleSensor(sensor);
+                        handleSensors();
                     }
 
                     @Override
