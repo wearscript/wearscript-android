@@ -158,7 +158,7 @@ Contributors
 ------------
 See [contributors](https://github.com/bwhite/wearscript/graphs/contributors) for details.
 
-* Brandyn White
+* [Brandyn White](https://plus.google.com/109113122718379096525?rel=author)
 * Andrew Miller
 * Scott Greenwald
 * Kurtis Nelson
