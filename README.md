@@ -95,6 +95,7 @@ The code is under rapid development and instead of making a list of supported co
 Troubleshooting
 ----------------
 * "adb: command not found" - Android Dev Tools need to be in your path
+* Android Studio on OSX (0.2.13) doesn't include the SDK.  After Studio is install download the SDK (http://developer.android.com/sdk/index.html, sdk tools should be sufficient), move the "sdk" folder from there to /Applications/Android\ Studio.app.
 
 Admin Operations
 ----------------
