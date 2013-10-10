@@ -43,7 +43,8 @@
 <h2>
 <a name="client-installation-video" class="anchor" href="#client-installation-video"><span class="octicon octicon-link"></span></a>Client Installation Video</h2>
 
-<p><a href="http://www.youtube.com/watch?v=lUCiqhWnRjg"><img src="http://img.youtube.com/vi/lUCiqhWnRjg/0.jpg" alt="client install"></a></p>
+<p>This assumes Android Studio and the SDK are installed (see below)
+<a href="http://www.youtube.com/watch?v=lUCiqhWnRjg"><img src="http://img.youtube.com/vi/lUCiqhWnRjg/0.jpg" alt="client install"></a></p>
 
 <h2>
 <a name="server-installation-video" class="anchor" href="#server-installation-video"><span class="octicon octicon-link"></span></a>Server Installation Video</h2>
@@ -72,18 +73,34 @@
 </ul>
 </li>
 </ul><h2>
-<a name="code-organization" class="anchor" href="#code-organization"><span class="octicon octicon-link"></span></a>Code Organization</h2>
+<a name="install-android-studio" class="anchor" href="#install-android-studio"><span class="octicon octicon-link"></span></a>Install Android Studio</h2>
 
 <ul>
-<li>Server: /server</li>
-<li>Webapp: /server/static/playground.html</li>
-<li>Server admin tools (authorize users, permissions, etc.): /admin</li>
-<li>Glass Client (Android app): /glass</li>
-<li>Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty</li>
-<li>3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware</li>
-<li>Useful tools (log data scripts, android adb helper, data visualization server): /tools/</li>
+<li>Windows/Linux
+
+<ul>
+<li><a href="http://developer.android.com/sdk/installing/studio.html">http://developer.android.com/sdk/installing/studio.html</a></li>
+</ul>
+</li>
+<li>OSX
+
+<ul>
+<li>Their patch system has an issue, you have to do a little bit of work, but if you follow this it should be fine.</li>
+<li>
+<a href="https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip">This</a> originally from <a href="http://tools.android.com/download/studio/canary/latest/">here</a>
+</li>
+<li>
+<a href="http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip">This</a> originally from <a href="http://developer.android.com/sdk/index.html">here</a>
+</li>
+<li>Put the Android Studio app in /Applications</li>
+<li>Open Studio, at the "Welcome" screen go to Configure-&gt;Project Defaults-&gt;Project Structure-&gt;SDKs-&gt;Click +-&gt;Android SDK-&gt;Select the SDK path inside of the adt-bundle</li>
+<li>Under Configure-&gt;Project Defaults-&gt;Project Structure-&gt;Android SDK-&gt;Select the SDK path inside of the adt-bundle</li>
+<li>If you get a problem with build tools then</li>
+<li>Under the adt-bundle open tools/android, from here we can add built-tools and sdks.</li>
+</ul>
+</li>
 </ul><h2>
-<a name="installing-go" class="anchor" href="#installing-go"><span class="octicon octicon-link"></span></a>Installing Go</h2>
+<a name="installing-go-manually" class="anchor" href="#installing-go-manually"><span class="octicon octicon-link"></span></a>Installing Go (manually)</h2>
 
 <ul>
 <li>wget <a href="https://go.googlecode.com/files/go1.1.1.linux-amd64.tar.gz">https://go.googlecode.com/files/go1.1.1.linux-amd64.tar.gz</a>
@@ -172,6 +189,17 @@
 <a name="hacking" class="anchor" href="#hacking"><span class="octicon octicon-link"></span></a>Hacking</h1>
 
 <h2>
+<a name="code-organization" class="anchor" href="#code-organization"><span class="octicon octicon-link"></span></a>Code Organization</h2>
+
+<ul>
+<li>Server: /server</li>
+<li>Webapp: /server/static/playground.html</li>
+<li>Server admin tools (authorize users, permissions, etc.): /admin</li>
+<li>Glass Client (Android app): /glass</li>
+<li>Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty</li>
+<li>3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware</li>
+<li>Useful tools (log data scripts, android adb helper, data visualization server): /tools/</li>
+</ul><h2>
 <a name="travis-ci" class="anchor" href="#travis-ci"><span class="octicon octicon-link"></span></a>Travis-CI</h2>
 
 <p>The current test setup just builds the server after each commit.</p>
