@@ -115,8 +115,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     a.view = (JavaCameraView) a.findViewById(R.id.activity_java_surface_view);
                     a.view.setVisibility(SurfaceView.VISIBLE);
                     // NOTE(brandyn): Disabled due to XE10 camera break
-                    /*a.view.setCvCameraViewListener(a);
-                    a.view.enableView();*/
+                    // NOTE(Conner): Enabled for XE10 camera fix
+                    a.view.setCvCameraViewListener(a);
+                    a.view.enableView();
                 }
             }
         });
@@ -262,7 +263,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             sensorSampleTimes = new TreeMap<Integer, Long>();
             sensorSampleTimesLast = new TreeMap<Integer, Long>();
             dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
-            displayWeb = true;
+            displayWeb = false; //Note(Conner): changed to false to test camera fix.
             sensorCallback = null;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             sensorManager.unregisterListener(this);

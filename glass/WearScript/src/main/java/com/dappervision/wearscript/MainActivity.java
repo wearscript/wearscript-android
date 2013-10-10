@@ -40,7 +40,8 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
                     // NOTE(brandyn): Disabled due to XE10 camera break
-                    //view.enableView();
+                    // NOTE(Conner): Enabled for camera fix.
+                    view.enableView();
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }
                 break;
@@ -104,7 +105,8 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
         // Setup OpenCV/Surface View
         // NOTE(brandyn): Disabled this until the XE10 camera break is fixed
-        if (false) {
+        //Note(Conner): Fixed XE10 Camera Break.
+        if (true) {
             setContentView(R.layout.surface_view);
             view = (JavaCameraView) findViewById(R.id.activity_java_surface_view);
             view.setVisibility(SurfaceView.VISIBLE);

@@ -152,9 +152,13 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
                     if (FocusModes != null && FocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
                         params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                     }
+                    //Note(Conner): removed for XE10 camera fix
+                    //mCamera.setParameters(params);
+                    //params = mCamera.getParameters();
 
+                    //Note(Conner): Sets correct values for camera in XE10
+                    params.setPreviewFpsRange(30000, 30000);
                     mCamera.setParameters(params);
-                    params = mCamera.getParameters();
 
                     mFrameWidth = params.getPreviewSize().width;
                     mFrameHeight = params.getPreviewSize().height;
