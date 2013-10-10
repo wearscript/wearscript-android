@@ -30,10 +30,17 @@ function pingStatus() {
     if (!_.has(window, 'glassStatus')) {
         glassStatus = {}
     }
-    _.each($('.pingLabel'), function (x) {
-        if ((new Date).getTime() - Number($(x).attr('updateTime')) > 4000)
+    var allTimedOut = _.every(_.map($('.pingLabel'), function (x) {
+        if ((new Date).getTime() - Number($(x).attr('updateTime')) > 4000) {
             $(x).removeClass('label-success').addClass('label-danger');
-    });
+            return true;
+        }
+        return false;
+    }));
+    if (allTimedOut) {
+        scriptRowDisabled = true;
+        $(".scriptel").prop('disabled', true);
+    }
     var out = {action: 'pingStatus'};
     ws.send(JSON.stringify(out));
     _.delay(pingStatus, 4000);
