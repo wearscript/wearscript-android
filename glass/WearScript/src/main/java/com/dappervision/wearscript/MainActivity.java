@@ -82,6 +82,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 byte [] wsUrlArray = bs.LoadData("", "qr.txt");
                 if (wsUrlArray == null) {
                     bs.say("Must set URL using ADB");
+                    finish();
                     return;
                 }
                 bs.reset();
