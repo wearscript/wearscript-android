@@ -76,11 +76,11 @@ function cb(data) {
 }
 
 function server() {
-    _.each([-1, 5], function (x) {WS.sensorOn(x, 2)});
+    _.each(['gps', 'light'], function (x) {WS.sensorOn(WS.sensor(x), 2)});
     WS.sensorCallback("cb");
 }
 $(function () {
-    WS.serverConnect('PUT_SERVER_HERE', 'server');
+    WS.serverConnect('{{WSURL}}', 'server');
 });
 </script>
 </body>
