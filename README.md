@@ -67,11 +67,13 @@ Install Android Studio
   * http://developer.android.com/sdk/installing/studio.html
 * OSX
   * Their patch system has an issue, you have to do a little bit of work, but if you follow this it should be fine.
-  * [This](https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip) from http://tools.android.com/download/studio/canary/latest/
-  * [This](http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip) from http://developer.android.com/sdk/index.html
+  * [This](https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip) originally from [here](http://tools.android.com/download/studio/canary/latest/)
+  * [This](http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip) originally from [here](http://developer.android.com/sdk/index.html)
   * Put the Android Studio app in /Applications
-  * Under the adt-bundle open tools/android, from here we can add built-tools and sdks. As of this writing we are using SDK Platform 18 and Build-tool 18.0.1, ensure both are installed.
   * Open Studio, at the "Welcome" screen go to Configure->Project Defaults->Project Structure->Click +->Android SDK->Select the SDK path inside of the adt-bundle
+  * If you get a problem with build tools then
+    * Under the adt-bundle open tools/android, from here we can add built-tools and sdks.
+
 
 Using the Playground
 ---------------------
