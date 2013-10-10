@@ -26,7 +26,7 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
 
 function isIndoors(data) {
     // Basic indoor/outdoor using light sensor: During daylight hours if the value is low then assume we are indoors
-    if (data.type != 5)  // If not light sensor then quit
+    if (data.type != WS.sensor('light'))  // If not light sensor then quit
         return;
     var minSamples = 2;
     var thresh = 200;
@@ -48,7 +48,7 @@ function isIndoors(data) {
 function nearGrocery(data) {
     if (!_.has(window, 'grocery'))
         grocery = false;
-    if (data.type != -1)  // If not GPS then quit
+    if (data.type != WS.sensor('gps'))  // If not GPS then quit
         return grocery;
     // If you're near a specific whole foods
     d = getDistanceFromLatLonInKm(data.values[0], data.values[1], 38.90969, -77.033134);
@@ -71,7 +71,7 @@ function cb(data) {
     if (nearGrocery(data) && isIndoors(data)) {
         WS.say('Sending grocery list');
         sendList();
-        _.each([-1, 5], function (x) {WS.sensorOff(x)});
+        _.each(['gps', 'light'], function (x) {WS.sensorOff(WS.sensor(x))});
     }
 }
 
