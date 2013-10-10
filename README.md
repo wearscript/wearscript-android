@@ -11,12 +11,12 @@ Intro Video
 
 Client Installation Video
 -------------------------
+This assumes Android Studio and the SDK are installed (see below)
 [![client install](http://img.youtube.com/vi/lUCiqhWnRjg/0.jpg)](http://www.youtube.com/watch?v=lUCiqhWnRjg)
 
 Server Installation Video
 -------------------------
 [![server install](http://img.youtube.com/vi/vdbE87oJja4/0.jpg)](http://www.youtube.com/watch?v=vdbE87oJja4)
-
 
 Getting Started
 ----------------
@@ -30,19 +30,21 @@ Getting Started
   * Follow the server installation video
   * Follow the above instructions but for your server
 
+Install Android Studio
+------------------------
+* Windows/Linux
+  * http://developer.android.com/sdk/installing/studio.html
+* OSX
+  * Their patch system has an issue, you have to do a little bit of work, but if you follow this it should be fine.
+  * [This](https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip) originally from [here](http://tools.android.com/download/studio/canary/latest/)
+  * [This](http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip) originally from [here](http://developer.android.com/sdk/index.html)
+  * Put the Android Studio app in /Applications
+  * Open Studio, at the "Welcome" screen go to Configure->Project Defaults->Project Structure->SDKs->Click +->Android SDK->Select the SDK path inside of the adt-bundle
+  * Under Configure->Project Defaults->Project Structure->Android SDK->Select the SDK path inside of the adt-bundle
+  * If you get a problem with build tools then
+    * Under the adt-bundle open tools/android, from here we can add built-tools and sdks.
 
-Code Organization
------------------
-
-* Server: /server
-* Webapp: /server/static/playground.html
-* Server admin tools (authorize users, permissions, etc.): /admin
-* Glass Client (Android app): /glass
-* Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty
-* 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
-* Useful tools (log data scripts, android adb helper, data visualization server): /tools/
-
-Installing Go
+Installing Go (manually)
 -----------------------------
 * wget https://go.googlecode.com/files/go1.1.1.linux-amd64.tar.gz
 * tar -xzf go1.1.1.linux-amd64.tar.gz
@@ -60,21 +62,6 @@ Install Server
 * Ubuntu packages: apt-get install golang git mercurial redis-server
 * Setup a config.go file (look at config.go.example)
 * Run /server/install.sh (this does basic dependencies and such)
-
-Install Android Studio
-------------------------
-* Windows/Linux
-  * http://developer.android.com/sdk/installing/studio.html
-* OSX
-  * Their patch system has an issue, you have to do a little bit of work, but if you follow this it should be fine.
-  * [This](https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip) originally from [here](http://tools.android.com/download/studio/canary/latest/)
-  * [This](http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip) originally from [here](http://developer.android.com/sdk/index.html)
-  * Put the Android Studio app in /Applications
-  * Open Studio, at the "Welcome" screen go to Configure->Project Defaults->Project Structure->SDKs->Click +->Android SDK->Select the SDK path inside of the adt-bundle
-  * Under Configure->Project Defaults->Project Structure->Android SDK->Select the SDK path inside of the adt-bundle
-  * If you get a problem with build tools then
-    * Under the adt-bundle open tools/android, from here we can add built-tools and sdks.
-
 
 Using the Playground
 ---------------------
@@ -134,6 +121,17 @@ OpenShades (the new OpenGlass) is our community name (join us at #openshades on 
 
 Hacking
 =======
+
+Code Organization
+-----------------
+
+* Server: /server
+* Webapp: /server/static/playground.html
+* Server admin tools (authorize users, permissions, etc.): /admin
+* Glass Client (Android app): /glass
+* Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty
+* 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
+* Useful tools (log data scripts, android adb helper, data visualization server): /tools/
 
 Travis-CI
 ---------
