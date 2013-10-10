@@ -69,7 +69,8 @@ Install Android Studio
   * Their patch system has an issue, you have to download this
   * [This](https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip) from http://tools.android.com/download/studio/canary/latest/
   * [This](http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip) from http://developer.android.com/sdk/index.html
-  * Put the Android Studio app in /Applications, move the sdk folder from bundle to /Applications/Android\ Studio.app/sdk
+  * Put the Android Studio app in /Applications
+  * Open Studio, at the "Welcome" screen go to Configure->Project Defaults->Project Structure->Click +->Android SDK->Select the SDK path inside of the adt-bundle
 
 Using the Playground
 ---------------------
