@@ -70,7 +70,8 @@ Install Android Studio
   * [This](https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip) originally from [here](http://tools.android.com/download/studio/canary/latest/)
   * [This](http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip) originally from [here](http://developer.android.com/sdk/index.html)
   * Put the Android Studio app in /Applications
-  * Open Studio, at the "Welcome" screen go to Configure->Project Defaults->Project Structure->Click +->Android SDK->Select the SDK path inside of the adt-bundle
+  * Open Studio, at the "Welcome" screen go to Configure->Project Defaults->Project Structure->SDKs->Click +->Android SDK->Select the SDK path inside of the adt-bundle
+  * Under Configure->Project Defaults->Project Structure->Android SDK->Select the SDK path inside of the adt-bundle
   * If you get a problem with build tools then
     * Under the adt-bundle open tools/android, from here we can add built-tools and sdks.
 
