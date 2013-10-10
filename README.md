@@ -61,6 +61,15 @@ Install Server
 * Setup a config.go file (look at config.go.example)
 * Run /server/install.sh (this does basic dependencies and such)
 
+Install Android Studio
+------------------------
+* Windows/Linux
+  * http://developer.android.com/sdk/installing/studio.html
+* OSX
+  * Their patch system has an issue, you have to download this
+  * [This](https://dl-ssl.google.com/android/studio/ide-zips/0.2.13/android-studio-ide-132.863010-mac.zip) from http://tools.android.com/download/studio/canary/latest/
+  * [This](http://dl.google.com/android/adt/adt-bundle-mac-x86_64-20130917.zip) from http://developer.android.com/sdk/index.html
+  * Put the Android Studio app in /Applications, move the sdk folder from bundle to /Applications/Android\ Studio.app/sdk
 
 Using the Playground
 ---------------------
