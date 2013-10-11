@@ -7,23 +7,23 @@
 <canvas id="canvas" width="640" height="360" style="display:block"></canvas>
 <script>
 function cb(data) {
-    WS.log(JSON.stringify(data));
     // Changes canvas color with head rotation
     if (data['type'] == 3) {
-        var ctx = $('#canvas')[0].getContext("2d");
         ctx.fillStyle = 'hsl(' + data['values'][0] + ', 90%, 50%)'
         ctx.fillRect(0, 0, 640, 360);
     }
 }
 function server() {
-    WS.say('Welcome to WearScript');
-    _.each(['gps', 'accelerometer', 'magneticField', 'orientation', 'gyroscope',
-            'light', 'gravity', 'linearAcceleration', 'rotationVector'], function (x) {WS.sensorOn(WS.sensor(x), .1)});
-    WS.dataLog(false, true, .1);
-    //WS.serverTimeline(JSON.stringify({'text': 'Welcome to WearScript'}));
+    WS.log('Welcome to WearScript');
+    //WS.say('Welcome to WearScript');
+    //_.each(['gps', 'accelerometer', 'magneticField', 'orientation', 'gyroscope',
+    //        'light', 'gravity', 'linearAcceleration', 'rotationVector'], function (x) {WS.sensorOn(WS.sensor(x), .1)});
+    //WS.dataLog(false, true, .1);
     //WS.sensorCallback('cb');
+    //WS.serverTimeline(JSON.stringify({'text': 'Welcome to WearScript'}));
 }
 $(function () {
+    ctx = $('#canvas')[0].getContext("2d");
     WS.serverConnect('{{WSUrl}}', 'server');
 });
 </script>

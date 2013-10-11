@@ -108,9 +108,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             return;
         a.runOnUiThread(new Thread() {
             public void run() {
-                if (displayWeb && webview != null)
+                if (displayWeb && webview != null) {
                     a.setContentView(webview);
-                else {
+                } else {
                     a.setContentView(R.layout.surface_view);
                     a.view = (JavaCameraView) a.findViewById(R.id.activity_java_surface_view);
                     a.view.setVisibility(SurfaceView.VISIBLE);

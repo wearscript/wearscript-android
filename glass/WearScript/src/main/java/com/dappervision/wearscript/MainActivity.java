@@ -9,7 +9,9 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.WebView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -68,9 +70,19 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 Log.i(TAG, "Service Connected");
                 bs = ((BackgroundService.LocalBinder) service).getService();
                 bs.activity = new WeakReference<MainActivity>(MainActivity.this);
+                if (bs.webview != null) {
+                    // Remove view's parent so that we can re-add it later to a new activity
+                    ViewGroup parentViewGroup = (ViewGroup)bs.webview.getParent();
+                    if (parentViewGroup != null)
+                        parentViewGroup.removeAllViews();
+                    bs.updateActivityView();
+                    return;
+                }
+
                 byte [] wsUrlArray = bs.LoadData("", "qr.txt");
                 if (wsUrlArray == null) {
                     bs.say("Must set URL using ADB");
+                    finish();
                     return;
                 }
                 bs.reset();
@@ -112,27 +124,30 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     @Override
     public void onPause() {
+        Log.i(TAG, "MainActivity: onPause");
         isForeground = false;
         super.onPause();
         if (view != null && isGlass) {
             view.disableView();
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     @Override
     public void onResume() {
+        Log.i(TAG, "MainActivity: onResume");
         isForeground = true;
         super.onResume();
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
     public void onDestroy() {
+        Log.i(TAG, "MainActivity: onDestroy");
         super.onDestroy();
         if (view != null) {
             view.disableView();
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (mConnection != null)
             unbindService(mConnection);
 

@@ -23,17 +23,24 @@ function biosScriptUrl(x) {
 }
 
 function createQR(WSUrl) {
-    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div>{{secret}}</div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: WSUrl + '/ws/glass/' + x}))}, function () {alert("Could not get ws")});
+    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div class="col-md-9"><pre>adb shell \"mkdir -p /sdcard/wearscript && echo \'{{url}}\' > /sdcard/wearscript/qr.txt\"</pre></div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: WSUrl + '/ws/glass/' + x}))}, function () {alert("Could not get ws")});
 }
 
 function pingStatus() {
     if (!_.has(window, 'glassStatus')) {
         glassStatus = {}
     }
-    _.each($('.pingLabel'), function (x) {
-        if ((new Date).getTime() - Number($(x).attr('updateTime')) > 4000)
+    var allTimedOut = _.every(_.map($('.pingLabel'), function (x) {
+        if ((new Date).getTime() - Number($(x).attr('updateTime')) > 4000) {
             $(x).removeClass('label-success').addClass('label-danger');
-    });
+            return true;
+        }
+        return false;
+    }));
+    if (allTimedOut) {
+        scriptRowDisabled = true;
+        $(".scriptel").prop('disabled', true);
+    }
     var out = {action: 'pingStatus'};
     ws.send(JSON.stringify(out));
     _.delay(pingStatus, 4000);
@@ -58,7 +65,7 @@ function connectWebsocket(WSUrl) {
             console.log(response.message);
         } else if (response.action == 'signScript') {
             var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response.script}}});
-            $.post('https://api.github.com/gists', data, function (result) {console.log(result)});
+            $.post('https://api.github.com/gists', data, function (result) {console.log(result);$('#script-url').val(result.files['wearscript.html'].raw_url)});
         } else if (response.action == "data" || response.action == "pongStatus") {
             if (!_.has(glassIdToNum, response.glassID)) {
                 var glassNum = _.uniqueId('glass-');
