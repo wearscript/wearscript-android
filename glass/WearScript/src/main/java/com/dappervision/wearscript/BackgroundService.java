@@ -54,7 +54,7 @@ import java.util.Locale;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SensorEventListener {
+public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview, sensorSampleTimes, sensors, sensorSampleTimesLast, client must acquire lock
     public WeakReference<MainActivity> activity;
@@ -78,7 +78,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected WebView webview;
     protected LocationManager locationManager;
     protected LocationListener locationListener;
-    protected SensorManager sensorManager;
+    protected DataManager dataManager;
     protected int remoteImageAckCount, remoteImageCount;
     protected String wsUrl;
     protected PowerManager.WakeLock wakeLock;
@@ -122,46 +122,22 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         });
     }
 
-    public void handleSensor(JSONObject sensor) {
-        synchronized (lock) {
-            if (sensorCallback != null && webview != null) {
-                webview.loadUrl(String.format("javascript:%s(%s);", sensorCallback, sensor.toJSONString()));
-            }
-        }
-        if (dataRemote || dataLocal) {
-            sensorBuffer.add(sensor);
-            if (System.nanoTime() - lastSensorSaveTime > sensorDelay) {
-                lastSensorSaveTime = System.nanoTime();
-                saveDataPacket(null);
-            }
-        }
-    }
+    public void handleSensors() {
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        Integer type = event.sensor.getType();
-        synchronized (lock) {
-            if (sensorSampleTimes == null || sensorSampleTimesLast == null)
-                return;
-            Long sampleTimeLast = sensorSampleTimesLast.get(type);
-            Long sampleTime = sensorSampleTimes.get(type);
-            if (sampleTimeLast == null || sampleTime == null || event.timestamp - sampleTimeLast < sampleTime)
-                return;
-            sensorSampleTimesLast.put(type, event.timestamp);
+        while(dataManager.hasData()){
+            DataPoint dp = dataManager.poll();
+            if(sensorCallback != null && webview != null){
+                webview.loadUrl(dp.toJSONString());
+            }
+
+            if (dataRemote || dataLocal) {
+                sensorBuffer.add(dp.toJSONString());
+                if (System.nanoTime() - lastSensorSaveTime > sensorDelay) {
+                    lastSensorSaveTime = System.nanoTime();
+                    saveDataPacket(null);
+                }
+            }
         }
-        JSONObject sensor = new JSONObject();
-        // NOTE(brandyn): The light sensor's timestampRaw is incorrect, this has been reported
-        // TODO(brandyn): Look into removing extra boxing, keep in mind we are buffering
-        sensor.put("timestamp", System.currentTimeMillis() / 1000.);
-        sensor.put("timestampRaw", new Long(event.timestamp));
-        sensor.put("type", new Integer(event.sensor.getType()));
-        sensor.put("name", event.sensor.getName());
-        JSONArray values = new JSONArray();
-        for (int i = 0; i < event.values.length; i++) {
-            values.add(new Float(event.values[i]));
-        }
-        sensor.put("values", values);
-        handleSensor(sensor);
     }
 
     public void saveDataPacket(final Mat frame) {
@@ -213,11 +189,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
-
     public void shutdown() {
         synchronized (lock) {
             reset();
@@ -265,7 +236,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             displayWeb = true;
             sensorCallback = null;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
-            sensorManager.unregisterListener(this);
+            dataManager.unregister();
             remoteImageAckCount = remoteImageCount = 0;
             updateActivityView();
         }
@@ -371,14 +342,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 client.send(o.toJSONString());
                             }
                         } else if (action.equals("data")) {
-                            for (Object sensor : (JSONArray) o.get("sensors")) {
-                                JSONObject s = (JSONObject) sensor;
-                                int sensorType = ((Long) s.get("type")).intValue();
-                                synchronized (lock) {
-                                    if (sensorType < 0 && sensors.containsKey(sensorType))
-                                        handleSensor(s);
-                                }
-                            }
+                            handleSensors();
                         } else if (action.equals("shutdown")) {
                             Log.i(TAG, "Shutting down!");
                             shutdown();
@@ -552,7 +516,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         tts = new TextToSpeech(this, this);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE));
+
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
@@ -586,6 +551,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (type < -1) // Custom
                 sensors.put(type, null);
             if (type == -1) { // GPS
+                //TODO(kurtisnelson) this stuff needs to move to an object
                 locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
                 locationListener = new LocationListener() {
                     @Override
@@ -600,7 +566,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         values.add(new Float(l.getBearing()));
                         values.add(new Float(l.getSpeed()));
                         sensor.put("values", values);
-                        handleSensor(sensor);
+                        handleSensors();
                     }
 
                     @Override
@@ -619,9 +585,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     if (locationManager.isProviderEnabled(provider))
                         locationManager.requestLocationUpdates(provider, 10000, 0, locationListener);
             } else { // Standard Android Sensors
-                Sensor s = sensorManager.getDefaultSensor(type);
-                sensors.put(type, s);
-                sensorManager.registerListener(this, s, SensorManager.SENSOR_DELAY_GAME);
+                dataManager.registerProvider(type);
             }
         }
     }
@@ -638,7 +602,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 locationListener = null;
             }
             if (s != null)
-                sensorManager.unregisterListener(this, s);
+                dataManager.unregister(s.getName());
         }
     }
 
