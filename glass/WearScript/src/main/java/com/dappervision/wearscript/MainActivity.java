@@ -39,8 +39,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
-                    // NOTE(brandyn): Disabled due to XE10 camera break
-                    //view.enableView();
+                    view.enableView();
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }
                 break;
@@ -66,10 +65,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         super.onCreate(savedInstanceState);
         mConnection = new ServiceConnection() {
             public void onServiceConnected(ComponentName className, IBinder service) {
-
                 Log.i(TAG, "Service Connected");
                 bs = ((BackgroundService.LocalBinder) service).getService();
                 bs.activity = new WeakReference<MainActivity>(MainActivity.this);
+
+
                 if (bs.webview != null) {
                     // Remove view's parent so that we can re-add it later to a new activity
                     ViewGroup parentViewGroup = (ViewGroup)bs.webview.getParent();
@@ -88,9 +88,9 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 bs.reset();
                 bs.wsUrl = (new String(wsUrlArray)).trim();
                 bs.startDefaultScript();
-                // NOTE(brandyn): QR Code disabled because it broke in XE10
-                //Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-                //startActivityForResult(intent, 0);
+
+                Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+                startActivityForResult(intent, 0);
             }
 
             public void onServiceDisconnected(ComponentName className) {
@@ -104,22 +104,23 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 BackgroundService.class), mConnection, Context.BIND_AUTO_CREATE);
 
         // Setup OpenCV/Surface View
-        // NOTE(brandyn): Disabled this until the XE10 camera break is fixed
-        if (false) {
+        if (true) {
             setContentView(R.layout.surface_view);
             view = (JavaCameraView) findViewById(R.id.activity_java_surface_view);
             view.setVisibility(SurfaceView.VISIBLE);
             view.setCvCameraViewListener(this);
         }
+
+
         // TODO(brandyn): Handle extras
-        /*Intent thisIntent = getIntent();
+        Intent thisIntent = getIntent();
         if (thisIntent.getStringExtra(EXTRA_NAME) != null) {
             mHadUrlExtra = true;
             extra = thisIntent.getStringExtra(EXTRA_NAME);
             Log.v(TAG, "Found extra: " + extra);
         } else {
             Log.v(TAG, "Did not find extra.");
-        }*/
+        }
     }
 
     @Override
@@ -198,7 +199,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        // NOTE(brandyn):  The camera was broken in XE10 and this will be reenabled after it is fixed
         Log.i(TAG, "QR: Got activity result: V0");
         if (requestCode == 0) {
             String contents = null;
