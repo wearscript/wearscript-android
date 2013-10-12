@@ -18,7 +18,8 @@ public class SocketClient {
     SocketClient(URI uri, SocketListener listener, String callback) {
         this.listener = listener;
         this.uri = uri;
-        client = new WebSocketClient(uri, new LocalListener(listener), (List<BasicNameValuePair>) Arrays.asList());
+        List<BasicNameValuePair> extraHeaders = Arrays.asList();
+        client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
     }
 
     public boolean isConnected() {
