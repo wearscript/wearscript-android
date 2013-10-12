@@ -1,67 +1,65 @@
 package com.dappervision.wearscript;
+
+import android.content.Context;
 import android.hardware.SensorManager;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataManager {
     SensorManager sensorManager;
-    ConcurrentHashMap<String, DataProvider> providers;
-    ConcurrentHashMap<String, String> jsCallbacks;
-    ConcurrentLinkedQueue<DataPoint> data;
+    ConcurrentHashMap<Integer, DataProvider> providers;
+    ConcurrentHashMap<Integer, String> jsCallbacks;
+    BackgroundService bs;
 
-    DataManager(SensorManager sensorManager){
+    DataManager(SensorManager sensorManager, BackgroundService bs) {
         this.sensorManager = sensorManager;
-        providers = new ConcurrentHashMap<String, DataProvider>();
-        jsCallbacks = new ConcurrentHashMap<String, String>();
-        data = new ConcurrentLinkedQueue<DataPoint>();
+        this.bs = bs;
+        providers = new ConcurrentHashMap<Integer, DataProvider>();
+        jsCallbacks = new ConcurrentHashMap<Integer, String>();
     }
 
-    public void registerProvider(int type){
-        DataProvider dp = new DataProvider(this, sensorManager.getDefaultSensor(type));
-        registerProvider(dp.sensor().getName(), dp);
+    public void registerProvider(int type, long samplePeriod) {
+        DataProvider dp;
+        if (type > 0)
+            dp = new NativeDataProvider(this, samplePeriod, sensorManager.getDefaultSensor(type));
+        else if (type == -1)
+            dp = new GPSDataProvider(this, samplePeriod, type);
+        else
+            throw new RuntimeException("Invalid type: " + type);
+        registerProvider(type, dp);
     }
 
-    public void registerProvider(String name, DataProvider p){
-        providers.put(name, p);
+    public void registerProvider(Integer type, DataProvider p) {
+        providers.put(type, p);
     }
 
-    public void registerCallback(String name, String jsFunction){
-        jsCallbacks.put(name, jsFunction);
+    public void registerCallback(Integer type, String jsFunction) {
+        jsCallbacks.put(type, jsFunction);
     }
 
-    public DataPoint getData(String name){
-        return providers.get(name).latest();
+    public Context getContext() {
+        return bs.getApplicationContext();
     }
 
-    /**
-     * To be called from a DataProvider
-     * @param dp
-     */
-    public void queue(DataPoint dp){
-        data.add(dp);
+
+    public void queue(DataPoint dp) {
+        bs.handleSensor(dp, buildCallbackString(dp));
     }
 
-    public DataPoint poll() {
-        return data.poll();
-    }
-
-    public boolean hasData() {
-        return !data.isEmpty();
-    }
-
-    public String buildCallbackString(String name, DataPoint dp){
-        return String.format("javascript:%s(%s);", jsCallbacks.get(name), dp);
+    public String buildCallbackString(DataPoint dp) {
+        if (dp == null || !jsCallbacks.containsKey(dp.type()))
+            return null;
+        return String.format("javascript:%s(%s);", jsCallbacks.get(dp.type()), dp.toJSONObject().toJSONString());
     }
 
     public void unregister() {
-        for(String name : providers.keySet()){
-            unregister(name);
+        for (Integer type : providers.keySet()) {
+            unregister(type);
         }
     }
 
-    public void unregister(String name) {
-        DataProvider dp = providers.remove(name);
+    public void unregister(Integer type) {
+        DataProvider dp = providers.remove(type);
         dp.unregister();
     }
 

@@ -11,7 +11,6 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.webkit.WebView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -72,14 +71,14 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 bs.activity = new WeakReference<MainActivity>(MainActivity.this);
                 if (bs.webview != null) {
                     // Remove view's parent so that we can re-add it later to a new activity
-                    ViewGroup parentViewGroup = (ViewGroup)bs.webview.getParent();
+                    ViewGroup parentViewGroup = (ViewGroup) bs.webview.getParent();
                     if (parentViewGroup != null)
                         parentViewGroup.removeAllViews();
                     bs.updateActivityView();
                     return;
                 }
 
-                byte [] wsUrlArray = bs.LoadData("", "qr.txt");
+                byte[] wsUrlArray = bs.LoadData("", "qr.txt");
                 if (wsUrlArray == null) {
                     bs.say("Must set URL using ADB");
                     finish();
@@ -210,7 +209,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             } else if (resultCode == RESULT_CANCELED) {
                 // Reuse local config
                 Log.i(TAG, "QR: Canceled, using previous scan");
-                byte [] contentsArray = bs.LoadData("", "qr.txt");
+                byte[] contentsArray = bs.LoadData("", "qr.txt");
                 if (contentsArray == null) {
                     bs.say("Please exit and scan the QR code");
                     return;

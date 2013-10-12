@@ -67,14 +67,16 @@ public class WearScript {
         bs.scriptImages.put(key, new Mat(height, width, CvType.CV_8UC4));
     }
 
+
     public void sensorOn(int type, double sampleTime) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type));
-        bs.sensorOn(type, Math.round(sampleTime * 1000000000L));
+        bs.getDataManager().registerProvider(type, Math.round(sampleTime * 1000000000L));
     }
 
-    public void sensorCallback(String callback) {
-        Log.i(TAG, "sensorCallback: " + callback);
-        bs.sensorCallback = callback;
+    public void sensorOn(int type, double sampleTime, String callback) {
+        Log.i(TAG, "sensorOn: " + Integer.toString(type) + " callback: " + callback);
+        sensorOn(type, sampleTime);
+        bs.getDataManager().registerCallback(type, callback);
     }
 
     public void log(String msg) {
@@ -82,10 +84,9 @@ public class WearScript {
         bs.log(msg);
     }
 
-
     public void sensorOff(int type) {
         Log.i(TAG, "sensorOff: " + Integer.toString(type));
-        bs.sensorOff(type);
+        bs.getDataManager().unregister(type);
     }
 
     public void serverConnect(String server, String callback) {
