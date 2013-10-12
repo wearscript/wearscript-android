@@ -1,4 +1,5 @@
 package com.dappervision.wearscript;
+
 import org.json.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -8,30 +9,35 @@ public class DataPoint {
     private DataProvider parent;
     private ArrayList<Float> values;
     private Double timestamp;
+    private Long timestampRaw;
 
-    DataPoint(DataProvider parent) {
+
+    DataPoint(DataProvider parent, double timestamp, long timestampRaw) {
         this.parent = parent;
-        this.timestamp = System.currentTimeMillis() / 1000.;
+        this.timestamp = timestamp;
+        this.timestampRaw = timestampRaw;
         this.values = new ArrayList<Float>();
     }
 
-    public void addValue(Float v){
+    public void addValue(Float v) {
         values.add(v);
     }
 
-    public int type(){
-        return parent.sensor().getType();
+    public int type() {
+        return parent.getType();
     }
 
-    public String toJSONString(){
+    public JSONObject toJSONObject() {
         JSONObject point = new JSONObject();
         point.put("timestamp", this.timestamp);
-        point.put("name", parent.sensor().getName());
+        point.put("timestampRaw", this.timestampRaw);
+        point.put("name", parent.getName());
+        point.put("type", type());
         JSONArray arr = new JSONArray();
-        for(Float f : values){
+        for (Float f : values) {
             arr.put(f);
         }
         point.put("values", arr);
-        return point.toString();
+        return point;
     }
 }

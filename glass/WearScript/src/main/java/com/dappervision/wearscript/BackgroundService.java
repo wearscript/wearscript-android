@@ -5,19 +5,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.media.AudioRecord;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -56,28 +49,23 @@ import java.util.TreeSet;
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
     private final IBinder mBinder = new LocalBinder();
-    private final Object lock = new Object(); // All calls to webview, sensorSampleTimes, sensors, sensorSampleTimesLast, client must acquire lock
+    private final Object lock = new Object(); // All calls to webview client must acquire lock
     public WeakReference<MainActivity> activity;
     public boolean previewWarp = false, displayWeb = false;
     public Mat overlay;
     public JSONArray sensorBuffer;
     public JSONArray wifiBuffer;
     public TreeSet<String> flags;
-    public String sensorCallback, imageCallback;
+    public String imageCallback;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
     protected String TAG = "WearScript";
     protected TreeMap<String, Mat> scriptImages;
-    protected TreeMap<Integer, Sensor> sensors;
-    protected TreeMap<Integer, Long> sensorSampleTimesLast;
-    protected TreeMap<Integer, Long> sensorSampleTimes;
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
     protected WebSocketClient client;
     protected WebView webview;
-    protected LocationManager locationManager;
-    protected LocationListener locationListener;
     protected DataManager dataManager;
     protected int remoteImageAckCount, remoteImageCount;
     protected String wsUrl;
@@ -122,16 +110,17 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         });
     }
 
-    public void handleSensors() {
+    public DataManager getDataManager() {
+        return dataManager;
+    }
 
-        while(dataManager.hasData()){
-            DataPoint dp = dataManager.poll();
-            if(sensorCallback != null && webview != null){
-                webview.loadUrl(dp.toJSONString());
+    public void handleSensor(DataPoint dp, String url) {
+        synchronized (lock) {
+            if (webview != null && url != null) {
+                webview.loadUrl(url);
             }
-
             if (dataRemote || dataLocal) {
-                sensorBuffer.add(dp.toJSONString());
+                sensorBuffer.add(dp.toJSONObject());
                 if (System.nanoTime() - lastSensorSaveTime > sensorDelay) {
                     lastSensorSaveTime = System.nanoTime();
                     saveDataPacket(null);
@@ -220,21 +209,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
             flags = new TreeSet<String>();
             scriptImages = new TreeMap<String, Mat>();
-            TreeMap<Integer, Sensor> sensorsPrev = sensors;
-            if (sensors != null) {
-                for (Integer type : (new TreeSet<Integer>(sensors.navigableKeySet()))) {
-                    sensorOff(type);
-                }
-            }
-            sensors = new TreeMap<Integer, Sensor>();
             sensorBuffer = new JSONArray();
             wifiBuffer = new JSONArray();
             overlay = null;
-            sensorSampleTimes = new TreeMap<Integer, Long>();
-            sensorSampleTimesLast = new TreeMap<Integer, Long>();
             dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
             displayWeb = true;
-            sensorCallback = null;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             dataManager.unregister();
             remoteImageAckCount = remoteImageCount = 0;
@@ -243,7 +222,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void startDefaultScript() {
-        byte [] defaultScriptArray = LoadData("", "default.html");
+        byte[] defaultScriptArray = LoadData("", "default.html");
         if (defaultScriptArray == null) {
             runScript("<script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
         } else {
@@ -342,7 +321,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                                 client.send(o.toJSONString());
                             }
                         } else if (action.equals("data")) {
-                            handleSensors();
+                            // TODO(brandyn): Add data point to provider
                         } else if (action.equals("shutdown")) {
                             Log.i(TAG, "Shutting down!");
                             shutdown();
@@ -516,7 +495,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         tts = new TextToSpeech(this, this);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
-        dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE));
+        dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE), this);
 
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
@@ -538,72 +517,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void wifiStartScan() {
         wifiManager.startScan();
-    }
-
-    public void sensorOn(int type, long sampleTime) {
-        synchronized (lock) {
-            if (sensors.containsKey(type))
-                return;
-
-            sensorSampleTimes.put(type, sampleTime);
-            sensorSampleTimesLast.put(type, 0L);
-
-            if (type < -1) // Custom
-                sensors.put(type, null);
-            if (type == -1) { // GPS
-                //TODO(kurtisnelson) this stuff needs to move to an object
-                locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                locationListener = new LocationListener() {
-                    @Override
-                    public void onLocationChanged(Location l) {
-                        JSONObject sensor = new JSONObject();
-                        sensor.put("timestamp", System.currentTimeMillis() / 1000.);
-                        sensor.put("type", new Integer(-1));
-                        sensor.put("name", "GPS");
-                        JSONArray values = new JSONArray();
-                        values.add(new Float(l.getLatitude()));
-                        values.add(new Float(l.getLongitude()));
-                        values.add(new Float(l.getBearing()));
-                        values.add(new Float(l.getSpeed()));
-                        sensor.put("values", values);
-                        handleSensors();
-                    }
-
-                    @Override
-                    public void onProviderDisabled(String provider) {
-                    }
-
-                    @Override
-                    public void onProviderEnabled(String provider) {
-                    }
-
-                    @Override
-                    public void onStatusChanged(String provider, int status, Bundle extras) {
-                    }
-                };
-                for (String provider : locationManager.getAllProviders())
-                    if (locationManager.isProviderEnabled(provider))
-                        locationManager.requestLocationUpdates(provider, 10000, 0, locationListener);
-            } else { // Standard Android Sensors
-                dataManager.registerProvider(type);
-            }
-        }
-    }
-
-    public void sensorOff(int type) {
-        synchronized (lock) {
-            if (!sensors.containsKey(type))
-                return;
-            Sensor s = sensors.get(type);
-            sensors.remove(type);
-            if (type == -1) {  // GPS
-                locationManager.removeUpdates(locationListener);
-                locationManager = null;
-                locationListener = null;
-            }
-            if (s != null)
-                dataManager.unregister(s.getName());
-        }
     }
 
     @Override

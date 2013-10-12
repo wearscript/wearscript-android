@@ -1,48 +1,35 @@
 package com.dappervision.wearscript;
 
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
+public abstract class DataProvider {
+    protected DataManager parent;
+    private long lastTimestamp;
+    protected long samplePeriod;
+    private int type;
+    private String name;
 
-public class DataProvider implements SensorEventListener{
-    private Sensor sensor;
-    private DataManager parent;
-    private DataPoint latest;
-
-    DataProvider(DataManager parent, Sensor androidSensor){
-        this.sensor = androidSensor;
+    DataProvider(DataManager parent, long samplePeriod, int type, String name) {
         this.parent = parent;
-        parent.sensorManager().registerListener(this, androidSensor, SensorManager.SENSOR_DELAY_GAME);
+        this.samplePeriod = samplePeriod;
+        this.type = type;
+        this.name = name;
     }
 
-    public DataPoint latest(){
-        return latest;
+    public String getName() {
+        return name;
     }
 
-    public Sensor sensor(){
-        return sensor;
+    public int getType() {
+        return type;
     }
 
-    public void unregister(){
-        parent.sensorManager().unregisterListener(this);
-        this.sensor = null;
-        this.latest = null;
+    public void unregister() {
         this.parent = null;
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        DataPoint dataPoint = new DataPoint(this);
-        for(int i = 0; i < event.values.length; i++) {
-            dataPoint.addValue(new Float(event.values[i]));
-        }
-        this.latest = dataPoint;
-        parent.queue(dataPoint);
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
+    protected boolean useSample(long timestamp) {
+        if (timestamp - lastTimestamp < samplePeriod)
+            return false;
+        lastTimestamp = timestamp;
+        return true;
     }
 }
