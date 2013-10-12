@@ -21,9 +21,6 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.webkit.WebView;
 
-import com.codebutler.android_websockets.WebSocketClient;
-
-import org.apache.http.message.BasicNameValuePair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -41,13 +38,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
+public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SocketClient.SocketListener {
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     public WeakReference<MainActivity> activity;
@@ -64,7 +60,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
-    protected WebSocketClient client;
+
+    protected SocketClient client;
     protected WebView webview;
     protected DataManager dataManager;
     protected int remoteImageAckCount, remoteImageCount;
@@ -247,10 +244,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void serverConnect(String url, final String callback) {
         Log.i(TAG, "WS Setup");
-        List<BasicNameValuePair> extraHeaders = Arrays.asList();
         synchronized (lock) {
             if (url.equals("{{WSUrl}}"))
                 url = wsUrl;
+
             if (client != null && client.isConnected() && wsUrl.equals(url)) {
                 Log.i(TAG, "WS Reusing client and calling callback");
                 if (callback != null && webview != null) {
@@ -258,140 +255,107 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
                 return;
             }
+
+            //We are starting a new connection or switching URLs.
             if (client != null) {
                 client.disconnect();
                 client = null;
             }
             wsUrl = url;
-            client = new WebSocketClient(URI.create(url), new WebSocketClient.Listener() {
-                private String cb = callback;
 
-                @Override
-                public void onConnect() {
-                    Log.i(TAG, "WS Connected!");
-                    remoteImageAckCount = remoteImageCount = 0;
-                    synchronized (lock) {
-                        if (cb != null && webview != null) {
-                            webview.loadUrl(String.format("javascript:%s();", cb));
-                            cb = null;
-                        }
-                    }
-                }
-
-                @Override
-                public void onMessage(String message) {
-                    try {
-                        JSONObject o = (JSONObject) JSONValue.parse(message);
-
-                        String action = (String) o.get("action");
-                        Log.i(TAG, String.format("Got %s", action));
-                        // TODO: String to Mat, save and display in the loopback thread
-                        if (action.equals("startScript") || action.equals("defaultScript")) {
-                            final String script = (String) o.get("script");
-                            Log.i(TAG, "WebView:" + Integer.toString(script.length()));
-                            if (activity == null)
-                                return;
-                            final MainActivity a = activity.get();
-                            if (a == null)
-                                return;
-                            if (action.equals("defaultScript"))
-                                SaveData(script.getBytes(), "", false, "default.html");
-                            a.runOnUiThread(new Thread() {
-                                public void run() {
-                                    runScript(script);
-                                }
-                            });
-                        } else if (action.equals("startScriptUrl")) {
-                            final String url = (String) o.get("scriptUrl");
-
-                            if (activity == null)
-                                return;
-                            final MainActivity a = activity.get();
-                            if (a == null)
-                                return;
-                            a.runOnUiThread(new Thread() {
-                                public void run() {
-                                    runScriptUrl(url);
-                                }
-                            });
-                        } else if (action.equals("pingStatus")) {
-                            o.put("action", "pongStatus");
-                            o.put("glassID", glassID);
-                            // Display: On/Off  Activity Visible: True/False, Sensor Count (Raw): Map<Integer, Integer>, Sensor Count (Saved): Map<Integer, Integer>
-                            // Javascript: ?
-                            synchronized (lock) {
-                                client.send(o.toJSONString());
-                            }
-                        } else if (action.equals("data")) {
-                            // TODO(brandyn): Add data point to provider
-                        } else if (action.equals("shutdown")) {
-                            Log.i(TAG, "Shutting down!");
-                            shutdown();
-                        } else if (action.equals("ping")) {
-                            remoteImageAckCount++;
-                            o.put("action", "pong");
-                            o.put("Tg1", new Double(System.currentTimeMillis() / 1000.));
-                            synchronized (lock) {
-                                client.send(o.toJSONString());
-                            }
-                        } else if (action.equals("flags")) {
-                            JSONArray a = (JSONArray) o.get("flags");
-                            if (a != null)
-                                flags = new TreeSet<String>((List<String>) a);
-                        }
-                        Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
-                    } catch (Exception e) {
-                        Log.e(TAG, e.toString());
-                    }
-                }
-
-                @Override
-                public void onDisconnect(int code, String reason) {
-                    Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
-                    synchronized (lock) {
-                        if (client == null || client.getListener() != this)
-                            return;
-                    }
-                    remoteImageAckCount = remoteImageCount = 0;
-                    new Thread(new Runnable() {
-                        public void run() {
-                            ReconnectClient(client);
-                        }
-                    }).start();
-                }
-
-                @Override
-                public void onError(Exception error) {
-                    Log.e(TAG, "WS: Error!", error);
-                }
-
-                @Override
-                public void onMessage(byte[] arg0) {
-                    // TODO Auto-generated method stub
-
-                }
-
-            }, extraHeaders);
+            client = new SocketClient(URI.create(url), this, callback);
             client.connect();
         }
     }
 
-    protected void ReconnectClient(WebSocketClient client) {
+    public void onSocketConnect(String cb) {
+        Log.i(TAG, "WS Connected!");
+        remoteImageAckCount = remoteImageCount = 0;
         synchronized (lock) {
-            if (client == null)
+            if (cb != null && webview != null) {
+                webview.loadUrl(String.format("javascript:%s();", cb));
+            }
+        }
+    }
+
+    public void onSocketMessage(String message) {
+        try {
+            JSONObject o = (JSONObject) JSONValue.parse(message);
+
+            String action = (String) o.get("action");
+            Log.i(TAG, String.format("Got %s", action));
+            // TODO: String to Mat, save and display in the loopback thread
+            if (action.equals("startScript") || action.equals("defaultScript")) {
+                final String script = (String) o.get("script");
+                Log.i(TAG, "WebView:" + Integer.toString(script.length()));
+                if (activity == null)
+                    return;
+                final MainActivity a = activity.get();
+                if (a == null)
+                    return;
+                if (action.equals("defaultScript"))
+                    SaveData(script.getBytes(), "", false, "default.html");
+                a.runOnUiThread(new Thread() {
+                    public void run() {
+                        runScript(script);
+                    }
+                });
+            } else if (action.equals("startScriptUrl")) {
+                final String url = (String) o.get("scriptUrl");
+
+                if (activity == null)
+                    return;
+                final MainActivity a = activity.get();
+                if (a == null)
+                    return;
+                a.runOnUiThread(new Thread() {
+                    public void run() {
+                        runScriptUrl(url);
+                    }
+                });
+            } else if (action.equals("pingStatus")) {
+                o.put("action", "pongStatus");
+                o.put("glassID", glassID);
+                // Display: On/Off  Activity Visible: True/False, Sensor Count (Raw): Map<Integer, Integer>, Sensor Count (Saved): Map<Integer, Integer>
+                // Javascript: ?
+                synchronized (lock) {
+                    client.send(o.toJSONString());
+                }
+            } else if (action.equals("data")) {
+                // TODO(brandyn): Add remote sensors
+            } else if (action.equals("shutdown")) {
+                Log.i(TAG, "Shutting down!");
+                shutdown();
+            } else if (action.equals("ping")) {
+                remoteImageAckCount++;
+                o.put("action", "pong");
+                o.put("Tg1", new Double(System.currentTimeMillis() / 1000.));
+                synchronized (lock) {
+                    client.send(o.toJSONString());
+                }
+            } else if (action.equals("flags")) {
+                JSONArray a = (JSONArray) o.get("flags");
+                if (a != null)
+                    flags = new TreeSet<String>((List<String>) a);
+            }
+            Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
+        } catch (Exception e) {
+            Log.e(TAG, e.toString());
+        }
+    }
+
+    public void onSocketDisconnect(int code, String reason) {
+        Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
+        synchronized (lock) {
+            if (client == null || client.getListener() != this)
                 return;
         }
-        while (true) {
-            synchronized (lock) {
-                if (client.isConnected())
-                    break;
-                client.connect();
-            }
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-            }
-        }
+        remoteImageAckCount = remoteImageCount = 0;
+        client.reconnect();
+    }
+
+    public void onSocketError(Exception error) {
+        Log.e(TAG, "WS: Error!", error);
     }
 
     protected String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
@@ -562,13 +526,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     @Override
     public void onMarkerReached(AudioRecord arg0) {
-        // TODO Auto-generated method stub
         Log.i(TAG, "Audio mark");
     }
 
     @Override
     public void onPeriodicNotification(AudioRecord arg0) {
-        // TODO Auto-generated method stub
         Log.i(TAG, "Audio period");
     }
 
