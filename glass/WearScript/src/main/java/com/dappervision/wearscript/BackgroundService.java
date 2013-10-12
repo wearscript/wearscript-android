@@ -102,9 +102,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     a.setContentView(R.layout.surface_view);
                     a.view = (JavaCameraView) a.findViewById(R.id.activity_java_surface_view);
                     a.view.setVisibility(SurfaceView.VISIBLE);
-                    // NOTE(brandyn): Disabled due to XE10 camera break
-                    /*a.view.setCvCameraViewListener(a);
-                    a.view.enableView();*/
+                    a.view.setCvCameraViewListener(a);
+                    a.view.enableView();
                 }
             }
         });
@@ -213,6 +212,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiBuffer = new JSONArray();
             overlay = null;
             dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
+            /* Note(Conner): Changed displayWeb to true so that UpdateActivityView doesn't break
+                the QR code Intent.
+            */
             displayWeb = true;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             dataManager.unregister();
