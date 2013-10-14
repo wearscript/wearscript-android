@@ -34,7 +34,7 @@ def server(port, **kw):
 
 def client(key):
     G = None
-    ws = create_connection("wss://api.picar.us/openglass/ws/web/%s")
+    ws = create_connection("wss://api.picar.us/wearscript/ws/web/%s")
     for x, y, _, _, _ in pupil_iter(**PARAMS):
         if x is None:
             continue
