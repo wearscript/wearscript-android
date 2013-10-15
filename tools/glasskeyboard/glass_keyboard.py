@@ -131,7 +131,7 @@ launch_components = {
     LAUNCHY: 'com.mikedg.android.glass.launchy/.MainActivity',
     PICTURE: '-a com.google.glass.action.TAKE_PICTURE com.google.glass.camera',
     WEARSCRIPT: 'com.dappervision.wearscript/.MainActivity',
-    COLORS: '--es wsurl "http://wearscript.com/colors.html" com.dappervision.wearscript/.MainActivity'
+    COLORS: '--es extra "http://wearscript.com/colors.html" com.dappervision.wearscript/.MainActivity'
 }
 cmd = "adb shell am start "
 for key, value in launch_components.items():
@@ -222,6 +222,14 @@ def main(**kw):
                     print startMessage
                 elif ch == 'e':
                     easter_egg()
+                elif ch == 'r':
+                    command = Command('adb root')
+                    print "ROOT: adb root"
+                    command.run(timeout=3)
+                elif ch == 'd':
+                    command = Command('adb devices')
+                    print "List devices: adb devices"
+                    command.run(timeout=3)
                 elif chHex == '0a':
                     print event_name_dict[TAP] + ": " + event_dict[TAP]
                     command = Command(event_dict[TAP])
@@ -244,6 +252,10 @@ def main(**kw):
                     elif chHex == '42': # DOWN
                         command = Command(event_dict[DOWN])
                         print event_name_dict[DOWN] + ": " + event_dict[DOWN]
+                        command.run(timeout=3)
+                    elif chHex == '41': # UP
+                        command = Command(event_dict[HOME])
+                        print doc_string(HOME)
                         command.run(timeout=3)
                     else:
                         print "Unrecognized arrow key"
