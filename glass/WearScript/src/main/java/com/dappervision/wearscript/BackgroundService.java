@@ -18,6 +18,8 @@ import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
@@ -46,6 +48,7 @@ import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SocketClient.SocketListener {
+    private static final boolean DBG = false;
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     public WeakReference<MainActivity> activity;
@@ -352,6 +355,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 a.runOnUiThread(new Thread() {
                     public void run() {
                         runScriptUrl(url);
+
                     }
                 });
             } else if (action.equals("pingStatus")) {
@@ -496,6 +500,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
             webview = new WebView(this);
+            webview.setWebChromeClient(new WebChromeClient() {
+                public boolean onConsoleMessage(ConsoleMessage cm) {
+                    Log.d("WearScriptWebView", cm.message() + " -- From line "
+                            + cm.lineNumber() + " of "
+                            + cm.sourceId() );
+                    return true;
+                }
+            });
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + script);
@@ -512,6 +524,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
             webview = new WebView(this);
+            webview.setWebChromeClient(new WebChromeClient() {
+                public boolean onConsoleMessage(ConsoleMessage cm) {
+                    Log.d("WearScriptWebView", cm.message() + " -- From line "
+                            + cm.lineNumber() + " of "
+                            + cm.sourceId() );
+                    return true;
+                }
+            });
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + url);
