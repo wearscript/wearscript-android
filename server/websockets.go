@@ -3,6 +3,7 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"code.google.com/p/google-api-go-client/mirror/v1"
+	"github.com/ugorji/go/codec"
 	"fmt"
 	"strings"
 	"time"
@@ -74,6 +75,25 @@ func WSSendDevice(userId string, data *WSData) error {
 	}
 	return nil
 }
+func MsgpackMarshal(v interface{}) (data []byte, payloadType byte, err error) {
+	mh := codec.MsgpackHandle{}
+	enc := codec.NewEncoderBytes(&data, &mh)
+	err = enc.Encode(v)
+	payloadType = websocket.BinaryFrame
+	return
+}
+
+func MsgpackUnmarshal(data []byte, payloadType byte, v interface{}) (err error) {
+	mh := codec.MsgpackHandle{}
+	dec := codec.NewDecoderBytes(data, &mh)
+	err = dec.Decode(&v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(B64Enc(string(data)))
+	return
+}
+
 
 func WSGlassHandler(c *websocket.Conn) {
 	defer c.Close()
@@ -116,7 +136,8 @@ func WSGlassHandler(c *websocket.Conn) {
 			}
 			fmt.Println("Sending to glass")
 			fmt.Println(request)
-			err = websocket.JSON.Send(c, *request)
+			msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
+			err = msgcodec.Send(c, *request)
 			if err != nil {
 				die = true
 				break
@@ -150,7 +171,8 @@ func WSGlassHandler(c *websocket.Conn) {
 	cnt := 0
 	for {
 		request := WSData{}
-		err := websocket.JSON.Receive(c, &request)
+		msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
+		err := msgcodec.Receive(c, &request)
 		if err != nil {
 			fmt.Println(err)
 			die = true
@@ -229,7 +251,8 @@ func WSWebHandler(c *websocket.Conn) {
 			if !ok {
 				break
 			}
-			err := websocket.JSON.Send(c, *request)
+			msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
+			err := msgcodec.Send(c, *request)
 			if err != nil {
 				return
 			}
@@ -238,7 +261,8 @@ func WSWebHandler(c *websocket.Conn) {
 	// Data from web loop
 	for {
 		request := WSData{}
-		err := websocket.JSON.Receive(c, &request)
+		msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
+		err := msgcodec.Receive(c, &request)
 		if err != nil {
 			fmt.Println(err)
 			return
