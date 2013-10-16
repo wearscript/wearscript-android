@@ -27,6 +27,8 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 
 import com.codebutler.android_websockets.WebSocketClient;
 
@@ -55,6 +57,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SensorEventListener {
+    private static final boolean DBG = false;
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview, sensorSampleTimes, sensors, sensorSampleTimesLast, client must acquire lock
     public WeakReference<MainActivity> activity;
@@ -394,7 +397,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                             if (a != null)
                                 flags = new TreeSet<String>((List<String>) a);
                         }
-                        Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
+                        if (DBG) Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
                     } catch (Exception e) {
                         Log.e(TAG, e.toString());
                     }
@@ -402,7 +405,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
                 @Override
                 public void onDisconnect(int code, String reason) {
-                    Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
+                    if (DBG) Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
                     synchronized (lock) {
                         if (client == null || client.getListener() != this)
                             return;
@@ -499,6 +502,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
             webview = new WebView(this);
+            webview.setWebChromeClient(new WebChromeClient() {
+                public boolean onConsoleMessage(ConsoleMessage cm) {
+                    Log.d("WearScriptWebView", cm.message() + " -- From line "
+                            + cm.lineNumber() + " of "
+                            + cm.sourceId() );
+                    return true;
+                }
+            });
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + script);
@@ -515,6 +526,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
             webview = new WebView(this);
+            webview.setWebChromeClient(new WebChromeClient() {
+                public boolean onConsoleMessage(ConsoleMessage cm) {
+                    Log.d("WearScriptWebView", cm.message() + " -- From line "
+                            + cm.lineNumber() + " of "
+                            + cm.sourceId() );
+                    return true;
+                }
+            });
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + url);
