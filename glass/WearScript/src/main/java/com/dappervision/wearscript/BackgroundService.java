@@ -166,11 +166,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             if (client == null)
                 return false;
-            if (!client.isConnected()) {
+            if (!client.isEnabled()) {
                 remoteImageAckCount = remoteImageCount = 0;
-                client.connect();
+                client.enable();
             }
-            return client.isConnected();
+            return client.isEnabled();
         }
     }
 
@@ -178,7 +178,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             reset();
             if (client != null) {
-                client.disconnect();
+                client.disable();
                 client = null;
             }
             if (activity == null)
@@ -248,7 +248,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (url.equals("{{WSUrl}}"))
                 url = wsUrl;
 
-            if (client != null && client.isConnected() && wsUrl.equals(url)) {
+            if (client != null && client.isEnabled() && wsUrl.equals(url)) {
                 Log.i(TAG, "WS Reusing client and calling callback");
                 if (callback != null && webview != null) {
                     webview.loadUrl(String.format("javascript:%s();", callback));
@@ -257,14 +257,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
 
             //We are starting a new connection or switching URLs.
-            if (client != null) {
-                client.disconnect();
-                client = null;
-            }
             wsUrl = url;
-
-            client = new SocketClient(URI.create(url), this, callback);
-            client.connect();
+            if (client != null) {
+                client.setURI(URI.create(url));
+            } else {
+                client = new SocketClient(URI.create(url), this, callback);
+            }
+            client.enable();
         }
     }
 
@@ -278,6 +277,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
+    public void onSocketMessage(byte[] message) {
+
+    }
     public void onSocketMessage(String message) {
         try {
             JSONObject o = (JSONObject) JSONValue.parse(message);
@@ -515,7 +517,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void log(String m) {
         synchronized (lock) {
-            if (client != null && client.isConnected()) {
+            if (client != null && client.isEnabled()) {
                 JSONObject data = new JSONObject();
                 data.put("action", "log");
                 data.put("message", m);

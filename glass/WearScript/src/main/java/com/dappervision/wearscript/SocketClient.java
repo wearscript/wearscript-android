@@ -7,34 +7,68 @@ import org.apache.http.message.BasicNameValuePair;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SocketClient {
     private WebSocketClient client;
     private SocketListener listener;
     private String callback;
-    private URI uri;
     private boolean connected;
+    private boolean enabled;
+    private ConcurrentLinkedQueue<String> stringBacklog;
+    private ConcurrentLinkedQueue<byte[]> byteBacklog;
+    private static List<BasicNameValuePair> extraHeaders = Arrays.asList();
 
     SocketClient(URI uri, SocketListener listener, String callback) {
         this.listener = listener;
-        this.uri = uri;
-        List<BasicNameValuePair> extraHeaders = Arrays.asList();
+        this.connected = false;
+        this.enabled = false;
+        this.callback = callback;
+        this.stringBacklog = new ConcurrentLinkedQueue<String>();
+        this.byteBacklog = new ConcurrentLinkedQueue<byte[]>();
+        setURI(uri);
         client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
     }
 
-    public boolean isConnected() {
-        return connected;
+    public boolean isEnabled() {
+        return enabled;
     }
 
+    public void setURI(URI uri) {
+        flush();
+        disable();
+        client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
+    }
     public void send(String payload) {
-        client.send(payload);
+        if(!enabled)
+            throw new RuntimeException("Socket not enabled");
+        else if(connected)
+            client.send(payload);
+        else
+            stringBacklog.add(payload);
     }
 
-    public void disconnect() {
+    public void send(byte[] payload) {
+        if(!enabled)
+            throw new RuntimeException("Socket not enabled");
+        else if(connected)
+            client.send(payload);
+        else
+            byteBacklog.add(payload);
+    }
+
+    public void disable() {
+        if(!enabled)
+            return;
+        enabled = false;
         client.disconnect();
+        squash();
     }
 
-    public void connect() {
+    public void enable() {
+        if(enabled)
+            return;
+        enabled = true;
         client.connect();
     }
 
@@ -43,6 +77,8 @@ public class SocketClient {
     }
 
     public void reconnect() {
+        if(!enabled)
+            throw new RuntimeException("Socket not enabled");
         new Thread(new Runnable() {
             public void run() {
                 while (!client.isConnected()) {
@@ -52,17 +88,30 @@ public class SocketClient {
                     } catch (InterruptedException e) {
                     }
                 }
+                flush();
             }
         }).start();
     }
 
+    private void flush() {
+        while(!stringBacklog.isEmpty()){
+            client.send(stringBacklog.poll());
+        }
+        while(!byteBacklog.isEmpty()){
+            client.send(byteBacklog.poll());
+        }
+    }
+
+    private void squash() {
+        stringBacklog.clear();
+        byteBacklog.clear();
+    }
+
     interface SocketListener {
         public void onSocketConnect(String callback);
-
         public void onSocketDisconnect(int i, String s);
-
+        public void onSocketMessage(byte[] message);
         public void onSocketMessage(String message);
-
         public void onSocketError(Exception e);
     }
 
@@ -77,6 +126,12 @@ public class SocketClient {
         public void onConnect() {
             connected = true;
             parent.onSocketConnect(callback);
+            flush();
+        }
+
+        @Override
+        public void onMessage(byte[] b) {
+            parent.onSocketMessage(b);
         }
 
         @Override
@@ -93,11 +148,6 @@ public class SocketClient {
         @Override
         public void onError(Exception e) {
             parent.onSocketError(e);
-        }
-
-        @Override
-        public void onMessage(byte[] arg0) {
-            // unused
         }
     }
 }
