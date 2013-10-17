@@ -30,6 +30,10 @@ public class SocketClient {
         client.send(payload);
     }
 
+    public void send(byte[] payload) {
+        client.send(payload);
+    }
+
     public void disconnect() {
         client.disconnect();
     }
@@ -61,7 +65,7 @@ public class SocketClient {
 
         public void onSocketDisconnect(int i, String s);
 
-        public void onSocketMessage(String message);
+        public void onSocketMessage(byte[] message);
 
         public void onSocketError(Exception e);
     }
@@ -81,7 +85,7 @@ public class SocketClient {
 
         @Override
         public void onMessage(String s) {
-            parent.onSocketMessage(s);
+            // Unused
         }
 
         @Override
@@ -96,8 +100,8 @@ public class SocketClient {
         }
 
         @Override
-        public void onMessage(byte[] arg0) {
-            // unused
+        public void onMessage(byte[] s) {
+            parent.onSocketMessage(s);
         }
     }
 }

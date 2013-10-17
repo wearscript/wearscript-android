@@ -26,6 +26,9 @@ dependencies {
     compile files('libs/android-websockets.jar')
     compile files('libs/commons-codec-1.6.jar')
     compile files('libs/java_websocket.jar')
+    compile files('libs/jackson-core-2.2.3.jar')
+    compile files('libs/jackson-databind-2.2.3.jar')
     compile files('libs/json-simple-1.1.1.jar')
+    compile files('libs/msgpack-0.6.9-SNAPSHOT.jar')
     compile project(':opencv-android')
 }
