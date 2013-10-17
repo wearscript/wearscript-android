@@ -8,6 +8,8 @@ import org.json.simple.JSONValue;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class WearScript {
@@ -142,12 +144,19 @@ public class WearScript {
 
     public void data(int type, String name, String values) {
         Log.i(TAG, "data");
-        JSONObject sensor = new JSONObject();
-        sensor.put("timestamp", System.currentTimeMillis() / 1000.);
-        sensor.put("type", new Integer(type));
-        sensor.put("name", name);
-        JSONArray valuesJS = (JSONArray) (new JSONValue()).parse(values);
-        sensor.put("values", valuesJS);
+
+        DataPoint.WSSensor sensor = new DataPoint.WSSensor();
+        sensor.name = name;
+        sensor.timestamp = System.currentTimeMillis() / 1000.;
+        sensor.timestampRaw = System.nanoTime();
+        sensor.type = type;
+        ArrayList<Double> vs;
+        try {
+            vs = (ArrayList<Double>)this.bs.mapper.readValue(values, ArrayList.class);
+        } catch (IOException e) {
+            Log.e(TAG, "JSON mapping error");
+            return;
+        }
         bs.sensorBuffer.add(sensor);
     }
 

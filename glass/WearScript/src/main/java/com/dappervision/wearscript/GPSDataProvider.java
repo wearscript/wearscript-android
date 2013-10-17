@@ -21,8 +21,8 @@ public class GPSDataProvider extends DataProvider {
                 if (!useSample(timestamp))
                     return;
                 DataPoint dataPoint = new DataPoint(GPSDataProvider.this, System.currentTimeMillis() / 1000., timestamp);
-                dataPoint.addValue(new Float(l.getLatitude()));
-                dataPoint.addValue(new Float(l.getLongitude()));
+                dataPoint.addValue(new Double(l.getLatitude()));
+                dataPoint.addValue(new Double(l.getLongitude()));
                 parent.queue(dataPoint);
             }
 

@@ -28,7 +28,7 @@ public class NativeDataProvider extends DataProvider implements SensorEventListe
         // TODO(brandyn): Compensate for light sensor and offset here
         DataPoint dataPoint = new DataPoint(this, System.currentTimeMillis() / 1000., event.timestamp);
         for (int i = 0; i < event.values.length; i++) {
-            dataPoint.addValue(new Float(event.values[i]));
+            dataPoint.addValue(new Double(event.values[i]));
         }
         parent.queue(dataPoint);
     }

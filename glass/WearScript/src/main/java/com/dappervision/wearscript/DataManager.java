@@ -49,7 +49,7 @@ public class DataManager {
     public String buildCallbackString(DataPoint dp) {
         if (dp == null || !jsCallbacks.containsKey(dp.type()))
             return null;
-        return String.format("javascript:%s(%s);", jsCallbacks.get(dp.type()), dp.toJSONObject().toJSONString());
+        return String.format("javascript:%s(%s);", jsCallbacks.get(dp.type()), dp.toJSONString());
     }
 
     public void unregister() {

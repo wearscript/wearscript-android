@@ -21,6 +21,12 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.webkit.WebView;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.msgpack.MessagePack;
+import org.msgpack.annotation.Message;
+import org.msgpack.packer.Packer;
+import org.msgpack.unpacker.Unpacker;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -36,8 +42,11 @@ import org.opencv.imgproc.Imgproc;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
@@ -49,7 +58,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public WeakReference<MainActivity> activity;
     public boolean previewWarp = false, displayWeb = false;
     public Mat overlay;
-    public JSONArray sensorBuffer;
     public JSONArray wifiBuffer;
     public TreeSet<String> flags;
     public String imageCallback;
@@ -60,6 +68,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
+    protected ObjectMapper mapper;
+    MessagePack msgpack = new MessagePack();
 
     protected SocketClient client;
     protected WebView webview;
@@ -84,6 +94,20 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
         }
     };
+
+    @Message
+    public static class WSData {
+        public String action;
+        public String message, scriptUrl, script, glassID, say;
+        public double version;
+        public DataPoint.WSSensor sensors[];
+        public String imageb64;
+        public String[] flags;
+        public double Tsave, Tg0, Ts0, Tg1, timestamp;
+    }
+
+    public ArrayList<DataPoint.WSSensor> sensorBuffer;
+
 
     public void updateActivityView() {
         if (activity == null)
@@ -116,7 +140,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview.loadUrl(url);
             }
             if (dataRemote || dataLocal) {
-                sensorBuffer.add(dp.toJSONObject());
+                sensorBuffer.add(dp.getWSSensor());
                 if (System.nanoTime() - lastSensorSaveTime > sensorDelay) {
                     lastSensorSaveTime = System.nanoTime();
                     saveDataPacket(null);
@@ -126,31 +150,38 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void saveDataPacket(final Mat frame) {
-        final JSONArray curSensorBuffer = sensorBuffer;
-        final JSONArray curWifiBuffer = wifiBuffer;
+        final ArrayList<DataPoint.WSSensor> curSensorBuffer = sensorBuffer;
+        //final JSONArray curWifiBuffer = wifiBuffer;
         final Double Tsave = new Double(System.currentTimeMillis() / 1000.);
-        sensorBuffer = new JSONArray();
-        wifiBuffer = new JSONArray();
+        sensorBuffer = new ArrayList<DataPoint.WSSensor>();
+        //wifiBuffer = new JSONArray();
 
-        JSONObject data = new JSONObject();
+        WSData data = new WSData();
         if (frame != null) {
             Log.i(TAG, "Got frame:" + frame.size().toString());
             MatOfByte jpgFrame = new MatOfByte();
             Highgui.imencode(".jpg", frame, jpgFrame);
             final byte[] out = jpgFrame.toArray();
-            data.put("imageb64", Base64.encodeToString(out, Base64.NO_WRAP));
+            data.imageb64 = Base64.encodeToString(out, Base64.NO_WRAP);
         }
         if (!curSensorBuffer.isEmpty())
-            data.put("sensors", curSensorBuffer);
-        if (!wifiBuffer.isEmpty())
-            data.put("wifi", wifiBuffer);
-        data.put("Tsave", Tsave);
-        data.put("Tg0", new Double(System.currentTimeMillis() / 1000.));
-        data.put("glassID", glassID);
-        data.put("action", "data");
-        final String dataStr = data.toJSONString();
+            data.sensors = (DataPoint.WSSensor[])curSensorBuffer.toArray();
+        /*if (!wifiBuffer.isEmpty())
+            data.put("wifi", wifiBuffer);*/
+        data.Tsave = Tsave;
+        data.Tg0 = new Double(System.currentTimeMillis() / 1000.);
+        data.glassID = glassID;
+        data.action = "data";
+        final byte[] dataStr;
+        try {
+            dataStr = msgpack.write(data);
+        } catch (IOException e) {
+            Log.e(TAG, "Couldn't serialize msgpack");
+            e.printStackTrace();
+            return;
+        }
         if (dataLocal) {
-            SaveData(dataStr.getBytes(), "data/", true, ".js");
+            SaveData(dataStr, "data/", true, ".js");
         }
         if (dataRemote) {
             if (frame != null)
@@ -203,10 +234,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview.stopLoading();
                 webview = null;
             }
+            mapper = new ObjectMapper();
+
             flags = new TreeSet<String>();
             scriptImages = new TreeMap<String, Mat>();
-            sensorBuffer = new JSONArray();
-            wifiBuffer = new JSONArray();
+            sensorBuffer = new ArrayList<DataPoint.WSSensor>();
+            //wifiBuffer = new JSONArray();
             overlay = null;
             dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
             /* Note(Conner): Changed displayWeb to true so that UpdateActivityView doesn't break
@@ -262,7 +295,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 client = null;
             }
             wsUrl = url;
-
             client = new SocketClient(URI.create(url), this, callback);
             client.connect();
         }
@@ -278,15 +310,16 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void onSocketMessage(String message) {
+    public void onSocketMessage(byte[] message) {
         try {
-            JSONObject o = (JSONObject) JSONValue.parse(message);
 
-            String action = (String) o.get("action");
+            WSData o = (WSData)msgpack.read(message);
+
+            String action = (String) o.action;
             Log.i(TAG, String.format("Got %s", action));
             // TODO: String to Mat, save and display in the loopback thread
             if (action.equals("startScript") || action.equals("defaultScript")) {
-                final String script = (String) o.get("script");
+                final String script = (String) o.script;
                 Log.i(TAG, "WebView:" + Integer.toString(script.length()));
                 if (activity == null)
                     return;
@@ -301,7 +334,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     }
                 });
             } else if (action.equals("startScriptUrl")) {
-                final String url = (String) o.get("scriptUrl");
+                final String url = (String) o.scriptUrl;
 
                 if (activity == null)
                     return;
@@ -314,12 +347,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     }
                 });
             } else if (action.equals("pingStatus")) {
-                o.put("action", "pongStatus");
-                o.put("glassID", glassID);
+                o.action = "pongStatus";
+                o.glassID = glassID;
                 // Display: On/Off  Activity Visible: True/False, Sensor Count (Raw): Map<Integer, Integer>, Sensor Count (Saved): Map<Integer, Integer>
                 // Javascript: ?
                 synchronized (lock) {
-                    client.send(o.toJSONString());
+                    client.send(msgpack.write(o));
                 }
             } else if (action.equals("data")) {
                 // TODO(brandyn): Add remote sensors
@@ -328,17 +361,18 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 shutdown();
             } else if (action.equals("ping")) {
                 remoteImageAckCount++;
-                o.put("action", "pong");
-                o.put("Tg1", new Double(System.currentTimeMillis() / 1000.));
+                o.action = "pong";
+                o.Tg1 = new Double(System.currentTimeMillis() / 1000.);
                 synchronized (lock) {
-                    client.send(o.toJSONString());
+                    client.send(msgpack.write(o));
                 }
             } else if (action.equals("flags")) {
-                JSONArray a = (JSONArray) o.get("flags");
-                if (a != null)
-                    flags = new TreeSet<String>((List<String>) a);
+                String[] a = o.flags;
+                if (a != null) {
+                    flags = new TreeSet<String>(Arrays.asList(a));
+                }
             }
-            Log.d(TAG, String.format("WS: Got string message! %d", message.length()));
+            Log.d(TAG, String.format("WS: Got string message! %d", message.length));
         } catch (Exception e) {
             Log.e(TAG, e.toString());
         }
