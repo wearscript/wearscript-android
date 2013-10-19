@@ -1,60 +1,69 @@
 package com.dappervision.wearscript;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.json.JSONArray;
 import org.json.simple.JSONObject;
-import org.msgpack.annotation.Message;
+import org.msgpack.type.Value;
+import org.msgpack.type.ValueFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class DataPoint {
     private DataProvider parent;
-    private ArrayList<Double> values;
-    private Double timestamp;
-    private Long timestampRaw;
-
-    @Message
-    public static class WSSensor {
-        public String name;
-        public int type;
-        public double timestamp;
-        public long timestampRaw;
-        public Double[] values;
-    }
-    private WSSensor sensor;
+    public String name;
+    public int type;
+    public List<Double> values;
+    public List<Value> valuesV;
+    public long timestampRaw;
+    public double timestamp;
 
     DataPoint(DataProvider parent, double timestamp, long timestampRaw) {
         this.parent = parent;
-        this.sensor = new WSSensor();
-        this.sensor.name = parent.getName();
-        this.sensor.type = parent.getType();
-        this.sensor.timestamp = timestamp;
-        this.sensor.timestampRaw = timestampRaw;
+
+        name = parent.getName();
+        type = parent.getType();
+        this.timestamp = timestamp;
+        this.timestampRaw = timestampRaw;
         this.values = new ArrayList<Double>();
+        this.valuesV = new ArrayList<Value>();
+    }
+
+    DataPoint(String name, int type, double timestamp, long timestampRaw) {
+        this.name = name;
+        this.type = type;
+        this.timestamp = timestamp;
+        this.timestampRaw = timestampRaw;
+        this.values = new ArrayList<Double>();
+        this.valuesV = new ArrayList<Value>();
     }
 
     public void addValue(Double v) {
-        values.add(v);
+        this.values.add(v);
+        this.valuesV.add(ValueFactory.createFloatValue(v));
     }
 
-    public int type() {
-        return parent.getType();
+    public int getType() {
+        return type;
     }
 
-    public WSSensor getWSSensor() {
-        this.sensor.values = (Double[])this.values.toArray();
-        return this.sensor;
+    public String getName() {
+        return name;
+    }
+
+    public Value getValue() {
+        ArrayList<Value> output = new ArrayList();
+        output.add(ValueFactory.createArrayValue(valuesV.toArray(new Value[0])));
+        output.add(ValueFactory.createFloatValue(timestamp));
+        output.add(ValueFactory.createIntegerValue(timestampRaw));
+        return ValueFactory.createArrayValue(output.toArray(new Value[0]));
     }
 
     public String toJSONString() {
-        WSSensor s = getWSSensor();
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.writeValueAsString(s);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
+        JSONObject o = new JSONObject();
+        o.put("name", name); // TODO(brandyn): Should we make this a string
+        o.put("type", type);
+        o.put("timestamp", timestamp);
+        o.put("timestampRaw", timestampRaw);
+        o.put("values", values);
+        return o.toJSONString();
     }
 }
