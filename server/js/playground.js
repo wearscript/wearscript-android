@@ -41,7 +41,7 @@ function pingStatus() {
         scriptRowDisabled = true;
         $(".scriptel").prop('disabled', true);
     }
-    var out = {action: 'pingStatus'};
+    var out = ['pingStatus'];
     ws.send(enc(out));
     _.delay(pingStatus, 4000);
 }
@@ -71,73 +71,77 @@ function connectWebsocket(WSUrl) {
             $(".scriptel").prop('disabled', false);
         }
         //var response = JSON.parse(event.data);
-        var response = msgpack.unpack(event.data);
-        if (response.action == "log") {
-            console.log(response.message);
-        } else if (response.action == 'signScript') {
-            var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response.script}}});
-            $.post('https://api.github.com/gists', data, function (result) {console.log(result);$('#script-url').val(result.files['wearscript.html'].raw_url)});
-        } else if (response.action == "data" || response.action == "pongStatus") {
-            if (!_.has(glassIdToNum, response.glassID)) {
-                var glassNum = _.uniqueId('glass-');
-                var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
+        var reader = new FileReader();
+        reader.addEventListener("loadend", function () {
+            debug_data = reader.result;
+            var response = msgpack.unpack(reader.result);
+            debug_response = response;
+            var action = response[0];
+            if (action == "log") {
+                console.log(response[1]);
+            } else if (action == 'signScript') {
+                var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response[1]}}});
+                $.post('https://api.github.com/gists', data, function (result) {console.log(result);$('#script-url').val(result.files['wearscript.html'].raw_url)});
+            } else if (action == "sensors" || action == "image" || action == "pongStatus") {
+                var glassID = response[1];
+                if (!_.has(glassIdToNum, glassID)) {
+                    var glassNum = _.uniqueId('glass-');
+                    var cubet = '<div class="ccontainer"><div class="cube"><figure class="front">1</figure><figure class="back">2</figure><figure class="right">3</figure><figure class="left">4</figure><figure class="top">5</figure><figure class="bottom">6</figure></div>'
 
+                    $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><div class="charts"></div><span class="pingLabel label label-success" updateTime="{{time}}">Status</span><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet, time: (new Date).getTime()}));
+                    glassIdToNum[glassID] = glassNum;
+	                graphs[glassID] = {};
+                }
+                var $glass = $('#' + glassIdToNum[glassID]);
+                $glass.find('.pingLabel').removeClass('label-danger').addClass('label-success').attr('updateTime', (new Date).getTime());
 
-                $('#glasses').append(Mustache.render('<div id="{{glassID}}"><img class="image" \><div class="times"></div><div class="charts"></div><span class="pingLabel label label-success" updateTime="{{time}}">Status</span><div class="panel panel-default"><div class="panel-heading">Sensor Values</div><table class="table"><thead><tr><th>#</th><th>Name</th><th>Time</th><th>Values</th><th>Actions</th></tr></thead><tbody class="sensor-data"></tbody></table></div>{{{cube}}}</div>', {glassID: glassNum, cube: cubet, time: (new Date).getTime()}));
-                glassIdToNum[response.glassID] = glassNum;
-	            graphs[response.glassID] = {};
+                if (action == "image") {
+                    $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response[3]);
+                }
+                if (action == "sensors") {
+                    response_sensor = response;
+                    _.each(response[3], function (sensorSamples, sensorName) {
+                        var sensorType = response[2][sensorName];
+                        sensorLastValues = _.last(sensorSamples)[0];
+                        if (sensorType == 11) {
+                            rotate_cuber($glass.find('.cube'), remap_coordinate_system(getRotationMatrixFromVector(sensorLastValues), 1, 3));
+                        }
+                        _.each(sensorSamples, function (x) {
+                            addGraphValues(glassID, $glass.find('.chart-' + sensorType), sensorType, x[0], x[1]);
+                        });
+                        if (!$glass.find('.sensor-' + sensorType).length) {
+	                        var $sensorData = $glass.find('.sensor-data');
+                            $sensorData.append($('<tr>').attr('class', 'sensor-' + sensorType));
+                            $sensorData.html($sensorData.children().sort(function (x, y) {return Number(x.className.split('-')[1]) -Number(y.className.split('-')[1])}));
+                        }
+                        var $sensor = $glass.find('.sensor-' + sensorType);
+                        $sensor.html(Mustache.render('<td>{{type}}</td><td>{{name}}</td><td>{{timestamp}}</td><td>{{valuesStr}}</td><td><button type="button" class="btn btn-primary btn-xs sensor-graph-button" glass="{{glassID}}" name="{{type}}">Graph</button></td>', {valuesStr: sensorLastValues.join(', '), name: sensorName, type: sensorType, glassID: glassID}));
+                        $sensor.find('.sensor-graph-button').click(sensor_graph_click);
+                    });
+                }
             }
-            var $glass = $('#' + glassIdToNum[response.glassID]);
-            $glass.find('.pingLabel').removeClass('label-danger').addClass('label-success').attr('updateTime', (new Date).getTime());
-
-            if (_.has(response, 'imageb64')) {
-                latestImages[response.glassID] = response.imageb64;
-                $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response.imageb64);
-                $glass.find('.times').html('Save Time: ' + (response.Tg0 - response.Tsave) + ' Tsave: ' + response.Tsave + ' Tg0: ' + response.Tg0);
-            }
-            if (_.has(response, 'sensors')) {
-                latestSensors[response.glassID] = response.sensors;
-                response_sensor = response;
-                _.each(response.sensors, function (x) {
-                    if (x.type == 11) {
-                        rotate_cuber($glass.find('.cube'), remap_coordinate_system(getRotationMatrixFromVector(x.values), 1, 3));
-                    }
-                    addGraphValues(response.glassID, $glass.find('.chart-' + x.type), x);
-                    if (!$glass.find('.sensor-' + x.type).length) {
-	                    var $sensorData = $glass.find('.sensor-data');
-                        $sensorData.append($('<tr>').attr('class', 'sensor-' + x.type));
-                        $sensorData.html($sensorData.children().sort(function (x, y) {return Number(x.className.split('-')[1]) -Number(y.className.split('-')[1])}));
-                    }
-                    x.valuesStr = x.values.join(', ');
-                    x.glassID = response.glassID;
-                    var $sensor = $glass.find('.sensor-' + x.type);
-                    $sensor.html(Mustache.render('<td>{{type}}</td><td>{{name}}</td><td>{{timestamp}}</td><td>{{valuesStr}}</td><td><button type="button" class="btn btn-primary btn-xs sensor-graph-button" glass="{{glassID}}" name="{{type}}">Graph</button></td>', x));
-                    $sensor.find('.sensor-graph-button').click(sensor_graph_click);
-                });
-            }
-        }
+        })
+        reader.readAsBinaryString(event.data);
     }
     return ws;
 }
-function addGraphValues(glassID, chart, sensor) {
+function addGraphValues(glassID, chart, type, ys, timestamp) {
     if (!chart.length)
         return;
     var domains = {'-2': [-1, 1], 1: [-10, 10], 2: [-60, 60], 3: [-180, 360], 4: [-3, 3], 5: [0, 2000], 9: [-10, 10], 10: [-12, 12], 11: [-1, 1]};
-    var ys = sensor.values;
     var colors = ['red', 'green', 'blue'];
-    var type = sensor.type;
     var domain = domains[type];
     if (!_.has(graphs[glassID], type) || seriesDatas[type]['0'].data.length > 1000) {
         // Sensor graph
         chart.html('');
         if (_.isUndefined(domain))
-            seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: sensor.timestamp, y: y}], color: colors[z], name: String(z)}});
+            seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: timestamp, y: y}], color: colors[z], name: String(z)}});
         else
-            seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: sensor.timestamp, y: y}], color: colors[z], name: String(z), scale: d3.scale.linear().domain(domains[type]).nice()}});
+            seriesDatas[type] = _.map(ys, function (y, z) {return {data: [{x: timestamp, y: y}], color: colors[z], name: String(z), scale: d3.scale.linear().domain(domains[type]).nice()}});
         graphs[glassID][type] = buildChart(chart, seriesDatas[type]);
     } else {
         _.each(ys, function (y, z) {
-            seriesDatas[type][z].data.push({x: sensor.timestamp, y: y});
+            seriesDatas[type][z].data.push({x: timestamp, y: y});
         });
         graphs[glassID][type].update();
     }
@@ -277,8 +281,8 @@ function sensor_graph_click() {
         $glass.find('.charts').html($glass.find('.charts').children().sort(function (x, y) {return Number($(x).attr('name')) - Number($(y).attr('name'))}));
     }
 }
-function sendTimelineImage(imageb64) {
-    var out = {action: 'sendTimelineImage', imageb64: imageb64};
+function sendTimelineImage(image) {
+    var out = ['sendTimelineImage', image];
     ws.send(enc(out));
 }
 
@@ -302,30 +306,28 @@ function unsetFlags(flags, success) {
 
 function main(WSUrl) {
     glassIdToNum = {};
-    latestImages = {};
-    latestSensors = {};
     graphs = {};
     seriesDatas = {};
     scriptRowDisabled = true;
     $(".scriptel").prop('disabled', true);
     $('#qrButton').click(function () {createQR(WSUrl)});
     $('#scriptButton').click(function () {
-        ws.send(enc({action: 'startScript', script: editor.getValue()}));
+        ws.send(enc(['startScript', editor.getValue()]));
     });
     $('#scriptDefaultButton').click(function () {
-        ws.send(enc({action: 'defaultScript', script: editor.getValue()}));
+        ws.send(enc(['defaultScript', editor.getValue()]));
     });
     $('#scriptUrlButton').click(function () {
-        ws.send(enc({action: 'startScriptUrl', scriptUrl: $('#script-url').val()}));
+        ws.send(enc(['startScriptUrl', $('#script-url').val()]));
     });
     $('#resetButton').click(function () {
-        ws.send(enc({action: 'startScript', script: "<script>function s() {WS.log('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>"}));
+        ws.send(enc(['startScript', "<script>function s() {WS.log('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>"]));
     });
     $('#gistButton').click(function () {
-        ws.send(enc({action: 'signScript', script: editor.getValue()}));
+        ws.send(enc(['signScript', editor.getValue()]));
     });
     $('#shutdownButton').click(function () {
-        ws.send(enc({action: 'shutdown'}));
+        ws.send(enc(['shutdown']));
     });
     c = {names: ['notify']};
 
