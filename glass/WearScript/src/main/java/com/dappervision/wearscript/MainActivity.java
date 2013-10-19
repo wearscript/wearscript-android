@@ -177,7 +177,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         if (sendData) {
             bs.lastSensorSaveTime = bs.lastImageSaveTime = System.nanoTime();
             frame = cameraToBGR(inputFrame);
-            bs.saveDataPacket(frame);
+            bs.saveImage(frame);
         }
         if (bs.overlay != null)
             return bs.overlay;
