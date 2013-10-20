@@ -21,8 +21,6 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.webkit.WebView;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
@@ -56,7 +54,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public WeakReference<MainActivity> activity;
     public boolean previewWarp = false, displayWeb = false;
     public Mat overlay;
-    public JSONArray wifiBuffer;
+    //public JSONArray wifiBuffer;
     public TreeSet<String> flags;
     public String imageCallback;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
@@ -516,6 +514,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void wifiScanResults() {
         Double timestamp = System.currentTimeMillis() / 1000.;
+        /*
         for (ScanResult s : wifiManager.getScanResults()) {
             JSONObject r = new JSONObject();
             r.put("timestamp", timestamp);
@@ -527,6 +526,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (dataWifi)
                 wifiBuffer.add(r);
         }
+        */
     }
 
     public void wifiStartScan() {
@@ -551,23 +551,32 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void serverTimeline(JSONObject ti) {
-        Log.i(TAG, "Timeline: " + ti.toJSONString());
-        JSONObject data = new JSONObject();
-        data.put("action", "timeline");
-        data.put("ti", ti);
+    public void serverTimeline(String ti) {
         synchronized (lock) {
-            client.send(data.toJSONString());
+            if (client != null && client.isConnected()) {
+                List<Value> output = new ArrayList<Value>();
+                output.add(ValueFactory.createRawValue("timeline"));
+                output.add(ValueFactory.createRawValue(ti));
+                try {
+                    client.send(msgpack.write(output));
+                } catch (IOException e) {
+                    Log.e(TAG, "serverTimeline: Couldn't serialize msgpack");
+                }
+            }
         }
     }
 
     public void log(String m) {
         synchronized (lock) {
             if (client != null && client.isConnected()) {
-                JSONObject data = new JSONObject();
-                data.put("action", "log");
-                data.put("message", m);
-                client.send(data.toJSONString());
+                List<Value> output = new ArrayList<Value>();
+                output.add(ValueFactory.createRawValue("log"));
+                output.add(ValueFactory.createRawValue(m));
+                try {
+                    client.send(msgpack.write(output));
+                } catch (IOException e) {
+                    Log.e(TAG, "serverTimeline: Couldn't serialize msgpack");
+                }
             }
         }
     }
