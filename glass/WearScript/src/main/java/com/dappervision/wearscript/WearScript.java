@@ -54,7 +54,7 @@ public class WearScript {
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
         // TODO: Require WS connection
-        bs.serverTimeline((JSONObject) new JSONValue().parse(ti));
+        bs.serverTimeline(ti);
     }
 
     public boolean hasFlag(String flag) {

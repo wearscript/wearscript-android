@@ -30,7 +30,9 @@ public class NativeDataProvider extends DataProvider implements SensorEventListe
         for (int i = 0; i < event.values.length; i++) {
             dataPoint.addValue(new Double(event.values[i]));
         }
-        parent.queue(dataPoint);
+        // NOTE(brandyn): This prevents a race condition but doesn't completely eliminate it, look into further
+        if (parent != null)
+            parent.queue(dataPoint);
     }
 
     @Override
