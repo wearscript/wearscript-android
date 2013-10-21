@@ -129,6 +129,9 @@ public class CameraManager implements Camera.PreviewCallback {
 
     public void onPreviewFrame(byte [] data, Camera camera) {
         synchronized (this) {
+            if (camera == null) {
+                return;
+            }
             Log.d(TAG, "Preview Frame received. Frame size: " + data.length);
             cameraFrame.setFrame(data);
             bs.handleImage(cameraFrame);
