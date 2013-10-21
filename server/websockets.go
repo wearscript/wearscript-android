@@ -11,13 +11,13 @@ import (
 )
 
 var DeviceChannels = map[string][]chan *[]interface{}{} // [user]
-var WebChannels = map[string][]chan *[]interface{}{}    // [user]
+var WebChannels = map[string][]chan **[]interface{}{}    // [user]
 
 func CurTime() float64 {
 	return float64(time.Now().UnixNano()) / 1000000000.
 }
 
-func WSSendWeb(userId string, data *[]interface{}) error {
+func WSSendWeb(userId string, data **[]interface{}) error {
 	for _, c := range WebChannels[userId] {
 		select {
 		case c <- data:
@@ -87,6 +87,7 @@ func WSGlassHandler(c *websocket.Conn) {
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
 	wsSendChan := make(chan *[]interface{}, 5)
 	DeviceChannels[userId] = append(DeviceChannels[userId], wsSendChan)
+	var latestSensors, latestImage *[]interface{}
 
 	// Initialize delays
 	die := false
@@ -132,6 +133,7 @@ func WSGlassHandler(c *websocket.Conn) {
 	// Data from glass loop
 	for {
 		request := []interface{}{}
+		requestP := &request
 		msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
 		err := msgcodec.Receive(c, &request)
 		if err != nil {
@@ -161,9 +163,15 @@ func WSGlassHandler(c *websocket.Conn) {
 			}
 		} else if action == "log" {
 			fmt.Println(request[1].([]uint8))
-			WSSendWeb(userId, &request)
+			WSSendWeb(userId, &requestP)
+		} else if action == "sensors" {
+			latestSensors = requestP
+			WSSendWeb(userId, &latestSensors)
+		} else if action == "image" {
+			latestImage = requestP
+			WSSendWeb(userId, &latestImage)
 		} else {
-			WSSendWeb(userId, &request)
+			WSSendWeb(userId, &requestP)
 		}
 	}
 }
@@ -186,8 +194,9 @@ func WSWebHandler(c *websocket.Conn) {
 	fmt.Println("Websocket connected")
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
 	// TODO: This needs the "die" code added, look into glass side also
-	wsSendChan := make(chan *[]interface{}, 5)
+	wsSendChan := make(chan **[]interface{}, 5)
 	WebChannels[userId] = append(WebChannels[userId], wsSendChan)
+	var lastSensors, lastImage *[]interface{}
 	// Websocket sender
 	go func() {
 		for {
@@ -196,7 +205,25 @@ func WSWebHandler(c *websocket.Conn) {
 				break
 			}
 			msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
-			err := msgcodec.Send(c, *request)
+			action := string((**request)[0].([]uint8))
+			/* NOTE(brandyn): This assumes that the pointer changes between samples,
+			   I believe this is safe and it greatly simplifies sending the latest image/sensors.
+			   If this doesn't hold, then we would only miss sending a sample so the harm is minimal.
+			 */
+			if action == "image" {
+				if *request == lastImage {
+					fmt.Println("Already sent image, skipping")
+					continue
+				}
+				lastImage = *request
+			} else if action == "sensors" {
+				if *request == lastSensors {
+					fmt.Println("Already sent sensors, skipping")
+					continue
+				}
+				lastSensors = *request
+			}
+			err := msgcodec.Send(c, **request)
 			if err != nil {
 				return
 			}
@@ -232,7 +259,8 @@ func WSWebHandler(c *websocket.Conn) {
 				continue
 			}
 		    request[1] = scriptBytes
-			wsSendChan <- &request
+			requestP := &request
+			wsSendChan <- &requestP
 		} else {
 			WSSendDevice(userId, &request)
 		}

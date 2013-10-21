@@ -102,9 +102,9 @@ function connectWebsocket(WSUrl) {
                     response_sensor = response;
                     _.each(response[3], function (sensorSamples, sensorName) {
                         var sensorType = response[2][sensorName];
-                        sensorLastValues = _.last(sensorSamples)[0];
+                        var sensorLast = _.last(sensorSamples);
                         if (sensorType == 11) {
-                            rotate_cuber($glass.find('.cube'), remap_coordinate_system(getRotationMatrixFromVector(sensorLastValues), 1, 3));
+                            rotate_cuber($glass.find('.cube'), remap_coordinate_system(getRotationMatrixFromVector(sensorLast[0]), 1, 3));
                         }
                         _.each(sensorSamples, function (x) {
                             addGraphValues(glassID, $glass.find('.chart-' + sensorType), sensorType, x[0], x[1]);
@@ -115,7 +115,7 @@ function connectWebsocket(WSUrl) {
                             $sensorData.html($sensorData.children().sort(function (x, y) {return Number(x.className.split('-')[1]) -Number(y.className.split('-')[1])}));
                         }
                         var $sensor = $glass.find('.sensor-' + sensorType);
-                        $sensor.html(Mustache.render('<td>{{type}}</td><td>{{name}}</td><td>{{timestamp}}</td><td>{{valuesStr}}</td><td><button type="button" class="btn btn-primary btn-xs sensor-graph-button" glass="{{glassID}}" name="{{type}}">Graph</button></td>', {valuesStr: sensorLastValues.join(', '), name: sensorName, type: sensorType, glassID: glassID}));
+                        $sensor.html(Mustache.render('<td>{{type}}</td><td>{{name}}</td><td>{{timestamp}}</td><td>{{valuesStr}}</td><td><button type="button" class="btn btn-primary btn-xs sensor-graph-button" glass="{{glassID}}" name="{{type}}">Graph</button></td>', {valuesStr: sensorLast[0].join(', '), name: sensorName, type: sensorType, glassID: glassID, timestamp: sensorLast[1]}));
                         $sensor.find('.sensor-graph-button').click(sensor_graph_click);
                     });
                 }
