@@ -15,12 +15,17 @@ function cb(data) {
 }
 function server() {
     WS.log('Welcome to WearScript');
-    //WS.say('Welcome to WearScript');
-    //_.each(['gps', 'accelerometer', 'magneticField', 'orientation', 'gyroscope',
-    //        'light', 'gravity', 'linearAcceleration', 'rotationVector'], function (x) {WS.sensorOn(WS.sensor(x), .1)});
-    //WS.dataLog(false, true, .1);
-    //WS.sensorCallback('cb');
-    //WS.serverTimeline(JSON.stringify({'text': 'Welcome to WearScript'}));
+    WS.say('Welcome to WearScript');
+    _.each(['gps', 'accelerometer', 'magneticField', 'orientation', 'gyroscope',
+            'light', 'gravity', 'linearAcceleration', 'rotationVector'], function (x) {WS.sensorOn(WS.sensor(x), .15, 'cb')});
+    WS.cameraOn(2);
+    if (1)
+	    WS.dataLog(false, true, .15);
+    else
+	    WS.dataLog(true, true, .15);
+    WS.serverTimeline(JSON.stringify({'text': 'Welcome to WearScript'}));
+    //WS.cameraOff();
+    //WS.shutdown();
 }
 $(function () {
     ctx = $('#canvas')[0].getContext("2d");
