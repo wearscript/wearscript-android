@@ -16,7 +16,6 @@ type NotifyEvent struct {
 	Key           string   `json:"key"`
 	Html          string   `json:"html"`
 	SpeakableText string   `json:"speakableText"`
-	HtmlPages     []string `json:"htmlPages"`
 }
 
 func NotifyServer(w http.ResponseWriter, req *http.Request) {
@@ -84,9 +83,6 @@ func NotifyServer(w http.ResponseWriter, req *http.Request) {
 		nt.SpeakableText = r.Title + " " + r.Application + " " + r.Message
 	} else {
 		nt.Html = r.Html
-	}
-	if r.HtmlPages != nil {
-		nt.HtmlPages = r.HtmlPages
 	}
 	if r.SpeakableText != "" {
 		nt.SpeakableText = r.SpeakableText
