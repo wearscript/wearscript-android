@@ -152,13 +152,14 @@ public class WearScript {
 
     public void cameraOff() {
         bs.dataImage = false;
+        bs.getCameraManager().unregister();
         // TODO: Turn off camera
     }
 
     public void cameraOn(double imagePeriod) {
         bs.dataImage = true;
         bs.imagePeriod = imagePeriod * 1000000000L;
-        // TODO: Turn on camera
+        bs.getCameraManager().register();
     }
 
     public void wifiListenOff() {

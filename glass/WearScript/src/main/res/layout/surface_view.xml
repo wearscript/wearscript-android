@@ -2,11 +2,4 @@
     xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
     android:layout_height="match_parent" >
-
-    <com.dappervision.wearscript.JavaCameraView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"
-        android:id="@+id/activity_java_surface_view" />
-
 </LinearLayout>
