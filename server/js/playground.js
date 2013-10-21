@@ -96,7 +96,7 @@ function connectWebsocket(WSUrl) {
                 $glass.find('.pingLabel').removeClass('label-danger').addClass('label-success').attr('updateTime', (new Date).getTime());
 
                 if (action == "image") {
-                    $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + response[3]);
+                    $glass.find('.image').attr('src', 'data:image/jpeg;base64,' + btoa(response[3]));
                 }
                 if (action == "sensors") {
                     response_sensor = response;

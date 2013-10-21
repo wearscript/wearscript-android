@@ -147,7 +147,7 @@ func WSGlassHandler(c *websocket.Conn) {
 		fmt.Println(action)
 		if action == "timeline" {
 			ti := mirror.TimelineItem{}
-			err = json.Unmarshal(request[1].([]byte), &ti)
+			err = json.Unmarshal(request[1].([]uint8), &ti)
 			if err != nil {
 				LogPrintf("ws: timeline: js")
 				continue
@@ -160,7 +160,7 @@ func WSGlassHandler(c *websocket.Conn) {
 				continue
 			}
 		} else if action == "log" {
-			fmt.Println(request[1].(string))
+			fmt.Println(request[1].([]uint8))
 			WSSendWeb(userId, &request)
 		} else {
 			WSSendWeb(userId, &request)
