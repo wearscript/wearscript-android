@@ -60,6 +60,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
     protected String TAG = "WearScript";
+    protected CameraManager cameraManager;
     protected TreeMap<String, Mat> scriptImages;
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
@@ -69,7 +70,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected SocketClient client;
     protected WebView webview;
     protected DataManager dataManager;
-    protected int remoteImageAckCount, remoteImageCount;
     protected String wsUrl;
     protected PowerManager.WakeLock wakeLock;
     protected WifiManager wifiManager;
@@ -103,11 +103,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 if (displayWeb && webview != null) {
                     a.setContentView(webview);
                 } else {
-                    a.setContentView(R.layout.surface_view);
-                    a.view = (JavaCameraView) a.findViewById(R.id.activity_java_surface_view);
-                    a.view.setVisibility(SurfaceView.VISIBLE);
-                    a.view.setCvCameraViewListener(a);
-                    a.view.enableView();
+
                 }
             }
         });
@@ -115,6 +111,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public DataManager getDataManager() {
         return dataManager;
+    }
+
+    public CameraManager getCameraManager() {
+        return cameraManager;
     }
 
     public void handleSensor(DataPoint dp, String url) {
@@ -180,28 +180,31 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void saveImage(final Mat frame) {
-        MatOfByte jpgFrame = new MatOfByte();
-        Highgui.imencode(".jpg", frame, jpgFrame);
-        List<Value> output = new ArrayList<Value>();
-        output.add(ValueFactory.createRawValue("image"));
-        output.add(ValueFactory.createRawValue(glassID));
-        output.add(ValueFactory.createFloatValue(System.currentTimeMillis() / 1000.));
-        output.add(ValueFactory.createRawValue(jpgFrame.toArray()));
-
-
-        final byte[] dataStr;
-        try {
-            dataStr = msgpack.write(output);
-        } catch (IOException e) {
-            Log.e(TAG, "Couldn't serialize msgpack");
-            e.printStackTrace();
+    public void handleImage(final CameraManager.CameraFrame frame) {
+        boolean sendData = !dataImage || (!dataLocal && !dataRemote) || System.nanoTime() - lastImageSaveTime < imagePeriod;
+        sendData = !sendData;
+        if (!sendData)
             return;
-        }
+        lastImageSaveTime = System.nanoTime();
+        byte[] frameJPEG = frame.getJPEG();
         if (dataLocal) {
-            SaveData(dataStr, "data/", true, ".msgpack");
+            // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
+            SaveData(frameJPEG, "data/", true, ".jpg");
         }
         if (dataRemote) {
+            List<Value> output = new ArrayList<Value>();
+            output.add(ValueFactory.createRawValue("image"));
+            output.add(ValueFactory.createRawValue(glassID));
+            output.add(ValueFactory.createFloatValue(System.currentTimeMillis() / 1000.));
+            output.add(ValueFactory.createRawValue(frameJPEG));
+            final byte[] dataStr;
+            try {
+                dataStr = msgpack.write(output);
+            } catch (IOException e) {
+                Log.e(TAG, "Couldn't serialize msgpack");
+                e.printStackTrace();
+                return;
+            }
             if (clientConnected())
                 synchronized (lock) {
                     client.send(dataStr);
@@ -214,7 +217,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (client == null)
                 return false;
             if (!client.isConnected()) {
-                remoteImageAckCount = remoteImageCount = 0;
                 client.connect();
             }
             return client.isConnected();
@@ -263,7 +265,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             displayWeb = true;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             dataManager.unregister();
-            remoteImageAckCount = remoteImageCount = 0;
+            cameraManager.unregister();
             updateActivityView();
         }
     }
@@ -317,7 +319,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void onSocketConnect(String cb) {
         Log.i(TAG, "WS Connected!");
-        remoteImageAckCount = remoteImageCount = 0;
         synchronized (lock) {
             if (cb != null && webview != null) {
                 webview.loadUrl(String.format("javascript:%s();", cb));
@@ -396,7 +397,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (client == null || client.getListener() != this)
                 return;
         }
-        remoteImageAckCount = remoteImageCount = 0;
         client.reconnect();
     }
 
@@ -508,7 +508,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
         dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE), this);
-
+        cameraManager = new CameraManager(this);
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
@@ -545,6 +545,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         if (broadcastReceiver != null)
             unregisterReceiver(broadcastReceiver);
         //wakeLock.release();
+        if (cameraManager != null) {
+            cameraManager.unregister();
+        }
         if (tts != null) {
             tts.stop();
             tts.shutdown();
