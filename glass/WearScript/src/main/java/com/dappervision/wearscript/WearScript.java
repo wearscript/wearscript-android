@@ -2,14 +2,12 @@ package com.dappervision.wearscript;
 
 import android.util.Log;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
 public class WearScript {
@@ -56,7 +54,7 @@ public class WearScript {
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
         // TODO: Require WS connection
-        bs.serverTimeline((JSONObject) new JSONValue().parse(ti));
+        bs.serverTimeline(ti);
     }
 
     public boolean hasFlag(String flag) {
@@ -145,19 +143,11 @@ public class WearScript {
     public void data(int type, String name, String values) {
         Log.i(TAG, "data");
 
-        DataPoint.WSSensor sensor = new DataPoint.WSSensor();
-        sensor.name = name;
-        sensor.timestamp = System.currentTimeMillis() / 1000.;
-        sensor.timestampRaw = System.nanoTime();
-        sensor.type = type;
-        ArrayList<Double> vs;
-        try {
-            vs = (ArrayList<Double>)this.bs.mapper.readValue(values, ArrayList.class);
-        } catch (IOException e) {
-            Log.e(TAG, "JSON mapping error");
-            return;
+        DataPoint dp = new DataPoint(name, type, System.currentTimeMillis() / 1000., System.nanoTime());
+        for (Double p : (List<Double>) JSONValue.parse(values)) {
+            dp.addValue(p);
         }
-        bs.sensorBuffer.add(sensor);
+        bs.handleSensor(dp, null);
     }
 
     public void cameraOff() {
