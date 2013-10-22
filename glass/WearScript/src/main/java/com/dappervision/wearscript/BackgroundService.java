@@ -371,6 +371,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
             } else if (action.equals("data")) {
                 // TODO(brandyn): Add remote sensors
+            } else if (action.equals("version")) {
+                int versionExpected = 0;
+                int version = input.get(1).asIntegerValue().getInt();
+                if (version != versionExpected) {
+                    say("Version mismatch!  Got " + version + " and expected " + versionExpected + ".  Visit wear script .com for information.");
+                }
             } else if (action.equals("shutdown")) {
                 Log.i(TAG, "Shutting down!");
                 shutdown();
