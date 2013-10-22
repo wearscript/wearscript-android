@@ -77,7 +77,12 @@ function connectWebsocket(WSUrl) {
             var response = msgpack.unpack(reader.result);
             debug_response = response;
             var action = response[0];
-            if (action == "log") {
+            if (action == "version") {
+                var version = 0;
+                if (response[1] != version) {
+                    alert('Incompatible server version: ' + response[1] + ' Expected: ' + version + '.  Bad things may happen...');
+                }
+            } else if (action == "log") {
                 console.log(response[1]);
             } else if (action == 'signScript') {
                 var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response[1]}}});

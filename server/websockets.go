@@ -86,6 +86,7 @@ func WSGlassHandler(c *websocket.Conn) {
 	}
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
 	wsSendChan := make(chan *[]interface{}, 5)
+	wsSendChan <- &[]interface{}{[]uint8("version"), version}
 	DeviceChannels[userId] = append(DeviceChannels[userId], wsSendChan)
 	var latestSensors, latestImage *[]interface{}
 
@@ -195,6 +196,8 @@ func WSWebHandler(c *websocket.Conn) {
 	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
 	// TODO: This needs the "die" code added, look into glass side also
 	wsSendChan := make(chan **[]interface{}, 5)
+	versionRequestP := &[]interface{}{[]uint8("version"), version}
+	wsSendChan <- &versionRequestP
 	WebChannels[userId] = append(WebChannels[userId], wsSendChan)
 	var lastSensors, lastImage *[]interface{}
 	// Websocket sender
