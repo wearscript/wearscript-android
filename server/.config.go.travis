@@ -2,6 +2,7 @@ package main
 
 const (
     // You can leave these
+	version = 0 // Defines the websocket protocol version
 	debug       = true // Set to false to turn off logging every API request.
 	allowAllUsers = true // If true then all users who auth can access the server, false admin must verify
 	sessionName = "wearscript"
