@@ -12,13 +12,9 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
 
 import java.lang.ref.WeakReference;
 
@@ -98,8 +94,6 @@ public class MainActivity extends Activity {
         startService(new Intent(this, BackgroundService.class));
         bindService(new Intent(this,
                 BackgroundService.class), mConnection, Context.BIND_AUTO_CREATE);
-
-
 
 
         // TODO(brandyn): Handle extras
