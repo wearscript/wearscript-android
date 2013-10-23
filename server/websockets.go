@@ -88,6 +88,7 @@ func WSGlassHandler(c *websocket.Conn) {
 	wsSendChan := make(chan *[]interface{}, 5)
 	wsSendChan <- &[]interface{}{[]uint8("version"), version}
 	DeviceChannels[userId] = append(DeviceChannels[userId], wsSendChan)
+	visionChan := make(chan *[]interface{})
 	var latestSensors, latestImage *[]interface{}
 
 	// Initialize delays
@@ -102,7 +103,6 @@ func WSGlassHandler(c *websocket.Conn) {
 				break
 			}
 			fmt.Println("Sending to glass")
-			fmt.Println(request)
 			msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
 			err = msgcodec.Send(c, request)
 			if err != nil {
@@ -128,6 +128,22 @@ func WSGlassHandler(c *websocket.Conn) {
 			fmt.Println("Sending flags")
 			wsSendChan <- &[]interface{}{"flags", uflags}
 			time.Sleep(time.Millisecond * 2000)
+		}
+	}()
+
+	// Vision
+	go func() {
+		for {
+			request, ok := <-visionChan
+			if !ok {
+				die = true
+				break
+			}
+			input := string((*request)[3].([]uint8))
+			output := process_image(&input)
+			if output != nil {
+				WSSendDevice(userId, &[]interface{}{[]uint8("image"), (*request)[1], (*request)[2], []uint8(*output)})
+			}
 		}
 	}()
 
@@ -171,6 +187,11 @@ func WSGlassHandler(c *websocket.Conn) {
 		} else if action == "image" {
 			latestImage = requestP
 			WSSendWeb(userId, &latestImage)
+			select {
+			case visionChan <- requestP:
+			default:
+				fmt.Println("Image skipped vision processing, it was busy...")
+			}
 		} else {
 			WSSendWeb(userId, &requestP)
 		}
