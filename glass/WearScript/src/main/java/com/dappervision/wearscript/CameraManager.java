@@ -3,6 +3,7 @@ package com.dappervision.wearscript;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.util.Base64;
 import android.util.Log;
 
 import org.opencv.core.CvType;
@@ -13,6 +14,7 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CameraManager implements Camera.PreviewCallback {
     private final BackgroundService bs;
@@ -22,9 +24,12 @@ public class CameraManager implements Camera.PreviewCallback {
     private byte[] buffer;
     private SurfaceTexture surfaceTexture;
     private CameraFrame cameraFrame;
+    ConcurrentHashMap<Integer, String> jsCallbacks;
+
 
     public class CameraFrame {
         private MatOfByte jpgFrame;
+        private String jpgB64;
         private boolean frameRGBSet;
         private Mat frameRGB;
         private Mat frame;
@@ -48,6 +53,7 @@ public class CameraManager implements Camera.PreviewCallback {
             Imgproc.cvtColor(frame, frameRGB, Imgproc.COLOR_YUV2RGB_NV12);
             return frameRGB;
         }
+
         byte[] getJPEG() {
             if (jpgFrame != null)
                 return jpgFrame.toArray();
@@ -60,6 +66,7 @@ public class CameraManager implements Camera.PreviewCallback {
 
     CameraManager(BackgroundService bs) {
         this.bs = bs;
+        jsCallbacks = new ConcurrentHashMap<Integer, String>();
     }
 
     public void unregister() {
@@ -71,6 +78,7 @@ public class CameraManager implements Camera.PreviewCallback {
                 camera.release();
             }
             camera = null;
+            jsCallbacks = new ConcurrentHashMap<Integer, String>();
         }
     }
 
@@ -127,7 +135,21 @@ public class CameraManager implements Camera.PreviewCallback {
         }
     }
 
-    public void onPreviewFrame(byte [] data, Camera camera) {
+    public void registerCallback(Integer type, String jsFunction) {
+        synchronized (this) {
+            jsCallbacks.put(type, jsFunction);
+        }
+    }
+
+    public String buildCallbackString(Integer type, byte[] frameJPEG) {
+        synchronized (this) {
+            if (frameJPEG == null || !jsCallbacks.containsKey(type))
+                return null;
+            return String.format("javascript:%s(\"%s\");", jsCallbacks.get(type), Base64.encodeToString(frameJPEG, Base64.NO_WRAP));
+        }
+    }
+
+    public void onPreviewFrame(byte[] data, Camera camera) {
         synchronized (this) {
             if (camera == null) {
                 return;
