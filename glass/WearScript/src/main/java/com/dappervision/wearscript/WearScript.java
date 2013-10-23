@@ -152,14 +152,18 @@ public class WearScript {
 
     public void cameraOff() {
         bs.dataImage = false;
+        // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
         bs.getCameraManager().unregister();
-        // TODO: Turn off camera
     }
 
     public void cameraOn(double imagePeriod) {
         bs.dataImage = true;
         bs.imagePeriod = imagePeriod * 1000000000L;
         bs.getCameraManager().register();
+    }
+
+    public void cameraCallback(int type, String callback) {
+        bs.getCameraManager().registerCallback(type, callback);
     }
 
     public void wifiListenOff() {
