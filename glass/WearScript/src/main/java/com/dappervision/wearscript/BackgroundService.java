@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
 import android.media.AudioRecord;
-import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
@@ -18,7 +17,6 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
 import android.util.Log;
-import android.view.SurfaceView;
 import android.webkit.WebView;
 
 import org.msgpack.MessagePack;
@@ -29,7 +27,6 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
@@ -117,6 +114,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return cameraManager;
     }
 
+
     public void handleSensor(DataPoint dp, String url) {
         synchronized (lock) {
             if (webview != null && url != null) {
@@ -181,12 +179,16 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void handleImage(final CameraManager.CameraFrame frame) {
-        boolean sendData = !dataImage || (!dataLocal && !dataRemote) || System.nanoTime() - lastImageSaveTime < imagePeriod;
-        sendData = !sendData;
-        if (!sendData)
+        // TODO(brandyn): Move this timing logic into the camera manager
+        if (!dataImage || System.nanoTime() - lastImageSaveTime < imagePeriod)
             return;
         lastImageSaveTime = System.nanoTime();
         byte[] frameJPEG = frame.getJPEG();
+        if (webview != null) {
+            String jsCallback = cameraManager.buildCallbackString(0, frameJPEG);
+            if (jsCallback != null)
+                webview.loadUrl(jsCallback);
+        }
         if (dataLocal) {
             // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
             SaveData(frameJPEG, "data/", true, ".jpg");
@@ -371,6 +373,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
             } else if (action.equals("data")) {
                 // TODO(brandyn): Add remote sensors
+            } else if (action.equals("image")) {
+                if (webview != null) {
+                    String jsCallback = cameraManager.buildCallbackString(1, input.get(3).asRawValue().getByteArray());
+                    if (jsCallback != null)
+                        webview.loadUrl(jsCallback);
+                }
             } else if (action.equals("version")) {
                 int versionExpected = 0;
                 int version = input.get(1).asIntegerValue().getInt();
