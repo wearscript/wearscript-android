@@ -10,7 +10,8 @@ int main() {
     int num_bytes = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     char *data = malloc(num_bytes);
-    fread(data, num_bytes, 1, fp);
+    if (fread(data, num_bytes, 1, fp) != 1)
+        return 1;
     fclose(fp);
     
     int output_size;

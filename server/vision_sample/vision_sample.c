@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui_c.h>
 #include "vision_sample.h"
 
 char *process_image_jpeg(char *input_jpeg, int input_size, int output_height, int output_width, int *output_size) {
@@ -23,6 +23,11 @@ char *process_image_jpeg(char *input_jpeg, int input_size, int output_height, in
     return output_jpeg;
 }
 
+void process_image_free(char *output) {
+    free(output);
+}
+
+#ifdef USE_SAMPLE
 void process_image(unsigned char *input, int input_height, int input_width, unsigned char *output, int output_height, int output_width) {
     int i, j, k;
     // Flips the image so that you can see a change
@@ -32,7 +37,5 @@ void process_image(unsigned char *input, int input_height, int input_width, unsi
                 output[(output_width * i + j) * 3 + k] = input[3 * (output_width * i + (output_width - j - 1)) + k];
     //memcpy(output, input, output_height * output_width * 3);
 }
+#endif
 
-void process_image_free(char *output) {
-    free(output);
-}
