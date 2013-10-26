@@ -1,8 +1,10 @@
 package com.dappervision.wearscript;
 
+import android.content.Intent;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
 
@@ -25,6 +27,7 @@ public class CameraManager implements Camera.PreviewCallback {
     private SurfaceTexture surfaceTexture;
     private CameraFrame cameraFrame;
     ConcurrentHashMap<Integer, String> jsCallbacks;
+    private boolean paused;
 
 
     public class CameraFrame {
@@ -39,6 +42,7 @@ public class CameraManager implements Camera.PreviewCallback {
             frameRGB = new Mat(width, height, CvType.CV_8UC3);
             jpgFrame = null;
             frameRGBSet = false;
+            paused = false;
         }
 
         void setFrame(byte[] data) {
@@ -69,7 +73,7 @@ public class CameraManager implements Camera.PreviewCallback {
         jsCallbacks = new ConcurrentHashMap<Integer, String>();
     }
 
-    public void unregister() {
+    public void unregister(boolean resetCallbacks) {
         synchronized (this) {
             if (camera != null) {
                 camera.stopPreview();
@@ -78,9 +82,26 @@ public class CameraManager implements Camera.PreviewCallback {
                 camera.release();
             }
             camera = null;
-            jsCallbacks = new ConcurrentHashMap<Integer, String>();
+            if (resetCallbacks) {
+                jsCallbacks = new ConcurrentHashMap<Integer, String>();
+                paused = false;
+            }
         }
     }
+
+    public void pause() {
+        synchronized (this) {
+            if (camera != null)
+                paused = true;
+            unregister(false);
+        }
+    }
+
+    public void resume() {
+        if (paused)
+            register();
+    }
+
 
     public void register() {
         synchronized (this) {
@@ -157,8 +178,24 @@ public class CameraManager implements Camera.PreviewCallback {
             Log.d(TAG, "Preview Frame received. Frame size: " + data.length);
             cameraFrame.setFrame(data);
             bs.handleImage(cameraFrame);
+            // TODO(brandyn): Handle race here
+            if (camera == null) {
+                return;
+            }
             this.camera.addCallbackBuffer(buffer);
         }
+    }
+
+    public void cameraPhoto() {
+        pause();
+        // TODO(brandyn): Get activity in a smarter way
+        bs.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
+    }
+
+    public void cameraVideo() {
+        pause();
+        // TODO(brandyn): Get activity in a smarter way
+        bs.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
     }
 
 }

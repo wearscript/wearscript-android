@@ -1,5 +1,6 @@
 package com.dappervision.wearscript;
 
+import android.content.Intent;
 import android.util.Log;
 
 import org.json.simple.JSONObject;
@@ -153,7 +154,15 @@ public class WearScript {
     public void cameraOff() {
         bs.dataImage = false;
         // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
-        bs.getCameraManager().unregister();
+        bs.getCameraManager().unregister(true);
+    }
+
+    public void cameraPhoto() {
+        this.bs.getCameraManager().cameraPhoto();
+    }
+
+    public void cameraVideo() {
+        this.bs.getCameraManager().cameraVideo();
     }
 
     public void cameraOn(double imagePeriod) {
@@ -164,6 +173,12 @@ public class WearScript {
 
     public void cameraCallback(int type, String callback) {
         bs.getCameraManager().registerCallback(type, callback);
+    }
+
+    public void activityFocus() {
+        Intent i = new Intent(bs, MainActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        bs.startActivity(i);
     }
 
     public void wifiListenOff() {
@@ -178,5 +193,8 @@ public class WearScript {
         bs.dataRemote = server;
         bs.dataLocal = local;
         bs.sensorDelay = sensorDelay * 1000000000L;
+    }
+    public boolean scriptVersion(int version) {
+        return version == 0;
     }
 }
