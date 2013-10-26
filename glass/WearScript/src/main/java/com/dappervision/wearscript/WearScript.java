@@ -175,10 +175,14 @@ public class WearScript {
         bs.getCameraManager().registerCallback(type, callback);
     }
 
-    public void activityFocus() {
+    public void activityCreate() {
         Intent i = new Intent(bs, MainActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         bs.startActivity(i);
+    }
+
+    public void activityDestroy() {
+        bs.activity.get().finish();
     }
 
     public void wifiListenOff() {
@@ -194,7 +198,13 @@ public class WearScript {
         bs.dataLocal = local;
         bs.sensorDelay = sensorDelay * 1000000000L;
     }
+
     public boolean scriptVersion(int version) {
-        return version == 0;
+        if (version == 0) {
+            return false;
+        } else {
+            bs.say("Script version incompatible with client");
+            return true;
+        }
     }
 }
