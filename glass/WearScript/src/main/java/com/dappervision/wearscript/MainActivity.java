@@ -8,14 +8,9 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
-
 import java.lang.ref.WeakReference;
 
 public class MainActivity extends Activity {
@@ -23,25 +18,9 @@ public class MainActivity extends Activity {
     private static final String EXTRA_NAME = "extra";
     public boolean isGlass = true, isForeground = true;
     protected BackgroundService bs;
-    protected Mat hSmallToGlassMat;
     ServiceConnection mConnection;
     private String extra;
     private boolean mHadUrlExtra = false;
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                }
-                break;
-                default: {
-                    super.onManagerConnected(status);
-                }
-                break;
-            }
-        }
-    };
 
     public MainActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
@@ -52,15 +31,19 @@ public class MainActivity extends Activity {
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // Bind Service
         super.onCreate(savedInstanceState);
         mConnection = new ServiceConnection() {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 Log.i(TAG, "Service Connected");
                 bs = ((BackgroundService.LocalBinder) service).getService();
+                if (bs.activity != null) {
+                    MainActivity activity = bs.activity.get();
+                    if (activity != null)
+                        activity.finish();
+                }
                 bs.activity = new WeakReference<MainActivity>(MainActivity.this);
-
 
                 if (bs.webview != null) {
                     // Remove view's parent so that we can re-add it later to a new activity
@@ -111,6 +94,7 @@ public class MainActivity extends Activity {
     public void onPause() {
         Log.i(TAG, "MainActivity: onPause");
         isForeground = false;
+        bs.getCameraManager().pause();
         super.onPause();
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
@@ -120,7 +104,9 @@ public class MainActivity extends Activity {
         Log.i(TAG, "MainActivity: onResume");
         isForeground = true;
         super.onResume();
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
+        // TODO(brandyn): We may be able to remove this
+        if (bs != null)
+            bs.getCameraManager().resume();
     }
 
     public void onDestroy() {
@@ -130,6 +116,16 @@ public class MainActivity extends Activity {
         if (mConnection != null)
             unbindService(mConnection);
 
+    }
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_CAMERA) {
+            if (bs != null)
+                bs.getCameraManager().pause();
+            return false;
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
     }
 
     @Override

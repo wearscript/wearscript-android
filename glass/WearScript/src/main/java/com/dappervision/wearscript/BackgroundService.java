@@ -25,10 +25,7 @@ import org.msgpack.type.ValueFactory;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.highgui.Highgui;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -114,6 +111,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return cameraManager;
     }
 
+    public void loadUrl(String url) {
+        synchronized (lock) {
+            if (webview != null && url != null) {
+                webview.loadUrl(url);
+            }
+        }
+    }
 
     public void handleSensor(DataPoint dp, String url) {
         synchronized (lock) {
@@ -267,7 +271,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             displayWeb = true;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             dataManager.unregister();
-            cameraManager.unregister();
+            cameraManager.unregister(true);
             updateActivityView();
         }
     }
@@ -560,7 +564,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             unregisterReceiver(broadcastReceiver);
         //wakeLock.release();
         if (cameraManager != null) {
-            cameraManager.unregister();
+            cameraManager.unregister(true);
         }
         if (tts != null) {
             tts.stop();
@@ -606,20 +610,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onPeriodicNotification(AudioRecord arg0) {
         Log.i(TAG, "Audio period");
-    }
-
-    protected Mat ImageBGRFromString(String dataB64) {
-        byte[] data = Base64.decode(dataB64, Base64.NO_WRAP);
-        Mat frame = new Mat(1, data.length, CvType.CV_8UC1);
-        frame.put(0, 0, data);
-        return Highgui.imdecode(frame, 1);
-    }
-
-    protected Mat ImageRGBAFromString(String data) {
-        Mat frameBGR = ImageBGRFromString(data);
-        Mat frameRGBA = new Mat(frameBGR.rows(), frameBGR.cols(), CvType.CV_8UC4);
-        Imgproc.cvtColor(frameBGR, frameRGBA, Imgproc.COLOR_BGR2RGBA);
-        return frameRGBA;
     }
 
     public void say(String text) {
