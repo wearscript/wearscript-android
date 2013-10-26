@@ -265,9 +265,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             //wifiBuffer = new JSONArray();
             overlay = null;
             dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
-            /* Note(Conner): Changed displayWeb to true so that UpdateActivityView doesn't break
-                the QR code Intent.
-            */
             displayWeb = true;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             dataManager.unregister();
@@ -570,6 +567,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             tts.stop();
             tts.shutdown();
         }
+        shutdown();
+        super.onDestroy();
     }
 
     public void serverTimeline(String ti) {
