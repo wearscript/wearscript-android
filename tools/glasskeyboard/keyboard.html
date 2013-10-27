@@ -1,0 +1,71 @@
+<html>
+<head>
+  <title>Glass Keyboard</title>
+    <link rel="stylesheet" href="lib/jquery-ui.css" />
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/jquery-ui.js"></script>
+    <script>
+    port = 8881;
+    baseURL = "http://localhost:" + port + "/cmd/";
+    showClickTimeout = 150;
+    keyBindings = {
+      13: 'TAP',
+      37: 'LEFT',
+      39: 'RIGHT',
+      40: 'DOWN',
+      72: 'HOME',
+      71: 'GLASS_SETTINGS', /* G */
+      76: 'LAUNCHY', /* L */
+      87: 'WEARSCRIPT_LAUNCHY' /* W */
+    };
+
+    function adb(name) {
+      console.log("adb function: " + name);
+      $.ajax(baseURL + name);
+    }
+
+    function showClick(name) {
+      var el = $('#'+name);
+      el.focus();
+      setTimeout( function() {el.blur()}, showClickTimeout);
+    }
+
+    function doTouchEvent(name) {
+      adb(name);
+      showClick(name);
+    }
+
+    $(function() {
+      $('#buttonContainer').width(500);
+      // add elements for action bindings
+      var boundActions = [];
+      for (k in keyBindings) boundActions.push(keyBindings[k]);
+      var bc = $('#buttonContainer');
+      $.each(boundActions, function(index, value) {
+        bc.append($('<button>').html(value).addClass('touchInput').attr('id', value));
+      });
+
+      // bind adb commands
+      $(".touchInput").button().click(function(event) {
+        adb($(event.currentTarget).attr('id'));
+        $(event.currentTarget).blur(); // get rid of residual focus border
+      });
+
+      // bind key events
+      $(document).keydown(function( event ) {
+        console.log("Key event " + event.which);
+        if (keyBindings.hasOwnProperty(event.which)) {
+          doTouchEvent(keyBindings[event.which]);
+        } else {
+          console.log("Unassigned keyy event.");
+        }
+      });
+    });
+
+    </script>
+</head>
+
+<body>
+  <div id='buttonContainer'></div>
+</body>
+</html>
