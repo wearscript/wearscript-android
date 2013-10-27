@@ -6,7 +6,8 @@
     <script src="lib/jquery-ui.js"></script>
     <script>
     port = 8881;
-    baseURL = "http://localhost:" + port + "/cmd/";
+    baseURL = "http://localhost:" + port + "/";
+    adbURL = baseURL + "cmd/";
     showClickTimeout = 150;
     keyBindings = {
       13: 'TAP',
@@ -21,7 +22,7 @@
 
     function adb(name) {
       console.log("adb function: " + name);
-      $.ajax(baseURL + name);
+      $.ajax(adbURL + name);
     }
 
     function showClick(name) {
@@ -60,6 +61,22 @@
           console.log("Unassigned keyy event.");
         }
       });
+
+      // initialize connected status
+      $.ajax(baseURL + 'isConnected')
+        .done(function(data) {
+          $('#isConnected').html((data == "True") ? "Device connected." : "Device not connected.");
+        })
+        .fail(function() {console.log("Failed to get isConnected.")});
+
+      // initialize root status
+      $.ajax(baseURL + 'isRoot')
+        .done(function(data) {
+          $('#isRoot').html((data == "True") ? "Running as root." : "Not running as root.");
+        })
+        .fail(function() {console.log("Failed to get isRoot.")});
+
+
     });
 
     </script>
@@ -67,5 +84,7 @@
 
 <body>
   <div id='buttonContainer'></div>
+  <div id='isConnected'>Unknown connection status.</div>
+  <div id='isRoot'>Unknown root privileges.</div>
 </body>
 </html>
