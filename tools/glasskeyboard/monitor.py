@@ -32,6 +32,12 @@ WEARSCRIPT = 10
 COLORS = 11
 WEARSCRIPT_LAUNCHY = 12
 
+GLASS_ID_NOT_SET = 'XXXXX'
+MY_GLASS_ID = GLASS_ID_NOT_SET; # YOUR GLASS ID HERE
+
+if MY_GLASS_ID == GLASS_ID_NOT_SET: 
+    print "Please set MY_GLASS_ID in source."
+
 # rooted command, e.g.:
 #  adb shell simulated_input TAP ON
 
@@ -102,11 +108,15 @@ for key, value in root_overrides.items():
     root_overrides[key] = rcmd % value
 root_dict = dict(user_dict, **root_overrides)
 
+def is_device_connected():
+    cmd = ['adb', 'devices']
+    val = subprocess.check_output(cmd)
+    return val.find(MY_GLASS_ID) > -1
+
 def user_has_root():
     cmd = ['adb', 'shell', 'getprop', 'service.adb.root']
     val = subprocess.check_output(cmd)
-    ret = True if val == "1\r\n" else False
-    return ret
+    return val == "1\r\n"
 
 def doc_string(event_name_key):
     if event_name_key in full_event_dict.keys():
@@ -138,7 +148,7 @@ class Command(object):
         #print self.process.returncode
 
 line_queue = Queue.Queue()
-cmd = ["adb", "logcat"] # ["./pass_through.py"] 
+cmd = ["adb", "logcat"] 
 process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
 data_line_re = re.compile("###([^#]+)###")
@@ -193,13 +203,16 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write("Did it: " + cmd)
-                # get result?
-        elif self.path == "/wake":
-            subprocess.call("adb shell input keyevent 3".split())
+        elif self.path == '/isRoot':
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header("Content-type", "text/plain")
             self.end_headers()
-            self.wfile.write("Did it.")
+            self.wfile.write(user_has_root());
+        elif self.path == '/isConnected':            
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(is_device_connected());
         elif self.path.startswith("/"):
             return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
         else:
@@ -207,6 +220,7 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     ROOT = user_has_root()
+    print "Device connected: %s" % is_device_connected()
     event_dict = root_dict if ROOT else user_dict
     full_event_dict = dict(event_dict, **launch_components)
     httpd = BaseHTTPServer.HTTPServer(("", port), MyHandler)
