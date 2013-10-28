@@ -17,6 +17,7 @@ import os
 import re
 
 port = 8881;
+wport = 5555;
 
 TAP = 0
 LEFT = 1
@@ -33,7 +34,7 @@ COLORS = 11
 WEARSCRIPT_LAUNCHY = 12
 
 GLASS_ID_NOT_SET = 'XXXXX'
-MY_GLASS_ID = GLASS_ID_NOT_SET; # YOUR GLASS ID HERE
+MY_GLASS_ID = '015D98410100801C'; # YOUR GLASS ID HERE
 
 if MY_GLASS_ID == GLASS_ID_NOT_SET: 
     print "Please set MY_GLASS_ID in source."
@@ -108,6 +109,8 @@ for key, value in root_overrides.items():
     root_overrides[key] = rcmd % value
 root_dict = dict(user_dict, **root_overrides)
 
+the_status = False
+
 def is_device_connected():
     cmd = ['adb', 'devices']
     val = subprocess.check_output(cmd)
@@ -115,7 +118,11 @@ def is_device_connected():
 
 def user_has_root():
     cmd = ['adb', 'shell', 'getprop', 'service.adb.root']
-    val = subprocess.check_output(cmd)
+    val = None
+    try:
+        val = subprocess.check_output(cmd)
+    except: 
+        print "no device connected", sys.exc_info()[0]
     return val == "1\r\n"
 
 def doc_string(event_name_key):
@@ -123,6 +130,34 @@ def doc_string(event_name_key):
         return event_name_dict[event_name_key] + ": " + full_event_dict[event_name_key]
     else:
         return "Unrecognize event_name_key " + str(event_name_key)
+
+def get_device_ip():
+    cmd = ['adb', 'shell', 'netcfg']
+    val = None
+    try:
+        val = subprocess.check_output(cmd)
+    except: 
+        print "netcfg no device connected", sys.exc_info()[0]
+        return None
+    return val.split("\n")[5].split()[2].split("/")[0]
+
+# if result says "error", didn't work. if echos port, did work.
+def adb_tcpip(port):
+    cmd = ['adb', 'tcpip', str(port)]
+    out = None
+    try:
+        val = subprocess.check_output(cmd)
+    except:
+        print "adb_tcpip something went wrong", sys.exc_info()[0]
+    return val.find("error") == -1
+
+def wireless_connect(port):
+    ip = get_device_ip()
+    print "Trying to connect to ip %s" % ip
+    if adb_tcpip(port):
+        cmd = 'adb connect %s:%s' % (ip,str(port))
+        command = Command(cmd)
+        command.run(timeout=5)
 
 class Command(object):
     def __init__(self, cmd):
@@ -147,27 +182,53 @@ class Command(object):
             thread.join()
         #print self.process.returncode
 
-line_queue = Queue.Queue()
-cmd = ["adb", "logcat"] 
-process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+# #####
+# # USED FOR FILTERING RECTANGLE PARAMS FROM LOGCAT
 
-data_line_re = re.compile("###([^#]+)###")
+# line_queue = Queue.Queue()
+# cmd = ["adb", "logcat"] 
+# process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
-def file_thread(process, line_queue):
+# data_line_re = re.compile("###([^#]+)###")
+
+# def file_thread(process, line_queue):
+#     while True:
+#         line = process.stdout.readline()
+#         if process.poll() is not None:
+#             print "Subprocess died."
+#             break
+#         m = data_line_re.search(line)
+#         if m:
+#             line = m.groups()[0]
+#             line_queue.put(line)
+
+# thread.start_new_thread(file_thread, (process, line_queue))
+
+#####
+# MAKING ANOTHER INSTANCE FOR STATUS MONITORING
+
+device_status_queue = Queue.Queue()
+status_cmd = ["adb", "status-window"] 
+status_process = subprocess.Popen(status_cmd, stdout=subprocess.PIPE)
+
+def status_thread(process, line_queue):
     while True:
-        line = process.stdout.readline()
-        if process.poll() is not None:
-            print "Subprocess died."
+        line = status_process.stdout.readline()
+        if status_process.poll() is not None:
+            print "Status subprocess died."
             break
-        m = data_line_re.search(line)
-        if m:
-            line = m.groups()[0]
-            line_queue.put(line)
+        if (line.find("device") > -1):
+            # device_status_queue.put("{'value': 'True'}")
+            device_status_queue.put(True)
+        if (line.find("unknown") > -1):
+            # device_status_queue.put("{'value': 'False'}")
+            device_status_queue.put(False)
 
-thread.start_new_thread(file_thread, (process, line_queue))
+thread.start_new_thread(status_thread, (status_process, device_status_queue))
 
 class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_GET(self):
+        global the_status
         """Respond to a GET request."""
         print "RESPONDING", self.path
         if self.path == "/longpoll":
@@ -186,6 +247,27 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_header("Content-type", "application/json")
             self.end_headers()
             self.wfile.write(the_line)
+
+        elif self.path == "/statuspoll":
+            # Long poll, waiting for a response from our queue.
+            count = 0
+            the_status_line = None
+            while not device_status_queue.empty():
+                try:
+                    count += 1
+                    the_status_line = device_status_queue.get_nowait()
+                except Queue.Empty:
+                    break
+            if the_status_line is not None:
+                the_status = the_status_line
+            #    the_status_line = device_status_queue.get()
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(the_status)
+
+        elif self.path == "/wirelessconnect":
+            wireless_connect(wport)
 
         elif self.path.startswith("/data/"):
             return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
@@ -221,6 +303,7 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     ROOT = user_has_root()
     print "Device connected: %s" % is_device_connected()
+    get_device_ip()
     event_dict = root_dict if ROOT else user_dict
     full_event_dict = dict(event_dict, **launch_components)
     httpd = BaseHTTPServer.HTTPServer(("", port), MyHandler)

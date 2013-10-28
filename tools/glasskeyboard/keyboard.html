@@ -9,6 +9,7 @@
     baseURL = "http://localhost:" + port + "/";
     adbURL = baseURL + "cmd/";
     showClickTimeout = 150;
+    statusPollInterval = 3000;
     keyBindings = {
       13: 'TAP',
       37: 'LEFT',
@@ -34,6 +35,14 @@
     function doTouchEvent(name) {
       adb(name);
       showClick(name);
+    }
+
+    function updateIsRoot() {
+      $.ajax(baseURL + 'isRoot')
+        .done(function(data) {
+          $('#isRoot').html((data == "True") ? "Running as root." : "Not running as root.");
+        })
+        .fail(function() {console.log("Failed to get isRoot.")});
     }
 
     $(function() {
@@ -62,20 +71,24 @@
         }
       });
 
-      // initialize connected status
-      $.ajax(baseURL + 'isConnected')
-        .done(function(data) {
-          $('#isConnected').html((data == "True") ? "Device connected." : "Device not connected.");
-        })
-        .fail(function() {console.log("Failed to get isConnected.")});
+      function pull_status_update() {
+        console.log("pull_status_update");
+        $.ajax(baseURL + 'statuspoll')
+          .done(function(data) {
+            console.log("Yay data from statuspoll");
+            console.log(data);
+            $('#isConnected').html((data == "True") ? "Device connected." : "Device not connected.");
+            if (data == "False") {
+              $('#isRoot').html("")
+            } else {
+              updateIsRoot();
+            }
+            setTimeout(pull_status_update, statusPollInterval);
+          })
+          .fail(function() {console.log("statuspoll failed"); setTimeout(pull_status_update, statusPollInterval);});
+      }
 
-      // initialize root status
-      $.ajax(baseURL + 'isRoot')
-        .done(function(data) {
-          $('#isRoot').html((data == "True") ? "Running as root." : "Not running as root.");
-        })
-        .fail(function() {console.log("Failed to get isRoot.")});
-
+      pull_status_update();
 
     });
 
@@ -84,7 +97,10 @@
 
 <body>
   <div id='buttonContainer'></div>
-  <div id='isConnected'>Unknown connection status.</div>
-  <div id='isRoot'>Unknown root privileges.</div>
+  <div id='utilButtonContainer'></div>
+  <div id='statusDashboard'>
+    <div id='isConnected'>Unknown connection status.</div>
+    <div id='isRoot'>Unknown root privileges.</div>
+  </div>
 </body>
 </html>
