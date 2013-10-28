@@ -1,0 +1,38 @@
+<html style="width:100%; height:100%; overflow:hidden">
+<head>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>-->
+</head>
+<body style="width:100%; height:100%; overflow:hidden; margin:0">
+<canvas id="canvas" width="640" height="360" style="display:block"></canvas>
+<script>
+function cb(data) {
+    // Changes canvas color with head rotation
+    if (data['type'] == WS.sensor('orientation')) {
+        ctx.fillStyle = 'hsl(' + data['values'][0] + ', 90%, 50%)'
+        ctx.fillRect(0, 0, 640, 360);
+    }
+}
+function server() {
+    WS.log('Welcome to WearScript');
+    WS.say('Welcome to WearScript');
+    var sensors = ['gps', 'accelerometer', 'magneticField', 'orientation', 'gyroscope',
+                   'light', 'gravity', 'linearAcceleration', 'rotationVector'];
+    for (var i = 0; i < sensors.length; i++)
+        WS.sensorOn(WS.sensor(sensors[i]), .15, 'cb');
+    WS.cameraOn(2);
+    WS.dataLog(false, true, .15);
+    //WS.cameraPhoto();
+    //WS.cameraVideo();
+    //WS.cameraOff();
+    //WS.shutdown();
+}
+function main() {
+    if (WS.scriptVersion(0)) return;
+    ctx = document.getElementById('canvas').getContext("2d");
+    WS.serverConnect('{{WSUrl}}', 'server');
+}
+window.onload = main;
+</script>
+</body>
+</html>

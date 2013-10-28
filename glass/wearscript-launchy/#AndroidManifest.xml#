@@ -52,7 +52,11 @@
                 <!--<action android:name="android.intent.action.VIEW" />-->
                 <!--<data android:scheme="http"  android:host="*.youtube.com" android:pathPrefix="/watch" />-->
                 <!--<data android:scheme="https" android:host="*.youtube.com" android:pathPrefix="/watch" />-->
-            <!--</intent-filter>-->
+   <string name="app_name">WearScriptLaunchy</string>
+    <string name="launch">Launch... </string>
+    <string name="voice_menu_trigger">start launchy</string>   <string name="app_name">WearScriptLaunchy</string>
+    <string name="launch">Launch... </string>
+    <string name="voice_menu_trigger">start launchy</string>            <!--</intent-filter>-->
             <intent-filter android:priority="100">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

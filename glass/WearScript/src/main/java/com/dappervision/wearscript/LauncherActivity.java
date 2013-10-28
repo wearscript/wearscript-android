@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //A good 80% of this app is from the Android SDK home app sample
-package com.openshades.android.glass.launchy;
+package com.dappervision.wearscript;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -27,7 +27,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
 
-public class MainActivity extends Activity {
+public class LauncherActivity extends Activity {
 
     private WearScriptHelper mWearScriptHelper;
 
@@ -37,15 +37,9 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mWearScriptHelper = new WearScriptHelper(this);
-        //mWearScriptHelper.loadApplications(true);
         mWearScriptHelper.loadWearScripts(true);
 
-        //mWearScriptHelper.bindApplications();
         mWearScriptHelper.bindWearScripts();
-        //mWearScriptHelper.registerIntentReceivers();
-        //mWearScriptHelper.registerIntentReceiversWS(); // will I need this?
-
-        // setupTestReceiver();
 
         final ListView list = (ListView) findViewById(android.R.id.list);
         list.setOnItemSelectedListener(new OnItemSelectedListener() {
@@ -80,30 +74,4 @@ public class MainActivity extends Activity {
             mWearScriptHelper.loadApplications(false);
         }
     };
-
-    // Just some junk I was investigating
-    // private void setupTestReceiver() {
-    // BroadcastReceiver receiver = new BroadcastReceiver() {
-    // @Override
-    // public void onReceive(Context context, Intent intent) {
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // Log.d("Launcher", "********((((((");
-    // }
-    // };
-    // IntentFilter filter = new IntentFilter();
-    // filter.addAction("com.google.glass.LOG_HEAD_GESTURE");
-    // filter.addAction("android.intent.action.ACTION_POWER_CONNECTED");
-    // filter.addAction("com.google.glass.action.TOUCH_GESTURE"); //not working? wtf... said, I was
-    // hoping to be able to itnercept this, nothing in logs
-    // registerReceiver(receiver, filter);
-    // }
 }

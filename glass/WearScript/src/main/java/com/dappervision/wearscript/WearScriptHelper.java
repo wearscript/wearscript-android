@@ -9,7 +9,7 @@
  * language governing permissions and limitations under the License.
  */
 // Original code snipped from the Android Home SDK Sample app
-package com.openshades.android.glass.launchy;
+package com.dappervision.wearscript;
 
 import android.app.Activity;
 import android.content.*;
@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,12 +33,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class WearScriptHelper {
-//    private final BroadcastReceiver mApplicationsReceiver = new ApplicationsIntentReceiver();
-    //private final BroadcastReceiver mWearScriptsReceiver = new WearScriptsIntentReceiver();
     private static final String TAG = "WearScriptHelper";
-    private static final String WEARSCRIPT_PATH =
-            "/mnt/sdcard/Android/data/com.dappervision.wearscript/files/";
-    //    private static final String WEARSCRIPT_PATH = "file:///mnt/sdcard/wearscript";
+    private static final String WEARSCRIPT_PATH = BackgroundService.dataPath() + "scripts/";
+    ;
     private static final String WS_PKG = "com.dappervision.wearscript";
     private static final String WS_ACTIVITY = "com.dappervision.wearscript.MainActivity";
 
@@ -67,18 +65,6 @@ public class WearScriptHelper {
         mExcludedApps.add("com.google.glass.home");
         mExcludedApps.add(mActivity.getPackageName());
     }
-
-    /**
-     * Registers various intent receivers. The current implementation registers only a wallpaper
-     * intent receiver to let other applications change the wallpaper.
-     */
-    //    public void registerIntentReceivers() {
-    //        mfilter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
-    //        mfilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
-    //        mfilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
-    //        mfilter.addDataScheme("package");
-    //        mActivity.registerReceiver(mWearScriptsReceiver, mfilter);
-    //    }
 
     /**
      * Creates a new appplications adapter for the grid view and registers it.
@@ -163,6 +149,8 @@ public class WearScriptHelper {
         Log.i(TAG, "WSFiles: the directory: " + extStorageDir);
         String[] flArray = extStorageDir.list();
         ArrayList<String> fl = new ArrayList<String>();
+        if (flArray == null)
+            return fl;
         for (String file : flArray) {
             if (file.matches(".*\\.html")) {
                 fl.add(file);
@@ -274,8 +262,12 @@ public class WearScriptHelper {
 
     private class WearScriptLauncher implements AdapterView.OnItemClickListener {
         public void onItemClick(AdapterView parent, View v, int position, long id) {
-            WearScriptInfo app = (WearScriptInfo) parent.getItemAtPosition(position);
-            mActivity.startActivity(app.intent);
+            try {
+                WearScriptInfo app = (WearScriptInfo) parent.getItemAtPosition(position);
+                mActivity.startActivity(app.intent);
+            } catch (java.lang.IndexOutOfBoundsException e) {
+                return;
+            }
         }
     }
 

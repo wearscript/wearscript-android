@@ -32,6 +32,14 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        Intent thisIntent = getIntent();
+        if (thisIntent.getStringExtra(EXTRA_NAME) != null) {
+            mHadUrlExtra = true;
+            extra = thisIntent.getStringExtra(EXTRA_NAME);
+            Log.v(TAG, "Found extra: " + extra);
+        } else {
+            Log.v(TAG, "Did not find extra.");
+        }
         // Bind Service
         super.onCreate(savedInstanceState);
         mConnection = new ServiceConnection() {
@@ -62,10 +70,11 @@ public class MainActivity extends Activity {
                 }
                 bs.reset();
                 bs.wsUrl = (new String(wsUrlArray)).trim();
-                bs.startDefaultScript();
-
-                //Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-                //startActivityForResult(intent, 0);
+                if (extra != null) {
+                    bs.runScriptUrl(extra);
+                } else {
+                    bs.startDefaultScript();
+                }
             }
 
             public void onServiceDisconnected(ComponentName className) {
@@ -77,17 +86,6 @@ public class MainActivity extends Activity {
         startService(new Intent(this, BackgroundService.class));
         bindService(new Intent(this,
                 BackgroundService.class), mConnection, Context.BIND_AUTO_CREATE);
-
-
-        // TODO(brandyn): Handle extras
-        Intent thisIntent = getIntent();
-        if (thisIntent.getStringExtra(EXTRA_NAME) != null) {
-            mHadUrlExtra = true;
-            extra = thisIntent.getStringExtra(EXTRA_NAME);
-            Log.v(TAG, "Found extra: " + extra);
-        } else {
-            Log.v(TAG, "Did not find extra.");
-        }
     }
 
     @Override
@@ -104,7 +102,6 @@ public class MainActivity extends Activity {
         Log.i(TAG, "MainActivity: onResume");
         isForeground = true;
         super.onResume();
-        // TODO(brandyn): We may be able to remove this
         if (bs != null)
             bs.getCameraManager().resume();
     }
@@ -125,34 +122,6 @@ public class MainActivity extends Activity {
             return false;
         } else {
             return super.onKeyDown(keyCode, event);
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        Log.i(TAG, "QR: Got activity result: V0");
-        if (requestCode == 0) {
-            String contents = null;
-            if (resultCode == RESULT_OK) {
-                contents = intent.getStringExtra("SCAN_RESULT");
-                String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
-                Log.i(TAG, "QR: " + contents + " Format: " + format);
-                bs.SaveData(contents.getBytes(), "", false, "qr.txt");
-            } else if (resultCode == RESULT_CANCELED) {
-                // Reuse local config
-                Log.i(TAG, "QR: Canceled, using previous scan");
-                byte[] contentsArray = bs.LoadData("", "qr.txt");
-                if (contentsArray == null) {
-                    bs.say("Please exit and scan the QR code");
-                    return;
-                }
-                contents = (new String(contentsArray)).trim();
-                // TODO: We want to allow reentry into a running app
-            }
-            // TODO(brandyn): Handle case where we want to re-enter webview and not reset it
-            bs.reset();
-            bs.wsUrl = contents;
-            bs.runScript("<script>function s() {WS.say('Server connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
         }
     }
 }

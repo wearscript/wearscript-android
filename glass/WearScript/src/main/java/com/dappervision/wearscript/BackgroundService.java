@@ -419,10 +419,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.e(TAG, "WS: Error!", error);
     }
 
-    protected String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
+    static protected String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
         try {
             try {
-                File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/wearscript/" + path);
+                File dir = new File(dataPath() + path);
                 dir.mkdirs();
                 File file;
                 if (timestamp)
@@ -438,15 +438,19 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 return null;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Bad disc");
+            Log.e("SaveData", "Bad disc");
             return null;
         }
+    }
+
+    static public String dataPath() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/wearscript/";
     }
 
     protected byte[] LoadData(String path, String suffix) {
         try {
             try {
-                File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/wearscript/" + path);
+                File dir = new File(dataPath() + path);
                 File file;
                 file = new File(dir, suffix);
                 FileInputStream inputStream = new FileInputStream(file);

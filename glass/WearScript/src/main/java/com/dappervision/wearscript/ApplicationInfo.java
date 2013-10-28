@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.openshades.android.glass.launchy;
+package com.dappervision.wearscript;
 
 import android.content.ComponentName;
 import android.content.Intent;

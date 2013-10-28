@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">WearScript</string>
+    <string name="launch">Launch... </string>
 </resources>
