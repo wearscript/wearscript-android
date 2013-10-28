@@ -35,8 +35,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-          <activity android:name="SetServerActivity"
-                  android:label="WearScript (Set Server)"
+          <activity android:name="SetupActivity"
+                  android:label="WearScript (Setup)"
                   android:screenOrientation="landscape"
                   android:configChanges="keyboardHidden|orientation">
             <intent-filter>

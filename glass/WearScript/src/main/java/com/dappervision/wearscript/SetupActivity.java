@@ -5,8 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
-public class SetServerActivity extends Activity {
-    private static final String TAG = "SetServerActivity";
+public class SetupActivity extends Activity {
+    private static final String TAG = "SetupActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
