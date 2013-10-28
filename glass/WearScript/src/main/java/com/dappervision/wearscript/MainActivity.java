@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+
 import java.lang.ref.WeakReference;
 
 public class MainActivity extends Activity {
@@ -60,6 +61,7 @@ public class MainActivity extends Activity {
                     if (parentViewGroup != null)
                         parentViewGroup.removeAllViews();
                     bs.updateActivityView();
+                    bs.getCameraManager().resume();
                     return;
                 }
 
@@ -95,27 +97,29 @@ public class MainActivity extends Activity {
     public void onPause() {
         Log.i(TAG, "MainActivity: onPause");
         isForeground = false;
-        bs.getCameraManager().pause();
-        super.onPause();
+        if (bs != null)
+            bs.getCameraManager().pause();
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        super.onPause();
     }
 
     @Override
     public void onResume() {
         Log.i(TAG, "MainActivity: onResume");
         isForeground = true;
-        super.onResume();
         if (bs != null)
             bs.getCameraManager().resume();
+        super.onResume();
     }
 
     public void onDestroy() {
         Log.i(TAG, "MainActivity: onDestroy");
-        super.onDestroy();
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (bs != null)
+            bs.getCameraManager().pause();
         if (mConnection != null)
             unbindService(mConnection);
-
+        super.onDestroy();
     }
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {

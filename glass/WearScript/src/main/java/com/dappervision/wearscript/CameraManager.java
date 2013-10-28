@@ -98,10 +98,13 @@ public class CameraManager implements Camera.PreviewCallback {
     }
 
     public void resume() {
-        if (paused)
-            register();
+	    synchronized (this) {
+	        if (paused) {
+		        paused = false;
+		        register();
+	        }
+	    }
     }
-
 
     public void register() {
         synchronized (this) {
