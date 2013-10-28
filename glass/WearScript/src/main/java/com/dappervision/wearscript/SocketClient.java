@@ -18,6 +18,7 @@ public class SocketClient {
     SocketClient(URI uri, SocketListener listener, String callback) {
         this.listener = listener;
         this.uri = uri;
+        this.callback = callback;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
         client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
     }

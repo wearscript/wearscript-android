@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
@@ -50,7 +51,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public Mat overlay;
     //public JSONArray wifiBuffer;
     public TreeSet<String> flags;
-    public String imageCallback;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
     protected String TAG = "WearScript";
@@ -274,25 +274,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void startDefaultScript() {
-        byte[] defaultScriptArray = LoadData("", "default.html");
-        if (defaultScriptArray == null) {
-            runScript("<script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
-        } else {
-            runScript(new String(defaultScriptArray));
-        }
-    }
-
-    public void directStartScriptUrl(final String url) {
-        if (activity == null)
-            return;
-        final MainActivity a = activity.get();
-        if (a == null)
-            return;
-        a.runOnUiThread(new Thread() {
-            public void run() {
-                runScriptUrl(url);
-            }
-        });
+        runScript("<script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
     }
 
     public void serverConnect(String url, final String callback) {
@@ -336,7 +318,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             String action = input.get(0).asRawValue().getString();
             Log.i(TAG, String.format("Got %s", action));
             // TODO: String to Mat, save and display in the loopback thread
-            if (action.equals("startScript") || action.equals("defaultScript")) {
+            if (action.equals("startScript")) {
                 final String script = input.get(1).asRawValue().getString();
                 Log.i(TAG, "WebView:" + Integer.toString(script.length()));
                 if (activity == null)
@@ -344,13 +326,20 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 final MainActivity a = activity.get();
                 if (a == null)
                     return;
-                if (action.equals("defaultScript"))
-                    SaveData(script.getBytes(), "", false, "default.html");
                 a.runOnUiThread(new Thread() {
                     public void run() {
                         runScript(script);
                     }
                 });
+            } else if (action.equals("saveScript")) {
+                final String script = input.get(1).asRawValue().getString();
+                final String name = input.get(2).asRawValue().getString();
+                Pattern p = Pattern.compile("[^a-zA-Z0-9]");
+                if (name == null || name.isEmpty() || p.matcher(name).find()) {
+                    Log.w(TAG, "Unable to save script");
+                    return;
+                }
+                SaveData(script.getBytes(), "", false, "/scripts/" + name + ".html");
             } else if (action.equals("startScriptUrl")) {
                 final String url = input.get(1).asRawValue().getString();
                 if (activity == null)

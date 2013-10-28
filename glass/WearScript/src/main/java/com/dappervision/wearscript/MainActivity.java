@@ -53,7 +53,8 @@ public class MainActivity extends Activity {
                 }
                 bs.activity = new WeakReference<MainActivity>(MainActivity.this);
 
-                if (bs.webview != null) {
+                // If we already have a view and aren't specifying a script to run, reuse the old script
+                if (bs.webview != null && extra == null) {
                     // Remove view's parent so that we can re-add it later to a new activity
                     ViewGroup parentViewGroup = (ViewGroup) bs.webview.getParent();
                     if (parentViewGroup != null)
@@ -71,8 +72,10 @@ public class MainActivity extends Activity {
                 bs.reset();
                 bs.wsUrl = (new String(wsUrlArray)).trim();
                 if (extra != null) {
+                    Log.i(TAG, "Extra script");
                     bs.runScriptUrl(extra);
                 } else {
+                    Log.i(TAG, "Default script");
                     bs.startDefaultScript();
                 }
             }
