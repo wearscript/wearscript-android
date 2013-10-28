@@ -17,7 +17,7 @@ import os
 import re
 
 port = 8881;
-wport = 5555;
+wport = 5556;
 
 TAP = 0
 LEFT = 1
@@ -159,6 +159,19 @@ def wireless_connect(port):
         command = Command(cmd)
         command.run(timeout=5)
 
+def usb_connect():
+    # TODO: verify that we're currently connected and in tcpip mode
+    print "Try to switch to usb connection."
+    cmd = 'adb usb'
+    command = Command(cmd)
+    command.run(timeout=3)
+
+def adb_root():
+    print "Trying to restart adb as root."
+    cmd = 'adb root'
+    command = Command(cmd)
+    command.run(timeout=3)
+
 class Command(object):
     def __init__(self, cmd):
         self.cmd = cmd
@@ -268,7 +281,10 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         elif self.path == "/wirelessconnect":
             wireless_connect(wport)
-
+        elif self.path == "/usbconnect":
+            usb_connect()
+        elif self.path == "/root":
+            adb_root()
         elif self.path.startswith("/data/"):
             return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
         elif self.path.startswith("/cmd/"):
