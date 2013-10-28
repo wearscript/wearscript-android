@@ -319,8 +319,8 @@ function main(WSUrl) {
     $('#scriptButton').click(function () {
         ws.send(enc(['startScript', editor.getValue()]));
     });
-    $('#scriptDefaultButton').click(function () {
-        ws.send(enc(['defaultScript', editor.getValue()]));
+    $('#scriptSaveButton').click(function () {
+        ws.send(enc(['saveScript', editor.getValue(), $('#script-name').val()]));
     });
     $('#scriptUrlButton').click(function () {
         ws.send(enc(['startScriptUrl', $('#script-url').val()]));
