@@ -20,6 +20,11 @@
       76: 'LAUNCHY', /* L */
       87: 'WEARSCRIPT_LAUNCHY' /* W */
     };
+    utilBindings = [
+      'wirelessconnect',
+      'usbconnect',
+      'root'
+    ];
 
     function adb(name) {
       console.log("adb function: " + name);
@@ -69,6 +74,18 @@
         } else {
           console.log("Unassigned keyy event.");
         }
+      });
+
+      // util buttons
+      var ubc = $('#utilButtonContainer');
+      $.each(utilBindings, function(index, value){
+        ubc.append($('<button>').html(value).addClass('utilInput').attr('id', value));
+      });
+
+      // bind util commands
+      $(".utilInput").button().click(function(event) {
+        $.ajax(baseURL + $(event.currentTarget).attr('id'));
+        $(event.currentTarget).blur(); // get rid of residual focus border
       });
 
       function pull_status_update() {
