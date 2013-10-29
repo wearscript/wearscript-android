@@ -222,10 +222,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             if (client == null)
                 return false;
-            if (!client.isConnected()) {
-                client.connect();
+            if (!client.isEnabled()) {
+                client.enable();
             }
-            return client.isConnected();
+            return client.isEnabled();
         }
     }
 
@@ -233,7 +233,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             reset();
             if (client != null) {
-                client.disconnect();
+                client.disable();
                 client = null;
             }
             if (activity == null)
@@ -283,7 +283,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (url.equals("{{WSUrl}}"))
                 url = wsUrl;
 
-            if (client != null && client.isConnected() && wsUrl.equals(url)) {
+            if (client != null && client.isEnabled() && wsUrl.equals(url)) {
                 Log.i(TAG, "WS Reusing client and calling callback");
                 if (callback != null && webview != null) {
                     webview.loadUrl(String.format("javascript:%s();", callback));
@@ -292,13 +292,15 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
 
             //We are starting a new connection or switching URLs.
-            if (client != null) {
-                client.disconnect();
-                client = null;
-            }
             wsUrl = url;
-            client = new SocketClient(URI.create(url), this, callback);
-            client.connect();
+            if (client != null) {
+                client.disable();
+                client = null;
+                client.setURI(URI.create(url));
+            }else{
+                client = new SocketClient(URI.create(url), this, callback);
+            }
+            client.enable();
         }
     }
 
@@ -309,6 +311,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview.loadUrl(String.format("javascript:%s();", cb));
             }
         }
+    }
+
+    public void onSocketMessage(String message) {
+        //we don't use this
     }
 
     public void onSocketMessage(byte[] message) {
@@ -566,7 +572,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void serverTimeline(String ti) {
         synchronized (lock) {
-            if (client != null && client.isConnected()) {
+            if (client != null && client.isEnabled()) {
                 List<Value> output = new ArrayList<Value>();
                 output.add(ValueFactory.createRawValue("timeline"));
                 output.add(ValueFactory.createRawValue(ti));
@@ -581,7 +587,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void log(String m) {
         synchronized (lock) {
-            if (client != null && client.isConnected()) {
+            if (client != null && client.isEnabled()) {
                 List<Value> output = new ArrayList<Value>();
                 output.add(ValueFactory.createRawValue("log"));
                 output.add(ValueFactory.createRawValue(m));
