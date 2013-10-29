@@ -159,6 +159,7 @@ public class SocketClient {
         @Override
         public void onError(Exception e) {
             parent.onSocketError(e);
+            client.disconnect();
         }
     }
 }
