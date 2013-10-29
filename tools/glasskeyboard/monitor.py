@@ -19,6 +19,8 @@ import re
 port = 8881;
 wport = 5556;
 adbTimeout = 999;
+hasRootTimeout = 3;
+
 TAP = 0
 LEFT = 1
 RIGHT = 2
@@ -32,12 +34,6 @@ PICTURE = 9
 WEARSCRIPT = 10
 COLORS = 11
 WEARSCRIPT_LAUNCHY = 12
-
-GLASS_ID_NOT_SET = 'XXXXX'
-MY_GLASS_ID = '015D98410100801C'; # YOUR GLASS ID HERE
-
-if MY_GLASS_ID == GLASS_ID_NOT_SET: 
-    print "Please set MY_GLASS_ID in source."
 
 # rooted command, e.g.:
 #  adb shell simulated_input TAP ON
@@ -110,19 +106,31 @@ for key, value in root_overrides.items():
 root_dict = dict(user_dict, **root_overrides)
 
 the_status = False
+just_tried_adb_root = False
 
-def is_device_connected():
+def get_device_id():
     cmd = ['adb', 'devices']
     val = subprocess.check_output(cmd)
-    return val.find(MY_GLASS_ID) > -1
+    try:
+        deviceId = val.split('\n')[1].split()[0]
+        return deviceId
+    except:
+        return "unknownId"
 
 def user_has_root():
+    global ROOT, event_dict, full_event_dict, just_tried_adb_root
     cmd = ['adb', 'shell', 'getprop', 'service.adb.root']
     val = None
     try:
         val = subprocess.check_output(cmd)
     except: 
         print "no device connected", sys.exc_info()[0]
+    # if this is a change, regenerate full_event_dict
+    if val is not None and just_tried_adb_root:
+        ROOT = val == "1\r\n"
+        event_dict = root_dict if ROOT else user_dict
+        full_event_dict = dict(event_dict, **launch_components)
+        just_tried_adb_root = False
     return val == "1\r\n"
 
 def doc_string(event_name_key):
@@ -180,10 +188,14 @@ def usb_connect():
     command.run(timeout=adbTimeout)
 
 def adb_root():
+    global just_tried_adb_root
+    # boolean flag to be picked up by user_has_root
+    just_tried_adb_root = True
     print "Trying to restart adb as root."
     cmd = 'adb root'
     command = Command(cmd)
     command.run(timeout=adbTimeout)
+    # event_dict / full_event_dict
 
 class Command(object):
     def __init__(self, cmd):
@@ -219,10 +231,8 @@ def status_thread(process, line_queue):
             print "Status subprocess died."
             break
         if (line.find("device") > -1):
-            # device_status_queue.put("{'value': 'True'}")
             device_status_queue.put(True)
         if (line.find("unknown") > -1):
-            # device_status_queue.put("{'value': 'False'}")
             device_status_queue.put(False)
 
 thread.start_new_thread(status_thread, (status_process, device_status_queue))
@@ -232,25 +242,7 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         global the_status
         """Respond to a GET request."""
         print "RESPONDING", self.path
-        if self.path == "/longpoll":
-            # Long poll, waiting for a response from our queue.
-            count = 0
-            the_line = None
-            while not line_queue.empty():
-                try:
-                    count += 1
-                    the_line = line_queue.get_nowait()
-                except Queue.Empty:
-                    break
-            if the_line is None:
-                the_line = line_queue.get()
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(the_line)
-
-        elif self.path == "/statuspoll":
-            # Long poll, waiting for a response from our queue.
+        if self.path == "/statuspoll":
             count = 0
             the_status_line = None
             while not device_status_queue.empty():
@@ -261,12 +253,10 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     break
             if the_status_line is not None:
                 the_status = the_status_line
-            #    the_status_line = device_status_queue.get()
             self.send_response(200)
             self.send_header("Content-type", "text/plain")
             self.end_headers()
             self.wfile.write(the_status)
-
         elif self.path == "/wirelessconnect":
             wireless_connect(wport)
         elif self.path == "/usbconnect":
@@ -299,6 +289,11 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_header("Content-type", "text/plain")
             self.end_headers()
             self.wfile.write(is_device_connected());
+        elif self.path == '/getDeviceId':            
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(get_device_id());            
         elif self.path.startswith("/"):
             return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
         else:
@@ -306,7 +301,6 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     ROOT = user_has_root()
-    print "Device connected: %s" % is_device_connected()
     get_device_ip()
     event_dict = root_dict if ROOT else user_dict
     full_event_dict = dict(event_dict, **launch_components)
