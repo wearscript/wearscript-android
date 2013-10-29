@@ -405,7 +405,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onSocketError(Exception error) {
-        Log.e(TAG, "WS: Error!", error);
+        Log.e(TAG, "WS: Connection Error!", error);
     }
 
     static protected String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
