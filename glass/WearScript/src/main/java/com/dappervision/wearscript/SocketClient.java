@@ -1,5 +1,7 @@
 package com.dappervision.wearscript;
 
+import android.util.Log;
+
 import com.codebutler.android_websockets.WebSocketClient;
 
 import org.apache.http.message.BasicNameValuePair;
@@ -48,6 +50,8 @@ public class SocketClient {
     }
 
     public void reconnect() {
+        Log.w(BackgroundService.TAG, "Reconnecting socket");
+
         new Thread(new Runnable() {
             public void run() {
                 while (!client.isConnected()) {
@@ -92,6 +96,7 @@ public class SocketClient {
         @Override
         public void onDisconnect(int i, String s) {
             connected = false;
+            Log.w(BackgroundService.TAG, "Underlying socket disconnected");
             parent.onSocketDisconnect(i, s);
         }
 
