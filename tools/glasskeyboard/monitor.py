@@ -18,7 +18,7 @@ import re
 
 port = 8881;
 wport = 5556;
-
+adbTimeout = 999;
 TAP = 0
 LEFT = 1
 RIGHT = 2
@@ -149,28 +149,41 @@ def adb_tcpip(port):
         val = subprocess.check_output(cmd)
     except:
         print "adb_tcpip something went wrong", sys.exc_info()[0]
-    return val.find("error") == -1
+    print  "adb_tcpip returning"
+    return val.find("error") == -1 # no error => True
 
 def wireless_connect(port):
     ip = get_device_ip()
     print "Trying to connect to ip %s" % ip
+    cmd = ['adb', 'connect',  '%s:%s' % (ip, str(port))]
+    val = ""
+    print "cmd is ", cmd
+    retry = 99
     if adb_tcpip(port):
-        cmd = 'adb connect %s:%s' % (ip,str(port))
-        command = Command(cmd)
-        command.run(timeout=5)
+        while retry > 0 and (val == "" or val.find("unable") > -1):
+            print "Remaining tries %s" % retry
+            try:
+                val = subprocess.check_output(cmd)
+                print val
+            except:
+                print "wireless_connect something went wrong", sys.exc_info()[0]
+            retry -= 1
+        return val.find("unable") == -1 # no unable => success
+    else:
+        print "adb_tcpip returned False."
 
 def usb_connect():
     # TODO: verify that we're currently connected and in tcpip mode
     print "Try to switch to usb connection."
     cmd = 'adb usb'
     command = Command(cmd)
-    command.run(timeout=3)
+    command.run(timeout=adbTimeout)
 
 def adb_root():
     print "Trying to restart adb as root."
     cmd = 'adb root'
     command = Command(cmd)
-    command.run(timeout=3)
+    command.run(timeout=adbTimeout)
 
 class Command(object):
     def __init__(self, cmd):
@@ -180,10 +193,8 @@ class Command(object):
     def run(self, timeout):
         print "running " + self.cmd
         def target():
-            #print 'Thread started'
             self.process = subprocess.Popen(self.cmd, shell=True)
             self.process.communicate()
-            #print 'Thread finished'
 
         thread = threading.Thread(target=target)
         thread.start()
@@ -195,30 +206,7 @@ class Command(object):
             thread.join()
         #print self.process.returncode
 
-# #####
-# # USED FOR FILTERING RECTANGLE PARAMS FROM LOGCAT
 
-# line_queue = Queue.Queue()
-# cmd = ["adb", "logcat"] 
-# process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-
-# data_line_re = re.compile("###([^#]+)###")
-
-# def file_thread(process, line_queue):
-#     while True:
-#         line = process.stdout.readline()
-#         if process.poll() is not None:
-#             print "Subprocess died."
-#             break
-#         m = data_line_re.search(line)
-#         if m:
-#             line = m.groups()[0]
-#             line_queue.put(line)
-
-# thread.start_new_thread(file_thread, (process, line_queue))
-
-#####
-# MAKING ANOTHER INSTANCE FOR STATUS MONITORING
 
 device_status_queue = Queue.Queue()
 status_cmd = ["adb", "status-window"] 
