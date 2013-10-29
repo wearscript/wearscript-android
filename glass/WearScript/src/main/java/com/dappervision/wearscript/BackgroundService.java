@@ -53,7 +53,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public TreeSet<String> flags;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
-    protected String TAG = "WearScript";
+    protected static String TAG = "WearScript";
     protected CameraManager cameraManager;
     protected TreeMap<String, Mat> scriptImages;
     protected TextToSpeech tts;
@@ -339,7 +339,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     Log.w(TAG, "Unable to save script");
                     return;
                 }
-                SaveData(script.getBytes(), "", false, "/scripts/" + name + ".html");
+                SaveData(script.getBytes(), "scripts/", false, name + ".html");
             } else if (action.equals("startScriptUrl")) {
                 final String url = input.get(1).asRawValue().getString();
                 if (activity == null)
