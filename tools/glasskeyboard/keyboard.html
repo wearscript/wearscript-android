@@ -1,0 +1,212 @@
+<html>
+<head>
+  <title>Glass Keyboard</title>
+     
+    <link href="lib/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="lib/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="lib/jquery-ui.css" rel="stylesheet">
+    <link href="lib/keyboard.css" rel="stylesheet">
+
+</head>
+
+<body>
+  <!-- Fixed navbar -->
+  <div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">
+          <img class="bar-image openshades-icon"> 
+          Glass Keyboard
+          <img class="bar-image device-connection">
+          <img class="bar-image root-connection">
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container theme-showcase">    
+
+    <div class="device-active">
+      <div class="page-header">
+        <h1>UI Control</h1>
+      </div>
+      <div id='buttonContainer'></div>
+
+      <div class="page-header">
+        <h1>Util Functions</h1>
+      </div>
+      <div id='utilButtonContainer'></div>
+    </div>
+
+    <div class="page-header">
+      <h1>Status Dashboard</h1>
+    </div>
+    <div id='statusDashboard'>
+      <div class="alert alert-success" id='isConnected'>
+        Unknown connection status.</div>
+      <div class="alert alert-info device-active" id='isRoot'>
+        Unknown root privileges.</div>
+      <div class="alert alert-warning device-active" id='deviceIdHolder'>
+        DeviceID: <span id="deviceId">Unknown</span></div>
+    </div>
+
+  </div>
+
+  <script src="lib/jquery.min.js"></script>
+  <script src="lib/bootstrap.min.js"></script>
+  <script src="lib/jquery-ui.js"></script>
+  <script>
+  port = 8881;
+  baseURL = "http://localhost:" + port + "/";
+  adbURL = baseURL + "cmd/";
+  showClickTimeout = 150;
+  statusPollInterval = 3000;
+  previousConnectionStatus = "False";
+  previousRootStatus = false;
+
+  keyBindings = {
+    13: 'TAP',
+    37: 'LEFT',
+    39: 'RIGHT',
+    40: 'DOWN',
+    72: 'HOME',
+    71: 'GLASS_SETTINGS', /* G */
+    76: 'LAUNCHY', /* L */
+    87: 'WEARSCRIPT_LAUNCHY' /* W */
+  };
+  utilBindings = [
+    'wirelessconnect',
+    'usbconnect',
+    'root'
+  ];
+
+  function adb(name) {
+    console.log("adb function: " + name);
+    $.ajax(adbURL + name);
+  }
+
+  function showClick(name) {
+    var el = $('#'+name);
+    el.focus();
+    setTimeout( function() {el.blur()}, showClickTimeout);
+  }
+
+  function doTouchEvent(name) {
+    adb(name);
+    showClick(name);
+  }
+
+  function updateIsRoot() {
+    $.ajax(baseURL + 'isRoot')
+      .done(function(data) {
+        $('#isRoot').html((data == "True") 
+           ? "Running as root." : "Not running as root.");
+        if (data == "True") {
+          $('.root-connection').removeClass('root-disconnected')
+              .addClass('root-connected');
+        } else {
+          $('.root-connection').removeClass('root-connected')
+              .addClass('root-disconnected');
+        }
+      })
+      .fail(function() {console.log("Failed to get isRoot.")});
+  }
+
+  function updateDeviceId() {
+    $.ajax(baseURL + 'getDeviceId')
+      .done(function(data) {
+        $('#deviceId').html(data);
+        if (data.match(":") == null) {
+          $('.device-connection').removeClass('connected-tcpip')
+              .removeClass('disconnected').addClass('connected-usb');
+        } else {
+          $('.device-connection').removeClass('connected-usb')
+              .removeClass('disconnected').addClass('connected-tcpip');          
+        }
+      })
+      .fail(function() {console.log("Failed to get deviceId.")});
+  }
+
+  function update_connection() {
+    console.log("update_connection");
+    $.ajax(baseURL + 'statuspoll')
+      .done(function(data) {
+        if (previousConnectionStatus != data) connectionStatusChanged = true;
+        previousConnectionStatus = data;
+        $('#isConnected').html((data == "True") 
+            ? "Device connected." : "Device not connected.");
+        if (data == "False") {
+          $('#isRoot').html("");
+          $('.device-active').addClass("hidden");
+          $('.device-connection').removeClass('connected-usb')
+              .removeClass('connected-tcpip').addClass('disconnected');
+          $('.root-connection').removeClass('root-connected')
+              .addClass('root-disconnected');
+          $('#isConnected').removeClass('alert-success').addClass('alert-danger');
+        } else {
+          $('#isConnected').removeClass('alert-danger').addClass('alert-success');
+          $('.device-active').removeClass("hidden");
+          if (connectionStatusChanged) updateIsRoot();
+          connectionStatusChanged = false;
+          updateDeviceId();
+        }
+        setTimeout(update_connection, statusPollInterval);
+      })
+      .fail(function() {
+        console.log("statuspoll failed"); 
+        setTimeout(update_connection, statusPollInterval);
+      });
+  }
+
+  $(function() {
+    $('#buttonContainer').width(500);
+    // add elements for action bindings
+    var boundActions = [];
+    for (k in keyBindings) boundActions.push(keyBindings[k]);
+    var bc = $('#buttonContainer');
+    $.each(boundActions, function(index, value) {
+      bc.append($('<button>').html(value).addClass('touchInput')
+          .attr('id', value));
+    });
+
+    // bind adb commands
+    $(".touchInput").button().click(function(event) {
+      adb($(event.currentTarget).attr('id'));
+      $(event.currentTarget).blur(); // get rid of residual focus border
+    });
+
+    // bind key events
+    $(document).keydown(function( event ) {
+      console.log("Key event " + event.which);
+      if (keyBindings.hasOwnProperty(event.which)) {
+        doTouchEvent(keyBindings[event.which]);
+      } else {
+        console.log("Unassigned keyy event.");
+      }
+    });
+
+    // util buttons
+    var ubc = $('#utilButtonContainer');
+    $.each(utilBindings, function(index, value){
+      ubc.append($('<button>').html(value).addClass('utilInput')
+          .attr('id', value));
+    });
+
+    // bind util commands
+    $(".utilInput").button().click(function(event) {
+      $.ajax(baseURL + $(event.currentTarget).attr('id'));
+      $(event.currentTarget).blur(); // get rid of residual focus border
+    });
+
+    // this triggers checking root status after it's clicked.
+    $("#root").click(function(event) {
+      connectionStatusChanged = true;
+    });
+
+    update_connection();
+
+  });
+
+  </script>
+</body>
+</html>

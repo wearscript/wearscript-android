@@ -1,0 +1,69 @@
+body {
+  padding-top: 70px;
+  padding-bottom: 30px;
+}
+
+.theme-dropdown .dropdown-menu {
+  display: block;
+  position: static;
+  margin-bottom: 20px;
+}
+
+.theme-showcase > p > .btn {
+  margin: 5px 0;
+}
+
+.theme-showcase {
+  margin-left: 25px;
+  margin-top: -18px;
+}
+
+.navbar > .container {
+  margin-left: 25px;
+}
+
+.navbar {
+  background: ;
+}
+
+.bar-image {
+  height: 25px;
+  margin-top: 0px; /* was 12px */
+  margin-left: 6px;
+  margin-bottom: 6px;
+}
+
+.root-connection {
+  margin-top: 4px;
+}
+
+.openshades-icon {
+  content: url('openshades.png');
+  position: fixed;
+  right: 25px;
+  top: 19px;
+}
+
+.hidden {
+  display: hidden;
+}
+
+.root-connected {
+  content: url("square-root-2-xxl.png");
+}
+
+.root-disconnected {
+  src: "";
+}
+
+.connected-usb {
+  content: url("ic_qs_usb_device.png");
+}
+
+.connected-tcpip {
+  content: url("ic_qs_wifi_full_4.png");
+}
+
+.disconnected {
+  content: url("x-mark-xxl.png");
+}
