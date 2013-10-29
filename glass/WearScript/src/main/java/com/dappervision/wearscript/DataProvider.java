@@ -26,6 +26,12 @@ public abstract class DataProvider {
         this.parent = null;
     }
 
+    public void remoteSample(DataPoint dp) {
+        if (!useSample(dp.timestampRaw))
+            return;
+        parent.queue(dp);
+    }
+
     protected boolean useSample(long timestamp) {
         if (timestamp - lastTimestamp < samplePeriod)
             return false;

@@ -24,6 +24,8 @@ public class DataManager {
             dp = new NativeDataProvider(this, samplePeriod, sensorManager.getDefaultSensor(type));
         else if (type == -1)
             dp = new GPSDataProvider(this, samplePeriod, type);
+        else if (type == -2)
+            dp = new RemoteDataProvider(this, samplePeriod, type, "Pupil Eyetracker");
         else
             throw new RuntimeException("Invalid type: " + type);
         registerProvider(type, dp);
@@ -40,7 +42,6 @@ public class DataManager {
     public Context getContext() {
         return bs.getApplicationContext();
     }
-
 
     public void queue(DataPoint dp) {
         bs.handleSensor(dp, buildCallbackString(dp));
@@ -65,5 +66,12 @@ public class DataManager {
 
     public SensorManager sensorManager() {
         return sensorManager;
+    }
+
+    public void queueRemote(DataPoint dp) {
+        DataProvider provider = providers.get(dp.getType());
+        if (provider == null)
+            return;
+        provider.remoteSample(dp);
     }
 }
