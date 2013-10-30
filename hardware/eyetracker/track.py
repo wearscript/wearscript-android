@@ -2,6 +2,7 @@ import gevent.monkey
 gevent.monkey.patch_all()
 import cv2
 import numpy as np
+import msgpack
 from websocket import create_connection
 import time
 import json
@@ -10,6 +11,12 @@ import os
 
 
 PARAMS = {'_delta':10, '_min_area': 7000, '_max_area': 30000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 1.5}
+
+PARAMS = {'_delta':10, '_min_area': 850, '_max_area':6000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 2.}
+
+def serialize(y, x):
+    return msgpack.dumps(['sensors', 'Pupil Eyetracker', {'Pupil Eyetracker': -2}, {'Pupil Eyetracker': [[[y, x], time.time(), int(time.time() * 1000000000)]]}])
+
 
 def server(port, **kw):
     def websocket_app(environ, start_response):
@@ -20,37 +27,27 @@ def server(port, **kw):
                 if x is None:
                     continue
                 print('Sending')
-                data = json.dumps({'action': 'data',
-                                   'sensors': [{'values': [y, x],
-                                                'type': -2,
-                                                'name': 'Pupil Eyetracker',
-                                                'timestamp': time.time()}]})
-                ws.send(data)
+                ws.send(serialize(y, x), binary=True)
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
     pywsgi.WSGIServer(("", port), websocket_app,
                       handler_class=WebSocketHandler).serve_forever()
 
 
-def client(key):
+def client(url, **kw):
     G = None
-    ws = create_connection("wss://api.picar.us/wearscript/ws/web/%s")
+    ws = create_connection(url)
     for x, y, _, _, _ in pupil_iter(**PARAMS):
         if x is None:
             continue
-        data = json.dumps({'action': 'pupil',
-                           'sensors': [{'values': [y, x],
-                                        'type': -2,
-                                        'name': 'Pupil Eyetracker',
-                                        'timestamp': time.time()}]})
-        ws.send(data)
+        ws.send(serialize(y, x), opcode=2)
 
 def debug(**kw):
     while True:
         print(PARAMS)
         for x, y, frame, region, hull in pupil_iter(debug=True, **PARAMS):
             if x is not None:
-                cv2.circle(frame, (x, y), 10, (0, 255, 0))
+                cv2.circle(frame, (int(np.round(x)), int(np.round(y))), 10, (0, 255, 0))
                 cv2.polylines(frame, [hull], 1, (0, 255, 0))
             cv2.imshow("Eye", frame)
             key = cv2.waitKey(20)
@@ -82,8 +79,8 @@ def debug(**kw):
 def pupil_iter(pupil_intensity, pupil_ratio, debug=False, **kw):
     camera_id = 1
     camera = cv2.VideoCapture(camera_id)
-    camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)
-    camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
+    camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 320)
+    camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
     rval = 1
     while rval:
         rval, frame = camera.read()
@@ -108,8 +105,8 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, **kw):
             hulls.append((r, region, h))
         if hulls:
             hulls.sort()
-            gaze = np.round(np.mean(hulls[0][2].reshape((-1, 2)), 0)).astype(np.int).tolist()
-            if debug: print('Gaze[%d,%d]' % (gaze[0], gaze[1]))
+            gaze = np.mean(hulls[0][2].reshape((-1, 2)), 0).tolist()
+            if debug: print('Gaze[%f,%f]' % (gaze[0], gaze[1]))
             yield gaze[0], gaze[1], frame, hulls[0][1], hulls[0][2]
         else:
             yield None, None, frame, None, None
@@ -120,6 +117,9 @@ def main():
     subparser = subparsers.add_parser('server')
     subparser.add_argument('--port', type=int, default=8080)
     subparser.set_defaults(func=server)
+    subparser = subparsers.add_parser('client')
+    subparser.add_argument('url')
+    subparser.set_defaults(func=client)
     subparser = subparsers.add_parser('debug')
     subparser.set_defaults(func=debug)
     args = parser.parse_args()
