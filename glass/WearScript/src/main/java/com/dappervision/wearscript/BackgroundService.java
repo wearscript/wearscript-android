@@ -370,34 +370,22 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             } else if (action.equals("sensors")) {
                 TreeMap<String, Integer> types = new TreeMap<String, Integer>();
                 Value[] typesKeyValues = input.get(2).asMapValue().getKeyValueArray();
-                Log.w(TAG, "Msgpack: 0");
-
                 for (int i = 0; i < typesKeyValues.length / 2; i++)
                     types.put(typesKeyValues[i * 2].asRawValue().getString(), typesKeyValues[i * 2 + 1].asIntegerValue().getInt());
-                Log.w(TAG, "Msgpack: 1");
-
                 Value[] samplesKeyValues = input.get(3).asMapValue().getKeyValueArray();
                 for (int i = 0; i < samplesKeyValues.length / 2; i++) {
-                    Log.w(TAG, "Msgpack: 2");
                     String name = samplesKeyValues[i * 2].asRawValue().getString();
                     Integer type = types.get(name);
                     if (type == null) {
                         Log.w(TAG, "Unknown type in sensors: " + name);
                         continue;
                     }
-                    Log.w(TAG, "Msgpack: 3");
-
                     Value[] samples = samplesKeyValues[i * 2 + 1].asArrayValue().getElementArray();
                     for (int j = 0; j < samples.length; j++) {
                         ArrayValue sample = samples[j].asArrayValue();
-                        Log.w(TAG, "Msgpack: 4");
                         DataPoint dp = new DataPoint(name, type, sample.get(1).asFloatValue().getDouble(), sample.get(2).asIntegerValue().getLong());
-                        Log.w(TAG, "Msgpack: 5");
-
-                        for (Value k : sample.get(0).asArrayValue().getElementArray()) {
-                            Log.w(TAG, "Msgpack: 6");
+                        for (Value k : sample.get(0).asArrayValue().getElementArray())
                             dp.addValue(k.asFloatValue().getDouble());
-                        }
                         dataManager.queueRemote(dp);
                     }
                 }
