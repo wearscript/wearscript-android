@@ -10,9 +10,13 @@ import argparse
 import os
 
 
-PARAMS = {'_delta':10, '_min_area': 7000, '_max_area': 30000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 1.5}
+PARAMS = {'_delta':10, '_min_area': 5000, '_max_area': 30000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 1.5}
 
-PARAMS = {'_delta':10, '_min_area': 850, '_max_area':6000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 2.}
+PARAMS = {'_delta':10, '_min_area': 5000, '_max_area': 35000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 2}
+
+
+
+#PARAMS = {'_delta':10, '_min_area': 850, '_max_area':6000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 2.}
 
 def serialize(y, x):
     return msgpack.dumps(['sensors', 'Pupil Eyetracker', {'Pupil Eyetracker': -2}, {'Pupil Eyetracker': [[[y, x], time.time(), int(time.time() * 1000000000)]]}])
@@ -23,7 +27,7 @@ def server(port, **kw):
         print('Connected')
         if environ["PATH_INFO"] == '/':
             ws = environ["wsgi.websocket"]
-            for x, y, _, _, _ in pupil_iter(**PARAMS):
+            for x, y, _, _, _ in pupil_iter_smooth(**PARAMS):
                 if x is None:
                     continue
                 print('Sending')
@@ -37,7 +41,7 @@ def server(port, **kw):
 def client(url, **kw):
     G = None
     ws = create_connection(url)
-    for x, y, _, _, _ in pupil_iter(**PARAMS):
+    for x, y, _, _, _ in pupil_iter_smooth(**PARAMS):
         if x is None:
             continue
         ws.send(serialize(y, x), opcode=2)
@@ -45,7 +49,7 @@ def client(url, **kw):
 def debug(**kw):
     while True:
         print(PARAMS)
-        for x, y, frame, region, hull in pupil_iter(debug=True, **PARAMS):
+        for x, y, frame, region, hull in pupil_iter_smooth(debug=True, **PARAMS):
             if x is not None:
                 cv2.circle(frame, (int(np.round(x)), int(np.round(y))), 10, (0, 255, 0))
                 cv2.polylines(frame, [hull], 1, (0, 255, 0))
@@ -76,11 +80,25 @@ def debug(**kw):
                 break
 
 
+def pupil_iter_smooth(*args, **kw):
+    xprev, yprev = None, None
+    alpha = .7
+    for x, y, frame, hull0, hull1  in pupil_iter(*args, **kw):
+        if x is None:
+            yield x, y, frame, hull0, hull1
+            continue
+        if xprev is None:
+            xprev = x
+            yprev = y
+        xprev = (1-alpha) * xprev + alpha * x
+        yprev = (1-alpha) * yprev + alpha * y
+        yield xprev, yprev, frame, hull0, hull1
+
 def pupil_iter(pupil_intensity, pupil_ratio, debug=False, **kw):
     camera_id = 1
     camera = cv2.VideoCapture(camera_id)
-    camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 320)
-    camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
+    camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1024)
+    camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 768)
     rval = 1
     while rval:
         rval, frame = camera.read()
@@ -105,7 +123,10 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, **kw):
             hulls.append((r, region, h))
         if hulls:
             hulls.sort()
-            gaze = np.mean(hulls[0][2].reshape((-1, 2)), 0).tolist()
+            gazem = np.min(hulls[0][2].reshape((-1, 2)), 0)
+            gazeM = np.max(hulls[0][2].reshape((-1, 2)), 0)
+            gaze = ((gazem + gazeM) / 2).tolist()
+            #gaze = np.mean(hulls[0][2].reshape((-1, 2)), 0).tolist()
             if debug: print('Gaze[%f,%f]' % (gaze[0], gaze[1]))
             yield gaze[0], gaze[1], frame, hulls[0][1], hulls[0][2]
         else:
