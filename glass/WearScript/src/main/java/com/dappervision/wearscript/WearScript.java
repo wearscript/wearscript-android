@@ -3,6 +3,7 @@ package com.dappervision.wearscript;
 import android.content.Intent;
 import android.util.Log;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.opencv.core.CvType;
@@ -143,10 +144,14 @@ public class WearScript {
 
     public void data(int type, String name, String values) {
         Log.i(TAG, "data");
-
         DataPoint dp = new DataPoint(name, type, System.currentTimeMillis() / 1000., System.nanoTime());
-        for (Double p : (List<Double>) JSONValue.parse(values)) {
-            dp.addValue(p);
+        JSONArray valuesArray = (JSONArray) JSONValue.parse(values);
+        for (Object j : valuesArray) {
+            try {
+                dp.addValue((Double) j);
+            } catch (ClassCastException e) {
+                dp.addValue(((Long) j).doubleValue());
+            }
         }
         bs.handleSensor(dp, null);
     }
