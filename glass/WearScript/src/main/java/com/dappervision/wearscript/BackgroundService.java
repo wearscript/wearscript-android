@@ -490,9 +490,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview = new WebView(this);
             webview.setWebChromeClient(new WebChromeClient() {
                 public boolean onConsoleMessage(ConsoleMessage cm) {
-                    Log.d("WearScriptWebView", cm.message() + " -- From line "
+                    String msg = cm.message() + " -- From line "
                             + cm.lineNumber() + " of "
-                            + cm.sourceId() );
+                            + cm.sourceId();
+                    Log.d("WearScriptWebView", msg);
+                    log("WebView: " + msg);
                     return true;
                 }
             });
@@ -514,9 +516,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview = new WebView(this);
             webview.setWebChromeClient(new WebChromeClient() {
                 public boolean onConsoleMessage(ConsoleMessage cm) {
-                    Log.d("WearScriptWebView", cm.message() + " -- From line "
+                    String msg = cm.message() + " -- From line "
                             + cm.lineNumber() + " of "
-                            + cm.sourceId() );
+                            + cm.sourceId();
+                    Log.d("WearScriptWebView", msg);
+                    log("WebView: " + msg);
                     return true;
                 }
             });
