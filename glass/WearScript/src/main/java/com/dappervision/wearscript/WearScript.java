@@ -146,12 +146,13 @@ public class WearScript {
         bs.dataWifi = true;
     }
 
-    public void wifiScan() {
-        bs.wifiStartScan();
+    public void wifiOn(String callback) {
+        bs.wifiScanCallback = callback;
+        wifiOn();
     }
 
-    public void wifiCallback(String callback) {
-        bs.wifiScanCallback = callback;
+    public void wifiScan() {
+        bs.wifiStartScan();
     }
 
     public void dataLog(boolean local, boolean server, double sensorDelay) {
