@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.SensorManager;
 import android.media.AudioRecord;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
@@ -21,6 +22,8 @@ import android.webkit.WebView;
 import android.webkit.WebChromeClient;
 import android.webkit.ConsoleMessage;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
 import org.msgpack.type.MapValue;
@@ -48,19 +51,14 @@ import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SocketClient.SocketListener {
-    private static final boolean DBG = false;
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     public WeakReference<MainActivity> activity;
-    public boolean previewWarp = false, displayWeb = false;
-    public Mat overlay;
-    //public JSONArray wifiBuffer;
     public TreeSet<String> flags;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
     protected static String TAG = "WearScript";
     protected CameraManager cameraManager;
-    protected TreeMap<String, Mat> scriptImages;
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
@@ -70,10 +68,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected WebView webview;
     protected DataManager dataManager;
     protected String wsUrl;
-    protected PowerManager.WakeLock wakeLock;
     protected WifiManager wifiManager;
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
+    public String wifiScanCallback;
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -91,7 +89,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     };
 
-    public void updateActivityView() {
+    public void updateActivityView(final String mode) {
         if (activity == null)
             return;
         final MainActivity a = activity.get();
@@ -99,10 +97,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             return;
         a.runOnUiThread(new Thread() {
             public void run() {
-                if (displayWeb && webview != null) {
+                if (mode.equals("webview") && webview != null) {
                     a.setContentView(webview);
                 } else {
-
                 }
             }
         });
@@ -264,17 +261,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview = null;
             }
             flags = new TreeSet<String>();
-            scriptImages = new TreeMap<String, Mat>();
             sensorBuffer = new TreeMap<String, ArrayList<Value>>();
             sensorTypes = new TreeMap<String, Integer>();
-            //wifiBuffer = new JSONArray();
-            overlay = null;
-            dataWifi = previewWarp = dataRemote = dataLocal = dataImage = false;
-            displayWeb = true;
+            wifiScanCallback = null;
+            dataWifi = dataRemote = dataLocal = dataImage = false;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             dataManager.unregister();
             cameraManager.unregister(true);
-            updateActivityView();
+            updateActivityView("webview");
         }
     }
 
@@ -404,16 +398,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             } else if (action.equals("shutdown")) {
                 Log.i(TAG, "Shutting down!");
                 shutdown();
-            } else if (action.equals("ping")) {
-                /*remoteImageAckCount++;
-                WSDataPong data = new WSDataPong();
-                data.timestamp = System.currentTimeMillis() / 1000.;
-                //o.action = "pong";
-                //o.Tg1 = new Double(System.currentTimeMillis() / 1000.);
-                synchronized (lock) {
-                    client.send(msgpack.write(data));
-                }
-                */
             }
             Log.d(TAG, String.format("WS: Got string message! %d", message.length));
         } catch (Exception e) {
@@ -505,7 +489,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
             Log.i(TAG, "WebView Ran");
-            updateActivityView();
+            updateActivityView("webview");
         }
     }
 
@@ -530,7 +514,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.setInitialScale(100);
             webview.loadUrl(url);
             Log.i(TAG, "WebView Ran");
-            updateActivityView();
+            updateActivityView("webview");
         }
     }
 
@@ -548,10 +532,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onCreate() {
         Log.i(TAG, "Service onCreate");
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        //PowerManager.PARTIAL_WAKE_LOCK
-        //wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "WearScript Background");
-        //wakeLock.acquire(); // TODO: Should only do this if necessary
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
@@ -568,7 +548,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void wifiScanResults() {
         Double timestamp = System.currentTimeMillis() / 1000.;
-        /*
+        JSONArray a = new JSONArray();
         for (ScanResult s : wifiManager.getScanResults()) {
             JSONObject r = new JSONObject();
             r.put("timestamp", timestamp);
@@ -577,10 +557,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             r.put("BSSID", new String(s.BSSID));
             r.put("level", new Integer(s.level));
             r.put("frequency", new Integer(s.frequency));
-            if (dataWifi)
-                wifiBuffer.add(r);
+            a.add(r);
         }
-        */
+        String scanResults = a.toJSONString();
+        if (wifiScanCallback != null && webview != null)
+            webview.loadUrl(String.format("javascript:%s(%s);", wifiScanCallback, scanResults));
+       // TODO(brandyn): Check if data logging is set and also buffer for those
     }
 
     public void wifiStartScan() {
@@ -598,7 +580,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.i(TAG, "Service onDestroy");
         if (broadcastReceiver != null)
             unregisterReceiver(broadcastReceiver);
-        //wakeLock.release();
         if (cameraManager != null) {
             cameraManager.unregister(true);
         }
@@ -684,8 +665,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 Log.i(TAG, "Battery changed");
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.i(TAG, "Wifi scan results");
-                if (dataWifi)
-                    bs.wifiScanResults();
+                bs.wifiScanResults();
             }
         }
     }

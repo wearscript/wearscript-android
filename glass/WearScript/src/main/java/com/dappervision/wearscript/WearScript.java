@@ -59,17 +59,6 @@ public class WearScript {
         bs.serverTimeline(ti);
     }
 
-    public boolean hasFlag(String flag) {
-        Log.i(TAG, "hasFlag");
-        return bs.flags.contains(flag);
-    }
-
-    public void imageCreate(String key, int height, int width) {
-        Log.i(TAG, "imageCreate: " + key);
-        bs.scriptImages.put(key, new Mat(height, width, CvType.CV_8UC4));
-    }
-
-
     public void sensorOn(int type, double sampleTime) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type));
         bs.getDataManager().registerProvider(type, Math.round(sampleTime * 1000000000L));
@@ -96,51 +85,10 @@ public class WearScript {
         bs.serverConnect(server, callback);
     }
 
-    public void imageCopy(String src, String dst) {
-        Log.i(TAG, "imageCopy: " + src + " to " + dst);
-        Mat image = bs.scriptImages.get(src);
-        if (image == null)
-            return;
-        bs.scriptImages.put(dst, image.clone());
-    }
-
-    public void imageDelete(String key) {
-        Log.i(TAG, "imageDelete: " + key);
-        bs.scriptImages.remove(key);
-    }
-
-    public void displayImage(String key) {
-        Log.i(TAG, "displayImage:" + key);
-        bs.overlay = bs.scriptImages.get(key);
-        bs.previewWarp = false;
-        bs.displayWeb = false;
-        bs.updateActivityView();
-    }
-
-    public void displayARWarp() {
-        Log.i(TAG, "displayARWarp");
-        bs.previewWarp = true;
-        bs.displayWeb = false;
-        bs.overlay = null;
-        bs.updateActivityView();
-    }
-
     public void displayWebView() {
         Log.i(TAG, "displayWebView");
-        bs.previewWarp = false;
-        bs.displayWeb = true;
-        bs.overlay = null;
-        bs.updateActivityView();
+        bs.updateActivityView("webview");
     }
-
-    public void displayCamera() {
-        Log.i(TAG, "displayCamera");
-        bs.previewWarp = false;
-        bs.displayWeb = false;
-        bs.overlay = null;
-        bs.updateActivityView();
-    }
-
 
     public void data(int type, String name, String values) {
         Log.i(TAG, "data");
@@ -190,12 +138,20 @@ public class WearScript {
         bs.activity.get().finish();
     }
 
-    public void wifiListenOff() {
+    public void wifiOff() {
         bs.dataWifi = false;
     }
 
-    public void wifiListenOn() {
+    public void wifiOn() {
         bs.dataWifi = true;
+    }
+
+    public void wifiScan() {
+        bs.wifiStartScan();
+    }
+
+    public void wifiCallback(String callback) {
+        bs.wifiScanCallback = callback;
     }
 
     public void dataLog(boolean local, boolean server, double sensorDelay) {
