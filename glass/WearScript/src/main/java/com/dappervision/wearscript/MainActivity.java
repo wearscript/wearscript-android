@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
                     ViewGroup parentViewGroup = (ViewGroup) bs.webview.getParent();
                     if (parentViewGroup != null)
                         parentViewGroup.removeAllViews();
-                    bs.updateActivityView();
+                    bs.updateActivityView("webview");
                     bs.getCameraManager().resume();
                     return;
                 }
