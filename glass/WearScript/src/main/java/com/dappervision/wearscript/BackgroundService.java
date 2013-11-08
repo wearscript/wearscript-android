@@ -472,6 +472,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
             webview = new WebView(this);
+            webview.clearCache(true);
             webview.setWebChromeClient(new WebChromeClient() {
                 public boolean onConsoleMessage(ConsoleMessage cm) {
                     String msg = cm.message() + " -- From line "
@@ -498,6 +499,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
             webview = new WebView(this);
+            webview.clearCache(true);
             webview.setWebChromeClient(new WebChromeClient() {
                 public boolean onConsoleMessage(ConsoleMessage cm) {
                     String msg = cm.message() + " -- From line "
