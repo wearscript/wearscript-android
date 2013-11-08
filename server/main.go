@@ -33,20 +33,29 @@ type PlaygroundTemplate struct {
 func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 	userId, err := userID(req)
 	if userId == "" || err != nil {
-		http.Redirect(w, req, fullUrl + "/auth", http.StatusFound)
+		http.Redirect(w, req, fullUrl+"/auth", http.StatusFound)
 		return
 	}
 	t, err := template.ParseFiles("static/playground.html")
-	if err != nil {
-		w.WriteHeader(500)
-		LogPrintf("playground: template parse")
-		return
-	}
-	glassBody, err := ioutil.ReadFile("static/playground_glass.html")
-	if err != nil {
-		w.WriteHeader(500)
-		LogPrintf("playground: glass")
-		return
+	var glassBody []byte
+	script := req.URL.Query().Get("script")
+	if script == "" {
+		if err != nil {
+			w.WriteHeader(500)
+			LogPrintf("playground: template parse")
+			return
+		}
+		glassBody, err = ioutil.ReadFile("static/playground_glass.html")
+		if err != nil {
+			w.WriteHeader(500)
+			LogPrintf("playground: glass")
+			return
+		}
+	} else {
+		glassBody = download(script)
+		if glassBody == nil {
+			glassBody = []byte("<!-- Server could not fetch script -->")
+		}
 	}
 	err = t.Execute(w, PlaygroundTemplate{WSUrl: wsUrl, GlassBody: string(glassBody)})
 	if err != nil {

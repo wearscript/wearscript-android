@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gorilla/sessions"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 )
@@ -37,6 +38,23 @@ func UB64Dec(s string) string {
 
 func UB64Enc(s string) string {
 	return base64.URLEncoding.EncodeToString([]byte(s))
+}
+
+func download(url string) []byte {
+	response, err := http.Get(url)
+	if err != nil {
+		return nil
+	}
+	defer response.Body.Close()
+	maxBytes := int64(262144) // 256K
+	contents, err := ioutil.ReadAll(io.LimitReader(response.Body, maxBytes))
+	if err != nil {
+		return nil
+	}
+	if int64(len(contents)) >= maxBytes {
+		return nil
+	}
+	return contents
 }
 
 // OAuth2.0 configuration variables.
