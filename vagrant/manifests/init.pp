@@ -9,8 +9,13 @@ group => vagrant,
 }
 
 class apt_packages {
+  exec { "apt-get-update":
+    command => "/usr/bin/apt-get update",
+  }
       $pkgs = ["golang", "git", "mercurial", "redis-server", "libcv-dev", "python-opencv", "python-pip", "libevent-dev", "python-dev", "oracle-java7-installer", "libc6-i386", "lib32stdc++6", "lib32gcc1", "lib32ncurses5", "lib32z1", "xorg"]
-      package {$pkgs: ensure => "installed"}
+      package {$pkgs: ensure => "installed",
+      require => Exec[apt-get-update],
+      }
 }
 
 class pip_packages {
@@ -69,7 +74,7 @@ class wearscript {
 
 class android_studio {
   exec { "download-android-studio":
-    command => "/usr/bin/wget https://dl-ssl.google.com/android/studio/android-studio-bundle-132.893413-linux.tgz && /bin/tar -xzf android-studio-bundle-132.893413-linux.tgz && /bin/chown -R vagrant:vagrant android-studio",
+    command => "/usr/bin/wget https://dl-ssl.google.com/dl/android/studio/install/0.3.2/android-studio-bundle-132.893413-linux.tgz && /bin/tar -xzf android-studio-bundle-132.893413-linux.tgz && /bin/chown -R vagrant:vagrant android-studio",
     creates => '/home/vagrant/android-studio',
     cwd => '/home/vagrant',
   }
