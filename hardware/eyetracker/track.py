@@ -2,6 +2,7 @@ import gevent.monkey
 gevent.monkey.patch_all()
 import cv2
 import numpy as np
+import random
 import msgpack
 from websocket import create_connection
 from consolidate_pupil import consolidate
@@ -11,8 +12,13 @@ import argparse
 import os
 import time
 import glob
+import requests
 
-PARAMS = {'_delta':10, '_min_area': 4000, '_max_area': 17000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 125, 'pupil_ratio': 1.5}
+PARAMS = {'_delta':10, '_min_area': 2000, '_max_area': 20000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 130, 'pupil_ratio': 2}
+CMDS = ['X', 'PERIOD']
+LAST_COMMAND_TIME_FIRST = 0
+LAST_COMMAND_TIME = 0
+LAST_COMMAND = None
 
 #PARAMS = {'_delta':10, '_min_area': 5000, '_max_area': 50000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 125, 'pupil_ratio': 2}
 
@@ -21,8 +27,12 @@ PARAMS = {'_delta':10, '_min_area': 4000, '_max_area': 17000, '_max_variation': 
 #PARAMS = {'_delta':10, '_min_area': 850, '_max_area':6000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 2.}
 COLORS = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1]]
 
-def serialize(y, x):
-    return msgpack.dumps(['sensors', 'Pupil Eyetracker', {'Pupil Eyetracker': -2}, {'Pupil Eyetracker': [[[y, x], time.time(), int(time.time() * 1000000000)]]}])
+def serialize(*args):
+    return msgpack.dumps(['sensors', 'Pupil Eyetracker', {'Pupil Eyetracker': -2}, {'Pupil Eyetracker': [[list(args), time.time(), int(time.time() * 1000000000)]]}])
+
+
+def serialize_cmd(*args):
+    return msgpack.dumps(args)
 
 
 def server(port, **kw):
@@ -53,11 +63,20 @@ def server(port, **kw):
                     
             g = gevent.spawn(receive)
             kw.update(PARAMS)
+            def command_func(cmd):
+                print('--------------------Sending')
+                ws.send(serialize(float(cmd)), binary=True)
+                gevent.sleep(0)
             while 1:
                 run[0] = 0
-                for x, y, _, _, _, _, _ in pupil_iter_smooth(**kw):
+                #requests.get('http://localhost:8881/cmd/' + CMDS[i]).content
+                for data in pupil_iter_smooth(command_func=command_func, **kw):
+                    x, y = data[:2]
                     if run[0] != 0:
                         break
+                    if kw.get('debug'):
+                        print('Debug iter')
+                        debug_iter(*data)
                     if x is None:
                         continue
                     print('Sending')
@@ -78,44 +97,53 @@ def client(url, **kw):
             continue
         ws.send(serialize(y, x), opcode=2)
 
-def debug( **kw):
+def debug(**kw):
     run = True
     while run:
         run = False
-        print(PARAMS)
-        kw.update(PARAMS)
-        for cnt, (x, y, frame, region, hull, box, timestamp) in enumerate(pupil_iter_smooth(debug=True, **kw)):
-            if x is not None:
-                cv2.circle(frame, (int(np.round(x)), int(np.round(y))), 10, (0, 255, 0))
-                cv2.ellipse(frame, box, (0, 255, 0))
-                cv2.polylines(frame, [hull], 1, (0, 0, 255))
-            if cnt % 2 == 0:
-                cv2.imshow("Eye", frame)
-            key = cv2.waitKey(20)
-            if key == -1:
-                continue
-            elif key == 27:
-                return
-            elif key == 97: # a
-                PARAMS['_delta'] += 5
-            elif key == 122: # z
-                PARAMS['_delta'] -= 5
-            elif key == 115: # s
-                PARAMS['_max_variation'] += .1
-            elif key == 120: # x
-                PARAMS['_max_variation'] -= .1
-            elif key == 100: # d
-                PARAMS['_min_diversity'] += .1
-            elif key == 99: # c
-                PARAMS['pupil_intensity'] -= .1
-            elif key == 102: # f
-                PARAMS['pupil_intensity'] += 5
-            elif key == 118: # v
-                PARAMS['pupil_intensity'] -= 5
-            if 97 <= key <= 122:
-                print(key)
-                run = True
-                break
+        debug_run(**kw)
+
+
+def debug_run(**kw):
+    print(PARAMS)
+    kw.update(PARAMS)
+    for data in pupil_iter_smooth(debug=True, **kw):
+        # TODO: Fix the exit cases
+        if debug_iter(*data):
+            return
+
+def debug_iter(x, y, frame, region, hull, box, timestamp):
+    if x is not None:
+        cv2.circle(frame, (int(np.round(x)), int(np.round(y))), 10, (0, 255, 0))
+        cv2.ellipse(frame, box, (0, 255, 0))
+        cv2.polylines(frame, [hull], 1, (0, 0, 255))
+    if random.random() < .5:
+        cv2.imshow("Eye", frame)
+    key = cv2.waitKey(20)
+    if key == -1:
+        return False
+    elif key == 27:
+        return True
+    elif key == 97: # a
+        PARAMS['_delta'] += 5
+    elif key == 122: # z
+        PARAMS['_delta'] -= 5
+    elif key == 115: # s
+        PARAMS['_max_variation'] += .1
+    elif key == 120: # x
+        PARAMS['_max_variation'] -= .1
+    elif key == 100: # d
+        PARAMS['_min_diversity'] += .1
+    elif key == 99: # c
+        PARAMS['pupil_intensity'] -= .1
+    elif key == 102: # f
+        PARAMS['pupil_intensity'] += 5
+    elif key == 118: # v
+        PARAMS['pupil_intensity'] -= 5
+    if 97 <= key <= 122:
+        print(key)
+        return True
+
 
 def pupil_iter_smooth(*args, **kw):
     xprev, yprev = None, None
@@ -132,7 +160,7 @@ def pupil_iter_smooth(*args, **kw):
         yield xprev, yprev, frame, hull0, hull1, box, timestamp
 
 
-def parse_calibration(calib):
+def parse_calibration(calib, command_func):
     import matplotlib.pyplot as mp
     from plot import plot_cov_ellipse
     covis = []
@@ -150,17 +178,27 @@ def parse_calibration(calib):
     mp.xlim([np.min(means[:, 0]) - np.std(means[:, 0]) * 2, np.max(means[:, 0]) + np.std(means[:, 0]) * 2])
     mp.draw()
     def plot_point(x, y):
+        global LAST_COMMAND_TIME, LAST_COMMAND_TIME_FIRST, LAST_COMMAND
         xy = np.array([x, y])
         ds = [np.dot(np.dot(xy - means[m, :], covis[m, :, :]), (xy - means[m, :]).T) for m in range(len(means))]
         i = np.argmin(ds)
-        if ds[i] > 16:
+        if ds[i] > 6:
             i = len(means)
+            LAST_COMMAND_TIME_FIRST = time.time()
+        else:
+            # or time.time() - LAST_COMMAND_TIME_FIRST > 2
+            if time.time() - LAST_COMMAND_TIME > 2.5 or LAST_COMMAND != i:
+                if command_func is not None:
+                    command_func(i)
+                if LAST_COMMAND != i:
+                    LAST_COMMAND_TIME_FIRST = time.time()
+                LAST_COMMAND_TIME = time.time()
+                LAST_COMMAND = i
         mp.scatter(x, y, c=np.array(COLORS[i]).reshape((1, -1)))
         mp.draw()
-        # TODO: Here is where we would add ADB
     return plot_point
 
-def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, plot=False, calib=None, func=None, **kw):
+def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, plot=False, calib=None, func=None, command_func=None, **kw):
     camera_id = 0
     camera = cv2.VideoCapture(camera_id)
     camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)
@@ -182,7 +220,7 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
         mp.ion()
         mp.show()
         if calib:
-            plot_point = parse_calibration(calib)
+            plot_point = parse_calibration(calib, command_func)
         else:
             def plot_point(x, y):
                 mp.scatter(x, y)
@@ -244,6 +282,7 @@ def main():
     parser.add_argument('--plot', action='store_true')
     subparser = subparsers.add_parser('server')
     subparser.add_argument('--port', type=int, default=8080)
+    subparser.add_argument('--debug', action='store_true')
     subparser.set_defaults(func=server)
     subparser = subparsers.add_parser('client')
     subparser.add_argument('url')
