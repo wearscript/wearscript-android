@@ -1,43 +1,39 @@
 <html style="width:100%; height:100%; overflow:hidden">
 <head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
-<script src="wearscript.js"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.0/zepto.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>-->
 </head>
 <body style="width:100%; height:100%; overflow:hidden; margin:0">
-<canvas id="canvas" width="640" height="360" style="display:block">
-</canvas>
+<canvas id="canvas" width="640" height="360" style="display:block"></canvas>
 <script>
-
 function cb(data) {
-    if (data.type != 1)
+    if (data.type != WS.sensor('accelerometer'))
         return;
-    if (_.has(window, 'prevValue')) {
+    if (window.hasOwnProperty('prevValue')) {
         var a = data.values;
         var b = prevValue;
         var c = [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
         var d = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
         WS.log(String(d) + ':' +  JSON.stringify(a));
-        if (d > 1.5)
+        if (d > 1.)
             randomColor();
     }
     prevValue = data.values;
 }
 
 function randomColor() {
-    var ctx = $('#canvas')[0].getContext("2d");
-    ctx.fillStyle = _.sample(["#E9003a", "#FF5300", "#00AB6F", "#58E000"])
+    var colors = ["#E9003a", "#FF5300", "#00AB6F", "#58E000"];
+    ctx.fillStyle = colors[Math.floor(Math.random() * 4)];
     ctx.fillRect(0, 0, 640, 360);
 }
 
-$(function () {
-    if (!_.has(window, 'WS'))
-        WS = new WearScriptSimulator();
-    WS.displayWebView();
+function main() {
+    if (WS.scriptVersion(0)) return;
+    ctx = document.getElementById('canvas').getContext("2d");
     randomColor();
-    WS.sensorOn(1, .05);
-    WS.sensorCallback('cb');
-});
+    WS.sensorOn(WS.sensor('accelerometer'), .05, 'cb');
+}
+window.onload = main;
 </script>
 </body>
 </html>
