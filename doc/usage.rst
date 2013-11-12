@@ -1,3 +1,6 @@
+Using WearScript
+================
+
 Using the Playground
 ---------------------
 The playground is a webapp that connects with WearScript while it is running on Glass.  It allows you to execute scripts and visualize the sensors/images from Glass.

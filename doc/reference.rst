@@ -1,3 +1,5 @@
+API Reference
+==============
 
 WearScript Syntax
 -----------------

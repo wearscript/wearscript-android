@@ -1,17 +1,25 @@
+Setup
+=====
 
 What do you want to do?
 -----------------------
 * Get WearScript Source...
+
   * with one click: Click Download ZIP on the right side of the page
   * using git: Clone the repo using the url on the right side of the page
+
 * Put WearScript on Glass...
+
   * as easy as possible:  See Install Client (Binary)
   * and be able to hack the Java code: See Install Client (Source)
   * and be able to hack the Java code (using our virtual machine): Install WearScript VM
+
 * Use our WearScript server: See Using Our Server
 * Run your own WearScript server...
+
   * on an existing machine:  See Install Server
   * in our virtual machine: Install WearScript VM
+
 * Install the WearScript VM Image (Vagrant, Ubuntu, Android Studio, WearScript Server): See Install WearScript VM (Client + Server)
 
 Setup Your Device
@@ -49,7 +57,16 @@ Starting the Client
 Client Installation Video
 -------------------------
 This assumes Android Studio and SDK are installed (see above)
-[![client install](http://img.youtube.com/vi/lUCiqhWnRjg/0.jpg)](http://www.youtube.com/watch?v=lUCiqhWnRjg)
+.. raw:: html
+
+        <object width="480" height="385"><param name="movie"
+        value="http://www.youtube.com/v/lUCiqhWnRjg&hl=en_US&fs=1&rel=0"></param><param
+        name="allowFullScreen" value="true"></param><param
+        name="allowscriptaccess" value="always"></param><embed
+        src="http://www.youtube.com/v/lUCiqhWnRjg&hl=en_US&fs=1&rel=0"
+        type="application/x-shockwave-flash" allowscriptaccess="always"
+        allowfullscreen="true" width="480"
+        height="385"></embed></object>
 
 Using Our Server
 ----------------
@@ -70,7 +87,16 @@ Install Server
 
 Server Installation Video
 -------------------------
-[![server install](http://img.youtube.com/vi/vdbE87oJja4/0.jpg)](http://www.youtube.com/watch?v=vdbE87oJja4)
+.. raw:: html
+
+        <object width="480" height="385"><param name="movie"
+        value="http://www.youtube.com/v/vdbE87oJja4&hl=en_US&fs=1&rel=0"></param><param
+        name="allowFullScreen" value="true"></param><param
+        name="allowscriptaccess" value="always"></param><embed
+        src="http://www.youtube.com/v/vdbE87oJja4&hl=en_US&fs=1&rel=0"
+        type="application/x-shockwave-flash" allowscriptaccess="always"
+        allowfullscreen="true" width="480"
+        height="385"></embed></object>
 
 Alternate: Installing Go (manually)
 ------------------------

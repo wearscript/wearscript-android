@@ -2,7 +2,7 @@ WearScript: JS with Batteries Included for Glass
 ================================================
 
 ..  toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     setup
     usage
