@@ -16,7 +16,7 @@ Travis-CI
 ---------
 The current test setup just builds the server after each commit.
 
-[![Build Status](https://travis-ci.org/OpenShades/wearscript.png?branch=master)](https://travis-ci.org/bwhite/wearscript)
+.. image:: https://travis-ci.org/OpenShades/wearscript.png?branch=master
 
 Resources
 ---------

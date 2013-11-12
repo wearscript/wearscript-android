@@ -8,12 +8,11 @@ WearScript: JS with Batteries Included for Glass
     usage
     hacking
     reference
-    `reference <http://wearscript.com/reference/index.html>`_
+    Reference <http://wearscript.com/reference/index.html>
     admin
     troubleshooting
 
 Visit https://github.com/OpenShades/wearscript for the source.
-
 
 WearScript
 ===========

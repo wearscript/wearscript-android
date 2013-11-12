@@ -57,6 +57,7 @@ Starting the Client
 Client Installation Video
 -------------------------
 This assumes Android Studio and SDK are installed (see above)
+
 .. raw:: html
 
         <object width="480" height="385"><param name="movie"
@@ -87,6 +88,7 @@ Install Server
 
 Server Installation Video
 -------------------------
+
 .. raw:: html
 
         <object width="480" height="385"><param name="movie"
