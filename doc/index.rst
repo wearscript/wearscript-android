@@ -8,6 +8,7 @@ WearScript: JS with Batteries Included for Glass
     usage
     hacking
     reference
+    `reference <http://wearscript.com/reference/index.html>`_
     admin
     troubleshooting
 
@@ -19,12 +20,18 @@ WearScript
 
 WearScript is a library that allows you to execute Javascript on Glass that can interact with the underlying device (e.g., control/sample sensors/camera, send timeline items, draw on the screen).  We have gone through many iterations to develop a streamlined user experience to write code and execute it on Glass, and I think we are very close.   This is much simpler than Android development, but more powerful than the built-in browser.  The features we are releasing today are sufficient to make a wide range of applications, but if you've seen our previous videos you can be sure there is more to come.   With your help we can build an open ecosystem around Glass.  Watch the short Intro Video to see what it can do.
 
-This has been slimmed down considerably to make it easier to install, the "rest" of the code is in "old" but it is unsupported.  We'll be working to gradually move some of the functionality to master.  Ping me in IRC if a certain capability would be useful to you and we'll give it a higher priority.  
-
 Intro Video
 -------------------------
-[![intro video](http://img.youtube.com/vi/tOUgybfQp4A/0.jpg)](http://www.youtube.com/watch?v=tOUgybfQp4A)
+.. raw:: html
 
+        <object width="480" height="385"><param name="movie"
+        value="http://www.youtube.com/v/tOUgybfQp4A&hl=en_US&fs=1&rel=0"></param><param
+        name="allowFullScreen" value="true"></param><param
+        name="allowscriptaccess" value="always"></param><embed
+        src="http://www.youtube.com/v/tOUgybfQp4A&hl=en_US&fs=1&rel=0"
+        type="application/x-shockwave-flash" allowscriptaccess="always"
+        allowfullscreen="true" width="480"
+        height="385"></embed></object>
 
 Contact/Info
 ============
@@ -42,9 +49,9 @@ Apache 2.0
 
 Contributors
 ------------
-See [contributors](https://github.com/bwhite/wearscript/graphs/contributors) for details.
+See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ for details.
 
-* [Brandyn White](https://plus.google.com/109113122718379096525?rel=author)
+* `Brandyn White <https://plus.google.com/109113122718379096525?rel=author>`_
 * Andrew Miller
 * Scott Greenwald
 * Kurtis Nelson
