@@ -58,7 +58,7 @@ WearScript combines the power of Android development on Glass with the learning 
 About
 -----
 
-* `OpenShades <http://openshades.com>`_ (the new OpenGlass) is our community (we hang out in #openshades on freenode IRC)
+* `OpenShades <http://openshades.com>`_ (the new OpenGlass) is our community (join us in #openshades on freenode IRC)
 * Project Lead: Brandyn White (bwhite dappervision com)
 * IRC freenode #openshades (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
 * `G+ Community <https://plus.google.com/communities/101102785351379725742>`_ (we post pictures/videos as we go here)
