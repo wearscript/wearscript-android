@@ -4,15 +4,13 @@ WearScript is the power of Android on Glass with the learning curve of a website
 
 .. raw:: html
 
-  <div style="position: relative;padding-bottom: 56.25%;padding-top: 30px; height: 0; overflow: hidden;">
+  <div style="position: relative;padding-bottom: 30px;padding-top: 30px; height: 0; overflow: hidden;">
     <iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;" src="http://www.youtube.com/embed/tOUgybfQp4A" frameborder="0"></iframe>
   </div>
 
-Sample Script
--------------
-
 .. code-block:: html
 
+  // Sample WearScript
   <html style="width:100%; height:100%; overflow:hidden">
   <body style="width:100%; height:100%; overflow:hidden; margin:0">
   <canvas id="canvas" width="640" height="360" style="display:block"></canvas>
