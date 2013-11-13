@@ -1,6 +1,8 @@
 WearScript: JS with Batteries Included for Glass
 ================================================
-WearScript is the power of Android with the learning curve of a website.  For an overview check out the intro video and sample script below.
+WearScript is the power of Android on Glass with the learning curve of a website.  Go from concept to demo in a fraction of the time. For an overview check out the intro video and sample script below.
+
+Visit https://github.com/OpenShades/wearscript for the source.
 
 .. raw:: html
 
@@ -58,8 +60,6 @@ WearScript is the power of Android with the learning curve of a website.  For an
     admin
     contributing
     troubleshooting
-
-Visit https://github.com/OpenShades/wearscript for the source.
 
 Contact/Info
 ============
