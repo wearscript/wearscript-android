@@ -1,19 +1,16 @@
 WearScript: JS with Batteries Included for Glass
 ================================================
-WearScript is the power of Android on Glass with the learning curve of a website.  Go from concept to demo in a fraction of the time. For an overview check out the intro video and sample script below.
-
-Visit https://github.com/OpenShades/wearscript for the source.
+WearScript is the power of Android on Glass with the learning curve of a website.  Go from concept to demo in a fraction of the time. For an overview check out the intro video and sample script below.  Visit https://github.com/OpenShades/wearscript for the goods.
 
 .. raw:: html
 
-        <object width="480" height="385"><param name="movie"
+        <object><param name="movie"
         value="http://www.youtube.com/v/tOUgybfQp4A&hl=en_US&fs=1&rel=0"></param><param
         name="allowFullScreen" value="true"></param><param
         name="allowscriptaccess" value="always"></param><embed
         src="http://www.youtube.com/v/tOUgybfQp4A&hl=en_US&fs=1&rel=0"
         type="application/x-shockwave-flash" allowscriptaccess="always"
-        allowfullscreen="true" width="480"
-        height="385"></embed></object>
+        allowfullscreen="true"></embed></object>
 
 .. code-block:: html
 
