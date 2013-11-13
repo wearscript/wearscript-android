@@ -54,15 +54,17 @@ WearScript is the power of Android on Glass with the learning curve of a website
     contributing
     troubleshooting
 
-Contact/Info
-============
-OpenShades (the new OpenGlass) is our community name that we use when hacking together (join us at #openshades on freenode IRC), WearScript is this project specifically.  For demos see http://openshades.com.  Dapper Vision, Inc. (by Brandyn and Andrew) is the sponsor of this project and unless otherwise specified is the copyright owner of the files listed.
+About
+-----
+OpenShades (the new OpenGlass) is our community (join us in #openshades on freenode IRC with demos at http://openshades.com).
 
 * Project Lead: Brandyn White (bwhite dappervision com)
 * IRC freenode #openshades (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
 * G+ Community: https://plus.google.com/communities/101102785351379725742 (we post pictures/videos as we go here)
 * Website: http://wearscript.com (overall project info, video links)
 * Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
+* `Dapper Vision, Inc. <http://www.dappervision.com>` (by Brandyn and Andrew) is the sponsor of this project
+* Code is licensed under Apache 2.0 unless otherwise specified
 
 Contributors
 ------------
@@ -75,5 +77,3 @@ See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ f
 * Conner Brooks (connerb)
 * Justin Chase (jujuman)
 * Alexander Conroy (geilt)
-
-Code is licensed under Apache 2.0 unless otherwise specified.
