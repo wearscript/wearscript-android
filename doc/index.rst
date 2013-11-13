@@ -74,7 +74,7 @@ Apache 2.0
 
 Contributors
 ------------
-See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ for details.
+See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ for details.  Name (irc nick) below
 
 * `Brandyn White (brandyn) <https://plus.google.com/109113122718379096525?rel=author>`_
 * Andrew Miller (amiller)
@@ -82,3 +82,4 @@ See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ f
 * Kurtis Nelson (kurtisnelson)
 * Conner Brooks (connerb)
 * Justin Chase (jujuman)
+* Alexander Conroy (geilt)
