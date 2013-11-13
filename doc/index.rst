@@ -1,6 +1,6 @@
 WearScript: JS with Batteries Included for Glass
 ================================================
-WearScript is a library that allows you to execute JavaScript on Glass that can interact with the underlying device.  It's the power of Android with the complexity of a website.  For an overview check out the intro video and sample script below.
+WearScript is the power of Android with the learning curve of a website.  For an overview check out the intro video and sample script below.
 
 .. raw:: html
 
@@ -46,6 +46,7 @@ WearScript is a library that allows you to execute JavaScript on Glass that can 
 
 
 ..  toctree::
+    :hidden:
     :maxdepth: 1
 
     setup
