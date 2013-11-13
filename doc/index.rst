@@ -5,11 +5,13 @@ WearScript: JS with Batteries Included for Glass
     :maxdepth: 1
 
     setup
-    usage
+    tutorial    
+    tips
     hacking
     reference
     Reference <http://wearscript.com/reference/index.html>
     admin
+    contributing
     troubleshooting
 
 Visit https://github.com/OpenShades/wearscript for the source.
