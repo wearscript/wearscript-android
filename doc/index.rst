@@ -4,13 +4,9 @@ WearScript is the power of Android on Glass with the learning curve of a website
 
 .. raw:: html
 
-        <object><param name="movie"
-        value="http://www.youtube.com/v/tOUgybfQp4A&hl=en_US&fs=1&rel=0"></param><param
-        name="allowFullScreen" value="true"></param><param
-        name="allowscriptaccess" value="always"></param><embed
-        src="http://www.youtube.com/v/tOUgybfQp4A&hl=en_US&fs=1&rel=0"
-        type="application/x-shockwave-flash" allowscriptaccess="always"
-        allowfullscreen="true"></embed></object>
+  <div style="position: relative;padding-bottom: 56.25%;padding-top: 30px; height: 0; overflow: hidden;">
+    <iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;" src="http://www.youtube.com/embed/tOUgybfQp4A" frameborder="0"></iframe>
+  </div>
 
 .. code-block:: html
 
