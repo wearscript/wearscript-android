@@ -14,116 +14,125 @@ import time
 import glob
 import requests
 
+# Default pupil parameters, use the debug mode to tune these and replace them for your purposes
 PARAMS = {'_delta':10, '_min_area': 2000, '_max_area': 20000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 130, 'pupil_ratio': 2}
 CMDS = ['X', 'PERIOD']
 LAST_COMMAND_TIME_FIRST = 0
 LAST_COMMAND_TIME = 0
 LAST_COMMAND = None
 
-#PARAMS = {'_delta':10, '_min_area': 5000, '_max_area': 50000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 125, 'pupil_ratio': 2}
+MSER_KEYS = ['_delta', '_min_area', '_max_area',
+             '_max_variation', '_min_diversity',
+             '_max_evolution', '_area_threshold',
+             '_min_margin', '_edge_blur_size']
 
-
-
-#PARAMS = {'_delta':10, '_min_area': 850, '_max_area':6000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 75, 'pupil_ratio': 2.}
 COLORS = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1]]
 
 def serialize(*args):
     return msgpack.dumps(['sensors', 'Pupil Eyetracker', {'Pupil Eyetracker': -2}, {'Pupil Eyetracker': [[list(args), time.time(), int(time.time() * 1000000000)]]}])
 
-
-def serialize_cmd(*args):
-    return msgpack.dumps(args)
-
-
-def server(port, **kw):
+def handle_incoming_data(msg_data, kw, run):
+    if not msg_data:
+        return
+    msg = msgpack.loads(msg_data)
+    if kw.get('debug'):
+        print(msg)
+    # If we get the "end of calibration" message restart the run loop
+    # TODO(brandyn): Here we are hitching onto the Pupil sensor type, clean this up
     dump = kw.get('dump')
-    if dump is not None:
-        dump = os.path.abspath(dump)
-        try:
-            os.makedirs(dump)
-        except OSError:
-            pass
+    if dump:
+        open(dump + '/%f.msgpack' % time.time(), 'w').write(msg_data)
+        if msg[0] == 'sensors' and any(int(x[0][0]) == -1 for x in msg[3].get('Pupil Point', [])):
+            consolidate(dump)
+            kw['calib'] = 'calib.js'
+            run[0] = 'RELOAD'
+
+def server(port, **kw):    
+    run = [None]
     def websocket_app(environ, start_response):
         print('Connected')
         if environ["PATH_INFO"] == '/':
             ws = environ["wsgi.websocket"]
-            run = [0]
+            if kw.get('command_server'):
+                prev_command_func = kw.get('command_func')
+                def command_func(cmd):
+                    if prev_command_func:
+                        prev_command_func(cmd)
+                    ws.send(serialize(float(cmd)), binary=True)
+                    gevent.sleep(0)
+                kw['command_func'] = command_func
+
             def receive():
-                while 1:
-                    msg_data = ws.receive()
-                    if dump:
-                        open(dump + '/%f.msgpack' % time.time(), 'w').write(msg_data)
-                    msg = msgpack.loads(msg_data)
-                    print(msg)
-                    # If we get the "end of calibration" message restart the run loop
-                    if dump and msg[0] == 'sensors' and any(int(x[0][0]) == -1 for x in msg[3].get('Pupil Point', [])):
-                        consolidate(dump)
-                        kw['calib'] = 'calib.js'
-                        run[0] = 1
-                    
+                while run[0] != 'QUIT':
+                    handle_incoming_data(ws.receive(), kw, run)
             g = gevent.spawn(receive)
             kw.update(PARAMS)
-            def command_func(cmd):
-                print('--------------------Sending')
-                ws.send(serialize(float(cmd)), binary=True)
-                gevent.sleep(0)
-            while 1:
-                run[0] = 0
-                #requests.get('http://localhost:8881/cmd/' + CMDS[i]).content
-                for data in pupil_iter_smooth(command_func=command_func, **kw):
-                    x, y = data[:2]
-                    if run[0] != 0:
-                        break
+
+            while run[0] != 'QUIT':
+                run[0] = None
+                for box, frame, hull, timestamp in pupil_iter(**kw):
                     if kw.get('debug'):
-                        print('Debug iter')
-                        debug_iter(*data)
-                    if x is None:
+                        run[0] = debug_iter(box, frame, hull, timestamp)
+                    if run[0]:
+                        break
+                    if box is None:
                         continue
-                    print('Sending')
-                    ws.send(serialize(y, x), binary=True)
+                    ws.send(serialize(box[0][1], box[0][0], max(box[1][0], box[1][1])), binary=True)
                     gevent.sleep(0)
+            g.kill()
+            wsgi_server.stop()
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
-    pywsgi.WSGIServer(("", port), websocket_app,
-                      handler_class=WebSocketHandler).serve_forever()
-
+    wsgi_server = pywsgi.WSGIServer(("", port), websocket_app,
+                                    handler_class=WebSocketHandler)
+    wsgi_server.serve_forever()
 
 def client(url, **kw):
     G = None
     kw.update(PARAMS)
     ws = create_connection(url)
-    for x, y, _, _, _, _, _ in pupil_iter_smooth(**kw):
-        if x is None:
-            continue
-        ws.send(serialize(y, x), opcode=2)
+    run = [None]
+    def receive():
+        while run[0] != 'QUIT':
+            handle_incoming_data(ws.recv(), kw, run)
+    g = gevent.spawn(receive)
+
+    while run[0] != 'QUIT':
+        run[0] = None
+        for box, frame, hull, timestamp in pupil_iter(**kw):
+            if kw.get('debug'):
+                run[0] = debug_iter(box, frame, hull, timestamp)
+            if run[0]:
+                break
+            if box is None:
+                continue
+            ws.send(serialize(box[0][1], box[0][0], max(box[1][0], box[1][1])), opcode=2)
+            gevent.sleep(0)
 
 def debug(**kw):
-    run = True
-    while run:
-        run = False
-        debug_run(**kw)
-
-
-def debug_run(**kw):
+    run = [None]
     print(PARAMS)
     kw.update(PARAMS)
-    for data in pupil_iter_smooth(debug=True, **kw):
-        # TODO: Fix the exit cases
-        if debug_iter(*data):
-            return
+    while run[0] != 'QUIT':
+        run = [None]
+        for data in pupil_iter(debug=True, **kw):
+            run[0] = debug_iter(*data)
+            if run[0]:
+                break
 
-def debug_iter(x, y, frame, region, hull, box, timestamp):
-    if x is not None:
-        cv2.circle(frame, (int(np.round(x)), int(np.round(y))), 10, (0, 255, 0))
+def debug_iter(box, frame, hull, timestamp):
+    if box is not None:
+        cv2.circle(frame, (int(np.round(box[0][0])), int(np.round(box[0][1]))), 10, (0, 255, 0))
         cv2.ellipse(frame, box, (0, 255, 0))
         cv2.polylines(frame, [hull], 1, (0, 0, 255))
     if random.random() < .5:
         cv2.imshow("Eye", frame)
     key = cv2.waitKey(20)
+    # No user input
     if key == -1:
-        return False
+        return
     elif key == 27:
-        return True
+        return 'QUIT'
     elif key == 97: # a
         PARAMS['_delta'] += 5
     elif key == 122: # z
@@ -141,26 +150,10 @@ def debug_iter(x, y, frame, region, hull, box, timestamp):
     elif key == 118: # v
         PARAMS['pupil_intensity'] -= 5
     if 97 <= key <= 122:
-        print(key)
-        return True
+        print('Got key[%d]' % key)
+        return 'RELOAD'
 
-
-def pupil_iter_smooth(*args, **kw):
-    xprev, yprev = None, None
-    alpha = 1
-    for x, y, frame, hull0, hull1, box, timestamp  in pupil_iter(*args, **kw):
-        if x is None:
-            yield x, y, frame, hull0, hull1, box, timestamp
-            continue
-        if xprev is None:
-            xprev = x
-            yprev = y
-        xprev = (1-alpha) * xprev + alpha * x
-        yprev = (1-alpha) * yprev + alpha * y
-        yield xprev, yprev, frame, hull0, hull1, box, timestamp
-
-
-def parse_calibration(calib, command_func):
+def parse_calibration(calib, command_func, command_thresh):
     import matplotlib.pyplot as mp
     from plot import plot_cov_ellipse
     covis = []
@@ -182,7 +175,7 @@ def parse_calibration(calib, command_func):
         xy = np.array([x, y])
         ds = [np.dot(np.dot(xy - means[m, :], covis[m, :, :]), (xy - means[m, :]).T) for m in range(len(means))]
         i = np.argmin(ds)
-        if ds[i] > 6:
+        if ds[i] > command_thresh:
             i = len(means)
             LAST_COMMAND_TIME_FIRST = time.time()
         else:
@@ -199,7 +192,7 @@ def parse_calibration(calib, command_func):
     return plot_point
 
 def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, plot=False, calib=None, func=None, command_func=None, **kw):
-    camera_id = 0
+    camera_id = 1
     camera = cv2.VideoCapture(camera_id)
     camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)
     camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
@@ -209,18 +202,12 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
         frames = None
     else:
         frames = sorted(glob.glob(os.path.abspath(load) + '/*.jpg'), reverse=True)
-    if dump is not None:
-        dump = os.path.abspath(dump)
-        try:
-            os.makedirs(dump)
-        except OSError:
-            pass
     if plot:
         import matplotlib.pyplot as mp
         mp.ion()
         mp.show()
         if calib:
-            plot_point = parse_calibration(calib, command_func)
+            plot_point = parse_calibration(calib, command_func, kw.get('command_thresh'))
         else:
             def plot_point(x, y):
                 mp.scatter(x, y)
@@ -239,11 +226,10 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
             frame = cv2.imread(path)
             if frame is None:
                 break
-        if dump is not None:
+        if dump:
             cv2.imwrite(dump + '/%f.jpg' % (timestamp,), frame)
         cnt += 1
-        print(frame.shape)
-        mser = cv2.MSER(**kw)
+        mser = cv2.MSER(**dict((k, kw[k]) for k in MSER_KEYS))
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         regions = mser.detect(gray, None)
         hulls = []
@@ -265,32 +251,47 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
         if hulls:
             hulls.sort()
             print('Time[%f]' % (time.time() - st))
-            e = cv2.fitEllipse(hulls[0][2])
-            if debug: print('Gaze[%f,%f]' % (e[0][1], e[0][1]))
+            box = cv2.fitEllipse(hulls[0][2])
+            if debug: print('Gaze[%f,%f]' % (box[0][0], box[0][1]))
             if plot:
-                plot_point(e[0][0], e[0][1])
-            yield e[0][0], e[0][1], frame, hulls[0][1], hulls[0][2], e, timestamp
+                plot_point(box[0][0], box[0][1])
+            yield box, frame, hulls[0][2], timestamp
         else:
-            yield None, None, frame, None, None, None, timestamp
+            yield None, frame, None, timestamp
 
 def main():
     parser = argparse.ArgumentParser(description='Pupil tracking code')
     subparsers = parser.add_subparsers()
     parser.add_argument('--dump')
     parser.add_argument('--load')
+    parser.add_argument('--command_thresh', type=int, default=6)
     parser.add_argument('--calib')
+    parser.add_argument('--command_keyboard')
     parser.add_argument('--plot', action='store_true')
     subparser = subparsers.add_parser('server')
     subparser.add_argument('--port', type=int, default=8080)
     subparser.add_argument('--debug', action='store_true')
+    subparser.add_argument('--command_server', action='store_true')
     subparser.set_defaults(func=server)
     subparser = subparsers.add_parser('client')
     subparser.add_argument('url')
+    subparser.add_argument('--debug', action='store_true')
     subparser.set_defaults(func=client)
     subparser = subparsers.add_parser('debug')
     subparser.set_defaults(func=debug)
     args = parser.parse_args()
-    args.func(**vars(args))
+    vargs = vars(args)    
+    if vargs.get('command_keyboard'):
+        def command_func(num):
+            requests.get(vargs['command_keyboard'] + '/cmd/' + CMDS[num]).content
+        vargs['command_func'] = command_func
+    if vargs.get('dump'):
+        vargs['dump'] = os.path.abspath(vargs['dump'])
+        try:
+            os.makedirs(vargs['dump'])
+        except OSError:
+            pass
+    args.func(**vargs)
 
 if __name__ == '__main__':
     main()
