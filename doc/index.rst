@@ -21,7 +21,7 @@ WearScript
 
 WearScript is a library that allows you to execute Javascript on Glass that can interact with the underlying device (e.g., control/sample sensors/camera, send timeline items, draw on the screen).  We have gone through many iterations to develop a streamlined user experience to write code and execute it on Glass, and I think we are very close.   This is much simpler than Android development, but more powerful than the built-in browser.  The features we are releasing today are sufficient to make a wide range of applications, but if you've seen our previous videos you can be sure there is more to come.   With your help we can build an open ecosystem around Glass.  Watch the short Intro Video to see what it can do.
 
-.. code-block:: guess
+.. code-block:: html
 
   <html style="width:100%; height:100%; overflow:hidden">
   <body style="width:100%; height:100%; overflow:hidden; margin:0">
