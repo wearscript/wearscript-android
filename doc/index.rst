@@ -61,9 +61,8 @@ OpenShades (the new OpenGlass) is our community (join us in #openshades on freen
 
 * Project Lead: Brandyn White (bwhite dappervision com)
 * IRC freenode #openshades (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
-* G+ Community: https://plus.google.com/communities/101102785351379725742 (we post pictures/videos as we go here)
-* Website: http://wearscript.com (overall project info, video links)
-* Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
+* `G+ Community <https://plus.google.com/communities/101102785351379725742>`_ (we post pictures/videos as we go here)
+* `Youtube <https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ>`_ (all OpenShades videos)
 * `Dapper Vision, Inc. <http://www.dappervision.com>`_ (by Brandyn and Andrew) is the sponsor of this project
 * Code is licensed under `Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_ unless otherwise specified
 
