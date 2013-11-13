@@ -64,13 +64,9 @@ OpenShades (the new OpenGlass) is our community name that we use when hacking to
 * Website: http://wearscript.com (overall project info, video links)
 * Youtube: https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ (all videos)
 
-License
--------
-Apache 2.0
-
 Contributors
 ------------
-See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ for details.  Name (irc nick) below
+See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ for details.  Name (irc nick)
 
 * `Brandyn White (brandyn) <https://plus.google.com/109113122718379096525?rel=author>`_
 * Andrew Miller (amiller)
@@ -79,3 +75,5 @@ See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ f
 * Conner Brooks (connerb)
 * Justin Chase (jujuman)
 * Alexander Conroy (geilt)
+
+Code is licensed under Apache 2.0 unless otherwise specified.
