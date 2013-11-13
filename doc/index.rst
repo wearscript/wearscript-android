@@ -1,9 +1,7 @@
 WearScript: JS with Batteries Included for Glass
 ================================================
-WearScript is a library that allows you to execute Javascript on Glass that can interact with the underlying device (e.g., control/sample sensors/camera, send timeline items, draw on the screen).  This is much simpler than Android development, but more powerful than the built-in browser.  For an overview check out the intro video and sample script below.
+WearScript is a library that allows you to execute JavaScript on Glass that can interact with the underlying device.  It's the power of Android with the complexity of a website.  For an overview check out the intro video and sample script below.
 
-Intro Video
--------------------------
 .. raw:: html
 
         <object width="480" height="385"><param name="movie"
@@ -28,7 +26,7 @@ Intro Video
       }
   }
   function server() {
-      WS.log('Welcome to WearScript');  // Write to Android Log and Playground JavaScript console
+      WS.log('Welcome to WearScript');  // Write to Android Log and Playground console
       WS.say('Welcome to WearScript');  // Text-to-speech
       // Stream camera images and all sensors to the WearScript Playground Webapp
       var sensors = ['gps', 'accelerometer', 'magneticField', 'orientation', 'gyroscope',
@@ -64,9 +62,9 @@ Visit https://github.com/OpenShades/wearscript for the source.
 
 Contact/Info
 ============
-OpenShades (the new OpenGlass) is our community name (join us at #openshades on freenode) that we use when hacking together, WearScript is this project specifically.  For demos see http://openshades.com.  Dapper Vision, Inc. (by Brandyn and Andrew) is the sponsor of this project and unless otherwise specified is the copyright owner of the files listed.
+OpenShades (the new OpenGlass) is our community name that we use when hacking together (join us at #openshades on freenode IRC), WearScript is this project specifically.  For demos see http://openshades.com.  Dapper Vision, Inc. (by Brandyn and Andrew) is the sponsor of this project and unless otherwise specified is the copyright owner of the files listed.
 
-* Brandyn White (bwhite dappervision com)
+* Project Lead: Brandyn White (bwhite dappervision com)
 * IRC freenode #openshades (if you want to collaborate or chat that's the place to be, we give regularly updates as we work here)
 * G+ Community: https://plus.google.com/communities/101102785351379725742 (we post pictures/videos as we go here)
 * Website: http://wearscript.com (overall project info, video links)
@@ -80,7 +78,9 @@ Contributors
 ------------
 See `contributors <https://github.com/bwhite/wearscript/graphs/contributors>`_ for details.
 
-* `Brandyn White <https://plus.google.com/109113122718379096525?rel=author>`_
-* Andrew Miller
-* Scott Greenwald
-* Kurtis Nelson
+* `Brandyn White (brandyn) <https://plus.google.com/109113122718379096525?rel=author>`_
+* Andrew Miller (amiller)
+* Scott Greenwald (swgreen_mit)
+* Kurtis Nelson (kurtisnelson)
+* Conner Brooks (connerb)
+* Justin Chase (jujuman)
