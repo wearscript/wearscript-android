@@ -276,6 +276,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         runScript("<script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
     }
 
+    public void wake() {
+        final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        final PowerManager.WakeLock wakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "BackgroundService");
+        wakeLock.acquire();
+        wakeLock.release();
+    }
+
     public void serverConnect(String url, final String callback) {
         Log.i(TAG, "WS Setup");
         synchronized (lock) {

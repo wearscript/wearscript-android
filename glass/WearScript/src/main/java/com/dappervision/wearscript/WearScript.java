@@ -169,4 +169,9 @@ public class WearScript {
             return true;
         }
     }
+
+    public void wake() {
+        Log.i(TAG, "wake");
+        bs.wake();
+    }
 }
