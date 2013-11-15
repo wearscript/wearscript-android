@@ -1,0 +1,3 @@
+Install
+
+sudo pip install --upgrade msgpack-python irc websocket-client

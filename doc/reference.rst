@@ -30,6 +30,10 @@ In the JavaScript environment there is a WS object that has the following method
 * WS.serverConnect(String server, String callback): Connects to the WearScript server, if given '{{WSUrl}}' as the server it will substitute the user configured server.  Some commands require a server connection.
 * WS.serverTimeline(timelineItemJSON): If connected to a server, has that server insert the timeline item (exact mirror timeline item syntax serialized to JSON)
 * WS.dataLog(boolean local, boolean server, double sensorPeriod): Log data local and/or remote, buffering sensor packets according to sensorPeriod.
+* WS.wake(): Wake the screen if it is off, shows whatever was there before (good in combination with WS.activityCreate() to bring it forward).
+* WS.blobSend(String name, String blob): Send a text blob (may be binary) to the server.
+* WS.blobCallback(String name, String callback): Get text blobs from the server with the matching "name", the callback is given one value which is the base64 encoded blob data (this can be decoded using btoa(blobb64)), this is for security reasons.
+
 
 Sensor Types
 ------------

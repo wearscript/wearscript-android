@@ -50,8 +50,9 @@ WearScript combines the power of Android development on Glass with the learning 
     tips
     hacking
     reference
+    wire
     admin
-    contributing
+    contributing    
     troubleshooting
 
 About

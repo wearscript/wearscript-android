@@ -26,3 +26,4 @@ All encoding is done using `msgpack <http://msgpack.org>`_ with lists as the bas
 * ('shutdown')
 * ('timeline', timelineJS)
 * ('sendTimelineImage', image)
+* ('blob', name, blob)
