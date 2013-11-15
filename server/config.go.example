@@ -19,8 +19,8 @@ const (
 	clientSecret = ""
 
     // Server info
-	fullUrl      = ""  // Url to the server (e.g., https://example.com) for mirror api
-    wsUrl        = ""  // Url websocket clients use (e.g., wss://example.com or ws://example.com)
+	fullUrl      = ""  // Url to the server (e.g., https://example.com) for mirror api, this is the base url that you can connect to the server with.  If you are using a load balancer or other front end, use that url here.  If not then it is often http://yourhot:servePort
+    wsUrl        = ""  // Url websocket clients use (e.g., wss://example.com or ws://example.com), same form/use as fullUrl but for the websocket, normally just use the fullUrl but replace http:// with ws:// or https:// with wss://
 	redisServerPort = "localhost:6379" // Fill in with your host:port
 	servePort = "8080"  // Fill in with the port you want to host on
 )

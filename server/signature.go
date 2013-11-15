@@ -70,6 +70,7 @@ func SignatureCreateKey() error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("Done generating key, server running...")
 	return setUserAttribute("", "private_key", string(privJS))
 }
 
