@@ -45,7 +45,10 @@ WearScript combines the power of Android development on Glass with the learning 
     :hidden:
     :maxdepth: 1
 
-    setup
+    start
+    setup-client
+    setup-server
+    setup-vm
     tutorial    
     tips
     hacking
