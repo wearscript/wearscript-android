@@ -184,4 +184,60 @@ public class WearScript {
         Log.i(TAG, "blobSend");
         bs.blobSend(name, blob);
     }
+
+    public void gestureCallback(String event, String callback) {
+        Log.i(TAG, "gestureCallback: " + event + " " + callback);
+        bs.getGestureManager().registerCallback(event, callback);
+    }
+
+    public void speechRecognize(String prompt, String callback) {
+        bs.speechRecognize(prompt, callback);
+    }
+
+    public void liveCardCreate(boolean nonSilent, double period) {
+        bs.getScriptView().liveCardPublish(nonSilent, Math.round(period * 1000.));
+    }
+
+    public void liveCardDestroy() {
+        bs.getScriptView().liveCardUnpublish();
+    }
+
+    public void cardInsert(int position, String cardJSON) {
+        bs.getCardScrollAdapter().cardInsert(position, cardJSON);
+        bs.updateCardScrollView();
+    }
+
+    public void cardModify(int position, String cardJSON) {
+        bs.getCardScrollAdapter().cardModify(position, cardJSON);
+        bs.updateCardScrollView();
+    }
+
+    public void cardDelete(int position) {
+        bs.getCardScrollAdapter().cardDelete(position);
+        bs.updateCardScrollView();
+    }
+
+    public String cardFactory(String text, String info) {
+        JSONObject o = new JSONObject();
+        o.put("type", "card");
+        o.put("text", text);
+        o.put("info", info);
+        return o.toJSONString();
+    }
+
+    public String cardFactoryHTML(String html) {
+        JSONObject o = new JSONObject();
+        o.put("type", "html");
+        o.put("html", html);
+        return o.toJSONString();
+    }
+
+    public void cardCallback(String event, String callback) {
+        bs.getCardScrollAdapter().registerCallback(event, callback);
+    }
+
+    public void displayCardScroll() {
+        Log.i(TAG, "displayCardScroll");
+        bs.updateActivityView("cardscroll");
+    }
 }

@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SocketClient {
+    private static final String TAG = "SocketClient";
     private WebSocketClient client;
     private SocketListener listener;
     private String callback;
@@ -85,6 +86,7 @@ public class SocketClient {
         @Override
         public void onConnect() {
             connected = true;
+            Log.i(TAG, "Lifecycle: Calling server callback");
             parent.onSocketConnect(callback);
         }
 

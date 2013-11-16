@@ -14,16 +14,24 @@ import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.provider.MediaStore;
+import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
 import android.util.Log;
-import android.webkit.WebView;
-import android.webkit.WebChromeClient;
-import android.webkit.ConsoleMessage;
+import android.view.View;
+import android.view.ViewGroup;
+
+
+import com.google.android.glass.media.Camera;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+
+import com.google.android.glass.widget.CardScrollView;
+
+
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
 import org.msgpack.type.MapValue;
@@ -63,22 +71,28 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
     MessagePack msgpack = new MessagePack();
+    private String speechCallback;
 
     protected SocketClient client;
-    protected WebView webview;
+    protected ScriptView webview;
     protected DataManager dataManager;
     protected String wsUrl;
     protected WifiManager wifiManager;
+    protected GestureManager gestureManager;
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public TreeMap<String, String> blobCallbacks;
     public String wifiScanCallback;
+    protected ScriptCardScrollAdapter cardScrollAdapter;
+    protected CardScrollView cardScroller;
+
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
-                    Log.i(TAG, "OpenCV loaded successfully");
+                    Log.i(TAG, "Lifecycle: OpenCV loaded successfully, calling reset()");
+                    opencvLoaded = true;
                     reset();
                 }
                 break;
@@ -89,6 +103,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
         }
     };
+    private View activityView;
+    private String activityMode;
+    private boolean opencvLoaded;
 
     public void updateActivityView(final String mode) {
         if (activity == null)
@@ -98,12 +115,44 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             return;
         a.runOnUiThread(new Thread() {
             public void run() {
+                activityMode = mode;
                 if (mode.equals("webview") && webview != null) {
-                    a.setContentView(webview);
+                    activityView = webview;
+                } else if (mode.equals("cardscroll"))  {
+                    activityView = cardScroller;
                 } else {
+                }
+                if (activityView != null) {
+                    ViewGroup parentViewGroup = (ViewGroup) activityView.getParent();
+                    if (parentViewGroup != null)
+                        parentViewGroup.removeAllViews();
+                    a.setContentView(activityView);
+                } else {
+                    Log.i(TAG, "Not setting activity view because it is null: " + mode);
                 }
             }
         });
+    }
+
+    public void refreshActivityView() {
+        updateActivityView(activityMode);
+    }
+
+    public View getActivityView() {
+        return activityView;
+    }
+
+    public void removeAllViews() {
+        if (webview != null) {
+            ViewGroup parentViewGroup = (ViewGroup) webview.getParent();
+            if (parentViewGroup != null)
+                parentViewGroup.removeAllViews();
+        }
+        if (cardScroller != null) {
+            ViewGroup parentViewGroup = (ViewGroup) cardScroller.getParent();
+            if (parentViewGroup != null)
+                parentViewGroup.removeAllViews();
+        }
     }
 
     public DataManager getDataManager() {
@@ -112,6 +161,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public CameraManager getCameraManager() {
         return cameraManager;
+    }
+
+    public ScriptView getScriptView() {
+        return webview;
+    }
+
+    public GestureManager getGestureManager() {
+        return gestureManager;
     }
 
     public void loadUrl(String url) {
@@ -235,19 +292,22 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void shutdown() {
         synchronized (lock) {
             reset();
-            if (client != null) {
+            Log.d(TAG, "Disconnecting client");
+            if (client != null && client.isConnected())
                 client.disconnect();
-                client = null;
-            }
+            client = null;
             if (activity == null)
                 return;
             final MainActivity a = activity.get();
             if (a == null) {
+                Log.d(TAG, "Stop self not activity");
                 stopSelf();
                 return;
             }
+            Log.d(TAG, "Running on ui thread");
             a.runOnUiThread(new Thread() {
                 public void run() {
+                    Log.d(TAG, "Stop self activity");
                     a.bs.stopSelf();
                     a.finish();
                 }
@@ -257,8 +317,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void reset() {
         synchronized (lock) {
+            Log.d(TAG, "reset");
+            // NOTE(brandyn): Put in a better spot
             if (webview != null) {
                 webview.stopLoading();
+                webview.onDestroy();
                 webview = null;
             }
             flags = new TreeSet<String>();
@@ -270,6 +333,17 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
             dataManager.unregister();
             cameraManager.unregister(true);
+            cardScrollAdapter.reset();
+            updateCardScrollView();
+            speechCallback = null;
+
+            if (gestureManager == null) {
+                MainActivity a = activity.get();
+                if (a != null)
+                    gestureManager = new GestureManager(a, this);
+            } else {
+                gestureManager.unregister();
+            }
             updateActivityView("webview");
         }
     }
@@ -278,11 +352,33 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         runScript("<script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
     }
 
+
     public void wake() {
         final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         final PowerManager.WakeLock wakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "BackgroundService");
         wakeLock.acquire();
         wakeLock.release();
+    }
+
+    public ScriptCardScrollAdapter getCardScrollAdapter() {
+        return cardScrollAdapter;
+    }
+
+    public CardScrollView getCardScrollView() {
+        return cardScroller;
+    }
+
+    public void updateCardScrollView() {
+        if (activity == null)
+            return;
+        final MainActivity a = activity.get();
+        if (a == null)
+            return;
+        a.runOnUiThread(new Thread() {
+            public void run() {
+                cardScroller.updateViews(true);
+            }
+        });
     }
 
     public void serverConnect(String url, final String callback) {
@@ -487,18 +583,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         reset();
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
-            webview = new WebView(this);
-            webview.clearCache(true);
-            webview.setWebChromeClient(new WebChromeClient() {
-                public boolean onConsoleMessage(ConsoleMessage cm) {
-                    String msg = cm.message() + " -- From line "
-                            + cm.lineNumber() + " of "
-                            + cm.sourceId();
-                    Log.d("WearScriptWebView", msg);
-                    log("WebView: " + msg);
-                    return true;
-                }
-            });
+            webview = createScriptView();
+            updateActivityView("webview");
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + script);
@@ -506,7 +592,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
             Log.i(TAG, "WebView Ran");
-            updateActivityView("webview");
         }
     }
 
@@ -514,18 +599,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         reset();
         synchronized (lock) {
             // TODO(brandyn): Refactor these as they are similar
-            webview = new WebView(this);
-            webview.clearCache(true);
-            webview.setWebChromeClient(new WebChromeClient() {
-                public boolean onConsoleMessage(ConsoleMessage cm) {
-                    String msg = cm.message() + " -- From line "
-                            + cm.lineNumber() + " of "
-                            + cm.sourceId();
-                    Log.d("WearScriptWebView", msg);
-                    log("WebView: " + msg);
-                    return true;
-                }
-            });
+            webview = createScriptView();
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.i(TAG, "WebView:" + url);
@@ -549,7 +623,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     @Override
     public void onCreate() {
-        Log.i(TAG, "Service onCreate");
+        Log.i(TAG, "Lifecycle: Service onCreate");
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
@@ -561,7 +635,25 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         glassID = getMacAddress();
         dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE), this);
         cameraManager = new CameraManager(this);
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
+        cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
+        cardScroller = new CardScrollView(this);
+        cardScroller.setAdapter(cardScrollAdapter);
+        cardScroller.activate();
+        cardScroller.setOnItemSelectedListener(cardScrollAdapter);
+        cardScroller.setOnItemClickListener(cardScrollAdapter);
+        opencvLoaded = false;
+    }
+
+    public void setMainActivity(MainActivity a) {
+        Log.i(TAG, "Lifecycle: BackgroundService: setMainActivity");
+        if (this.activity != null) {
+            MainActivity activity = this.activity.get();
+            if (activity != null)
+                activity.finish();
+        }
+        this.activity = new WeakReference<MainActivity>(a);
+        if (!opencvLoaded)
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
     public void wifiScanResults() {
@@ -595,7 +687,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     @Override
     public void onDestroy() {
-        Log.i(TAG, "Service onDestroy");
+        Log.i(TAG, "Lifecycle: Service onDestroy");
         if (broadcastReceiver != null)
             unregisterReceiver(broadcastReceiver);
         if (cameraManager != null) {
@@ -712,5 +804,65 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         BackgroundService getService() {
             return BackgroundService.this;
         }
+    }
+
+    public void cameraPhoto() {
+        cameraManager.pause();
+        activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
+    }
+
+    public void cameraVideo() {
+        cameraManager.pause();
+        activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
+    }
+
+    public void speechRecognize(String prompt, String callback) {
+        speechCallback = callback;
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, prompt);
+        activity.get().startActivityForResult(intent, 1002);
+    }
+
+    public ScriptView createScriptView() {
+        ScriptView mCallback = new ScriptView(this);
+        return mCallback;
+    }
+
+    public boolean onActivityResult(int requestCode, int resultCode, Intent intent) {
+        Log.d(TAG, "Got request code: " + requestCode);
+        if (requestCode == 1000) {
+            cameraManager.resume();
+            if (resultCode == activity.get().RESULT_OK) {
+                String pictureFilePath = intent.getStringExtra(Camera.EXTRA_PICTURE_FILE_PATH);
+                String thumbnailFilePath = intent.getStringExtra(Camera.EXTRA_THUMBNAIL_FILE_PATH);
+            } else if (resultCode == activity.get().RESULT_CANCELED) {
+
+            }
+        } else if (requestCode == 1001) {
+            cameraManager.resume();
+            if (resultCode == activity.get().RESULT_OK) {
+                String thumbnailFilePath = intent.getStringExtra(Camera.EXTRA_THUMBNAIL_FILE_PATH);
+                String videoFilePath = intent.getStringExtra(Camera.EXTRA_VIDEO_FILE_PATH);
+            } else if (resultCode == activity.get().RESULT_CANCELED) {
+
+            }
+        } else if (requestCode == 1002) {
+            Log.d(TAG, "Spoken Text Result");
+            if (resultCode == activity.get().RESULT_OK) {
+                List<String> results = intent.getStringArrayListExtra(
+                        RecognizerIntent.EXTRA_RESULTS);
+                String spokenText = results.get(0);
+                Log.d(TAG, "Spoken Text: " + spokenText);
+                if (speechCallback == null)
+                    return true;
+                // TODO(brandyn): Check speech result for JS injection that can escape out of the quotes
+                loadUrl(String.format("javascript:%s(\"%s\");", speechCallback, spokenText));
+            } else if (resultCode == activity.get().RESULT_CANCELED) {
+
+            }
+        } else {
+            return false;
+        }
+        return true;
     }
 }

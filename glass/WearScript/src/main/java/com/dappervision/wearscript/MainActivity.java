@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
@@ -32,6 +33,7 @@ public class MainActivity extends Activity {
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "Lifecycle: Activity onCreate");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Intent thisIntent = getIntent();
         if (thisIntent.getStringExtra(EXTRA_NAME) != null) {
@@ -47,23 +49,18 @@ public class MainActivity extends Activity {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 Log.i(TAG, "Service Connected");
                 bs = ((BackgroundService.LocalBinder) service).getService();
-                if (bs.activity != null) {
-                    MainActivity activity = bs.activity.get();
-                    if (activity != null)
-                        activity.finish();
-                }
-                bs.activity = new WeakReference<MainActivity>(MainActivity.this);
+                bs.setMainActivity(MainActivity.this);
 
                 // If we already have a view and aren't specifying a script to run, reuse the old script
                 if (bs.webview != null && extra == null) {
                     // Remove view's parent so that we can re-add it later to a new activity
-                    ViewGroup parentViewGroup = (ViewGroup) bs.webview.getParent();
-                    if (parentViewGroup != null)
-                        parentViewGroup.removeAllViews();
-                    bs.updateActivityView("webview");
+                    Log.i(TAG, "Lifecycle: Recycling webview");
+                    bs.removeAllViews();
+                    bs.refreshActivityView();
                     bs.getCameraManager().resume();
                     return;
                 }
+                Log.i(TAG, "Lifecycle: Creating new webview");
 
                 byte[] wsUrlArray = bs.LoadData("", "qr.txt");
                 if (wsUrlArray == null) {
@@ -71,7 +68,6 @@ public class MainActivity extends Activity {
                     finish();
                     return;
                 }
-                bs.reset();
                 bs.wsUrl = (new String(wsUrlArray)).trim();
                 if (extra != null) {
                     Log.i(TAG, "Extra script");
@@ -95,7 +91,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onPause() {
-        Log.i(TAG, "MainActivity: onPause");
+        Log.i(TAG, "Lifecycle: MainActivity: onPause");
         isForeground = false;
         if (bs != null)
             bs.getCameraManager().pause();
@@ -105,7 +101,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onResume() {
-        Log.i(TAG, "MainActivity: onResume");
+        Log.i(TAG, "Lifecycle: MainActivity: onResume");
         isForeground = true;
         if (bs != null)
             bs.getCameraManager().resume();
@@ -113,7 +109,7 @@ public class MainActivity extends Activity {
     }
 
     public void onDestroy() {
-        Log.i(TAG, "MainActivity: onDestroy");
+        Log.i(TAG, "LifeCycle: MainActivity: onDestroy");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null)
             bs.getCameraManager().pause();
@@ -130,5 +126,50 @@ public class MainActivity extends Activity {
         } else {
             return super.onKeyDown(keyCode, event);
         }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        Log.i(TAG, "Request code: " + requestCode + " Result code: " + resultCode);
+        if (bs != null && bs.onActivityResult(requestCode, resultCode, intent))
+            return;
+        Log.i(TAG, "QR: Got activity result: V0");
+        if (requestCode == 0) {
+            String contents = null;
+            if (resultCode == RESULT_OK) {
+                contents = intent.getStringExtra("SCAN_RESULT");
+                String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
+                Log.i(TAG, "QR: " + contents + " Format: " + format);
+                bs.SaveData(contents.getBytes(), "", false, "qr.txt");
+            } else if (resultCode == RESULT_CANCELED) {
+                // Reuse local config
+                Log.i(TAG, "QR: Canceled, using previous scan");
+                byte[] contentsArray = bs.LoadData("", "qr.txt");
+                if (contentsArray == null) {
+                    bs.say("Please exit and scan the QR code");
+                    return;
+                }
+                contents = (new String(contentsArray)).trim();
+                // TODO: We want to allow reentry into a running app
+            }
+            // TODO(brandyn): Handle case where we want to re-enter webview and not reset it
+            bs.reset();
+            bs.wsUrl = contents;
+            bs.runScript("<script>function s() {WS.say('Server connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
+        }
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (bs == null)
+            return false;
+        GestureManager gm = bs.getGestureManager();
+        if (gm == null)
+            return false;
+        // NOTE(brandyn): If you return true then the cardscroll won't get the gesture
+        // TODO(brandyn): Consider registering overrides
+        //return gm.onMotionEvent(event);
+        gm.onMotionEvent(event);
+        return false;
     }
 }

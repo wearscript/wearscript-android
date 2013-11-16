@@ -36,8 +36,8 @@ public class WearScriptHelper {
     private static final String TAG = "WearScriptHelper";
     private static final String WEARSCRIPT_PATH = BackgroundService.dataPath() + "scripts/";
     ;
-    private static final String WS_PKG = "com.dappervision.wearscript";
-    private static final String WS_ACTIVITY = "com.dappervision.wearscript.MainActivity";
+    public static final String WS_PKG = "com.dappervision.wearscript";
+    public static final String WS_ACTIVITY = "com.dappervision.wearscript.MainActivity";
 
     private Activity mActivity;
     private IntentFilter mfilter;

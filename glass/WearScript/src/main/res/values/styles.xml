@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Pulled form the Phone app on Glass -->
-    <style name="GlassTheme" parent="android:Theme.Holo" tools:ignore="PrivateResource,PrivateResource">
+    <style name="GlassTheme" parent="@android:style/Theme.DeviceDefault" tools:ignore="PrivateResource,PrivateResource">
         <item name="android:screenOrientation">landscape</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:windowNoTitle">true</item>
@@ -10,4 +10,14 @@
         <item name="android:windowActionBar">false</item>
     </style>
 
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    </style>
+    <style name="MenuTheme" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

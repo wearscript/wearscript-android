@@ -13,6 +13,24 @@ function cb(data) {
         ctx.fillRect(0, 0, 640, 360);
     }
 }
+function onGesture(name) {
+    WS.log('onGesture: ' + name);
+}
+function onFingerCountChanged(i, i2) {
+    WS.log('onFingerCountChanged: ' + i + ', ' + i2);
+}
+function onScroll(v, v2, v3) {
+    WS.log('onScroll: ' + v + ', ' + v2 + ', ' + v3);
+}
+function onTwoFingerScroll(v, v2, v3) {
+    WS.log('onTwoFingerScroll: ' + v + ', ' + v2 + ', ' + v3);
+}
+function onVerticalScroll(v, v2, v3) {
+    WS.log('onVerticalScroll: ' + v + ', ' + v2 + ', ' + v3);
+}
+function speech(data) {
+    WS.log('speech: ' + data);
+}
 function server() {
     WS.log('Welcome to WearScript');
     WS.say('Welcome to WearScript');
@@ -22,6 +40,11 @@ function server() {
         WS.sensorOn(WS.sensor(sensors[i]), .15, 'cb');
     WS.cameraOn(2);
     WS.dataLog(false, true, .15);
+    var gestures = ['onGesture', 'onFingerCountChanged', 'onScroll', 'onTwoFingerScroll', 'onVerticalScroll'];
+    for (var i = 0; i < gestures.length; i++)
+        WS.gestureCallback(gestures[i], gestures[i]);
+    WS.speechRecognize('speech');
+    WS.liveCardCreate(false, .2);
     //WS.cameraPhoto();
     //WS.cameraVideo();
     //WS.cameraOff();
