@@ -3,7 +3,7 @@
 Server Setup
 ============
 
-Using Our Server
+0a. Using Our Server
 ----------------
 * Visit https://api.picar.us/wearscript/, click "authenticate", then sign-in using your Google acccount
 * Contact brandyn in #openshades on IRC freenode to be white-listed (you must authenticate before we can add you)
@@ -11,7 +11,7 @@ Using Our Server
 
 .. _your-server:
 
-Install Server
+0b. Install Server
 --------------
 * Linux is highly recommended, we have not tested this on OSX or Windows (feel free to try)
 * The video below gives a step by step guide

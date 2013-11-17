@@ -5,6 +5,7 @@ Using the Playground
 ---------------------
 The playground is a webapp that connects with WearScript while it is running on Glass.  It allows you to execute scripts and visualize the sensors/images from Glass.
 
+
 * Go to the playground page for the server you'd like to use (if it's your first time, you'll sign into your Google account)
 * After authorizing the webapp with Google, click the QR button the top right
 * Ensure that Glass has an internet connection, WiFi is highly recommended

@@ -13,8 +13,16 @@ Client Setup
 * Put the device in debug mode (see "Turning on debug mode" here https://developers.google.com/glass/gdk)
 * Connect your Glass to your computer with a USB cable
 
-2: Get Android Studio
----------------------
+.. _client-setup-binary:
+
+2a: Install Client (Binary)
+----------------------------
+* To make this as easy as possible we've included the "adb" binaries in wearscript/glass/thirdparty/adbs (this lets you install packages on Glass)
+* In the WearScript source go to glass/thirdparty and run the command "bash install_binary_<youros>.sh" for osx, windows, linux.
+
+
+2b: Get Android Studio (Source)
+-------------------------------
 * Download/unpack the canary version of Android Studio with Android SDK bundle http://tools.android.com/download/studio/canary/0-3-2 note that this is the latest version WITH the sdk bundled, you can update once it is installed but this simplifies the install
 * NOTE: If it can't find the SDK then follow these steps
 
@@ -23,15 +31,10 @@ Client Setup
     * If you have changed your SDK path you may need to remove wearscript/glass/local.properties (it retains the path to use for the project, it'll be reset to default on import)
 * Locate the "sdk/platform-tools" directory and add it to your system path (this lets you use the "adb" command)
 
-.. _client-setup-binary:
-
-3a: Install Client (Binary)
-----------------------------
-* In the WearScript source go to glass/thirdparty and run the command "bash install_with_binary_wearscript.sh"
 
 .. _client-setup-source:
 
-3b: Install Client (Source)
+3: Install Client (Source)
 ----------------------------
 * In the WearScript source go to glass/thirdparty and run the command "bash install.sh"
 * Start Android Studio (Linux: bash android-studio/bin/studio.sh)
