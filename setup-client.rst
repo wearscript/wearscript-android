@@ -19,7 +19,10 @@ Client Setup
 -------------------------------------
 * To make this as easy as possible we've included the "adb" binaries in wearscript/glass/thirdparty/adbs (this lets you install packages on Glass)
 * In the WearScript source go to glass/thirdparty and run the command "bash install_binary_<youros>.sh" for osx, windows, linux.
+* (Windows) after you have updated your PATH variable to include the location of your /platform-tools directory, connect your Glass and run the install_binary_windows.bat file
+* (Windows) if adb cant find your Glass ensure you have enabled Debug on your Glass and have installed the correct drivers (http://appliedanalog.com/agw/?p=17)
 * If that worked then you are done with the client install, skip to :ref:`starting-the-client`
+
 
 2b: Get Android Studio (Source Install)
 ---------------------------------------
@@ -31,6 +34,7 @@ Client Setup
     * If you have changed your SDK path you may need to remove wearscript/glass/local.properties (it retains the path to use for the project, it'll be reset to default on import)
 
 * Locate the "sdk/platform-tools" directory and add it to your system path (this lets you use the "adb" command)
+* (Windows) from the command prompt(Without quotes) "set PATH=%PATH%;C:\YourFolderPath\whereadbIsLocated\sdk\platform-tools\"
 
 .. _client-setup-source:
 
