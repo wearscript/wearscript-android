@@ -5,8 +5,8 @@ Client Setup
 
 0: Get WearScript Source
 ------------------------
-* with one click: `Click to Download ZIP <https://github.com/OpenShades/wearscript/archive/master.zip>`_
-* using git: git clone https://github.com/OpenShades/wearscript.git
+#. with one click: `Click to Download ZIP <https://github.com/OpenShades/wearscript/archive/master.zip>`_
+#. using git: git clone https://github.com/OpenShades/wearscript.git
 
 1: Setup Your Device
 --------------------
@@ -47,6 +47,8 @@ Client Setup
 * If you install the "thirdparty" tools as recommended, you can use Launchy (go to the far left where settings is, tap, select WearScript (start))
 * To start with adb use "adb shell am start -n com.dappervision.wearscript/.MainActivity"
 * To start with Android Studio after the project has been imported (see Install Client (Source)) select Run->Run 'WearScript'. 
+
+.. _connecting-client-to-server:
 
 5: Connecting the Client to the Server
 --------------------------------------
