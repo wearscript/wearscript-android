@@ -42,6 +42,18 @@ Client Setup
 * To start with adb use "adb shell am start -n com.dappervision.wearscript/.MainActivity"
 * To start with Android Studio after the project has been imported (see Install Client (Source)) select Run->Run 'WearScript'. 
 
+5: Connecting the Client to the Server
+--------------------------------------
+* Go to the server in Chrome (please use Chrome, it is easier for us to support)
+* Click "authenticate", then sign-in using your Google acccount
+* Click QR, then either
+
+  * Paste the adb command while Glass is plugged connected to USB
+  * Select WearScript (setup) and scan the QR code
+
+* Open WearScript (start) using Launchy while you have the webapp open, you should see the cube/table pop up and buttons enable on the bottom.
+
+
 Client Installation Video
 -------------------------
 This assumes Android Studio and SDK are installed (see above)

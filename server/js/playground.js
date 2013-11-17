@@ -62,6 +62,12 @@ function connectWebsocket(WSUrl) {
     var ws = new ReconnectingWebSocket(url);
     ws.onopen = function () {
         pingStatus();
+        function receiveMessage(event) {
+            // TODO(brandyn): Check source! (security hazard)
+            console.log(event.data);
+            ws.send(event.data);
+        }
+        window.addEventListener("message", receiveMessage, false);
     }
     ws.onclose = function () {
     }
@@ -74,6 +80,9 @@ function connectWebsocket(WSUrl) {
         var reader = new FileReader();
         reader.addEventListener("loadend", function () {
             debug_data = reader.result;
+            if (_.has(window, 'iframeWindow')) {
+                iframeWindow.postMessage(reader.result, iframeHost);
+            }
             var response = msgpack.unpack(reader.result);
             debug_response = response;
             var action = response[0];
@@ -310,6 +319,12 @@ function getFlags(success) {
 function unsetFlags(flags, success) {
     $.ajax({url: 'flags', type: 'DELETE', data: JSON.stringify(flags), success: success});
 }
+function urlToHost(url) {
+    var pathArray = url.split( '/' );
+    var protocol = pathArray[0];
+    var host = pathArray[2];
+    return protocol + '//' + host;
+}
 
 
 function main(WSUrl) {
@@ -317,7 +332,12 @@ function main(WSUrl) {
     graphs = {};
     seriesDatas = {};
     scriptRowDisabled = true;
-    blobHandlers = {};
+    blobHandlers = {url: function (x) {window.open(x)}};
+    if ($('#iframe').attr('src').length) {
+        iframeWindow = $('#iframe')[0].contentWindow;
+        iframeHost = urlToHost($('#iframe').attr('src'));
+    }
+
     $(".scriptel").prop('disabled', true);
     $('#qrButton').click(function () {createQR(WSUrl)});
     $('#scriptButton').click(function () {

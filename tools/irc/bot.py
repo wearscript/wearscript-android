@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+import gevent.monkey
+gevent.monkey.patch_all()
+import gevent
 import websocket
 import argparse
 import msgpack
@@ -12,6 +15,15 @@ class WSIRCRelayBot(irc.bot.SingleServerIRCBot):
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
         self.ws = websocket.create_connection(endpoint)
         self.channel = channel
+        gevent.spawn(self.listener)
+
+    def listener(self):
+        while True:
+            print('Listening')
+            msg = msgpack.loads(self.ws.recv())
+            print(msg)
+            if msg[0] == 'blob' and msg[1] == 'irc':
+                self.connection.privmsg(self.channel, msg[2])
 
     def on_nicknameinuse(self, c, e):
         c.nick(c.get_nickname() + "_")

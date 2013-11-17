@@ -28,6 +28,7 @@ func StaticServer(w http.ResponseWriter, req *http.Request) {
 type PlaygroundTemplate struct {
 	WSUrl     string
 	GlassBody string
+	WidgetUrl string
 }
 
 func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
@@ -57,7 +58,7 @@ func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 			glassBody = []byte("<!-- Server could not fetch script -->")
 		}
 	}
-	err = t.Execute(w, PlaygroundTemplate{WSUrl: wsUrl, GlassBody: string(glassBody)})
+	err = t.Execute(w, PlaygroundTemplate{WSUrl: wsUrl, GlassBody: string(glassBody), WidgetUrl: req.URL.Query().Get("widget")})
 	if err != nil {
 		w.WriteHeader(500)
 		LogPrintf("playground: template execute")
