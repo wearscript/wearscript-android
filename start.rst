@@ -1,5 +1,8 @@
 Getting Started
 ---------------
+
+You need to install WearScript on Glass and in most cases you'll want to use a server.  If you want get started using your own server quickly, consider trying out the VM as it could save you significant setup time and it will make easier for us to help you.
+
 * Put WearScript on Glass...
 
   #. as easy as possible:  Follow the :ref:`client-setup` and use :ref:`client-setup-binary`.

@@ -1,7 +1,7 @@
-.. _our-server:
-
 Server Setup
 ============
+
+.. _our-server:
 
 0a. Using Our Server
 ----------------
