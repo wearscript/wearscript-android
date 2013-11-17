@@ -19,6 +19,9 @@ class apt_packages {
 }
 
 class pip_packages {
+      service { "redis-server":
+        enable => true,
+      }
       package {
       "gevent":
           ensure => latest,
@@ -77,6 +80,7 @@ class android_studio {
     command => "/usr/bin/wget https://dl-ssl.google.com/dl/android/studio/install/0.3.2/android-studio-bundle-132.893413-linux.tgz && /bin/tar -xzf android-studio-bundle-132.893413-linux.tgz && /bin/chown -R vagrant:vagrant android-studio",
     creates => '/home/vagrant/android-studio',
     cwd => '/home/vagrant',
+    timeout => 3600
   }
 }
 
