@@ -16,7 +16,7 @@ Install WearScript VM (Client + Server)
 ------------------------
 * Get/install Vagrant (go here http://downloads.vagrantup.com/ get the newest version for your platform)
 * In a terminal run: vagrant box add saucy64 http://cloud-images.ubuntu.com/vagrant/saucy/current/saucy-server-cloudimg-amd64-vagrant-disk1.box
-* Enter the wearscript/vagrant directory, and run "vagrant up" (takes about 10 minutes)
+* Enter the wearscript/vagrant directory, and run "vagrant up" (takes about 17 minutes on a Macbook Pro)
 
 3: Using the Box
 ------------------------
