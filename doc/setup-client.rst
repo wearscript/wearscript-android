@@ -1,3 +1,5 @@
+.. _client-setup:
+
 Client Setup
 ============
 
@@ -21,9 +23,13 @@ Client Setup
     * If you have changed your SDK path you may need to remove wearscript/glass/local.properties (it retains the path to use for the project, it'll be reset to default on import)
 * Locate the "sdk/platform-tools" directory and add it to your system path (this lets you use the "adb" command)
 
+.. _client-setup-binary:
+
 3a: Install Client (Binary)
 ----------------------------
 * In the WearScript source go to glass/thirdparty and run the command "bash install_with_binary_wearscript.sh"
+
+.. _client-setup-source:
 
 3b: Install Client (Source)
 ----------------------------
