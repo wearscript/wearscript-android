@@ -15,27 +15,27 @@ Client Setup
 
 .. _client-setup-binary:
 
-2a: Install Client (Binary)
-----------------------------
+2a: Install Client (Binary Install)
+-------------------------------------
 * To make this as easy as possible we've included the "adb" binaries in wearscript/glass/thirdparty/adbs (this lets you install packages on Glass)
 * In the WearScript source go to glass/thirdparty and run the command "bash install_binary_<youros>.sh" for osx, windows, linux.
+* If that worked then you are done with the client install, skip to :ref:`starting-the-client`
 
-
-2b: Get Android Studio (Source)
--------------------------------
+2b: Get Android Studio (Source Install)
+---------------------------------------
 * Download/unpack the canary version of Android Studio with Android SDK bundle http://tools.android.com/download/studio/canary/0-3-2 note that this is the latest version WITH the sdk bundled, you can update once it is installed but this simplifies the install
 * NOTE: If it can't find the SDK then follow these steps
 
     * If you need a new version of the SDK get the ADT Bundle here http://developer.android.com/sdk/index.html
     * Open Android Studio, click on Configure->Project Defaults->Project Structure and under Project SDK click New...->Android SDK and select the "sdk" folder inside of the ADT Bundle
     * If you have changed your SDK path you may need to remove wearscript/glass/local.properties (it retains the path to use for the project, it'll be reset to default on import)
-* Locate the "sdk/platform-tools" directory and add it to your system path (this lets you use the "adb" command)
 
+* Locate the "sdk/platform-tools" directory and add it to your system path (this lets you use the "adb" command)
 
 .. _client-setup-source:
 
-3: Install Client (Source)
-----------------------------
+3: Install Client (Source Install)
+----------------------------------
 * In the WearScript source go to glass/thirdparty and run the command "bash install.sh"
 * Start Android Studio (Linux: bash android-studio/bin/studio.sh)
 * Click "Import Project" and select wearscript/glass  (NOTE: make sure you use the "wearscript/glass" directory, if you select "wearscript" it won't work)
@@ -44,6 +44,8 @@ Client Setup
 * Build using Run->Run 'WearScript'
 * After it is built, Select your device and install.
 * Keep the screen on while it is installing or it will be started in the background.
+
+.. _starting-the-client:
 
 4: Starting the Client
 -----------------------
