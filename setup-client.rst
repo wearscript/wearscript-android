@@ -33,8 +33,10 @@ Client Setup
     * Open Android Studio, click on Configure->Project Defaults->Project Structure and under Project SDK click New...->Android SDK and select the "sdk" folder inside of the ADT Bundle
     * If you have changed your SDK path you may need to remove wearscript/glass/local.properties (it retains the path to use for the project, it'll be reset to default on import)
 
-* Locate the "sdk/platform-tools" directory and add it to your system path (this lets you use the "adb" command)
+* Locate the "sdk/platform-tools" and "sdk/tools" directories and add them to your system path (this lets you use the "adb and android" commands)
 * (Windows) from the command prompt(Without quotes) "set PATH=%PATH%;C:\YourFolderPath\whereadbIsLocated\sdk\platform-tools\"
+* The gdk.jar is already included for you in the libraries folder.  The steps we ran to get it are:  run the "android" command, under Android 4.0.3 (API 15) install Glass Developer Sneak Peek
+to get the extra library (see https://developers.google.com/glass/develop/gdk/quick-start) and then copy the gdk.jar into the glass/WearScript/libs folder.
 
 .. _client-setup-source:
 
