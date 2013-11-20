@@ -202,24 +202,69 @@ public class WearScript {
         bs.getScriptView().liveCardUnpublish();
     }
 
-    public void cardInsert(int position, String cardJSON) {
-        bs.getCardScrollAdapter().cardInsert(position, cardJSON);
-        bs.updateCardScrollView();
+    public void cardInsert(final int position, final String cardJSON) {
+        MainActivity a = bs.activity.get();
+        if (a != null) {
+            a.runOnUiThread(new Thread() {
+                public void run() {
+                    Log.i(TAG, "cardInsert: " + position);
+                    bs.getCardScrollAdapter().cardInsert(position, cardJSON);
+                    bs.updateCardScrollView();
+                }
+            });
+        }
     }
 
-    public void cardModify(int position, String cardJSON) {
-        bs.getCardScrollAdapter().cardModify(position, cardJSON);
-        bs.updateCardScrollView();
+    public void cardModify(final int position, final String cardJSON) {
+        MainActivity a = bs.activity.get();
+        if (a != null) {
+            a.runOnUiThread(new Thread() {
+                public void run() {
+                    Log.i(TAG, "cardModify: " + position);
+                    bs.getCardScrollAdapter().cardModify(position, cardJSON);
+                    bs.getCardScrollAdapter().cardInsert(position, cardJSON);
+                    bs.updateCardScrollView();
+                }
+            });
+        }
     }
 
-    public void cardTrim(int position) {
-        bs.getCardScrollAdapter().cardTrim(position);
-        bs.updateCardScrollView();
+    public void cardTrim(final int position) {
+        MainActivity a = bs.activity.get();
+        if (a != null) {
+            a.runOnUiThread(new Thread() {
+                public void run() {
+                    Log.i(TAG, "cardTrim: " + position);
+                    bs.getCardScrollAdapter().cardTrim(position);
+                    bs.updateCardScrollView();
+                }
+            });
+        }
     }
 
-    public void cardDelete(int position) {
-        bs.getCardScrollAdapter().cardDelete(position);
-        bs.updateCardScrollView();
+    public void cardDelete(final int position) {
+        MainActivity a = bs.activity.get();
+        if (a != null) {
+            a.runOnUiThread(new Thread() {
+                public void run() {
+                    Log.i(TAG, "cardDelete: " + position);
+                    bs.getCardScrollAdapter().cardDelete(position);
+                    bs.updateCardScrollView();
+                }
+            });
+        }
+    }
+
+    public void cardPosition(final int position) {
+        MainActivity a = bs.activity.get();
+        if (a != null) {
+            a.runOnUiThread(new Thread() {
+                public void run() {
+                    Log.i(TAG, "cardPosition: " + position);
+                    bs.cardPosition(position);
+                }
+            });
+        }
     }
 
     public String cardFactory(String text, String info) {

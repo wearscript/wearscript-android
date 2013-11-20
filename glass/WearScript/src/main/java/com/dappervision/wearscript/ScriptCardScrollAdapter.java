@@ -92,7 +92,6 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
         cards.remove(position);
     }
 
-
     @Override
     public int getCount() {
         return cards.size();
@@ -112,9 +111,9 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
     public View getView(int position, View convertView, ViewGroup parent) {
         Log.i(TAG, "getView called: " + position);
         if (convertView == null) {
-            return cards.get(position);
+            return setItemOnCard(this, cards.get(position));
         } else {
-            return convertView;
+            return setItemOnCard(this, convertView);
         }
     }
 

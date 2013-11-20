@@ -200,6 +200,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
+    public void cardPosition(int position) {
+        cardScroller.setSelection(position);
+    }
+
     public void saveSensors() {
         final TreeMap<String, ArrayList<Value>> curSensorBuffer = sensorBuffer;
         if (curSensorBuffer.isEmpty())
