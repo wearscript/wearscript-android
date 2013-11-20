@@ -87,6 +87,9 @@ func storeUserID(w http.ResponseWriter, r *http.Request, userId string) error {
 
 // userID retrieves the current user's ID from the session's cookies.
 func userID(r *http.Request) (string, error) {
+        if singleUserMode {
+	    return "singleUserMode_userid", nil
+	}
 	session, err := store.Get(r, sessionName)
 	if err != nil {
 		return "", err
