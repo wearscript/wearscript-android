@@ -23,6 +23,7 @@ public class SocketClient {
         this.uri = uri;
         this.callback = callback;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
+        Log.w(BackgroundService.TAG, "Lifecycle: Socket connecting to: " + uri);
         client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
     }
 
@@ -42,23 +43,19 @@ public class SocketClient {
         client.disconnect();
     }
 
-    public void connect() {
-        client.connect();
-    }
-
     public SocketListener getListener() {
         return listener;
     }
 
     public void reconnect() {
-        Log.w(BackgroundService.TAG, "Reconnecting socket");
+        Log.w(BackgroundService.TAG, "Lifecycle: Reconnecting socket");
 
         new Thread(new Runnable() {
             public void run() {
                 while (!client.isConnected()) {
                     client.connect();
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -98,12 +95,13 @@ public class SocketClient {
         @Override
         public void onDisconnect(int i, String s) {
             connected = false;
-            Log.w(BackgroundService.TAG, "Underlying socket disconnected");
+            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket disconnected");
             parent.onSocketDisconnect(i, s);
         }
 
         @Override
         public void onError(Exception e) {
+            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket errored");
             parent.onSocketError(e);
         }
 

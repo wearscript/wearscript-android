@@ -83,6 +83,11 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
         cards.set(position, v);
     }
 
+    public void cardTrim(int position) {
+        for (int i = cards.size() -  1; i >= position; i--)
+            cards.remove(position);
+    }
+
     public void cardDelete(int position) {
         cards.remove(position);
     }

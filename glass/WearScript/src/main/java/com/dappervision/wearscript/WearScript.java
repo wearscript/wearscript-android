@@ -212,6 +212,11 @@ public class WearScript {
         bs.updateCardScrollView();
     }
 
+    public void cardTrim(int position) {
+        bs.getCardScrollAdapter().cardTrim(position);
+        bs.updateCardScrollView();
+    }
+
     public void cardDelete(int position) {
         bs.getCardScrollAdapter().cardDelete(position);
         bs.updateCardScrollView();

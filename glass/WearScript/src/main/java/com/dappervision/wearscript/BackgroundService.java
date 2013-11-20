@@ -283,7 +283,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (client == null)
                 return false;
             if (!client.isConnected()) {
-                client.connect();
+                client.reconnect();
             }
             return client.isConnected();
         }
@@ -338,9 +338,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             speechCallback = null;
 
             if (gestureManager == null) {
-                MainActivity a = activity.get();
-                if (a != null)
-                    gestureManager = new GestureManager(a, this);
+                if (activity != null) {
+                    MainActivity a = activity.get();
+                    if (a != null)
+                        gestureManager = new GestureManager(a, this);
+                }
             } else {
                 gestureManager.unregister();
             }
@@ -402,7 +404,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
             wsUrl = url;
             client = new SocketClient(URI.create(url), this, callback);
-            client.connect();
+            client.reconnect();
         }
     }
 
