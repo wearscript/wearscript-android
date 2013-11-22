@@ -30,6 +30,7 @@ function onVerticalScroll(v, v2, v3) {
 }
 function speech(data) {
     WS.log('speech: ' + data);
+    WS.say('you said ' + data);
 }
 function server() {
     WS.log('Welcome to WearScript');
@@ -43,8 +44,8 @@ function server() {
     var gestures = ['onGesture', 'onFingerCountChanged', 'onScroll', 'onTwoFingerScroll', 'onVerticalScroll'];
     for (var i = 0; i < gestures.length; i++)
         WS.gestureCallback(gestures[i], gestures[i]);
-    WS.speechRecognize('speech');
     WS.liveCardCreate(false, .2);
+    //WS.speechRecognize('Say Something', 'speech');
     //WS.cameraPhoto();
     //WS.cameraVideo();
     //WS.cameraOff();

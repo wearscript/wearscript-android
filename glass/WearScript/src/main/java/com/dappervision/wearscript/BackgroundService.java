@@ -37,10 +37,6 @@ import org.msgpack.type.ArrayValue;
 import org.msgpack.type.MapValue;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -85,24 +81,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public String wifiScanCallback;
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
-
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.i(TAG, "Lifecycle: OpenCV loaded successfully, calling reset()");
-                    opencvLoaded = true;
-                    reset();
-                }
-                break;
-                default: {
-                    super.onManagerConnected(status);
-                }
-                break;
-            }
-        }
-    };
     private View activityView;
     private String activityMode;
     private boolean opencvLoaded;
@@ -647,7 +625,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         cardScroller.activate();
         cardScroller.setOnItemSelectedListener(cardScrollAdapter);
         cardScroller.setOnItemClickListener(cardScrollAdapter);
-        opencvLoaded = false;
+        reset();
     }
 
     public void setMainActivity(MainActivity a) {
@@ -658,8 +636,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activity.finish();
         }
         this.activity = new WeakReference<MainActivity>(a);
-        if (!opencvLoaded)
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
     public void wifiScanResults() {
