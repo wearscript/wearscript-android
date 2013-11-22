@@ -109,7 +109,7 @@ public class MainActivity extends Activity {
     }
 
     public void onDestroy() {
-        Log.i(TAG, "LifeCycle: MainActivity: onDestroy");
+        Log.i(TAG, "Lifecycle: MainActivity: onDestroy");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null)
             bs.getCameraManager().pause();

@@ -8,6 +8,9 @@ import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -18,7 +21,7 @@ import org.opencv.imgproc.Imgproc;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CameraManager implements Camera.PreviewCallback {
+public class CameraManager implements Camera.PreviewCallback  {
     private final BackgroundService bs;
     private static final String TAG = "CameraManager";
     private static final int MAGIC_TEXTURE_ID = 10;
@@ -28,7 +31,7 @@ public class CameraManager implements Camera.PreviewCallback {
     private CameraFrame cameraFrame;
     ConcurrentHashMap<Integer, String> jsCallbacks;
     private boolean paused;
-
+    private boolean opencvLoaded;
 
     public class CameraFrame {
         private MatOfByte jpgFrame;
@@ -107,6 +110,27 @@ public class CameraManager implements Camera.PreviewCallback {
     }
 
     public void register() {
+        BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(bs) {
+            @Override
+            public void onManagerConnected(int status) {
+                switch (status) {
+                    case LoaderCallbackInterface.SUCCESS: {
+                        Log.i(TAG, "Lifecycle: OpenCV loaded successfully, calling register_callback()");
+                        opencvLoaded = true;
+                        register_callback();
+                    }
+                    break;
+                    default: {
+                        super.onManagerConnected(status);
+                    }
+                    break;
+                }
+            }
+        };
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, bs, mLoaderCallback);
+    }
+
+    private void register_callback() {
         synchronized (this) {
             for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); ++camIdx) {
                 Log.d(TAG, "Trying to open camera with new open(" + Integer.valueOf(camIdx) + ")");
