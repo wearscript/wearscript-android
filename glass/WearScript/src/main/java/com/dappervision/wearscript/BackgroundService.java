@@ -83,7 +83,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected CardScrollView cardScroller;
     private View activityView;
     private String activityMode;
-    private boolean opencvLoaded;
 
     public void updateActivityView(final String mode) {
         if (activity == null)
@@ -114,6 +113,16 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void refreshActivityView() {
         updateActivityView(activityMode);
+    }
+
+    public void resetDefaultUrl() {
+        byte[] wsUrlArray = LoadData("", "qr.txt");
+        if (wsUrlArray == null) {
+            say("Must setup");
+            shutdown();
+            return;
+        }
+        wsUrl = (new String(wsUrlArray)).trim();
     }
 
     public View getActivityView() {
@@ -368,8 +377,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void serverConnect(String url, final String callback) {
         Log.i(TAG, "WS Setup");
         synchronized (lock) {
-            if (url.equals("{{WSUrl}}"))
+            if (url.equals("{{WSUrl}}")) {
+                // NOTE(brandyn): This means that we use the system default and not the previously
+                // set url (e.g., if it was changed manually by a script)
+                resetDefaultUrl();
                 url = wsUrl;
+            }
 
             if (client != null && client.isConnected() && wsUrl.equals(url)) {
                 Log.i(TAG, "WS Reusing client and calling callback");
