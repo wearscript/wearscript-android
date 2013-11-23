@@ -62,13 +62,7 @@ public class MainActivity extends Activity {
                 }
                 Log.i(TAG, "Lifecycle: Creating new webview");
 
-                byte[] wsUrlArray = bs.LoadData("", "qr.txt");
-                if (wsUrlArray == null) {
-                    bs.say("Must set URL using ADB");
-                    finish();
-                    return;
-                }
-                bs.wsUrl = (new String(wsUrlArray)).trim();
+                bs.resetDefaultUrl();
                 if (extra != null) {
                     Log.i(TAG, "Extra script");
                     bs.runScriptUrl(extra);
