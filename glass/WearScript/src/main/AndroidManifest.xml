@@ -40,6 +40,11 @@
                   android:name="com.google.android.glass.VoiceTrigger"
                   android:resource="@xml/voice_trigger_start" />
         </activity>
+        <activity android:name="QRActivity"
+            android:label="WearScript QR"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboardHidden|orientation">
+        </activity>
           <activity android:name="SetupActivity"
                   android:clearTaskOnLaunch="true"
                   android:label="WearScript (Setup)"
