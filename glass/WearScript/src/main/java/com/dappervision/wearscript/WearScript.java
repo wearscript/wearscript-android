@@ -182,6 +182,12 @@ public class WearScript {
         bs.wake();
     }
 
+    public void QR(String cb) {
+        Log.i(TAG, "QR");
+        bs.getQRService().registerCallback(cb);
+        bs.getQRService().startActivity();
+    }
+
     public void blobCallback(String name, String cb) {
         Log.i(TAG, "blobCallback");
         bs.registerBlobCallback(name, cb);

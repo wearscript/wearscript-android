@@ -79,6 +79,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String wsUrl;
     protected WifiManager wifiManager;
     protected GestureManager gestureManager;
+    protected QRService QRService;
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public TreeMap<String, String> blobCallbacks;
@@ -664,6 +665,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         broadcastReceiver = new ScreenBroadcastReceiver(this);
         registerReceiver(broadcastReceiver, intentFilter);
+        QRService = new QRService(this);
         tts = new TextToSpeech(this, this);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         glassID = getMacAddress();
@@ -808,6 +810,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             // TODO: Check result
         }
         // TODO: Check result on else
+    }
+
+    public QRService getQRService() {
+        return QRService;
     }
 
     class ScreenBroadcastReceiver extends BroadcastReceiver {
