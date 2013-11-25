@@ -289,6 +289,7 @@ public class WearScript {
     public void displayCardScroll() {
         Log.i(TAG, "displayCardScroll");
         bs.updateActivityView("cardscroll");
+    }
 
     public void picarus(String config, String input, String callback) {
         bs.loadPicarus();
