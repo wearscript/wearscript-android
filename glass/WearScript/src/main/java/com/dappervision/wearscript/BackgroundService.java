@@ -12,6 +12,8 @@ import android.media.AudioRecord;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
@@ -47,16 +49,25 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.regex.Pattern;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
 
 import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
+
+
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SocketClient.SocketListener {
     private final IBinder mBinder = new LocalBinder();
@@ -72,6 +83,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String glassID;
     MessagePack msgpack = new MessagePack();
     private String speechCallback;
+    private String openglCallback;
+    public LinkedBlockingQueue<OpenGLStatement> openglCommandQueue;
+    public LinkedBlockingQueue<Object> openglResultQueue;
 
     protected SocketClient client;
     protected ScriptView webview;
@@ -87,6 +101,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected CardScrollView cardScroller;
     private View activityView;
     private String activityMode;
+    private GLSurfaceView mGLView;
+    public Thread webviewThread;
+    public Thread openglThread;
 
     public void updateActivityView(final String mode) {
         if (activity == null)
@@ -99,6 +116,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activityMode = mode;
                 if (mode.equals("webview") && webview != null) {
                     activityView = webview;
+                } else if (mode.equals("opengl"))  {
+                    activityView = mGLView;
                 } else if (mode.equals("cardscroll"))  {
                     activityView = cardScroller;
                 } else {
@@ -113,6 +132,49 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
             }
         });
+    }
+
+    class ClearRenderer implements GLSurfaceView.Renderer {
+        public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+            // Do nothing special.
+        }
+
+        public void onSurfaceChanged(GL10 gl, int w, int h) {
+            GLES20.glViewport(0, 0, w, h);
+        }
+
+        public void onDrawFrame(GL10 gl) {
+            if (openglCallback != null && webview != null)
+                webview.loadUrl(String.format("javascript:%s();", openglCallback));
+            OpenGLStatement statement;
+            while (true) {
+                try {
+                    statement = (OpenGLStatement)openglCommandQueue.take();
+                } catch (InterruptedException e) {
+                    // TODO: Make error
+                    break;
+                }
+                if (statement.isDone()) {
+                    Log.i(TAG, "OpenGL Done");
+                    break;
+                }
+                Object out = statement.execute();
+                Log.i(TAG, "Got return from statement");
+                if (statement.hasReturn()) {
+                    try {
+                        Log.i(TAG, "Got return from statement, putting");
+                        openglResultQueue.put(out);
+                    } catch (InterruptedException e) {
+                        // TODO: Make error
+                    }
+                }
+            }
+        }
+    }
+
+    public void setOpenGLCallback(String callback) {
+        openglCallback = callback;
+        mGLView.requestRender();
     }
 
     public void refreshActivityView() {
@@ -330,8 +392,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             cameraManager.unregister(true);
             cardScrollAdapter.reset();
             updateCardScrollView();
+            openglCommandQueue = new LinkedBlockingQueue<OpenGLStatement>();
+            openglResultQueue = new LinkedBlockingQueue<Object>();
+            webviewThread = null;
+            openglThread = null;
             speechCallback = null;
-
+            openglCallback = null;
             if (gestureManager == null) {
                 if (activity != null) {
                     MainActivity a = activity.get();
@@ -669,6 +735,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         cardScroller.activate();
         cardScroller.setOnItemSelectedListener(cardScrollAdapter);
         cardScroller.setOnItemClickListener(cardScrollAdapter);
+        mGLView = new GLSurfaceView(BackgroundService.this);
+        mGLView.setEGLContextClientVersion(2);
+        mGLView.setRenderer(new ClearRenderer());
+        mGLView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         reset();
     }
 
@@ -813,15 +883,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-                Log.i(TAG, "Screen off");
-            } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
-                Log.i(TAG, "Screen on");
-            } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
-                Log.i(TAG, "Battery changed");
-            } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+            if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.i(TAG, "Wifi scan results");
                 bs.wifiScanResults();
+            } else {
+                dataManager.onReceive(context, intent);
             }
         }
     }
@@ -830,16 +896,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         BackgroundService getService() {
             return BackgroundService.this;
         }
-    }
-
-    public void cameraPhoto() {
-        cameraManager.pause();
-        activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
-    }
-
-    public void cameraVideo() {
-        cameraManager.pause();
-        activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
     }
 
     public void speechRecognize(String prompt, String callback) {

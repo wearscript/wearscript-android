@@ -1,6 +1,7 @@
 package com.dappervision.wearscript;
 
 import android.content.Intent;
+import android.opengl.GLES20;
 import android.util.Log;
 
 import org.json.simple.JSONArray;
@@ -9,6 +10,10 @@ import org.json.simple.JSONValue;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -17,12 +22,17 @@ public class WearScript {
     String TAG = "WearScript";
     TreeMap<String, Integer> sensors;
     String sensorsJS;
+    TreeMap<String, Method> openglMethods;
 
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
         this.sensors = new TreeMap<String, Integer>();
+        this.openglMethods = new TreeMap<String, Method>();
+        for (Method m: GLES20.class.getMethods())
+            openglMethods.put(m.getName(), m);
         // Sensor Types
+        this.sensors.put("battery", -3);
         this.sensors.put("pupil", -2);
         this.sensors.put("gps", -1);
         this.sensors.put("accelerometer", 1);
@@ -293,5 +303,107 @@ public class WearScript {
 
     public void picarus(String config, String input, String callback) {
         bs.loadPicarus();
+    }
+
+    private Object glConvert(Object v) {
+        Log.i(TAG, "GL: " + v);
+        return new Float((Double)v);
+        //return float.class;
+    }
+
+    private Class glClass(Float v) {
+        return float.class;
+    }
+
+    private Class glClass(Integer v) {
+        return int.class;
+    }
+
+    public void glCallback(String callback) {
+        bs.setOpenGLCallback(callback);
+    }
+
+    public void displayGL() {
+        Log.i(TAG, "displayGL");
+        bs.updateActivityView("opengl");
+    }
+
+    public void glDone() {
+        try {
+            bs.openglCommandQueue.put(new OpenGLStatement());
+        } catch (InterruptedException e) {
+            // TODO
+        }
+    }
+
+    public void gl(String methodName, double p0, double p1, double p2, double p3) {
+        glHelper(methodName, false, p0, p1, p2, p3);
+    }
+
+    public void gl(String methodName, double p0) {
+        glHelper(methodName, false, p0);
+    }
+
+    public int glInt(String methodName, double p0) {
+        return (Integer)glHelper(methodName, true, p0);
+    }
+
+    private Object glHelper(String methodName, boolean ret, Object...p) {
+        Log.i(TAG, "OpenGL Method[d...]: " + methodName);
+        Method m = openglMethods.get(methodName);
+        if (m == null) {
+            Log.e(TAG, "Method missing: " + methodName);
+            return null;
+        }
+        Class<?>[] types = m.getParameterTypes();
+        ArrayList<Object> args = new ArrayList<Object>();
+        for (int i = 0; i < p.length; i++) {
+            Class c = types[i];
+            if (c.equals(float.class))
+                args.add(((Double)p[i]).floatValue());
+            else if (c.equals(int.class))
+                args.add(((Double)p[i]).intValue());
+            else if (c.equals(String.class))
+                args.add(((String)p[i]));
+            else {
+                Log.e(TAG, "Cannot cast!: " + c);
+                return null;
+            }
+        }
+        try {
+            bs.openglCommandQueue.put(new OpenGLStatement(m, ret, args.toArray()));
+            if (ret) {
+                Log.i(TAG, "Waiting for return");
+                Object out = bs.openglResultQueue.take();
+                Log.i(TAG, "Got return: " + out);
+                return out;
+            } else {
+                Log.i(TAG, "Not waiting for return");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public String glConstants() {
+        JSONObject o = new JSONObject();
+        for (Field f : GLES20.class.getFields()) {
+            try {
+                o.put(f.getName(), f.getInt(o));
+            } catch (IllegalAccessException e) {
+                Log.w(TAG, "Illegal access in glConstants: " + f.getName());
+                continue;
+            }
+        }
+        return o.toJSONString();
+    }
+
+    public String glMethods() {
+        JSONArray o = new JSONArray();
+        for (Method m : GLES20.class.getMethods()) {
+            o.add(m.getName());
+        }
+        return o.toJSONString();
     }
 }

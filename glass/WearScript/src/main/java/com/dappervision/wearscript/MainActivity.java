@@ -87,8 +87,8 @@ public class MainActivity extends Activity {
     public void onPause() {
         Log.i(TAG, "Lifecycle: MainActivity: onPause");
         isForeground = false;
-        if (bs != null)
-            bs.getCameraManager().pause();
+        //if (bs != null)
+        //    bs.getCameraManager().pause();
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onPause();
     }

@@ -1,11 +1,18 @@
 package com.dappervision.wearscript;
 
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.SensorManager;
+import android.net.wifi.WifiManager;
+import android.os.BatteryManager;
+import android.util.Log;
+
+import org.msgpack.type.Value;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataManager {
+    private static final String TAG = "DataManager";
     SensorManager sensorManager;
     ConcurrentHashMap<Integer, DataProvider> providers;
     ConcurrentHashMap<Integer, String> jsCallbacks;
@@ -26,9 +33,32 @@ public class DataManager {
             dp = new GPSDataProvider(this, samplePeriod, type);
         else if (type == -2)
             dp = new RemoteDataProvider(this, samplePeriod, type, "Pupil Eyetracker");
+        else if (type == -3)
+            dp = new RemoteDataProvider(this, samplePeriod, type, "Battery");
         else
             throw new RuntimeException("Invalid type: " + type);
         registerProvider(type, dp);
+    }
+
+    public void onReceive(Context context, Intent intent) {
+        if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+            Log.i(TAG, "Screen off");
+        } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
+            Log.i(TAG, "Screen on");
+        } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
+            Log.i(TAG, "Battery changed");
+            // NOTE(brandyn): This is a little funny since it's on the device, but we are creating the data
+            // point "remotely" so we treat it as such, it's not worth a new class and pushing the intent around
+            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+            if (level >= 0 && scale >= 0) {
+                double pct = level / (double)scale;
+                Log.i(TAG, "Battery changed: " + pct);
+                DataPoint dataPoint = new DataPoint("Battery", -3, System.currentTimeMillis() / 1000., System.nanoTime());
+                dataPoint.addValue(pct);
+                queueRemote(dataPoint);
+            }
+        }
     }
 
     public void registerProvider(Integer type, DataProvider p) {
