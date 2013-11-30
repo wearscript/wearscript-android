@@ -1,7 +1,7 @@
 .. _vm-setup:
 
-Virtual Machine Install (client and server)
-===========================================
+Virtual Machine
+===============
 By using the VM you will get a full development environment and server.  This makes it easier to assist with any problems you run into since we can replicate the environment and fixes only need to be applied once to the VM.  If you intend to run this on your personal computer use Vagrant and for servers we recommend EC2.
 
 0a. Install WearScript VM using Vagrant
