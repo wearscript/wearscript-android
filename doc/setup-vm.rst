@@ -1,7 +1,7 @@
 .. _vm-setup:
 
-Install WearScript VM (Client + Server)
-========================================
+Install WearScript VM using Vagrant
+===================================
 
 0: Get WearScript Source
 ------------------------
@@ -24,6 +24,22 @@ Install WearScript VM (Client + Server)
 * Use "vagrant ssh" to enter the VM (if you launch a graphical program such as Android Studio it will start in your native window environment)
 * Client: Follow "Install Client (source)" above (starting with importing "wearscript/glass" as a new project)
 * Server: Follow the "Install Server" above (starting from setting up config.go)
+
+
+
+Install WearScript VM on EC2
+=============================
+
+0: Acquire an EC2 Instance
+------------------------------
+* Use `this EC2 image <https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LaunchInstanceWizard:ami=ami-4b143122>`_ with any compatible instance you'd like (c1.medium and m1.medium work well)
+* Login with ssh ubuntu@<hostname>
+* Run the following command
+
+.. code-block:: bash
+
+  sudo apt-get install puppet && curl https://raw.github.com/OpenShades/wearscript/master/vagrant/manifests/init.pp > init.pp && sudo puppet apply init.pp
+
 
 Connecting the Client to the Server
 -----------------------------------
