@@ -79,6 +79,7 @@ Now we build/install the client
 * To start with "Ok Glass" say "start wear script"
 
 
+
 Client Installation Video
 -------------------------
 This assumes Android Studio and SDK are installed (see above)
