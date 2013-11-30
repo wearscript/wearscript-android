@@ -2,6 +2,7 @@
 
 Virtual Machine Install (client and server)
 ===========================================
+By using the VM you will get a full development environment and server.  This makes it easier to assist with any problems you run into since we can replicate the environment and fixes only need to be applied once to the VM.  If you intend to run this on your personal computer use Vagrant and for servers we recommend EC2.
 
 0a. Install WearScript VM using Vagrant
 --------------------------------------
@@ -10,7 +11,6 @@ Virtual Machine Install (client and server)
 * Get/install Vagrant (go here http://downloads.vagrantup.com/ get the newest version for your platform)
 * In a terminal run: vagrant box add saucy64 http://cloud-images.ubuntu.com/vagrant/saucy/current/saucy-server-cloudimg-amd64-vagrant-disk1.box
 * Enter the wearscript/vagrant directory, and run "vagrant up" (takes about 17 minutes on a Macbook Pro)
-
 
 0b. Install WearScript VM on EC2
 ---------------------------------
@@ -21,7 +21,7 @@ Virtual Machine Install (client and server)
 
 .. code-block:: bash
 
-  sudo apt-get install puppet && curl https://raw.github.com/OpenShades/wearscript/master/vagrant/manifests/init.pp > init.pp && sudo puppet apply init.pp
+  sudo apt-get install -y puppet && curl https://raw.github.com/OpenShades/wearscript/master/vagrant/manifests/init.pp > init.pp && sudo puppet apply init.pp
 
 
 1: Using the Box
