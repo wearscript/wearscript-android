@@ -7,22 +7,26 @@ By using the VM you will get a full development environment and server.  This ma
 0a. Install WearScript VM using Vagrant
 --------------------------------------
 * with one click: `Click to Download ZIP <https://github.com/OpenShades/wearscript/archive/master.zip>`_ or using git: git clone https://github.com/OpenShades/wearscript.git
-* https://www.virtualbox.org/wiki/Downloads
+* Install virtual box and the "Oracle VM VirtualBox Extension Pack" (needed for usb) from https://www.virtualbox.org/wiki/Downloads
 * Get/install Vagrant (go here http://downloads.vagrantup.com/ get the newest version for your platform)
-* In a terminal run: vagrant box add saucy64 http://cloud-images.ubuntu.com/vagrant/saucy/current/saucy-server-cloudimg-amd64-vagrant-disk1.box
+* OSX: You need XQuarts to enable X11 support (to open Android Studio, etc.)  http://xquartz.macosforge.org/landing/
+* In a terminal run: vagrant box add saucy64 http://cloud-images.ubuntu.com/vagrant/saucy/20131124/saucy-server-cloudimg-amd64-vagrant-disk1.box
 * Enter the wearscript/vagrant directory, and run "vagrant up" (takes about 17 minutes on a Macbook Pro)
+* Manual step for sudo adb: Run "sudo visudo" and comment out the line with "secure_path" by prefixing with #
+* Note: Install requires a solid internet connection, if puppet stops silently it is likely because the internet timed out
 
 0b. Install WearScript VM on EC2
 ---------------------------------
 
 * Use `this EC2 image <https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LaunchInstanceWizard:ami=ami-4b143122>`_ with any compatible instance you'd like (c1.medium and m1.medium work well)
 * Login with ssh ubuntu@<hostname>
-* Run the following command
+* Run the following command (takes about 5 minutes on a c1.medium)
 
 .. code-block:: bash
 
   sudo apt-get install -y puppet && curl https://raw.github.com/OpenShades/wearscript/master/vagrant/manifests/init.pp > init.pp && sudo puppet apply init.pp
 
+* You will need to log out and back in for the environment to update
 
 1: Using the Box
 -----------------
