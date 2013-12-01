@@ -2,10 +2,8 @@ group { "puppet":
     ensure => "present",
 }
 
-file { '/home/vagrant/.pam_environment':
-content => "GOPATH=/home/vagrant/gocode\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/vagrant/android-studio/sdk/platform-tools:/home/vagrant/android-studio/sdk/tools",
-owner => vagrant,
-group => vagrant,
+exec { 'setenvironment':
+command => "/bin/bash -c 'printf GOPATH=`pwd`/gocode\\\\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:`pwd`/android-studio/sdk/platform-tools:`pwd`/android-studio/sdk/tools' > /etc/environment",
 }
 
 class apt_packages {

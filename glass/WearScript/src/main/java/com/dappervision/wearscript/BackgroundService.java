@@ -122,8 +122,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void resetDefaultUrl() {
         byte[] wsUrlArray = LoadData("", "qr.txt");
         if (wsUrlArray == null) {
-            say("Must setup");
-            shutdown();
+            say("Must setup wear script");
             return;
         }
         wsUrl = (new String(wsUrlArray)).trim();
@@ -387,7 +386,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 resetDefaultUrl();
                 url = wsUrl;
             }
-
+            if (url == null) {
+                Log.e(TAG, "Lifecycle: Invalid url provided");
+                return;
+            }
             if (client != null && client.isConnected() && wsUrl.equals(url)) {
                 Log.i(TAG, "WS Reusing client and calling callback");
                 if (callback != null && webview != null) {
