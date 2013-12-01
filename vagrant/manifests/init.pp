@@ -3,7 +3,7 @@ group { "puppet":
 }
 
 exec { 'setenvironment':
-command => "/bin/bash -c 'echo GOPATH=`pwd`/gocode\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:`pwd`/android-studio/sdk/platform-tools:`pwd`/android-studio/sdk/tools' > /etc/environment",
+command => "/bin/bash -c 'printf GOPATH=`pwd`/gocode\\\\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:`pwd`/android-studio/sdk/platform-tools:`pwd`/android-studio/sdk/tools' > /etc/environment",
 }
 
 class apt_packages {
