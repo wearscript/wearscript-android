@@ -2,10 +2,6 @@ group { "puppet":
     ensure => "present",
 }
 
-exec { 'setenvironment':
-command => "/bin/bash -c 'printf GOPATH=`pwd`/gocode\\\\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:`pwd`/android-studio/sdk/platform-tools:`pwd`/android-studio/sdk/tools' > /etc/environment",
-}
-
 class apt_packages {
   exec { "apt-get-update":
     command => "/usr/bin/apt-get update",
@@ -44,6 +40,10 @@ class pip_packages {
 }
 
 class java {
+exec { 'setenvironment':
+command => "/bin/bash -c 'echo GOPATH=`pwd`/gocode > /etc/environment && echo PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:`pwd`/android-studio/sdk/platform-tools:`pwd`/android-studio/sdk/tools' >> /etc/environment",
+}
+
   package { "python-software-properties": }
  
   exec { "add-apt-repository-oracle":
