@@ -111,6 +111,13 @@ public class WearScript {
     }
 
     public void cameraPhoto() {
+        // TODO(brandyn): Callback should be in camera manager
+        this.bs.photoCallback = null;
+        this.bs.getCameraManager().cameraPhoto();
+    }
+
+    public void cameraPhoto(String callback) {
+        this.bs.photoCallback = callback;
         this.bs.getCameraManager().cameraPhoto();
     }
 
