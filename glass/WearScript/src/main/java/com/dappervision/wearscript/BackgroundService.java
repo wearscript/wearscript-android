@@ -83,6 +83,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public TreeMap<String, Integer> sensorTypes;
     public TreeMap<String, String> blobCallbacks;
     public String wifiScanCallback;
+    public String photoCallback;
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
     private View activityView;
@@ -322,6 +323,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             sensorBuffer = new TreeMap<String, ArrayList<Value>>();
             sensorTypes = new TreeMap<String, Integer>();
             wifiScanCallback = null;
+            photoCallback = null;
             blobCallbacks = new TreeMap<String, String>();
             dataWifi = dataRemote = dataLocal = dataImage = false;
             lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
@@ -588,25 +590,27 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/wearscript/";
     }
 
-    protected byte[] LoadData(String path, String suffix) {
+    protected byte[] LoadFile(File file) {
         try {
             try {
-                File dir = new File(dataPath() + path);
-                File file;
-                file = new File(dir, suffix);
+                Log.i(TAG, "LoadFile: " + file.getAbsolutePath());
                 FileInputStream inputStream = new FileInputStream(file);
                 byte[] data = new byte[(int) file.length()];
                 inputStream.read(data);
                 inputStream.close();
                 return data;
             } catch (Exception e) {
+                Log.e(TAG, e.getMessage());
                 return null;
             }
         } catch (Exception e) {
             Log.e(TAG, "Bad file read");
             return null;
         }
+    }
 
+    protected byte[] LoadData(String path, String suffix) {
+        return LoadFile(new File(new File(dataPath() + path), suffix));
     }
 
     public void runScript(String script) {
@@ -863,6 +867,23 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (resultCode == activity.get().RESULT_OK) {
                 String pictureFilePath = intent.getStringExtra(Camera.EXTRA_PICTURE_FILE_PATH);
                 String thumbnailFilePath = intent.getStringExtra(Camera.EXTRA_THUMBNAIL_FILE_PATH);
+                if (photoCallback != null && webview != null) {
+                    //pictureFilePath
+                    byte imageData[] = null;
+                    for (int i = 0; i < 100; i++) {
+                        imageData = LoadFile(new File(pictureFilePath));
+                        if (imageData == null) {
+                            Log.w(TAG, "Waiting for photo...");
+                            try {
+                                Thread.sleep(250);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                    }
+                    String data = String.format("javascript:%s(\"%s\");", photoCallback, Base64.encodeToString(imageData, Base64.NO_WRAP));
+                    photoCallback = null;
+                    webview.loadUrl(data);
+                }
             } else if (resultCode == activity.get().RESULT_CANCELED) {
 
             }
