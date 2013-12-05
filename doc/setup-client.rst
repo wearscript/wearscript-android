@@ -66,7 +66,7 @@ Now we build/install the client
 * Click QR, then either
 
   * Paste the adb command while Glass is plugged connected to USB
-  * Select WearScript (setup) and scan the QR code
+  * Select WearScript (setup) and scan the QR code (the first time you start the barcode scanner it has a setup menu, just downswipe to dismiss it)
 
 .. _starting-the-client:
 
