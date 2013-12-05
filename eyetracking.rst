@@ -27,14 +27,21 @@ Getting Started
 Attach the Webcam to the VM
 ---------------------------
 
-* VBoxManage list webcams
-* VBoxManage list vms
-* VBoxManage controlvm <yourvm name> webcam attach <your webcam id>
+* From a terminal on the host OS
+  
+  * VBoxManage list webcams
+  * VBoxManage list vms
+  * VBoxManage controlvm <yourvm name> webcam attach <your webcam id>
+
+* From the Virtual Box gui (when vb.gui = true in Vagrantfile)
+
+  * Devices -> Webcams -> Microsoft LifeCam HD-6000 for Notebooks
+  * If it isn't listed or otherwise isn't working try rebooting the box or using a different usb port with the camera
 
 Tips
 -----
 
 * The webcam must be manually focused, if it appears blurry twist the lens until the image is in focus.  It may help to take the webcam out of the plastic mount and hold it roughly where it would be while doing this.
 * When using the VM, we want virtual box to use the webcam as a webcam.  Virtualbox uses the host to capture from the webcam and has a good driver on the guest side.  Specifically we don't want it to expose it through usb directly.
-* The 'Vagrantfile' has a line that specifies vb.gui, if this is set to true then the virtual box gui is presented (useful for more easily connecting/disconnecting the webcam).  If it is false then we can only use vagrant ssh to connect (though X11 connections are still tunneled).
-* If 
+* The 'Vagrantfile' has a line that specifies vb.gui, if this is set to true then the virtual box gui is presented (useful for more easily connecting/disconnecting the webcam).  If it is false then we can only use vagrant ssh to connect (though X11 connections are still tunneled).  If you change it use "vagrant reload" to restart the vm and parse that file.
+
