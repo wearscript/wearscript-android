@@ -56,6 +56,7 @@ WearScript combines the power of Android development on Glass with the learning 
     wire
     admin
     contributing    
+    eyetracking
     troubleshooting
 
 About
