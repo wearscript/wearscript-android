@@ -10,7 +10,8 @@ By using the VM you will get a full development environment and server.  This ma
 * Install virtual box and the "Oracle VM VirtualBox Extension Pack" (needed for usb) from https://www.virtualbox.org/wiki/Downloads
 * Get/install Vagrant (go here http://downloads.vagrantup.com/ get the newest version for your platform)
 * OSX: You need XQuarts to enable X11 support (to open Android Studio, etc.)  http://xquartz.macosforge.org/landing/
-* In a terminal run: vagrant box add saucy64 http://cloud-images.ubuntu.com/vagrant/saucy/20131124/saucy-server-cloudimg-amd64-vagrant-disk1.box
+* In a terminal run: vagrant box add saucy64 http://cloud-images.ubuntu.com/vagrant/saucy/current/saucy-server-cloudimg-amd64-vagrant-disk1.box
+  * However, if you want a full ubuntu gui or want to use the eye tracking camera download this box http://goo.gl/CLuK6P and install it with vagrant box add saucy64 ubuntusaucy64-gui.box
 * Enter the wearscript/vagrant directory, and run "vagrant up" (takes about 17 minutes on a Macbook Pro)
 * Manual step for sudo adb: Run "sudo visudo" and comment out the line with "secure_path" by prefixing with #
 * Note: Install requires a solid internet connection, if puppet stops silently it is likely because the internet timed out
