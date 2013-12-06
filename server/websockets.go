@@ -60,7 +60,6 @@ func MsgpackUnmarshal(data []byte, payloadType byte, v interface{}) (err error) 
 	return
 }
 
-
 func WSGlassHandler(c *websocket.Conn) {
 	defer c.Close()
 	fmt.Println("Connected with glass")
@@ -72,11 +71,6 @@ func WSGlassHandler(c *websocket.Conn) {
 	userId, err := getSecretUser("ws", secretHash(path[len(path)-1]))
 	if err != nil {
 		fmt.Println(err)
-		return
-	}
-	uflags, err := getUserFlags(userId, "uflags")
-	if err != nil {
-		fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
 		return
 	}
 	svc, err := mirror.New(authTransport(userId).Client())
@@ -109,25 +103,6 @@ func WSGlassHandler(c *websocket.Conn) {
 				die = true
 				break
 			}
-		}
-	}()
-
-	// Flags sender
-	go func() {
-		for {
-			if die {
-				break
-			}
-			// TODO: Make a subscription and have this repeated only when things change
-			uflags, err = getUserFlags(userId, "uflags")
-			if err != nil {
-				fmt.Println(fmt.Errorf("Couldn't get flags: %s", err))
-				time.Sleep(time.Millisecond * 2000)
-				continue
-			}
-			fmt.Println("Sending flags")
-			wsSendChan <- &[]interface{}{"flags", uflags}
-			time.Sleep(time.Millisecond * 2000)
 		}
 	}()
 

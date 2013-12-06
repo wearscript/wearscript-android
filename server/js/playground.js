@@ -310,15 +310,6 @@ function createKey(type, success, error) {
     }
 }
 
-function setFlags(flags, success) {
-    $.ajax({url: 'flags', type: 'POST', data: JSON.stringify(flags), success: success});
-}
-function getFlags(success) {
-    $.ajax({url: 'flags', type: 'GET', success: success});
-}
-function unsetFlags(flags, success) {
-    $.ajax({url: 'flags', type: 'DELETE', data: JSON.stringify(flags), success: success});
-}
 function urlToHost(url) {
     var pathArray = url.split( '/' );
     var protocol = pathArray[0];
@@ -386,19 +377,6 @@ function main(WSUrl) {
         createKey("ws", function (x) {$('#secret-ws').html(_.escape(x))}, function () {alert("Could not get ws")});
     });
 
-    $('.make-switch').on('switch-change', function () {
-        var $this = $(this);
-        if ($this.bootstrapSwitch('status')) {
-            setFlags([$this.attr('name')]);
-        } else {
-            unsetFlags([$this.attr('name')]);
-        }
-    });
-    getFlags(function (x) {
-        _.each(JSON.parse(x), function (y) {
-            $('.make-switch[name=' + y + ']').bootstrapSwitch('setState', true);
-        });
-    });
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,

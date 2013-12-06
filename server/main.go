@@ -206,8 +206,6 @@ func main() {
 	SignatureCreateKey()
 	m := pat.New()
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
-	m.Post("/notify/{key}", http.HandlerFunc(NotifyServer))
-	m.Post("/notify/", http.HandlerFunc(NotifyServer))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
 
@@ -216,9 +214,6 @@ func main() {
 	m.Get("/oauth2callback", http.HandlerFunc(oauth2callbackHandler))
 
 	m.Post("/signout", http.HandlerFunc(signoutHandler))
-	m.Post("/flags", http.HandlerFunc(FlagsHandler))
-	m.Get("/flags", http.HandlerFunc(FlagsHandler))
-	m.Delete("/flags", http.HandlerFunc(FlagsHandler))
 	m.Post("/signature", http.HandlerFunc(SignatureVerifyHandler))
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
 	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
