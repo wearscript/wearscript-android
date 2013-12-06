@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
@@ -25,7 +24,6 @@ public class MainActivity extends Activity {
     private boolean mHadUrlExtra = false;
 
     public MainActivity() {
-        Log.i(TAG, "Instantiated new " + this.getClass());
     }
 
     /**
@@ -33,15 +31,16 @@ public class MainActivity extends Activity {
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.register(this);
         Log.i(TAG, "Lifecycle: Activity onCreate");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Intent thisIntent = getIntent();
         if (thisIntent.getStringExtra(EXTRA_NAME) != null) {
             mHadUrlExtra = true;
             extra = thisIntent.getStringExtra(EXTRA_NAME);
-            Log.v(TAG, "Found extra: " + extra);
+            Log.d(TAG, "Found extra: " + extra);
         } else {
-            Log.v(TAG, "Did not find extra.");
+            Log.d(TAG, "Did not find extra.");
         }
         // Bind Service
         super.onCreate(savedInstanceState);

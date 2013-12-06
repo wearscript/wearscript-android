@@ -6,7 +6,6 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.provider.MediaStore;
 import android.util.Base64;
-import android.util.Log;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;

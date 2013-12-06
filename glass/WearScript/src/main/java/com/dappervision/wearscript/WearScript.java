@@ -1,7 +1,6 @@
 package com.dappervision.wearscript;
 
 import android.content.Intent;
-import android.util.Log;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

@@ -1,7 +1,5 @@
 package com.dappervision.wearscript;
 
-import android.util.Log;
-
 import com.codebutler.android_websockets.WebSocketClient;
 
 import org.apache.http.message.BasicNameValuePair;
@@ -23,7 +21,7 @@ public class SocketClient {
         this.uri = uri;
         this.callback = callback;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
-        Log.w(BackgroundService.TAG, "Lifecycle: Socket connecting to: " + uri);
+        Log.i(BackgroundService.TAG, "Lifecycle: Socket connecting");
         client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
     }
 

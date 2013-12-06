@@ -1,7 +1,5 @@
 package com.dappervision.wearscript;
 
-import android.util.Log;
-
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 

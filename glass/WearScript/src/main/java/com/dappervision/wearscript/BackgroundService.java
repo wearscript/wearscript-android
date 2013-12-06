@@ -22,7 +22,6 @@ import android.os.RemoteException;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -62,7 +61,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     public WeakReference<MainActivity> activity;
-    public TreeSet<String> flags;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
     protected static String TAG = "WearScript";
@@ -319,7 +317,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview.onDestroy();
                 webview = null;
             }
-            flags = new TreeSet<String>();
             sensorBuffer = new TreeMap<String, ArrayList<Value>>();
             sensorTypes = new TreeMap<String, Integer>();
             wifiScanCallback = null;
@@ -451,7 +448,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         try {
             List<Value> input = msgpack.read(message, tList(TValue));
             String action = input.get(0).asRawValue().getString();
-            Log.i(TAG, String.format("Got %s", action));
+            Log.d(TAG, String.format("Got %s", action));
             // TODO: String to Mat, save and display in the loopback thread
             if (action.equals("startScript")) {
                 final String script = input.get(1).asRawValue().getString();
@@ -621,7 +618,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             updateActivityView("webview");
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
-            Log.i(TAG, "WebView:" + script);
+            Log.d(TAG, "WebView:" + script);
             String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
             webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
@@ -636,7 +633,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview = createScriptView();
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
-            Log.i(TAG, "WebView:" + url);
+            Log.d(TAG, "WebView:" + url);
             webview.setInitialScale(100);
             webview.loadUrl(url);
             Log.i(TAG, "WebView Ran");
@@ -820,13 +817,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-                Log.i(TAG, "Screen off");
+                Log.d(TAG, "Screen off");
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
-                Log.i(TAG, "Screen on");
+                Log.d(TAG, "Screen on");
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
-                Log.i(TAG, "Battery changed");
+                Log.d(TAG, "Battery changed");
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                Log.i(TAG, "Wifi scan results");
+                Log.d(TAG, "Wifi scan results");
                 bs.wifiScanResults();
             }
         }
