@@ -203,7 +203,11 @@ func sendImageCard(image string, text string, svc *mirror.Service) {
 }
 
 func main() {
-	SignatureCreateKey()
+	err := SignatureCreateKey()
+	if err != nil {
+		log.Fatal("SignatureCreateKey: Is the Redis database running?: ", err)
+		return
+	}
 	m := pat.New()
 	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
@@ -222,7 +226,7 @@ func main() {
 	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))
 	m.Get("/", http.HandlerFunc(PlaygroundServer))
 	http.Handle("/", m)
-	err := http.ListenAndServe(":"+servePort, nil)
+	err = http.ListenAndServe(":"+servePort, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

@@ -3,13 +3,14 @@ package main
 import (
 	"github.com/garyburd/redigo/redis"
 	"strconv"
+	"time"
 )
 
 func getRedisConnection() (redis.Conn, error) {
 	// TODO: Replace with pool
 	// TODO: Add port to config
 	// TODO: Ensure that connections are being closed properly
-	return redis.Dial("tcp", redisServerPort)
+	return redis.DialTimeout("tcp", redisServerPort, time.Second * 5, time.Second * 5, time.Second * 5)
 }
 
 func setSecretUser(secretType string, hash string, userId string) error {
