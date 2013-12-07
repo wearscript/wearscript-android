@@ -341,10 +341,6 @@ function main(WSUrl) {
     $('#shutdownButton').click(function () {
         ws.send(enc(['shutdown']));
     });
-    c = {names: ['notify']};
-
-    $('#switches').html(Mustache.render('{{#names}}<div class="control-group switch-wrap"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
-    $('.make-switch').bootstrapSwitch();
     $('#buttonAuth').click(function () {
         window.location.replace('auth');
     });
