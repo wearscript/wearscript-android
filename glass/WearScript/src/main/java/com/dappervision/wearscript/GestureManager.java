@@ -29,11 +29,11 @@ public class GestureManager extends GestureDetector implements GestureDetector.B
     }
 
     protected void makeCall(String key, String data) {
-        Log.i(TAG, key + " " + data);
+        Log.d(TAG, key + " " + data);
         if (!jsCallbacks.contains(key))
             return;
         String url = String.format("javascript:%s(%s);", jsCallbacks.get(key), data);
-        Log.i(TAG, "Gesture: Call: " + url);
+        Log.d(TAG, "Gesture: Call: " + url);
         bs.loadUrl(url);
     }
 

@@ -8,9 +8,9 @@ import com.joshdholtz.sentry.Sentry.SentryEventBuilder.SentryEventLevel;
 
 
 public class Log {
-
+    private static final String TAG = "Log";
     private static boolean inited = false;
-    private static String dsn;
+    private static String dsn = "https://528123420aa94452a7dfb6dc08ff4a34:5e26315ac6d54b94bc23c6cb05f55854@app.getsentry.com/16563";
     private static MainActivity activity;
 
     static void register(MainActivity act) {
@@ -19,11 +19,19 @@ public class Log {
         Sentry.init(activity, dsn);
     }
 
+    static void setDsn(String dsn) {
+        setup();
+        Log.dsn = dsn;
+        if (activity != null) {
+            d(TAG, "setDsn");
+            Sentry.init(activity, dsn);
+        }
+    }
+
     static void setup() {
         if (inited)
             return;
         inited = true;
-        dsn = "https://528123420aa94452a7dfb6dc08ff4a34:5e26315ac6d54b94bc23c6cb05f55854@app.getsentry.com/16563";
     }
 
     static private void logRaven(final String tag, final String message, final SentryEventLevel level) {

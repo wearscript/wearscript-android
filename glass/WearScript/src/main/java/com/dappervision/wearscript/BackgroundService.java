@@ -286,8 +286,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             reset();
             Log.d(TAG, "Disconnecting client");
-            if (client != null && client.isConnected())
-                client.disconnect();
+            if (client != null) {
+                client.shutdown();
+            }
             client = null;
             if (activity == null)
                 return;
@@ -485,15 +486,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
                     }
                 });
-            } else if (action.equals("pingStatus")) {
-                List<Value> output = new ArrayList<Value>();
-                output.add(ValueFactory.createRawValue("pongStatus"));
-                output.add(ValueFactory.createRawValue(glassID));
-                // Display: On/Off  Activity Visible: True/False, Sensor Count (Raw): Map<Integer, Integer>, Sensor Count (Saved): Map<Integer, Integer>
-                // Javascript: ?
-                synchronized (lock) {
-                    client.send(msgpack.write(output));
-                }
             } else if (action.equals("sensors")) {
                 TreeMap<String, Integer> types = new TreeMap<String, Integer>();
                 Value[] typesKeyValues = input.get(2).asMapValue().getKeyValueArray();
@@ -522,6 +514,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     if (jsCallback != null)
                         webview.loadUrl(jsCallback);
                 }
+            } else if (action.equals("raven")) {
+                Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {
                 String name = input.get(1).asRawValue().getString();
                 byte[] blob = input.get(2).asRawValue().getByteArray();
