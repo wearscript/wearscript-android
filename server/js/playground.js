@@ -27,9 +27,6 @@ function createQR(WSUrl) {
 }
 
 function pingStatus() {
-    if (!_.has(window, 'glassStatus')) {
-        glassStatus = {}
-    }
     var allTimedOut = _.every(_.map($('.pingLabel'), function (x) {
         if ((new Date).getTime() - Number($(x).attr('updateTime')) > 4000) {
             $(x).removeClass('label-success').addClass('label-danger');
@@ -37,13 +34,7 @@ function pingStatus() {
         }
         return false;
     }));
-    if (allTimedOut) {
-        scriptRowDisabled = true;
-        $(".scriptel").prop('disabled', true);
-    }
-    var out = ['pingStatus'];
-    ws.send(enc(out));
-    _.delay(pingStatus, 4000);
+    _.delay(pingStatus, 500);
 }
 
 function enc(data) {
@@ -57,7 +48,7 @@ function enc(data) {
 }
 
 function connectWebsocket(WSUrl) {
-    var url = WSUrl + "/ws/web";
+    var url = WSUrl + "/ws/client";
     console.log(url);
     var ws = new ReconnectingWebSocket(url);
     ws.onopen = function () {
@@ -72,10 +63,6 @@ function connectWebsocket(WSUrl) {
     ws.onclose = function () {
     }
     ws.onmessage = function (event) {
-        if (scriptRowDisabled) {
-            scriptRowDisabled = false;
-            $(".scriptel").prop('disabled', false);
-        }
         //var response = JSON.parse(event.data);
         var reader = new FileReader();
         reader.addEventListener("loadend", function () {
@@ -93,6 +80,11 @@ function connectWebsocket(WSUrl) {
                 }
             } else if (action == "log") {
                 console.log(response[1]);
+            } else if (action == 'connections') {
+                if (response[1] == 0)
+                    $(".scriptel").prop('disabled', true);
+                else
+                    $(".scriptel").prop('disabled', false);
             } else if (action == 'signScript') {
                 var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response[1]}}});
                 $.post('https://api.github.com/gists', data, function (result) {console.log(result);$('#script-url').val(result.files['wearscript.html'].raw_url)});
@@ -364,17 +356,8 @@ function main(WSUrl) {
         $.post('setup').error(function () {alert("Could not setup")});
     });
 
-    $('#buttonRaven').click(function () {
-        createKey("raven", function (x) {$('#secret-raven').html(_.escape(x))}, function () {alert("Could not get raven")})
-    });
-    $('#buttonNotify').click(function () {
-        createKey("notify", function (x) {$('#secret-notify').html(_.escape(x))}, function () {alert("Could not get notify")})
-    });
-    $('#buttonPupil').click(function () {
-        createKey("pupil", function (x) {$('#secret-pupil').html(_.escape(x))}, function () {alert("Could not get pupil")});
-    });
-    $('#buttonWS').click(function () {
-        createKey("ws", function (x) {$('#secret-ws').html(_.escape(x))}, function () {alert("Could not get ws")});
+    $('#buttonClient').click(function () {
+        createKey("client", function (x) {$('#secret-client').html(_.escape(WSUrl + "/ws/client/" + x))}, function () {alert("Could not get client endpoint")})
     });
 
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {

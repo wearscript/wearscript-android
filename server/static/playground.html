@@ -31,15 +31,13 @@
           <div class="col-md-6">
             <h2>Endpoints</h2>
             <div>
-              <button id="buttonRaven" class="btn btn-large btn-primary" type="button">Raven</button>
-              <button id="buttonNotify" class="btn btn-large btn-primary" type="button">Notify</button>
+              <button id="buttonClient" class="btn btn-large btn-primary" type="button">Client Endpoint</button>
               <button class="btn btn-primary" type="button" id="qrButton">QR</button>
             </div>
           </div>
         </div>
         <div class="row">
-          <span id="secret-raven"></span>
-          <span id="secret-notify"></span>
+          <span id="secret-client"></span>
           <div class="row" id="qr"></div>
         </div>
       <div class="row" id="switches"></div>
@@ -55,8 +53,8 @@
         <div>
           <form class="form-inline" role="form">
             <button class="btn btn-primary" type="button" id="shutdownButton">Shutdown</button>
-            <button class="btn btn-primary scriptel" type="button" id="resetButton">Reset</button>
-            <button class="btn btn-primary scriptel" type="button" id="gistButton">Save to Gist</button>
+            <button class="btn btn-primary" type="button" id="resetButton">Reset</button>
+            <button class="btn btn-primary" type="button" id="gistButton">Save to Gist</button>
             <button class="btn btn-primary scriptel" type="button" id="scriptButton">Wear This Script</button>
             <button class="btn btn-primary scriptel" type="button" id="scriptSaveButton">Save Script</button>
             <button class="btn btn-primary scriptel" type="button" id="scriptUrlButton">Wear Script From URL</button>
@@ -76,24 +74,6 @@
 </div> <!-- /container -->
 <script src="static/compressed.js"></script>
 
-<!--<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script src="static/reconnecting-websocket.min.js"></script>
-<script src="static/msgpack.js"></script>
-<script src="static/bootstrap.min.js"></script>
-<script src="static/codemirror.js"></script>
-<script src="static/bootstrap-switch.min.js"></script>
-<script src="static/d3.v3.min.js"></script>
-<script src="static/rickshaw.min.js"></script>
-<script src="static/playground.js"></script>
-<script src="static/matchbrackets.js"></script>
-<script src="static/active-line.js"></script>
-<script src="static/css.js"></script>
-<script src="static/javascript.js"></script>
-<script src="static/xml.js"></script>
-<script src="static/htmlmixed.js"></script>
-<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
--->
 <script type="text/javascript">
     $(function () {main("{{.WSUrl}}")});
 </script>

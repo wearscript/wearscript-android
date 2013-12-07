@@ -8,6 +8,7 @@ All encoding is done using `msgpack <http://msgpack.org>`_ with lists as the bas
 * ('signScript', script)
 * ('startScriptUrl', url)
 * ('log', message)
+* ('raven', ravenDSN)
 * ('pingStatus')
 * ('version', version), where version is an integer
 * ('pongStatus', glassID)
@@ -24,6 +25,6 @@ All encoding is done using `msgpack <http://msgpack.org>`_ with lists as the bas
 
 * ('image', glassID, timestamp, image)
 * ('shutdown')
+* ('connections', numGlass, numClient)
 * ('timeline', timelineJS)
-* ('sendTimelineImage', image)
 * ('blob', name, blob)

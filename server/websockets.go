@@ -8,8 +8,10 @@ import (
 	"strings"
 	"encoding/json"
 	"time"
+	"sync"
 )
 
+var Locks = map[string]*sync.Mutex{} // [user]
 var DeviceChannels = map[string][]chan *[]interface{}{} // [user]
 var WebChannels = map[string][]chan **[]interface{}{}    // [user]
 
@@ -18,6 +20,7 @@ func CurTime() float64 {
 }
 
 func WSSendWeb(userId string, data **[]interface{}) error {
+	Locks[userId].Lock()
 	for _, c := range WebChannels[userId] {
 		select {
 		case c <- data:
@@ -26,10 +29,12 @@ func WSSendWeb(userId string, data **[]interface{}) error {
 			fmt.Println("Data skipped, web client too slow...")
 		}
 	}
+	Locks[userId].Unlock()
 	return nil
 }
 
 func WSSendDevice(userId string, data *[]interface{}) error {
+	Locks[userId].Lock()
 	for _, c := range DeviceChannels[userId] {
 		select {
 		case c <- data:
@@ -38,8 +43,24 @@ func WSSendDevice(userId string, data *[]interface{}) error {
 			fmt.Println("Data skipped, device too slow...")
 		}
 	}
+	Locks[userId].Unlock()
 	return nil
 }
+
+func WSUpdateConnections(userId string) error {
+	Locks[userId].Lock()
+	p := &[]interface{}{[]uint8("connections"), len(DeviceChannels[userId]), len(WebChannels[userId])}
+	fmt.Println(*p)
+	for _, c := range DeviceChannels[userId] {
+		c <- p
+	}
+	for _, c := range WebChannels[userId] {
+		c <- &p
+	}
+	Locks[userId].Unlock()
+	return nil
+}
+
 func MsgpackMarshal(v interface{}) (data []byte, payloadType byte, err error) {
 	mh := codec.MsgpackHandle{}
 	enc := codec.NewEncoderBytes(&data, &mh)
@@ -78,11 +99,31 @@ func WSGlassHandler(c *websocket.Conn) {
 		LogPrintf("ws: mirror")
 		return
 	}
-	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
+	// TODO: make buffer size configurable
+	if Locks[userId] == nil {
+		Locks[userId] = &sync.Mutex{}
+	}
+	Locks[userId].Lock()
 	wsSendChan := make(chan *[]interface{}, 5)
-	wsSendChan <- &[]interface{}{[]uint8("version"), version}
 	DeviceChannels[userId] = append(DeviceChannels[userId], wsSendChan)
-	visionChan := make(chan *[]interface{})
+	Locks[userId].Unlock()
+	WSUpdateConnections(userId)
+	wsSendChan <- &[]interface{}{[]uint8("version"), version}
+	if ravenDSN != "" {
+		wsSendChan <- &[]interface{}{[]uint8("raven"), ravenDSN}
+	}
+	defer func () {
+		Locks[userId].Lock()
+		var p []chan *[]interface{}
+		for _, v := range DeviceChannels[userId] {
+			if v != wsSendChan {
+				p = append(p, v)
+			}
+		}
+		DeviceChannels[userId] = p
+		Locks[userId].Unlock()
+		WSUpdateConnections(userId)
+	}()
 	var latestSensors, latestImage *[]interface{}
 
 	// Initialize delays
@@ -106,22 +147,6 @@ func WSGlassHandler(c *websocket.Conn) {
 		}
 	}()
 
-	// Vision
-	go func() {
-		for {
-			request, ok := <-visionChan
-			if !ok {
-				die = true
-				break
-			}
-			input := string((*request)[3].([]uint8))
-			output := process_image(&input)
-			if output != nil {
-				WSSendDevice(userId, &[]interface{}{[]uint8("image"), (*request)[1], (*request)[2], []uint8(*output)})
-			}
-		}
-	}()
-
 	// Data from glass loop
 	for {
 		request := []interface{}{}
@@ -138,7 +163,7 @@ func WSGlassHandler(c *websocket.Conn) {
 			break
 		}
 		action := string(request[0].([]uint8))
-		fmt.Println(action)
+		//fmt.Println(action)
 		if action == "timeline" {
 			ti := mirror.TimelineItem{}
 			err = json.Unmarshal(request[1].([]uint8), &ti)
@@ -162,11 +187,6 @@ func WSGlassHandler(c *websocket.Conn) {
 		} else if action == "image" {
 			latestImage = requestP
 			WSSendWeb(userId, &latestImage)
-			select {
-			case visionChan <- requestP:
-			default:
-				fmt.Println("Image skipped vision processing, it was busy...")
-			}
 		} else {
 			WSSendWeb(userId, &requestP)
 		}
@@ -182,25 +202,47 @@ func WSWebHandler(c *websocket.Conn) {
 			fmt.Println("Bad path")
 			return
 		}
-		userId, err = getSecretUser("ws", secretHash(path[len(path)-1]))
+		userId, err = getSecretUser("client", secretHash(path[len(path)-1]))
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
 	fmt.Println("Websocket connected")
-	// TODO: Look into locking and add defer to cleanup later, make buffer size configurable
-	// TODO: This needs the "die" code added, look into glass side also
+	// TODO: make buffer size configurable
+	if Locks[userId] == nil {
+		Locks[userId] = &sync.Mutex{}
+	}
+	die := false
+	Locks[userId].Lock()
 	wsSendChan := make(chan **[]interface{}, 5)
+	WebChannels[userId] = append(WebChannels[userId], wsSendChan)
+	Locks[userId].Unlock()
+	WSUpdateConnections(userId)
 	versionRequestP := &[]interface{}{[]uint8("version"), version}
 	wsSendChan <- &versionRequestP
-	WebChannels[userId] = append(WebChannels[userId], wsSendChan)
+	if ravenDSN != "" {
+		ravenRequestP := &[]interface{}{[]uint8("raven"), ravenDSN}
+		wsSendChan <- &ravenRequestP
+	}
+	defer func () {
+		Locks[userId].Lock()
+		var p []chan **[]interface{}
+		for _, v := range WebChannels[userId] {
+			if v != wsSendChan {
+				p = append(p, v)
+			}
+		}
+		WebChannels[userId] = p
+		Locks[userId].Unlock()
+		WSUpdateConnections(userId)
+	}()
 	var lastSensors, lastImage *[]interface{}
 	// Websocket sender
 	go func() {
 		for {
 			request, ok := <-wsSendChan
-			if !ok {
+			if !ok || die {
 				break
 			}
 			msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
@@ -235,23 +277,12 @@ func WSWebHandler(c *websocket.Conn) {
 		err := msgcodec.Receive(c, &request)
 		if err != nil {
 			fmt.Println(err)
+			die = true
 			return
 		}
 		action := string(request[0].([]uint8))
 		fmt.Println(action)
-		if action == "sendTimelineImage" {
-			trans := authTransport(userId)
-			if trans == nil {
-				LogPrintf("notify: auth")
-				continue
-			}
-			svc, err := mirror.New(trans.Client())
-			if err != nil {
-				LogPrintf("notify: mirror")
-				continue
-			}
-			sendImageCard(request[1].(string), "", svc)
-		} else if action == "signScript" {
+		if action == "signScript" {
 			scriptBytes, err := SignatureSignScript(userId, request[1].([]byte))
 			if err != nil {
 				LogPrintf("notify: request")
