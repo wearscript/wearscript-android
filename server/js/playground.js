@@ -56,7 +56,12 @@ function connectWebsocket(WSUrl) {
         function receiveMessage(event) {
             // TODO(brandyn): Check source! (security hazard)
             console.log(event.data);
-            ws.send(event.data);
+            var eventData = msgpack.unpack(event.data);
+            if (eventData[0] === 'widgetHeight') {
+                $('#iframe').attr('height', Number(eventData[1]) + 'px')
+            } else {
+                ws.send(event.data);
+            }
         }
         window.addEventListener("message", receiveMessage, false);
     }
@@ -319,6 +324,7 @@ function main(WSUrl) {
     if ($('#iframe').attr('src').length) {
         iframeWindow = $('#iframe')[0].contentWindow;
         iframeHost = urlToHost($('#iframe').attr('src'));
+        $('#iframeRow').css('display', '');
     }
 
     $(".scriptel").prop('disabled', true);

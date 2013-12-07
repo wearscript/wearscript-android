@@ -157,6 +157,7 @@ func WSGlassHandler(c *websocket.Conn) {
 			LogPrintf("ws: from glass")
 			fmt.Println(err)
 			die = true
+			close(wsSendChan)
 			break
 		}
 		if die {
@@ -278,6 +279,7 @@ func WSWebHandler(c *websocket.Conn) {
 		if err != nil {
 			fmt.Println(err)
 			die = true
+			close(wsSendChan)
 			return
 		}
 		action := string(request[0].([]uint8))

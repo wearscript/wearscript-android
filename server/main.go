@@ -218,6 +218,8 @@ func main() {
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))
 	http.Handle("/ws/client", websocket.Handler(WSWebHandler))
 	http.Handle("/ws/client/", websocket.Handler(WSWebHandler))
+	http.Handle("/ws/web", websocket.Handler(WSWebHandler))
+	http.Handle("/ws/web/", websocket.Handler(WSWebHandler))
 	m.Get("/", http.HandlerFunc(PlaygroundServer))
 	http.Handle("/", m)
 	err := http.ListenAndServe(":"+servePort, nil)
