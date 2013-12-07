@@ -181,7 +181,7 @@ public class WearScript {
         bs.wake();
     }
 
-    public void QR(String cb) {
+    public void qr(String cb) {
         Log.i(TAG, "QR");
         bs.getQRService().registerCallback(cb);
         bs.getQRService().startActivity();

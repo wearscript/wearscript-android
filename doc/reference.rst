@@ -26,6 +26,13 @@ In the JavaScript environment there is a WS object that has the following method
 
 * WS.sensorOff(int type)
 * WS.say(String message): Uses Text-to-Speach to read text
+* WS.qr(String callback): Open a QR scanner, return scan results via a callback from zxing
+
+  * Callback has parameters of the form function callback(data, format)
+  * data(string): The scanned data (e.g., http://wearscript.com)
+  * format(string): The format of the data (e.g., QR_CODE)
+
+
 * WS.log(String message): Log a message to the Android log and the JavaScript console of the webapp (if connected to a server).
 * WS.displayWebView(): Display the WebView activity (this is the default, reserved for future use when we may have alternate views).
 * WS.shutdown(): Shuts down wearscript
