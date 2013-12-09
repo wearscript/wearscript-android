@@ -36,7 +36,7 @@ Building an Eye Tracker
 .. raw:: html
 
   <div style="position: relative;margin-bottom: 30px;padding-bottom: 56.25%;padding-top: 30px; height: 0; overflow: hidden;">
-    <iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;" src="http://www.youtube.com/embed/K4k8SOrJM0c" frameborder="0"></iframe>
+    <iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;" src="http://www.youtube.com/embed/uoeUJYn5C-g" frameborder="0"></iframe>
   </div>
 
 
