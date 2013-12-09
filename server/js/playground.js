@@ -351,7 +351,7 @@ function main(WSUrl) {
         window.location.replace('auth');
     });
     $('#buttonSignout').click(function () {
-        $.post('signout', {success: function () {location.reload()}}).error(function () {alert("Could not signout")});
+        $.post('signout', {success: function () {location.reload()}});
     });
 
     $('#buttonSetup').click(function () {

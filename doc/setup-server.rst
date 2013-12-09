@@ -8,8 +8,7 @@ Server Setup
 0a. Using Our Server
 ----------------
 * Visit https://api.picar.us/wearscript/, click "authenticate", then sign-in using your Google acccount
-* Contact brandyn in #openshades on IRC freenode to be white-listed (you must authenticate before we can add you)
-* After being whitelisted you can do :ref:`connecting-client-to-server`
+* Alternatively, we provide a server that tracks the 'dev' branch https://api.picar.us/wearscriptdev/
 
 .. _your-server:
 
