@@ -16,7 +16,7 @@ import com.dappervision.wearscript.jsevents.CameraVideoEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.GestureCallbackEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
-import com.dappervision.wearscript.jsevents.PicariusEvent;
+import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.SensorJSEvent;
@@ -318,6 +318,6 @@ public class WearScript {
     }
 
     public void picarus(String config, String input, String callback) {
-        getEventBus().post(new PicariusEvent());
+        getEventBus().post(new PicarusEvent());
     }
 }

@@ -29,7 +29,7 @@ import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraEvent;
 import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
-import com.dappervision.wearscript.jsevents.PicariusEvent;
+import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
@@ -415,10 +415,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void loadPicarus() {
-        picarusManager = new PicarusManager(this);
-    }
-
     public void onSocketMessage(byte[] message) {
         try {
             List<Value> input = msgpack.read(message, tList(TValue));
@@ -721,8 +717,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onEvent(SpeechRecognizeEvent e){
         speechRecognize(e.getPrompt(), e.getCallback());
     }
-    public void onEvent(PicariusEvent e){
-        loadPicarus();
+
+    public void onEvent(PicarusEvent e){
+        picarusManager = new PicarusManager(this);
     }
 
     public void onEvent(SendBlobEvent e){
@@ -757,6 +754,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onEvent(ServerConnectEvent e){
         serverConnect(e.getServer(), e.getCallback());
     }
+
     public void serverTimeline(String ti) {
         synchronized (lock) {
             if (client != null && client.isConnected()) {
@@ -864,16 +862,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         public BackgroundService getService() {
             return BackgroundService.this;
         }
-    }
-
-    public void cameraPhoto() {
-        cameraManager.pause();
-        activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
-    }
-
-    public void cameraVideo() {
-        cameraManager.pause();
-        activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
     }
 
     public void speechRecognize(String prompt, String callback) {
