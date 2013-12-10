@@ -1,8 +1,11 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.activities;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+
+import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
 
 public class SetupActivity extends Activity {
     private static final String TAG = "SetupActivity";

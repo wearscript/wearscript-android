@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //A good 80% of this app is from the Android SDK home app sample
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.activities;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -26,6 +26,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
+
+import com.dappervision.wearscript.R;
+import com.dappervision.wearscript.WearScriptHelper;
 
 public class LauncherActivity extends Activity {
 

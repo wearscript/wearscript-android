@@ -1,7 +1,6 @@
 package com.dappervision.wearscript;
 
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.os.Handler;
@@ -11,6 +10,7 @@ import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
+import com.dappervision.wearscript.activities.MenuActivity;
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
 

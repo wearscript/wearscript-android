@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.dappervision.picarus.IPicarusService;
+import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.SendBlobEvent;
@@ -84,9 +85,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private String speechCallback;
 
     protected SocketClient client;
-    protected ScriptView webview;
+    public ScriptView webview;
     protected DataManager dataManager;
-    protected String wsUrl;
+    public String wsUrl;
     protected WifiManager wifiManager;
     protected GestureManager gestureManager;
     protected BarcodeManager BarcodeManager;
@@ -562,7 +563,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.e(TAG, "WS: Connection Error!", error);
     }
 
-    static protected String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
+    public static String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
         try {
             try {
                 File dir = new File(dataPath() + path);
@@ -609,7 +610,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    protected byte[] LoadData(String path, String suffix) {
+    public byte[] LoadData(String path, String suffix) {
         return LoadFile(new File(new File(dataPath() + path), suffix));
     }
 
@@ -924,7 +925,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public class LocalBinder extends Binder {
-        BackgroundService getService() {
+        public BackgroundService getService() {
             return BackgroundService.this;
         }
     }

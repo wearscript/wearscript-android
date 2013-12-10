@@ -1,4 +1,4 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.activities;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -11,13 +11,16 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 
+import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
+
 import de.greenrobot.event.EventBus;
 
 public class MainActivity extends Activity {
     protected static final String TAG = "WearScript";
     private static final String EXTRA_NAME = "extra";
     public boolean isGlass = true, isForeground = true;
-    protected BackgroundService bs;
+    public BackgroundService bs;
     ServiceConnection mConnection;
     private String extra;
     private boolean mHadUrlExtra = false;

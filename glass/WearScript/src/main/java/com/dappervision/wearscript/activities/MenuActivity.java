@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.activities;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -23,6 +23,11 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+
+import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.R;
+import com.dappervision.wearscript.WearScriptHelper;
 
 /**
  * Activity showing the options menu.

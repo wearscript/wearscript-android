@@ -1,4 +1,4 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.activities;
 
 import android.app.Activity;
 import android.content.Intent;

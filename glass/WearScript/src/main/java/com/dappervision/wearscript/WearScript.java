@@ -1,5 +1,6 @@
 package com.dappervision.wearscript;
 
+import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;

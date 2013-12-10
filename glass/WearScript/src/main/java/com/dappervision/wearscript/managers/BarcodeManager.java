@@ -8,7 +8,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.QRActivity;
+import com.dappervision.wearscript.activities.QRActivity;
 import com.dappervision.wearscript.jsevents.BarcodeCallbackEvent;
 
 import de.greenrobot.event.EventBus;

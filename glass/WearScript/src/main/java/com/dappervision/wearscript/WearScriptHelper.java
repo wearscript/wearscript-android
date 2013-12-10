@@ -12,12 +12,15 @@
 package com.dappervision.wearscript;
 
 import android.app.Activity;
-import android.content.*;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +39,7 @@ public class WearScriptHelper {
     private static final String WEARSCRIPT_PATH = BackgroundService.dataPath() + "scripts/";
     ;
     public static final String WS_PKG = "com.dappervision.wearscript";
-    public static final String WS_ACTIVITY = "com.dappervision.wearscript.MainActivity";
+    public static final String WS_ACTIVITY = "com.dappervision.wearscript.activities.MainActivity";
 
     private Activity mActivity;
     private IntentFilter mfilter;
