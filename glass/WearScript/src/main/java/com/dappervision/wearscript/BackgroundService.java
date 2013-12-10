@@ -26,9 +26,7 @@ import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
-import com.dappervision.wearscript.jsevents.CameraEvent;
-import com.dappervision.wearscript.jsevents.CameraFrameEvent;
-import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
+import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
@@ -234,7 +232,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void onEventAsync(CameraFrameEvent frameEvent) {
+    public void onEventAsync(CameraEvents.Frame frameEvent) {
         try {
             final CameraManager.CameraFrame frame = frameEvent.getCameraFrame();
             // TODO(brandyn): Move this timing logic into the camera manager
@@ -685,7 +683,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
-    public void onEvent(CameraPhotoEvent e){
+    public void onEvent(CameraEvents.Photo e){
         photoCallback = e.getCallback();
     }
 

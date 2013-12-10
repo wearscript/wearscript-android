@@ -11,8 +11,6 @@ import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.activities.QRActivity;
 import com.dappervision.wearscript.jsevents.BarcodeCallbackEvent;
 
-import de.greenrobot.event.EventBus;
-
 public class BarcodeManager extends Manager {
     public BarcodeManager(BackgroundService bs) {
         super(bs);

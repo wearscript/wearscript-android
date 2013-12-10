@@ -1,8 +1,5 @@
 package com.dappervision.wearscript.jsevents;
 
-/**
- * Created by kurt on 12/9/13.
- */
 public class ActivityEvent implements JSBusEvent {
     private Mode mode;
     public enum Mode {

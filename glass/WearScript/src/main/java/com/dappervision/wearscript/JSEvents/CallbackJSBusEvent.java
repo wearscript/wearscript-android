@@ -3,7 +3,7 @@ package com.dappervision.wearscript.jsevents;
 /**
  * Created by kurt on 12/9/13.
  */
-public abstract class CallbackJSBusEvent implements JSBusEvent {
+public abstract class CallbackJSBusEvent implements com.dappervision.wearscript.jsevents.JSBusEvent {
     private String callback;
 
     public CallbackJSBusEvent(String callback){

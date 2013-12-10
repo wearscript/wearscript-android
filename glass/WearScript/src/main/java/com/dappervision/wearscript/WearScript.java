@@ -10,9 +10,7 @@ import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.BarcodeCallbackEvent;
 import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
-import com.dappervision.wearscript.jsevents.CameraEvent;
-import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
-import com.dappervision.wearscript.jsevents.CameraVideoEvent;
+import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.GestureCallbackEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
@@ -131,23 +129,23 @@ public class WearScript {
     }
 
     public void cameraOff() {
-        getEventBus().post(new CameraEvent(0));
+        getEventBus().post(new CameraEvents.Start(0));
     }
 
     public void cameraPhoto() {
-        getEventBus().post(new CameraPhotoEvent(null));
+        getEventBus().post(new CameraEvents.Photo(null));
     }
 
     public void cameraPhoto(String callback) {
-        getEventBus().post(new CameraPhotoEvent(callback));
+        getEventBus().post(new CameraEvents.Photo(callback));
     }
 
     public void cameraVideo() {
-        getEventBus().post(new CameraVideoEvent(null));
+        getEventBus().post(new CameraEvents.Video(null));
     }
 
     public void cameraOn(double imagePeriod) {
-        getEventBus().post(new CameraEvent(imagePeriod));
+        getEventBus().post(new CameraEvents.Start(imagePeriod));
     }
 
     public void cameraCallback(int type, String callback) {
