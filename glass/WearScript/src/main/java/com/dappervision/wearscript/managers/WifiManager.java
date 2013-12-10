@@ -12,9 +12,6 @@ import com.dappervision.wearscript.jsevents.WifiScanEvent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-/**
- * Created by kurt on 12/9/13.
- */
 public class WifiManager extends Manager {
     public static final String SCAN_RESULTS_AVAILABLE_ACTION = android.net.wifi.WifiManager.SCAN_RESULTS_AVAILABLE_ACTION;
     android.net.wifi.WifiManager manager;

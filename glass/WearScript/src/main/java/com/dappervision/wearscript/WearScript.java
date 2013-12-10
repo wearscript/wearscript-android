@@ -1,11 +1,5 @@
 package com.dappervision.wearscript;
 
-import com.dappervision.wearscript.activities.MainActivity;
-import com.dappervision.wearscript.dataproviders.DataPoint;
-import com.dappervision.wearscript.events.LogEvent;
-import com.dappervision.wearscript.events.SendBlobEvent;
-import com.dappervision.wearscript.events.ServerConnectEvent;
-import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.BarcodeCallbackEvent;
 import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
@@ -25,6 +19,12 @@ import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
 import com.dappervision.wearscript.jsevents.WifiEvent;
 import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.dataproviders.DataPoint;
+import com.dappervision.wearscript.events.LogEvent;
+import com.dappervision.wearscript.events.SendBlobEvent;
+import com.dappervision.wearscript.events.ServerConnectEvent;
+import com.dappervision.wearscript.events.ShutdownEvent;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

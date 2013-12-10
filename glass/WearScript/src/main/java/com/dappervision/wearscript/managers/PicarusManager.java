@@ -12,9 +12,6 @@ import com.dappervision.picarus.IPicarusService;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 
-/**
- * Created by kurt on 12/9/13.
- */
 public class PicarusManager extends Manager {
     public PicarusManager(BackgroundService service) {
         super(service);

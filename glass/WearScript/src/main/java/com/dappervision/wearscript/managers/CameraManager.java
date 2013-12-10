@@ -6,16 +6,14 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.provider.MediaStore;
 import android.util.Base64;
-import android.view.ViewGroup;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraEvent;
 import com.dappervision.wearscript.jsevents.CameraFrameEvent;
 import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
 import com.dappervision.wearscript.jsevents.CameraVideoEvent;
-import com.dappervision.wearscript.managers.Manager;
+import com.dappervision.wearscript.Log;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
