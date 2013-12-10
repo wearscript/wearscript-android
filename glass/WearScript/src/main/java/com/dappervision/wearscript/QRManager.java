@@ -7,12 +7,15 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 
-public class QRService {
-    private BackgroundService service;
+import com.dappervision.wearscript.jsevents.QREvent;
+
+import de.greenrobot.event.EventBus;
+
+public class QRManager extends Manager{
     private String callback;
 
-    QRService(BackgroundService bs) {
-        service = bs;
+    QRManager(BackgroundService bs) {
+        super(bs);
         IntentFilter QRIntentFilter = new IntentFilter(QRActivity.ACTION_RESULT);
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
@@ -23,6 +26,13 @@ public class QRService {
             }
         };
         LocalBroadcastManager.getInstance(service).registerReceiver(receiver, QRIntentFilter);
+
+       EventBus.getDefault().register(this);
+    }
+
+    public void onEvent(QREvent e){
+        registerCallback(e.getCallback());
+        startActivity();
     }
 
     public void registerCallback(String cb) {

@@ -7,11 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.hardware.SensorManager;
 import android.media.AudioRecord;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
@@ -32,13 +28,10 @@ import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
-import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraEvent;
 import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
-import com.dappervision.wearscript.jsevents.CameraVideoEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicariusEvent;
-import com.dappervision.wearscript.jsevents.QREvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
@@ -49,8 +42,6 @@ import com.dappervision.wearscript.jsevents.WifiScanEvent;
 import com.google.android.glass.media.Camera;
 import com.google.android.glass.widget.CardScrollView;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
 import org.msgpack.type.Value;
@@ -93,7 +84,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String wsUrl;
     protected WifiManager wifiManager;
     protected GestureManager gestureManager;
-    protected QRService QRService;
+    protected QRManager QRManager;
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public TreeMap<String, String> blobCallbacks;
@@ -659,27 +650,31 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public String getMacAddress() {
-        WifiInfo info = wifiManager.getConnectionInfo();
-        return info.getMacAddress();
+        return wifiManager.getMacAddress();
     }
 
     @Override
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
-        WearScript.getEventBus().register(this);
         EventBus.getDefault().register(this);
-         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         broadcastReceiver = new ScreenBroadcastReceiver(this);
         registerReceiver(broadcastReceiver, intentFilter);
-        QRService = new QRService(this);
-        tts = new TextToSpeech(this, this);
-        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        glassID = getMacAddress();
-        dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE), this);
+
+        //Plugin new Managers here
+        dataManager = new DataManager(this);
         cameraManager = new CameraManager(this);
+        QRManager = new QRManager(this);
+        wifiManager = new WifiManager(this);
+
+        tts = new TextToSpeech(this, this);
+
+        glassID = getMacAddress();
+
         cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
         cardScroller = new CardScrollView(this);
         cardScroller.setAdapter(cardScrollAdapter);
@@ -700,21 +695,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void wifiScanResults() {
-        Double timestamp = System.currentTimeMillis() / 1000.;
-        JSONArray a = new JSONArray();
-        for (ScanResult s : wifiManager.getScanResults()) {
-            JSONObject r = new JSONObject();
-            r.put("timestamp", timestamp);
-            r.put("capabilities", new String(s.capabilities));
-            r.put("SSID", new String(s.SSID));
-            r.put("BSSID", new String(s.BSSID));
-            r.put("level", new Integer(s.level));
-            r.put("frequency", new Integer(s.frequency));
-            a.add(r);
-        }
-        String scanResults = a.toJSONString();
         if (wifiScanCallback != null && webview != null)
-            webview.loadUrl(String.format("javascript:%s(%s);", wifiScanCallback, scanResults));
+            webview.loadUrl(String.format("javascript:%s(%s);", wifiScanCallback, wifiManager.getScanResults()));
        // TODO(brandyn): Check if data logging is set and also buffer for those
     }
 
@@ -731,7 +713,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onDestroy() {
         Log.i(TAG, "Lifecycle: Service onDestroy");
-        WearScript.getEventBus().unregister(this);
         EventBus.getDefault().unregister(this);
         if (broadcastReceiver != null)
             unregisterReceiver(broadcastReceiver);
@@ -748,16 +729,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void onEvent(CameraPhotoEvent e){
         photoCallback = e.getCallback();
-        // TODO(brandyn): Callback should be in camera manager
-        getCameraManager().cameraPhoto();
-    }
-
-    public void onEvent(CameraVideoEvent e){
-        getCameraManager().cameraVideo();
-    }
-
-    public void onEvent(CameraCallbackEvent e){
-        getCameraManager().registerCallback(e.getType(), e.getCallback());
     }
 
     public void onEvent(CameraEvent e){
@@ -765,11 +736,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         if(period > 0){
             dataImage = true;
             imagePeriod = period * 1000000000L;
-            getCameraManager().register();
         }else{
             dataImage = false;
             // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
-            getCameraManager().unregister(true);
         }
     }
 
@@ -807,6 +776,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         dataLocal = e.isLocal();
         sensorDelay = e.getSensorDelay() * 1000000000L;
     }
+
     public void onEvent(SpeechRecognizeEvent e){
         speechRecognize(e.getPrompt(), e.getCallback());
     }
@@ -835,10 +805,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         log(e.getMsg());
     }
 
-    public void onEvent(QREvent e){
-        getQRService().registerCallback(e.getCallback());
-        getQRService().startActivity();
-    }
     public void onEvent(ServerTimelineEvent e){
         serverTimeline(e.getMsg());
     }
@@ -927,8 +893,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         // TODO: Check result on else
     }
 
-    public QRService getQRService() {
-        return QRService;
+    public QRManager getQRManager() {
+        return QRManager;
     }
 
     class ScreenBroadcastReceiver extends BroadcastReceiver {

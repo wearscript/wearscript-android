@@ -7,16 +7,14 @@ import com.dappervision.wearscript.jsevents.SensorJSEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DataManager {
+public class DataManager extends Manager{
     SensorManager sensorManager;
     ConcurrentHashMap<Integer, DataProvider> providers;
     ConcurrentHashMap<Integer, String> jsCallbacks;
-    BackgroundService bs;
 
-    DataManager(SensorManager sensorManager, BackgroundService bs) {
-        this.sensorManager = sensorManager;
-        this.bs = bs;
-        WearScript.getEventBus().register(this);
+    DataManager(BackgroundService bs) {
+        super(bs);
+        this.sensorManager = (SensorManager) bs.getSystemService(Context.SENSOR_SERVICE);
         providers = new ConcurrentHashMap<Integer, DataProvider>();
         jsCallbacks = new ConcurrentHashMap<Integer, String>();
     }
@@ -54,11 +52,11 @@ public class DataManager {
     }
 
     public Context getContext() {
-        return bs.getApplicationContext();
+        return service.getApplicationContext();
     }
 
     public void queue(DataPoint dp) {
-        bs.handleSensor(dp, buildCallbackString(dp));
+        service.handleSensor(dp, buildCallbackString(dp));
     }
 
     public String buildCallbackString(DataPoint dp) {

@@ -7,6 +7,11 @@ import android.hardware.Camera;
 import android.provider.MediaStore;
 import android.util.Base64;
 
+import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraEvent;
+import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
+import com.dappervision.wearscript.jsevents.CameraVideoEvent;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
@@ -20,8 +25,7 @@ import org.opencv.imgproc.Imgproc;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CameraManager implements Camera.PreviewCallback  {
-    private final BackgroundService bs;
+public class CameraManager extends Manager implements Camera.PreviewCallback {
     private static final String TAG = "CameraManager";
     private static final int MAGIC_TEXTURE_ID = 10;
     private Camera camera;
@@ -71,8 +75,30 @@ public class CameraManager implements Camera.PreviewCallback  {
     }
 
     CameraManager(BackgroundService bs) {
-        this.bs = bs;
+        super(bs);
         jsCallbacks = new ConcurrentHashMap<Integer, String>();
+    }
+
+    public void onEvent(CameraPhotoEvent e){
+        // TODO(brandyn): Callback should be in camera manager
+        cameraPhoto();
+    }
+
+    public void onEvent(CameraVideoEvent e){
+        cameraVideo();
+    }
+
+    public void onEvent(CameraCallbackEvent e){
+        registerCallback(e.getType(), e.getCallback());
+    }
+
+    public void onEvent(CameraEvent e){
+        double period = e.getPeriod();
+        if(period > 0){
+            register();
+        }else{
+            unregister(true);
+        }
     }
 
     public void unregister(boolean resetCallbacks) {
@@ -109,7 +135,7 @@ public class CameraManager implements Camera.PreviewCallback  {
     }
 
     public void register() {
-        BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(bs) {
+        BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(service) {
             @Override
             public void onManagerConnected(int status) {
                 switch (status) {
@@ -126,7 +152,7 @@ public class CameraManager implements Camera.PreviewCallback  {
                 }
             }
         };
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, bs, mLoaderCallback);
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, service, mLoaderCallback);
     }
 
     private void register_callback() {
@@ -203,7 +229,7 @@ public class CameraManager implements Camera.PreviewCallback  {
             }
             Log.d(TAG, "Preview Frame received. Frame size: " + data.length);
             cameraFrame.setFrame(data);
-            bs.handleImage(cameraFrame);
+            service.handleImage(cameraFrame);
             this.camera.addCallbackBuffer(buffer);
         }
     }
@@ -211,13 +237,13 @@ public class CameraManager implements Camera.PreviewCallback  {
     public void cameraPhoto() {
         pause();
         // TODO(brandyn): Get activity in a smarter way
-        bs.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
+        service.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
     }
 
     public void cameraVideo() {
         pause();
         // TODO(brandyn): Get activity in a smarter way
-        bs.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
+        service.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
     }
 
 }

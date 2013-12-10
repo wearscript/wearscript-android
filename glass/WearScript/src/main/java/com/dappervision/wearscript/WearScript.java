@@ -35,7 +35,6 @@ public class WearScript {
     String TAG = "WearScript";
     TreeMap<String, Integer> sensors;
     String sensorsJS;
-    private static final EventBus eventBus = new EventBus();
 
 
     WearScript(BackgroundService bs) {
@@ -56,10 +55,6 @@ public class WearScript {
     }
 
     public static EventBus getEventBus(){
-        return eventBus;
-    }
-
-    private EventBus getGlobalEventBus(){
         return EventBus.getDefault();
     }
 
@@ -69,7 +64,7 @@ public class WearScript {
 
     public void shutdown() {
         //Global event
-        getGlobalEventBus().post(new ShutdownEvent());
+        getEventBus().post(new ShutdownEvent());
     }
 
     public String sensors() {
@@ -98,7 +93,7 @@ public class WearScript {
 
     public void log(String msg) {
         //Global event
-        getGlobalEventBus().post(new LogEvent(msg));
+        getEventBus().post(new LogEvent(msg));
     }
 
     public void sensorOff(int type) {
@@ -109,7 +104,7 @@ public class WearScript {
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
         //Global event
-        getGlobalEventBus().post(new ServerConnectEvent(server, callback));
+        getEventBus().post(new ServerConnectEvent(server, callback));
     }
 
     public void displayWebView() {
@@ -210,7 +205,7 @@ public class WearScript {
 
     public void blobSend(String name, String blob) {
         Log.i(TAG, "blobSend");
-        getGlobalEventBus().post(new SendBlobEvent(name, blob));
+        getEventBus().post(new SendBlobEvent(name, blob));
     }
 
     public void gestureCallback(String event, String callback) {
