@@ -17,16 +17,6 @@ import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
-import com.dappervision.wearscript.jsevents.CameraFrameEvent;
-import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
-import com.dappervision.wearscript.jsevents.DataLogEvent;
-import com.dappervision.wearscript.jsevents.PicarusEvent;
-import com.dappervision.wearscript.jsevents.SayEvent;
-import com.dappervision.wearscript.jsevents.ScreenEvent;
-import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
-import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
@@ -34,6 +24,15 @@ import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
+import com.dappervision.wearscript.jsevents.ActivityEvent;
+import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraEvents;
+import com.dappervision.wearscript.jsevents.DataLogEvent;
+import com.dappervision.wearscript.jsevents.PicarusEvent;
+import com.dappervision.wearscript.jsevents.SayEvent;
+import com.dappervision.wearscript.jsevents.ScreenEvent;
+import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
+import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.DataManager;
@@ -233,7 +232,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void onEventAsync(CameraFrameEvent frameEvent) {
+    public void onEventAsync(CameraEvents.Frame frameEvent) {
         try {
             final CameraManager.CameraFrame frame = frameEvent.getCameraFrame();
             // TODO(brandyn): Move this timing logic into the camera manager
@@ -684,7 +683,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
-    public void onEvent(CameraPhotoEvent e){
+    public void onEvent(CameraEvents.Photo e){
         photoCallback = e.getCallback();
     }
 

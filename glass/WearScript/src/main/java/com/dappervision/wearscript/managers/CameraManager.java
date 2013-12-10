@@ -8,12 +8,9 @@ import android.provider.MediaStore;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
-import com.dappervision.wearscript.jsevents.CameraEvent;
-import com.dappervision.wearscript.jsevents.CameraFrameEvent;
-import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
-import com.dappervision.wearscript.jsevents.CameraVideoEvent;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraEvents;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -85,12 +82,12 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         super(bs);
     }
 
-    public void onEvent(CameraPhotoEvent e){
+    public void onEvent(CameraEvents.Photo e){
         // TODO(brandyn): Callback should be in camera manager
         cameraPhoto();
     }
 
-    public void onEvent(CameraVideoEvent e){
+    public void onEvent(CameraEvents.Video e){
         cameraVideo();
     }
 
@@ -98,7 +95,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         registerCallback(e.getType(), e.getCallback());
     }
 
-    public void onEvent(CameraEvent e){
+    public void onEvent(CameraEvents.Start e){
         imagePeriod  = Math.round(e.getPeriod() * 1000000000L);
         lastImageSaveTime = 0.;
 
@@ -246,7 +243,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             lastImageSaveTime = System.nanoTime();
             cameraFrame.setFrame(data);
             Log.d(TAG, "Frame on bus");
-            EventBus.getDefault().post(new CameraFrameEvent(cameraFrame, this));
+            EventBus.getDefault().post(new CameraEvents.Frame(cameraFrame, this));
         }
     }
 
