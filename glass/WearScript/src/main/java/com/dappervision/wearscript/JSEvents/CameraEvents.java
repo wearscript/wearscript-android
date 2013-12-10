@@ -30,17 +30,4 @@ public class CameraEvents {
         }
 
     }
-
-    public static class Photo extends CallbackJSBusEvent {
-        public Photo(String callback) {
-            super(callback);
-        }
-    }
-
-    public static class Video extends CallbackJSBusEvent {
-        public Video(String callback) {
-            super(callback);
-        }
-    }
-
 }

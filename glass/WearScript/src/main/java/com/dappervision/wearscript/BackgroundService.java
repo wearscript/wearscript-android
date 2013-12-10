@@ -25,7 +25,7 @@ import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
+import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
@@ -34,6 +34,7 @@ import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
@@ -683,8 +684,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
-    public void onEvent(CameraEvents.Photo e){
-        photoCallback = e.getCallback();
+    public void onEvent(CallbackRegistration e){
+        if(e.isManager(CameraManager.class)){
+            if(e.isEvent("PHOTO")){
+                photoCallback = e.getCallback();
+            }
+        }else if(e.isManager(BlobManager.class)){
+            registerBlobCallback(e.getEvent(), e.getCallback());
+        }
     }
 
     public void onEvent(JsCall e){
@@ -725,10 +732,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void onEvent(SendBlobEvent e){
         blobSend(e.getName(), e.getBlob());
-    }
-
-    public void onEvent(BlobCallbackEvent e){
-        registerBlobCallback(e.getName(), e.getCallback());
     }
 
     public void onEvent(ScreenEvent e){

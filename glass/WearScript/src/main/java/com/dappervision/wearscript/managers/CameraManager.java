@@ -9,7 +9,7 @@ import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
+import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -31,6 +31,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private static final int MAGIC_TEXTURE_ID = 10;
     public static final String LOCAL = "0";
     public static final String REMOTE = "1";
+    public static final String PHOTO = "PHOTO";
+    public static final String VIDEO = "VIDEO";
     private Camera camera;
     private byte[] buffer;
     private SurfaceTexture surfaceTexture;
@@ -82,17 +84,14 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         super(bs);
     }
 
-    public void onEvent(CameraEvents.Photo e){
-        // TODO(brandyn): Callback should be in camera manager
-        cameraPhoto();
-    }
-
-    public void onEvent(CameraEvents.Video e){
-        cameraVideo();
-    }
-
-    public void onEvent(CameraCallbackEvent e){
-        registerCallback(e.getType(), e.getCallback());
+    public void setupCallback(CallbackRegistration r){
+        if(r.getEvent().equals(PHOTO)){
+            cameraPhoto();
+        }else if(r.getEvent().equals(VIDEO)){
+            cameraVideo();
+        }else{
+            registerCallback(r.getEvent(), r.getCallback());
+        }
     }
 
     public void onEvent(CameraEvents.Start e){

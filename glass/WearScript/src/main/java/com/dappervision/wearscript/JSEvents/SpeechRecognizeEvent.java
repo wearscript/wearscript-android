@@ -1,12 +1,18 @@
 package com.dappervision.wearscript.jsevents;
 
-public class SpeechRecognizeEvent extends CallbackJSBusEvent {
+public class SpeechRecognizeEvent implements JSBusEvent {
     private String prompt;
+    private String callback;
 
     public SpeechRecognizeEvent(String prompt, String callback){
-        super(callback);
+        this.callback = callback;
         this.prompt = prompt;
     }
+
+    public String getCallback() {
+        return callback;
+    }
+
     public String getPrompt() {
         return prompt;
     }

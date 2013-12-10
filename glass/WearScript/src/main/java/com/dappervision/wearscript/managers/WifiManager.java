@@ -5,7 +5,6 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
 import com.dappervision.wearscript.jsevents.WifiEvent;
 import com.dappervision.wearscript.jsevents.WifiScanEvent;
 
@@ -42,10 +41,6 @@ public class WifiManager extends Manager {
             a.add(r);
         }
         return a.toJSONString();
-    }
-
-    public void onEvent(WifiCallbackEvent e){
-        registerCallback("wifi", e.getCallback());
     }
 
     public void onEvent(WifiScanEvent e){
