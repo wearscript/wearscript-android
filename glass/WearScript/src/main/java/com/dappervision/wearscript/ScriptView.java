@@ -11,8 +11,11 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
 import com.dappervision.wearscript.activities.MenuActivity;
+import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
+
+import de.greenrobot.event.EventBus;
 
 public class ScriptView extends WebView implements SurfaceHolder.Callback {
     private static final String TAG = "ScriptView";
@@ -24,8 +27,9 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
 
     ScriptView(final BackgroundService context) {
         super(context);
+        EventBus.getDefault().register(this);
         this.context = context;
-	clearCache(true);
+	    clearCache(true);
         setWebChromeClient(new WebChromeClient() {
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 String msg = cm.message() + " -- From line " + cm.lineNumber() + " of " + cm.sourceId();
@@ -37,6 +41,13 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
         handler = new Handler();
     }
 
+    public void onEvent(LiveCardEvent e){
+        if(e.getPeriod() > 0){
+            liveCardPublish(e.isNonSilent(), Math.round(e.getPeriod() * 1000.));
+        }else{
+            liveCardUnpublish();
+        }
+    }
     public void liveCardPublish(boolean nonSilent, long drawFrequency) {
         if (liveCard != null)
             return;
@@ -87,6 +98,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
     }
 
     public void onDestroy() {
+        EventBus.getDefault().unregister(this);
         if (liveCard != null && liveCard.isPublished()) {
             Log.d(TAG, "Unpublishing LiveCard");
             liveCardUnpublish();

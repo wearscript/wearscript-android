@@ -14,6 +14,8 @@ import com.dappervision.wearscript.jsevents.CameraEvent;
 import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
 import com.dappervision.wearscript.jsevents.CameraVideoEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
+import com.dappervision.wearscript.jsevents.GestureCallbackEvent;
+import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.dappervision.wearscript.jsevents.PicariusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
@@ -212,7 +214,7 @@ public class WearScript {
 
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
-        bs.getGestureManager().registerCallback(event, callback);
+        getEventBus().post(new GestureCallbackEvent(event, callback));
     }
 
     public void speechRecognize(String prompt, String callback) {
@@ -220,11 +222,11 @@ public class WearScript {
     }
 
     public void liveCardCreate(boolean nonSilent, double period) {
-        bs.getScriptView().liveCardPublish(nonSilent, Math.round(period * 1000.));
+        getEventBus().post(new LiveCardEvent(nonSilent, period));
     }
 
     public void liveCardDestroy() {
-        bs.getScriptView().liveCardUnpublish();
+        getEventBus().post(new LiveCardEvent(false, 0));
     }
 
     public void cardInsert(final int position, final String cardJSON) {
