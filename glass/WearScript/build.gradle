@@ -23,6 +23,7 @@ android {
 }
 
 dependencies {
+    compile 'de.greenrobot:eventbus:2.2.0'
     compile files('libs/android-websockets.jar')
     compile files('libs/commons-codec-1.6.jar')
     compile files('libs/gdk.jar')

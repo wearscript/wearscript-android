@@ -16,28 +16,44 @@ import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
-import android.os.RemoteException;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.google.android.glass.media.Camera;
-
 import com.dappervision.picarus.IPicarusService;
+import com.dappervision.wearscript.events.LogEvent;
+import com.dappervision.wearscript.events.SendBlobEvent;
+import com.dappervision.wearscript.events.ServerConnectEvent;
+import com.dappervision.wearscript.events.ShutdownEvent;
+import com.dappervision.wearscript.jsevents.ActivityEvent;
+import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraEvent;
+import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
+import com.dappervision.wearscript.jsevents.CameraVideoEvent;
+import com.dappervision.wearscript.jsevents.DataLogEvent;
+import com.dappervision.wearscript.jsevents.PicariusEvent;
+import com.dappervision.wearscript.jsevents.QREvent;
+import com.dappervision.wearscript.jsevents.SayEvent;
+import com.dappervision.wearscript.jsevents.ScreenEvent;
+import com.dappervision.wearscript.jsevents.SensorJSEvent;
+import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
+import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
+import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
+import com.dappervision.wearscript.jsevents.WifiEvent;
+import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.google.android.glass.media.Camera;
+import com.google.android.glass.widget.CardScrollView;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-
-import com.google.android.glass.widget.CardScrollView;
-
-
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
-import org.msgpack.type.MapValue;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
@@ -51,8 +67,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
+
+import de.greenrobot.event.EventBus;
 
 import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
@@ -99,7 +116,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activityMode = mode;
                 if (mode.equals("webview") && webview != null) {
                     activityView = webview;
-                } else if (mode.equals("cardscroll"))  {
+                } else if (mode.equals("cardscroll")) {
                     activityView = cardScroller;
                 } else {
                 }
@@ -650,7 +667,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
-        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        WearScript.getEventBus().register(this);
+        EventBus.getDefault().register(this);
+         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -713,6 +732,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onDestroy() {
         Log.i(TAG, "Lifecycle: Service onDestroy");
+        WearScript.getEventBus().unregister(this);
+        EventBus.getDefault().unregister(this);
         if (broadcastReceiver != null)
             unregisterReceiver(broadcastReceiver);
         if (cameraManager != null) {
@@ -726,6 +747,121 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
+    public void onEvent(CameraPhotoEvent e){
+        photoCallback = e.getCallback();
+        // TODO(brandyn): Callback should be in camera manager
+        getCameraManager().cameraPhoto();
+    }
+
+    public void onEvent(CameraVideoEvent e){
+        getCameraManager().cameraVideo();
+    }
+
+    public void onEvent(CameraCallbackEvent e){
+        getCameraManager().registerCallback(e.getType(), e.getCallback());
+    }
+
+    public void onEvent(CameraEvent e){
+        double period = e.getPeriod();
+        if(period > 0){
+            dataImage = true;
+            imagePeriod = period * 1000000000L;
+            getCameraManager().register();
+        }else{
+            dataImage = false;
+            // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
+            getCameraManager().unregister(true);
+        }
+    }
+
+    public void onEvent(WifiEvent e){
+        dataWifi = e.getStatus();
+    }
+    public void onEvent(WifiCallbackEvent e){
+        wifiScanCallback = e.getCallback();
+    }
+
+    public void onEvent(WifiScanEvent e){
+        wifiStartScan();
+    }
+
+    public void onEvent(SayEvent e){
+        say("Script version incompatible with client");
+    }
+
+    public void onEvent(ActivityEvent e){
+        if(e.getMode() == ActivityEvent.Mode.CREATE){
+            Intent i = new Intent(this, MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        }else if(e.getMode() == ActivityEvent.Mode.DESTROY){
+            activity.get().finish();
+        }else if(e.getMode() == ActivityEvent.Mode.WEBVIEW){
+            updateActivityView("webview");
+        }else if(e.getMode() == ActivityEvent.Mode.CARD_SCROLL){
+            updateActivityView("cardscroll");
+        }
+    }
+
+    public void onEvent(DataLogEvent e){
+        dataRemote = e.isServer();
+        dataLocal = e.isLocal();
+        sensorDelay = e.getSensorDelay() * 1000000000L;
+    }
+    public void onEvent(SpeechRecognizeEvent e){
+        speechRecognize(e.getPrompt(), e.getCallback());
+    }
+    public void onEvent(PicariusEvent e){
+        loadPicarus();
+    }
+
+    public void onEvent(SendBlobEvent e){
+        blobSend(e.getName(), e.getBlob());
+    }
+
+    public void onEvent(BlobCallbackEvent e){
+        registerBlobCallback(e.getName(), e.getCallback());
+    }
+
+    public void onEvent(ScreenEvent e){
+        wake();
+    }
+
+    public void onEvent(DataPoint dp){
+        handleSensor(dp, null);
+    }
+
+    public void onEvent(LogEvent e){
+        Log.i(TAG, "log: " + e.getMsg());
+        log(e.getMsg());
+    }
+
+    public void onEvent(SensorJSEvent e){
+        if(e.getStatus()){
+            getDataManager().registerProvider(e.getType(), Math.round(e.getSampleTime() * 1000000000L));
+            if(e.getCallback() != null){
+                getDataManager().registerCallback(e.getType(), e.getCallback());
+            }
+        }else{
+            getDataManager().unregister(e.getType());
+        }
+    }
+
+    public void onEvent(QREvent e){
+        getQRService().registerCallback(e.getCallback());
+        getQRService().startActivity();
+    }
+    public void onEvent(ServerTimelineEvent e){
+        serverTimeline(e.getMsg());
+    }
+
+    public void onEvent(ShutdownEvent e){
+        shutdown();
+    }
+
+    public void onEvent(ServerConnectEvent e){
+        serverConnect(e.getServer(), e.getCallback());
+    }
     public void serverTimeline(String ti) {
         synchronized (lock) {
             if (client != null && client.isConnected()) {
