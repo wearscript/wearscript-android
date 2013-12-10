@@ -691,7 +691,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEvent(SayEvent e){
-        say("Script version incompatible with client");
+        say(e.getMsg());
     }
 
     public void onEvent(ActivityEvent e){
