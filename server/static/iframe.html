@@ -16,7 +16,8 @@ function enc(data) {
     return data_out;
 }
 window.addEventListener('message',function(e) {
-parent.postMessage(enc(['shutdown']), 'https://api.picar.us');
+parent.postMessage(enc(['widgetHeight', 50]), 'https://api.picar.us');
+//parent.postMessage(enc(['shutdown']), 'https://api.picar.us');
 $('#d').html(JSON.stringify(msgpack.unpack(e.data)));
 },false);
 </script>

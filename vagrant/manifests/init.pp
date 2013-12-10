@@ -6,7 +6,7 @@ class apt_packages {
   exec { "apt-get-update":
     command => "/usr/bin/apt-get update",
   }
-      $pkgs = ["golang", "git", "mercurial", "redis-server", "libcv-dev", "python-opencv", "python-pip", "libevent-dev", "python-dev", "oracle-java7-installer", "libc6-i386", "lib32stdc++6", "lib32gcc1", "lib32ncurses5", "lib32z1", "xorg"]
+      $pkgs = ["golang", "git", "mercurial", "redis-server", "libcv-dev", "python-opencv", "python-pip", "libevent-dev", "python-dev", "oracle-java7-installer", "libc6-i386", "lib32stdc++6", "lib32gcc1", "lib32ncurses5", "lib32z1", "xorg", "rake", "bundler", "ruby1.9.1-dev", "nodejs", "emacs24-nox"]
       package {$pkgs: ensure => "installed",
       require => Exec[apt-get-update],
       }

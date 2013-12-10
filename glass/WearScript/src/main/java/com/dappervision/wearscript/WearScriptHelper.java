@@ -18,7 +18,6 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Environment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

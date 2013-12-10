@@ -6,7 +6,11 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.provider.MediaStore;
 import android.util.Base64;
-import android.util.Log;
+
+import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraEvent;
+import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
+import com.dappervision.wearscript.jsevents.CameraVideoEvent;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -19,17 +23,16 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class CameraManager implements Camera.PreviewCallback  {
-    private final BackgroundService bs;
+public class CameraManager extends Manager implements Camera.PreviewCallback {
     private static final String TAG = "CameraManager";
     private static final int MAGIC_TEXTURE_ID = 10;
+    public static final String LOCAL = "0";
+    public static final String REMOTE = "1";
     private Camera camera;
     private byte[] buffer;
     private SurfaceTexture surfaceTexture;
     private CameraFrame cameraFrame;
-    ConcurrentHashMap<Integer, String> jsCallbacks;
     private boolean paused;
     private boolean opencvLoaded;
 
@@ -72,8 +75,29 @@ public class CameraManager implements Camera.PreviewCallback  {
     }
 
     CameraManager(BackgroundService bs) {
-        this.bs = bs;
-        jsCallbacks = new ConcurrentHashMap<Integer, String>();
+        super(bs);
+    }
+
+    public void onEvent(CameraPhotoEvent e){
+        // TODO(brandyn): Callback should be in camera manager
+        cameraPhoto();
+    }
+
+    public void onEvent(CameraVideoEvent e){
+        cameraVideo();
+    }
+
+    public void onEvent(CameraCallbackEvent e){
+        registerCallback(e.getType(), e.getCallback());
+    }
+
+    public void onEvent(CameraEvent e){
+        double period = e.getPeriod();
+        if(period > 0){
+            register();
+        }else{
+            unregister(true);
+        }
     }
 
     public void unregister(boolean resetCallbacks) {
@@ -86,7 +110,7 @@ public class CameraManager implements Camera.PreviewCallback  {
             }
             camera = null;
             if (resetCallbacks) {
-                jsCallbacks = new ConcurrentHashMap<Integer, String>();
+                super.unregister();
                 paused = false;
             }
         }
@@ -110,7 +134,7 @@ public class CameraManager implements Camera.PreviewCallback  {
     }
 
     public void register() {
-        BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(bs) {
+        BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(service) {
             @Override
             public void onManagerConnected(int status) {
                 switch (status) {
@@ -127,7 +151,7 @@ public class CameraManager implements Camera.PreviewCallback  {
                 }
             }
         };
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, bs, mLoaderCallback);
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, service, mLoaderCallback);
     }
 
     private void register_callback() {
@@ -183,17 +207,11 @@ public class CameraManager implements Camera.PreviewCallback  {
         }
     }
 
-    public void registerCallback(Integer type, String jsFunction) {
-        synchronized (this) {
-            jsCallbacks.put(type, jsFunction);
-        }
-    }
-
-    public String buildCallbackString(Integer type, byte[] frameJPEG) {
+    public String buildCallbackString(String type, byte[] frameJPEG) {
         synchronized (this) {
             if (frameJPEG == null || !jsCallbacks.containsKey(type))
                 return null;
-            return String.format("javascript:%s(\"%s\");", jsCallbacks.get(type), Base64.encodeToString(frameJPEG, Base64.NO_WRAP));
+            return buildCallbackString(type, Base64.encodeToString(frameJPEG, Base64.NO_WRAP));
         }
     }
 
@@ -204,7 +222,7 @@ public class CameraManager implements Camera.PreviewCallback  {
             }
             Log.d(TAG, "Preview Frame received. Frame size: " + data.length);
             cameraFrame.setFrame(data);
-            bs.handleImage(cameraFrame);
+            service.handleImage(cameraFrame);
             this.camera.addCallbackBuffer(buffer);
         }
     }
@@ -212,13 +230,13 @@ public class CameraManager implements Camera.PreviewCallback  {
     public void cameraPhoto() {
         pause();
         // TODO(brandyn): Get activity in a smarter way
-        bs.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
+        service.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
     }
 
     public void cameraVideo() {
         pause();
         // TODO(brandyn): Get activity in a smarter way
-        bs.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
+        service.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
     }
 
 }

@@ -1,7 +1,5 @@
 package com.dappervision.wearscript;
 
-import android.util.Log;
-
 import com.codebutler.android_websockets.WebSocketClient;
 
 import org.apache.http.message.BasicNameValuePair;
@@ -15,6 +13,7 @@ public class SocketClient {
     private WebSocketClient client;
     private SocketListener listener;
     private String callback;
+    private boolean shutdown;
     private URI uri;
     private boolean connected;
 
@@ -22,8 +21,9 @@ public class SocketClient {
         this.listener = listener;
         this.uri = uri;
         this.callback = callback;
+        this.shutdown = false;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
-        Log.w(BackgroundService.TAG, "Lifecycle: Socket connecting to: " + uri);
+        Log.i(BackgroundService.TAG, "Lifecycle: Socket connecting");
         client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
     }
 
@@ -47,7 +47,14 @@ public class SocketClient {
         return listener;
     }
 
+    public void shutdown() {
+        this.shutdown = true;
+        disconnect();
+    }
+
     public void reconnect() {
+        if (shutdown)
+            return;
         Log.w(BackgroundService.TAG, "Lifecycle: Reconnecting socket");
 
         new Thread(new Runnable() {

@@ -27,9 +27,6 @@ function createQR(WSUrl) {
 }
 
 function pingStatus() {
-    if (!_.has(window, 'glassStatus')) {
-        glassStatus = {}
-    }
     var allTimedOut = _.every(_.map($('.pingLabel'), function (x) {
         if ((new Date).getTime() - Number($(x).attr('updateTime')) > 4000) {
             $(x).removeClass('label-success').addClass('label-danger');
@@ -37,13 +34,7 @@ function pingStatus() {
         }
         return false;
     }));
-    if (allTimedOut) {
-        scriptRowDisabled = true;
-        $(".scriptel").prop('disabled', true);
-    }
-    var out = ['pingStatus'];
-    ws.send(enc(out));
-    _.delay(pingStatus, 4000);
+    _.delay(pingStatus, 500);
 }
 
 function enc(data) {
@@ -57,7 +48,7 @@ function enc(data) {
 }
 
 function connectWebsocket(WSUrl) {
-    var url = WSUrl + "/ws/web";
+    var url = WSUrl + "/ws/client";
     console.log(url);
     var ws = new ReconnectingWebSocket(url);
     ws.onopen = function () {
@@ -65,17 +56,18 @@ function connectWebsocket(WSUrl) {
         function receiveMessage(event) {
             // TODO(brandyn): Check source! (security hazard)
             console.log(event.data);
-            ws.send(event.data);
+            var eventData = msgpack.unpack(event.data);
+            if (eventData[0] === 'widgetHeight') {
+                $('#iframe').attr('height', Number(eventData[1]) + 'px')
+            } else {
+                ws.send(event.data);
+            }
         }
         window.addEventListener("message", receiveMessage, false);
     }
     ws.onclose = function () {
     }
     ws.onmessage = function (event) {
-        if (scriptRowDisabled) {
-            scriptRowDisabled = false;
-            $(".scriptel").prop('disabled', false);
-        }
         //var response = JSON.parse(event.data);
         var reader = new FileReader();
         reader.addEventListener("loadend", function () {
@@ -93,6 +85,11 @@ function connectWebsocket(WSUrl) {
                 }
             } else if (action == "log") {
                 console.log(response[1]);
+            } else if (action == 'connections') {
+                if (response[1] == 0)
+                    $(".scriptel").prop('disabled', true);
+                else
+                    $(".scriptel").prop('disabled', false);
             } else if (action == 'signScript') {
                 var data = JSON.stringify({"public": false, "files": {"wearscript.html": {"content": response[1]}}});
                 $.post('https://api.github.com/gists', data, function (result) {console.log(result);$('#script-url').val(result.files['wearscript.html'].raw_url)});
@@ -310,15 +307,6 @@ function createKey(type, success, error) {
     }
 }
 
-function setFlags(flags, success) {
-    $.ajax({url: 'flags', type: 'POST', data: JSON.stringify(flags), success: success});
-}
-function getFlags(success) {
-    $.ajax({url: 'flags', type: 'GET', success: success});
-}
-function unsetFlags(flags, success) {
-    $.ajax({url: 'flags', type: 'DELETE', data: JSON.stringify(flags), success: success});
-}
 function urlToHost(url) {
     var pathArray = url.split( '/' );
     var protocol = pathArray[0];
@@ -336,6 +324,7 @@ function main(WSUrl) {
     if ($('#iframe').attr('src').length) {
         iframeWindow = $('#iframe')[0].contentWindow;
         iframeHost = urlToHost($('#iframe').attr('src'));
+        $('#iframeRow').css('display', '');
     }
 
     $(".scriptel").prop('disabled', true);
@@ -358,47 +347,21 @@ function main(WSUrl) {
     $('#shutdownButton').click(function () {
         ws.send(enc(['shutdown']));
     });
-    c = {names: ['notify']};
-
-    $('#switches').html(Mustache.render('{{#names}}<div class="control-group switch-wrap"><label class="control-label" for="switch-wrap-{{.}}">{{.}}</label><div class="controls"><div id="switch-wrap-{{.}}" name="{{.}}" class="make-switch"><input class="flag-check" type="checkbox" name="{{.}}"></div></div></div>{{/names}}', c));
-    $('.make-switch').bootstrapSwitch();
     $('#buttonAuth').click(function () {
         window.location.replace('auth');
     });
     $('#buttonSignout').click(function () {
-        $.post('signout', {success: function () {location.reload()}}).error(function () {alert("Could not signout")});
+        $.post('signout', {success: function () {location.reload()}});
     });
 
     $('#buttonSetup').click(function () {
         $.post('setup').error(function () {alert("Could not setup")});
     });
 
-    $('#buttonRaven').click(function () {
-        createKey("raven", function (x) {$('#secret-raven').html(_.escape(x))}, function () {alert("Could not get raven")})
-    });
-    $('#buttonNotify').click(function () {
-        createKey("notify", function (x) {$('#secret-notify').html(_.escape(x))}, function () {alert("Could not get notify")})
-    });
-    $('#buttonPupil').click(function () {
-        createKey("pupil", function (x) {$('#secret-pupil').html(_.escape(x))}, function () {alert("Could not get pupil")});
-    });
-    $('#buttonWS').click(function () {
-        createKey("ws", function (x) {$('#secret-ws').html(_.escape(x))}, function () {alert("Could not get ws")});
+    $('#buttonClient').click(function () {
+        createKey("client", function (x) {$('#secret-client').html(_.escape(WSUrl + "/ws/client/" + x))}, function () {alert("Could not get client endpoint")})
     });
 
-    $('.make-switch').on('switch-change', function () {
-        var $this = $(this);
-        if ($this.bootstrapSwitch('status')) {
-            setFlags([$this.attr('name')]);
-        } else {
-            unsetFlags([$this.attr('name')]);
-        }
-    });
-    getFlags(function (x) {
-        _.each(JSON.parse(x), function (y) {
-            $('.make-switch[name=' + y + ']').bootstrapSwitch('setState', true);
-        });
-    });
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,

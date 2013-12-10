@@ -3,19 +3,31 @@ package com.dappervision.wearscript;
 import android.content.Context;
 import android.hardware.SensorManager;
 
+import com.dappervision.wearscript.jsevents.SensorJSEvent;
+
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DataManager {
+public class DataManager extends Manager{
     SensorManager sensorManager;
     ConcurrentHashMap<Integer, DataProvider> providers;
     ConcurrentHashMap<Integer, String> jsCallbacks;
-    BackgroundService bs;
 
-    DataManager(SensorManager sensorManager, BackgroundService bs) {
-        this.sensorManager = sensorManager;
-        this.bs = bs;
+    DataManager(BackgroundService bs) {
+        super(bs);
+        this.sensorManager = (SensorManager) bs.getSystemService(Context.SENSOR_SERVICE);
         providers = new ConcurrentHashMap<Integer, DataProvider>();
         jsCallbacks = new ConcurrentHashMap<Integer, String>();
+    }
+
+    public void onEvent(SensorJSEvent e){
+        if(e.getStatus()){
+            registerProvider(e.getType(), Math.round(e.getSampleTime() * 1000000000L));
+            if(e.getCallback() != null){
+                registerCallback(e.getType(), e.getCallback());
+            }
+        }else{
+            unregister(e.getType());
+        }
     }
 
     public void registerProvider(int type, long samplePeriod) {
@@ -40,11 +52,11 @@ public class DataManager {
     }
 
     public Context getContext() {
-        return bs.getApplicationContext();
+        return service.getApplicationContext();
     }
 
     public void queue(DataPoint dp) {
-        bs.handleSensor(dp, buildCallbackString(dp));
+        service.handleSensor(dp, buildCallbackString(dp));
     }
 
     public String buildCallbackString(DataPoint dp) {

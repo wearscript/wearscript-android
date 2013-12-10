@@ -1,16 +1,34 @@
 package com.dappervision.wearscript;
 
-import android.content.Intent;
-import android.util.Log;
+import com.dappervision.wearscript.events.LogEvent;
+import com.dappervision.wearscript.events.SendBlobEvent;
+import com.dappervision.wearscript.events.ServerConnectEvent;
+import com.dappervision.wearscript.events.ShutdownEvent;
+import com.dappervision.wearscript.jsevents.ActivityEvent;
+import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraEvent;
+import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
+import com.dappervision.wearscript.jsevents.CameraVideoEvent;
+import com.dappervision.wearscript.jsevents.DataLogEvent;
+import com.dappervision.wearscript.jsevents.PicariusEvent;
+import com.dappervision.wearscript.jsevents.QREvent;
+import com.dappervision.wearscript.jsevents.SayEvent;
+import com.dappervision.wearscript.jsevents.ScreenEvent;
+import com.dappervision.wearscript.jsevents.SensorJSEvent;
+import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
+import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
+import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
+import com.dappervision.wearscript.jsevents.WifiEvent;
+import com.dappervision.wearscript.jsevents.WifiScanEvent;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
 
-import java.util.List;
 import java.util.TreeMap;
+
+import de.greenrobot.event.EventBus;
 
 public class WearScript {
     BackgroundService bs;
@@ -36,12 +54,17 @@ public class WearScript {
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
     }
 
+    public static EventBus getEventBus(){
+        return EventBus.getDefault();
+    }
+
     public int sensor(String name) {
         return this.sensors.get(name);
     }
 
     public void shutdown() {
-        bs.shutdown();
+        //Global event
+        getEventBus().post(new ShutdownEvent());
     }
 
     public String sensors() {
@@ -49,45 +72,44 @@ public class WearScript {
     }
 
     public void say(String text) {
+        getEventBus().post(new SayEvent(text));
         Log.i(TAG, "say: " + text);
-        bs.say(text);
     }
 
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
-        // TODO: Require WS connection
-        bs.serverTimeline(ti);
+        getEventBus().post(new ServerTimelineEvent(ti));
     }
 
     public void sensorOn(int type, double sampleTime) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type));
-        bs.getDataManager().registerProvider(type, Math.round(sampleTime * 1000000000L));
+        getEventBus().post(new SensorJSEvent(type, true, sampleTime, null));
     }
 
     public void sensorOn(int type, double sampleTime, String callback) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type) + " callback: " + callback);
-        sensorOn(type, sampleTime);
-        bs.getDataManager().registerCallback(type, callback);
+        getEventBus().post(new SensorJSEvent(type, true, sampleTime, callback));
     }
 
     public void log(String msg) {
-        Log.i(TAG, "log: " + msg);
-        bs.log(msg);
+        //Global event
+        getEventBus().post(new LogEvent(msg));
     }
 
     public void sensorOff(int type) {
         Log.i(TAG, "sensorOff: " + Integer.toString(type));
-        bs.getDataManager().unregister(type);
+        getEventBus().post(new SensorJSEvent(type, false));
     }
 
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
-        bs.serverConnect(server, callback);
+        //Global event
+        getEventBus().post(new ServerConnectEvent(server, callback));
     }
 
     public void displayWebView() {
         Log.i(TAG, "displayWebView");
-        bs.updateActivityView("webview");
+        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.WEBVIEW));
     }
 
     public void data(int type, String name, String values) {
@@ -101,95 +123,89 @@ public class WearScript {
                 dp.addValue(((Long) j).doubleValue());
             }
         }
-        bs.handleSensor(dp, null);
+        getEventBus().post(dp);
     }
 
     public void cameraOff() {
-        bs.dataImage = false;
-        // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
-        bs.getCameraManager().unregister(true);
+        getEventBus().post(new CameraEvent(0));
     }
 
     public void cameraPhoto() {
-        // TODO(brandyn): Callback should be in camera manager
-        this.bs.photoCallback = null;
-        this.bs.getCameraManager().cameraPhoto();
+        getEventBus().post(new CameraPhotoEvent(null));
     }
 
     public void cameraPhoto(String callback) {
-        this.bs.photoCallback = callback;
-        this.bs.getCameraManager().cameraPhoto();
+        getEventBus().post(new CameraPhotoEvent(callback));
     }
 
     public void cameraVideo() {
-        this.bs.getCameraManager().cameraVideo();
+        getEventBus().post(new CameraVideoEvent(null));
     }
 
     public void cameraOn(double imagePeriod) {
-        bs.dataImage = true;
-        bs.imagePeriod = imagePeriod * 1000000000L;
-        bs.getCameraManager().register();
+        getEventBus().post(new CameraEvent(imagePeriod));
     }
 
     public void cameraCallback(int type, String callback) {
-        bs.getCameraManager().registerCallback(type, callback);
+        getEventBus().post(new CameraCallbackEvent(type, callback));
     }
 
     public void activityCreate() {
-        Intent i = new Intent(bs, MainActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        bs.startActivity(i);
+        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.CREATE));
     }
 
     public void activityDestroy() {
-        bs.activity.get().finish();
+        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.DESTROY));
     }
 
     public void wifiOff() {
-        bs.dataWifi = false;
+        getEventBus().post(new WifiEvent(false));
     }
 
     public void wifiOn() {
-        bs.dataWifi = true;
+        getEventBus().post(new WifiEvent(true));
     }
 
     public void wifiOn(String callback) {
-        bs.wifiScanCallback = callback;
-        wifiOn();
+        getEventBus().post(new WifiCallbackEvent(callback));
+        getEventBus().post(new WifiEvent(true));
     }
 
     public void wifiScan() {
-        bs.wifiStartScan();
+        getEventBus().post(new WifiScanEvent());
     }
 
     public void dataLog(boolean local, boolean server, double sensorDelay) {
-        bs.dataRemote = server;
-        bs.dataLocal = local;
-        bs.sensorDelay = sensorDelay * 1000000000L;
+        getEventBus().post(new DataLogEvent(local, server, sensorDelay));
     }
 
     public boolean scriptVersion(int version) {
         if (version == 0) {
             return false;
         } else {
-            bs.say("Script version incompatible with client");
+            getEventBus().post(new SayEvent("Script version incompatible with client"));
             return true;
         }
     }
 
     public void wake() {
         Log.i(TAG, "wake");
-        bs.wake();
+        getEventBus().post(new ScreenEvent(true));
+    }
+
+    public void qr(String cb) {
+        Log.i(TAG, "QR");
+        getEventBus().post(new QREvent(cb));
     }
 
     public void blobCallback(String name, String cb) {
         Log.i(TAG, "blobCallback");
-        bs.registerBlobCallback(name, cb);
+        getEventBus().post(new BlobCallbackEvent(name, cb));
     }
 
     public void blobSend(String name, String blob) {
         Log.i(TAG, "blobSend");
-        bs.blobSend(name, blob);
+        getEventBus().post(new SendBlobEvent(name, blob));
     }
 
     public void gestureCallback(String event, String callback) {
@@ -198,7 +214,7 @@ public class WearScript {
     }
 
     public void speechRecognize(String prompt, String callback) {
-        bs.speechRecognize(prompt, callback);
+        getEventBus().post(new SpeechRecognizeEvent(prompt, callback));
     }
 
     public void liveCardCreate(boolean nonSilent, double period) {
@@ -294,11 +310,10 @@ public class WearScript {
     }
 
     public void displayCardScroll() {
-        Log.i(TAG, "displayCardScroll");
-        bs.updateActivityView("cardscroll");
+        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.CARD_SCROLL));
     }
 
     public void picarus(String config, String input, String callback) {
-        bs.loadPicarus();
+        getEventBus().post(new PicariusEvent());
     }
 }

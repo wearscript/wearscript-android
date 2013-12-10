@@ -7,38 +7,44 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.hardware.SensorManager;
 import android.media.AudioRecord;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
-import android.os.RemoteException;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Base64;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.google.android.glass.media.Camera;
-
 import com.dappervision.picarus.IPicarusService;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
+import com.dappervision.wearscript.events.JsCall;
+import com.dappervision.wearscript.events.LogEvent;
+import com.dappervision.wearscript.events.SendBlobEvent;
+import com.dappervision.wearscript.events.ServerConnectEvent;
+import com.dappervision.wearscript.events.ShutdownEvent;
+import com.dappervision.wearscript.jsevents.ActivityEvent;
+import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
+import com.dappervision.wearscript.jsevents.CameraEvent;
+import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
+import com.dappervision.wearscript.jsevents.DataLogEvent;
+import com.dappervision.wearscript.jsevents.PicariusEvent;
+import com.dappervision.wearscript.jsevents.SayEvent;
+import com.dappervision.wearscript.jsevents.ScreenEvent;
+import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
+import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
+import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
+import com.dappervision.wearscript.jsevents.WifiEvent;
+import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.google.android.glass.media.Camera;
 import com.google.android.glass.widget.CardScrollView;
-
 
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
-import org.msgpack.type.MapValue;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
@@ -52,8 +58,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
+
+import de.greenrobot.event.EventBus;
 
 import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
@@ -62,7 +69,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     public WeakReference<MainActivity> activity;
-    public TreeSet<String> flags;
     public boolean dataRemote, dataLocal, dataImage, dataWifi;
     public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
     protected static String TAG = "WearScript";
@@ -79,6 +85,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String wsUrl;
     protected WifiManager wifiManager;
     protected GestureManager gestureManager;
+    protected QRManager QRManager;
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public TreeMap<String, String> blobCallbacks;
@@ -100,7 +107,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activityMode = mode;
                 if (mode.equals("webview") && webview != null) {
                     activityView = webview;
-                } else if (mode.equals("cardscroll"))  {
+                } else if (mode.equals("cardscroll")) {
                     activityView = cardScroller;
                 } else {
                 }
@@ -244,9 +251,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         lastImageSaveTime = System.nanoTime();
         byte[] frameJPEG = frame.getJPEG();
         if (webview != null) {
-            String jsCallback = cameraManager.buildCallbackString(0, frameJPEG);
-            if (jsCallback != null)
-                webview.loadUrl(jsCallback);
+            String call = cameraManager.buildCallbackString(CameraManager.LOCAL, frameJPEG);
+            EventBus.getDefault().post(new JsCall(call));
         }
         if (dataLocal) {
             // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
@@ -288,8 +294,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         synchronized (lock) {
             reset();
             Log.d(TAG, "Disconnecting client");
-            if (client != null && client.isConnected())
-                client.disconnect();
+            if (client != null) {
+                client.shutdown();
+            }
             client = null;
             if (activity == null)
                 return;
@@ -319,7 +326,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview.onDestroy();
                 webview = null;
             }
-            flags = new TreeSet<String>();
             sensorBuffer = new TreeMap<String, ArrayList<Value>>();
             sensorTypes = new TreeMap<String, Integer>();
             wifiScanCallback = null;
@@ -451,7 +457,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         try {
             List<Value> input = msgpack.read(message, tList(TValue));
             String action = input.get(0).asRawValue().getString();
-            Log.i(TAG, String.format("Got %s", action));
+            Log.d(TAG, String.format("Got %s", action));
             // TODO: String to Mat, save and display in the loopback thread
             if (action.equals("startScript")) {
                 final String script = input.get(1).asRawValue().getString();
@@ -488,15 +494,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
                     }
                 });
-            } else if (action.equals("pingStatus")) {
-                List<Value> output = new ArrayList<Value>();
-                output.add(ValueFactory.createRawValue("pongStatus"));
-                output.add(ValueFactory.createRawValue(glassID));
-                // Display: On/Off  Activity Visible: True/False, Sensor Count (Raw): Map<Integer, Integer>, Sensor Count (Saved): Map<Integer, Integer>
-                // Javascript: ?
-                synchronized (lock) {
-                    client.send(msgpack.write(output));
-                }
             } else if (action.equals("sensors")) {
                 TreeMap<String, Integer> types = new TreeMap<String, Integer>();
                 Value[] typesKeyValues = input.get(2).asMapValue().getKeyValueArray();
@@ -520,11 +517,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     }
                 }
             } else if (action.equals("image")) {
-                if (webview != null) {
-                    String jsCallback = cameraManager.buildCallbackString(1, input.get(3).asRawValue().getByteArray());
-                    if (jsCallback != null)
-                        webview.loadUrl(jsCallback);
-                }
+                String call = cameraManager.buildCallbackString(CameraManager.REMOTE, input.get(3).asRawValue().getByteArray());
+                EventBus.getDefault().post(new JsCall(call));
+            } else if (action.equals("raven")) {
+                Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {
                 String name = input.get(1).asRawValue().getString();
                 byte[] blob = input.get(2).asRawValue().getByteArray();
@@ -621,7 +617,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             updateActivityView("webview");
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
-            Log.i(TAG, "WebView:" + script);
+            Log.d(TAG, "WebView:" + script);
             String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
             webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
@@ -636,7 +632,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview = createScriptView();
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
-            Log.i(TAG, "WebView:" + url);
+            Log.d(TAG, "WebView:" + url);
             webview.setInitialScale(100);
             webview.loadUrl(url);
             Log.i(TAG, "WebView Ran");
@@ -651,24 +647,31 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public String getMacAddress() {
-        WifiInfo info = wifiManager.getConnectionInfo();
-        return info.getMacAddress();
+        return wifiManager.getMacAddress();
     }
 
     @Override
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
+        EventBus.getDefault().register(this);
+
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         broadcastReceiver = new ScreenBroadcastReceiver(this);
         registerReceiver(broadcastReceiver, intentFilter);
-        tts = new TextToSpeech(this, this);
-        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        glassID = getMacAddress();
-        dataManager = new DataManager((SensorManager) getSystemService(SENSOR_SERVICE), this);
+
+        //Plugin new Managers here
+        dataManager = new DataManager(this);
         cameraManager = new CameraManager(this);
+        QRManager = new QRManager(this);
+        wifiManager = new WifiManager(this);
+
+        tts = new TextToSpeech(this, this);
+
+        glassID = getMacAddress();
+
         cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
         cardScroller = new CardScrollView(this);
         cardScroller.setAdapter(cardScrollAdapter);
@@ -689,21 +692,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void wifiScanResults() {
-        Double timestamp = System.currentTimeMillis() / 1000.;
-        JSONArray a = new JSONArray();
-        for (ScanResult s : wifiManager.getScanResults()) {
-            JSONObject r = new JSONObject();
-            r.put("timestamp", timestamp);
-            r.put("capabilities", new String(s.capabilities));
-            r.put("SSID", new String(s.SSID));
-            r.put("BSSID", new String(s.BSSID));
-            r.put("level", new Integer(s.level));
-            r.put("frequency", new Integer(s.frequency));
-            a.add(r);
-        }
-        String scanResults = a.toJSONString();
         if (wifiScanCallback != null && webview != null)
-            webview.loadUrl(String.format("javascript:%s(%s);", wifiScanCallback, scanResults));
+            webview.loadUrl(String.format("javascript:%s(%s);", wifiScanCallback, wifiManager.getScanResults()));
        // TODO(brandyn): Check if data logging is set and also buffer for those
     }
 
@@ -720,6 +710,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onDestroy() {
         Log.i(TAG, "Lifecycle: Service onDestroy");
+        EventBus.getDefault().unregister(this);
         if (broadcastReceiver != null)
             unregisterReceiver(broadcastReceiver);
         if (cameraManager != null) {
@@ -733,6 +724,98 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
+    public void onEvent(CameraPhotoEvent e){
+        photoCallback = e.getCallback();
+    }
+
+    public void onEvent(JsCall e){
+        loadUrl(e.getCall());
+    }
+    public void onEvent(CameraEvent e){
+        double period = e.getPeriod();
+        if(period > 0){
+            dataImage = true;
+            imagePeriod = period * 1000000000L;
+        }else{
+            dataImage = false;
+            // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
+        }
+    }
+
+    public void onEvent(WifiEvent e){
+        dataWifi = e.getStatus();
+    }
+    public void onEvent(WifiCallbackEvent e){
+        wifiScanCallback = e.getCallback();
+    }
+
+    public void onEvent(WifiScanEvent e){
+        wifiStartScan();
+    }
+
+    public void onEvent(SayEvent e){
+        say("Script version incompatible with client");
+    }
+
+    public void onEvent(ActivityEvent e){
+        if(e.getMode() == ActivityEvent.Mode.CREATE){
+            Intent i = new Intent(this, MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        }else if(e.getMode() == ActivityEvent.Mode.DESTROY){
+            activity.get().finish();
+        }else if(e.getMode() == ActivityEvent.Mode.WEBVIEW){
+            updateActivityView("webview");
+        }else if(e.getMode() == ActivityEvent.Mode.CARD_SCROLL){
+            updateActivityView("cardscroll");
+        }
+    }
+
+    public void onEvent(DataLogEvent e){
+        dataRemote = e.isServer();
+        dataLocal = e.isLocal();
+        sensorDelay = e.getSensorDelay() * 1000000000L;
+    }
+
+    public void onEvent(SpeechRecognizeEvent e){
+        speechRecognize(e.getPrompt(), e.getCallback());
+    }
+    public void onEvent(PicariusEvent e){
+        loadPicarus();
+    }
+
+    public void onEvent(SendBlobEvent e){
+        blobSend(e.getName(), e.getBlob());
+    }
+
+    public void onEvent(BlobCallbackEvent e){
+        registerBlobCallback(e.getName(), e.getCallback());
+    }
+
+    public void onEvent(ScreenEvent e){
+        wake();
+    }
+
+    public void onEvent(DataPoint dp){
+        handleSensor(dp, null);
+    }
+
+    public void onEvent(LogEvent e){
+        Log.i(TAG, "log: " + e.getMsg());
+        log(e.getMsg());
+    }
+
+    public void onEvent(ServerTimelineEvent e){
+        serverTimeline(e.getMsg());
+    }
+
+    public void onEvent(ShutdownEvent e){
+        shutdown();
+    }
+
+    public void onEvent(ServerConnectEvent e){
+        serverConnect(e.getServer(), e.getCallback());
+    }
     public void serverTimeline(String ti) {
         synchronized (lock) {
             if (client != null && client.isConnected()) {
@@ -810,6 +893,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         // TODO: Check result on else
     }
 
+    public QRManager getQRManager() {
+        return QRManager;
+    }
+
     class ScreenBroadcastReceiver extends BroadcastReceiver {
         BackgroundService bs;
 
@@ -820,13 +907,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-                Log.i(TAG, "Screen off");
+                Log.d(TAG, "Screen off");
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
-                Log.i(TAG, "Screen on");
+                Log.d(TAG, "Screen on");
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
-                Log.i(TAG, "Battery changed");
+                Log.d(TAG, "Battery changed");
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                Log.i(TAG, "Wifi scan results");
+                Log.d(TAG, "Wifi scan results");
                 bs.wifiScanResults();
             }
         }

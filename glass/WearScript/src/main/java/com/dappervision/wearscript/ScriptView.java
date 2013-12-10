@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.os.Handler;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.webkit.ConsoleMessage;
@@ -30,7 +29,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
         setWebChromeClient(new WebChromeClient() {
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 String msg = cm.message() + " -- From line " + cm.lineNumber() + " of " + cm.sourceId();
-                Log.d("WearScriptWebView", msg);
+                Log.w("WearScriptWebView", msg);
                 context.log("WebView: " + msg);
                 return true;
             }
