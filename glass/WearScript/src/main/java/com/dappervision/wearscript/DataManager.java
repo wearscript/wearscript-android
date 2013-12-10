@@ -3,6 +3,8 @@ package com.dappervision.wearscript;
 import android.content.Context;
 import android.hardware.SensorManager;
 
+import com.dappervision.wearscript.jsevents.SensorJSEvent;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataManager {
@@ -14,8 +16,20 @@ public class DataManager {
     DataManager(SensorManager sensorManager, BackgroundService bs) {
         this.sensorManager = sensorManager;
         this.bs = bs;
+        WearScript.getEventBus().register(this);
         providers = new ConcurrentHashMap<Integer, DataProvider>();
         jsCallbacks = new ConcurrentHashMap<Integer, String>();
+    }
+
+    public void onEvent(SensorJSEvent e){
+        if(e.getStatus()){
+            registerProvider(e.getType(), Math.round(e.getSampleTime() * 1000000000L));
+            if(e.getCallback() != null){
+                registerCallback(e.getType(), e.getCallback());
+            }
+        }else{
+            unregister(e.getType());
+        }
     }
 
     public void registerProvider(int type, long samplePeriod) {

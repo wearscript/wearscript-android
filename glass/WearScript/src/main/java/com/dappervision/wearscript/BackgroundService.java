@@ -41,7 +41,6 @@ import com.dappervision.wearscript.jsevents.PicariusEvent;
 import com.dappervision.wearscript.jsevents.QREvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
-import com.dappervision.wearscript.jsevents.SensorJSEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
@@ -834,17 +833,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onEvent(LogEvent e){
         Log.i(TAG, "log: " + e.getMsg());
         log(e.getMsg());
-    }
-
-    public void onEvent(SensorJSEvent e){
-        if(e.getStatus()){
-            getDataManager().registerProvider(e.getType(), Math.round(e.getSampleTime() * 1000000000L));
-            if(e.getCallback() != null){
-                getDataManager().registerCallback(e.getType(), e.getCallback());
-            }
-        }else{
-            getDataManager().unregister(e.getType());
-        }
     }
 
     public void onEvent(QREvent e){
