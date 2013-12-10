@@ -5,6 +5,7 @@ import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
+import com.dappervision.wearscript.jsevents.BarcodeCallbackEvent;
 import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraEvent;
@@ -12,7 +13,6 @@ import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
 import com.dappervision.wearscript.jsevents.CameraVideoEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicariusEvent;
-import com.dappervision.wearscript.jsevents.QREvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.SensorJSEvent;
@@ -195,7 +195,7 @@ public class WearScript {
 
     public void qr(String cb) {
         Log.i(TAG, "QR");
-        getEventBus().post(new QREvent(cb));
+        getEventBus().post(new BarcodeCallbackEvent("QR_CODE", cb));
     }
 
     public void blobCallback(String name, String cb) {

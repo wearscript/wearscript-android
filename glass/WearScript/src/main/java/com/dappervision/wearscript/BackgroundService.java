@@ -40,6 +40,10 @@ import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
 import com.dappervision.wearscript.jsevents.WifiEvent;
 import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.DataManager;
+import com.dappervision.wearscript.managers.GestureManager;
 import com.google.android.glass.media.Camera;
 import com.google.android.glass.widget.CardScrollView;
 
@@ -85,7 +89,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected String wsUrl;
     protected WifiManager wifiManager;
     protected GestureManager gestureManager;
-    protected QRManager QRManager;
+    protected BarcodeManager BarcodeManager;
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public TreeMap<String, String> blobCallbacks;
@@ -665,7 +669,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         //Plugin new Managers here
         dataManager = new DataManager(this);
         cameraManager = new CameraManager(this);
-        QRManager = new QRManager(this);
+        BarcodeManager = new BarcodeManager(this);
         wifiManager = new WifiManager(this);
 
         tts = new TextToSpeech(this, this);
@@ -893,8 +897,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         // TODO: Check result on else
     }
 
-    public QRManager getQRManager() {
-        return QRManager;
+    public BarcodeManager getBarcodeManager() {
+        return BarcodeManager;
     }
 
     class ScreenBroadcastReceiver extends BroadcastReceiver {

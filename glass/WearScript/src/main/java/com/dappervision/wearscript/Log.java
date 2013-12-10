@@ -1,8 +1,6 @@
 package com.dappervision.wearscript;
 
 
-import android.view.ViewGroup;
-
 import com.joshdholtz.sentry.Sentry;
 import com.joshdholtz.sentry.Sentry.SentryEventBuilder.SentryEventLevel;
 
@@ -67,27 +65,27 @@ public class Log {
         });
     }
 
-    static int d(String tag, String message) {
+    public static int d(String tag, String message) {
         //logRaven(tag, message, SentryEventLevel.DEBUG);
         return android.util.Log.d(tag, message);
     }
 
-    static int i(String tag, String message) {
+    public static int i(String tag, String message) {
         logRaven(tag, message, SentryEventLevel.INFO);
         return android.util.Log.i(tag, message);
     }
 
-    static int w(String tag, String message) {
+    public static int w(String tag, String message) {
         logRaven(tag, message, SentryEventLevel.WARNING);
         return android.util.Log.w(tag, message);
     }
 
-    static int e(String tag, String message) {
+    public static int e(String tag, String message) {
         logRaven(tag, message, SentryEventLevel.ERROR);
         return android.util.Log.e(tag, message);
     }
 
-    static int e(String tag, String message, Throwable tr) {
+    public static int e(String tag, String message, Throwable tr) {
         logRaven(tag, message, SentryEventLevel.ERROR);
         return android.util.Log.e(tag, message, tr);
     }

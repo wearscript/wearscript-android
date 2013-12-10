@@ -5,10 +5,12 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import com.dappervision.wearscript.managers.DataManager;
+
 public class NativeDataProvider extends DataProvider implements SensorEventListener {
     private Sensor sensor;
 
-    NativeDataProvider(DataManager parent, long samplePeriod, Sensor sensor) {
+    public NativeDataProvider(DataManager parent, long samplePeriod, Sensor sensor) {
         super(parent, samplePeriod, sensor.getType(), sensor.getName());
         this.sensor = sensor;
         // TODO(brandyn): We should base the sensor sample on the Type and selected sampling rate (requires calibration)

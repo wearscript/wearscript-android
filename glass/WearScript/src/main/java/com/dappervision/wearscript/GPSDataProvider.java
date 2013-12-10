@@ -6,12 +6,14 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 
+import com.dappervision.wearscript.managers.DataManager;
+
 
 public class GPSDataProvider extends DataProvider {
     private final LocationListener locationListener;
     private LocationManager locationManager;
 
-    GPSDataProvider(final DataManager parent, long samplePeriod, int type) {
+    public GPSDataProvider(final DataManager parent, long samplePeriod, int type) {
         super(parent, samplePeriod, type, "GPS");
         locationManager = (LocationManager) parent.getContext().getSystemService(Context.LOCATION_SERVICE);
         locationListener = new LocationListener() {

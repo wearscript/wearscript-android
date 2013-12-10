@@ -1,16 +1,17 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.managers;
 
 import android.content.Context;
 import android.view.MotionEvent;
 
+import com.dappervision.wearscript.BackgroundService;
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 
-public class GestureManager extends Manager  {
+public class GestureManager extends Manager {
     private static final String TAG = "GestureManager";
     private MyGestureDetector detector;
 
-    GestureManager(Context activity, BackgroundService bs) {
+    public GestureManager(Context activity, BackgroundService bs) {
         super(bs);
         detector = new MyGestureDetector(this, activity);
     }
@@ -23,7 +24,7 @@ public class GestureManager extends Manager  {
 class MyGestureDetector extends GestureDetector implements GestureDetector.BaseListener, GestureDetector.FingerListener, GestureDetector.ScrollListener, GestureDetector.TwoFingerScrollListener, GestureDetector.VerticalScrollListener {
     private GestureManager parent;
 
-    public MyGestureDetector(GestureManager parent, Context context) {
+    MyGestureDetector(GestureManager parent, Context context) {
         super(context);
         this.parent = parent;
         setBaseListener(this);

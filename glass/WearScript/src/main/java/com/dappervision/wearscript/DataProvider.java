@@ -1,5 +1,7 @@
 package com.dappervision.wearscript;
 
+import com.dappervision.wearscript.managers.DataManager;
+
 public abstract class DataProvider {
     protected DataManager parent;
     private long lastTimestamp;

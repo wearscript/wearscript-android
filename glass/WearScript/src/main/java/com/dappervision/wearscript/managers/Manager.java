@@ -1,5 +1,7 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.managers;
 
+import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.events.JsCall;
 
 import java.util.concurrent.ConcurrentHashMap;

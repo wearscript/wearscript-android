@@ -1,18 +1,24 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.managers;
 
 import android.content.Context;
 import android.hardware.SensorManager;
 
+import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.DataPoint;
+import com.dappervision.wearscript.DataProvider;
+import com.dappervision.wearscript.GPSDataProvider;
+import com.dappervision.wearscript.NativeDataProvider;
+import com.dappervision.wearscript.RemoteDataProvider;
 import com.dappervision.wearscript.jsevents.SensorJSEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DataManager extends Manager{
+public class DataManager extends Manager {
     SensorManager sensorManager;
     ConcurrentHashMap<Integer, DataProvider> providers;
     ConcurrentHashMap<Integer, String> jsCallbacks;
 
-    DataManager(BackgroundService bs) {
+    public DataManager(BackgroundService bs) {
         super(bs);
         this.sensorManager = (SensorManager) bs.getSystemService(Context.SENSOR_SERVICE);
         providers = new ConcurrentHashMap<Integer, DataProvider>();

@@ -1,4 +1,4 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.managers;
 
 import android.content.Intent;
 import android.graphics.ImageFormat;
@@ -7,10 +7,13 @@ import android.hardware.Camera;
 import android.provider.MediaStore;
 import android.util.Base64;
 
+import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraEvent;
 import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
 import com.dappervision.wearscript.jsevents.CameraVideoEvent;
+import com.dappervision.wearscript.managers.Manager;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -64,7 +67,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             return frameRGB;
         }
 
-        byte[] getJPEG() {
+        public byte[] getJPEG() {
             if (jpgFrame != null)
                 return jpgFrame.toArray();
             Mat frameRGB = getRGB();
@@ -74,7 +77,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    CameraManager(BackgroundService bs) {
+    public CameraManager(BackgroundService bs) {
         super(bs);
     }
 

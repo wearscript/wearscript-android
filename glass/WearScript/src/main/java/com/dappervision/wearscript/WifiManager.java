@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 
+import com.dappervision.wearscript.managers.Manager;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
