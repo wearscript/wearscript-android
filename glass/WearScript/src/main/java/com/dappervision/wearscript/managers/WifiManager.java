@@ -1,10 +1,13 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.managers;
 
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 
-import com.dappervision.wearscript.managers.Manager;
+import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
+import com.dappervision.wearscript.jsevents.WifiEvent;
+import com.dappervision.wearscript.jsevents.WifiScanEvent;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -15,9 +18,11 @@ import org.json.simple.JSONObject;
 public class WifiManager extends Manager {
     public static final String SCAN_RESULTS_AVAILABLE_ACTION = android.net.wifi.WifiManager.SCAN_RESULTS_AVAILABLE_ACTION;
     android.net.wifi.WifiManager manager;
+    private boolean enabled;
 
     public WifiManager(BackgroundService bs){
         super(bs);
+        enabled = false;
         manager = (android.net.wifi.WifiManager) bs.getSystemService(Context.WIFI_SERVICE);
     }
 
@@ -42,7 +47,19 @@ public class WifiManager extends Manager {
         return a.toJSONString();
     }
 
-    public void startScan(){
+    public void onEvent(WifiCallbackEvent e){
+        registerCallback("wifi", e.getCallback());
+    }
+
+    public void onEvent(WifiScanEvent e){
         manager.startScan();
+    }
+
+    public void makeCall(){
+        makeCall("wifi", getScanResults());
+    }
+
+    public void onEvent(WifiEvent e){
+        enabled = e.getStatus();
     }
 }

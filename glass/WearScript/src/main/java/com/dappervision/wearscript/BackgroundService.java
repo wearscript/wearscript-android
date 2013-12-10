@@ -10,7 +10,6 @@ import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
@@ -35,14 +34,12 @@ import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
-import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
-import com.dappervision.wearscript.jsevents.WifiEvent;
-import com.dappervision.wearscript.jsevents.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.PicarusManager;
+import com.dappervision.wearscript.managers.WifiManager;
 import com.google.android.glass.media.Camera;
 import com.google.android.glass.widget.CardScrollView;
 
@@ -615,10 +612,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return mBinder;
     }
 
-    public String getMacAddress() {
-        return wifiManager.getMacAddress();
-    }
-
     @Override
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
@@ -639,7 +632,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         tts = new TextToSpeech(this, this);
 
-        glassID = getMacAddress();
+        glassID = wifiManager.getMacAddress();
 
         cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
         cardScroller = new CardScrollView(this);
@@ -658,16 +651,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activity.finish();
         }
         this.activity = new WeakReference<MainActivity>(a);
-    }
-
-    public void wifiScanResults() {
-        if (wifiScanCallback != null && webview != null)
-            webview.loadUrl(String.format("javascript:%s(%s);", wifiScanCallback, wifiManager.getScanResults()));
-       // TODO(brandyn): Check if data logging is set and also buffer for those
-    }
-
-    public void wifiStartScan() {
-        wifiManager.startScan();
     }
 
     @Override
@@ -709,17 +692,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             dataImage = false;
             // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
         }
-    }
-
-    public void onEvent(WifiEvent e){
-        dataWifi = e.getStatus();
-    }
-    public void onEvent(WifiCallbackEvent e){
-        wifiScanCallback = e.getCallback();
-    }
-
-    public void onEvent(WifiScanEvent e){
-        wifiStartScan();
     }
 
     public void onEvent(SayEvent e){
@@ -862,10 +834,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         // TODO: Check result on else
     }
 
-    public BarcodeManager getBarcodeManager() {
-        return BarcodeManager;
-    }
-
     public CameraManager getCameraManager() {
         return cameraManager;
     }
@@ -887,7 +855,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 Log.d(TAG, "Battery changed");
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.d(TAG, "Wifi scan results");
-                bs.wifiScanResults();
+                bs.wifiManager.makeCall();
             }
         }
     }
