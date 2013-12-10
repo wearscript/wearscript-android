@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.dappervision.picarus.IPicarusService;
+import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
@@ -250,9 +251,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         lastImageSaveTime = System.nanoTime();
         byte[] frameJPEG = frame.getJPEG();
         if (webview != null) {
-            String jsCallback = cameraManager.buildCallbackString(0, frameJPEG);
-            if (jsCallback != null)
-                webview.loadUrl(jsCallback);
+            String call = cameraManager.buildCallbackString(CameraManager.LOCAL, frameJPEG);
+            EventBus.getDefault().post(new JsCall(call));
         }
         if (dataLocal) {
             // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
@@ -517,11 +517,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     }
                 }
             } else if (action.equals("image")) {
-                if (webview != null) {
-                    String jsCallback = cameraManager.buildCallbackString(1, input.get(3).asRawValue().getByteArray());
-                    if (jsCallback != null)
-                        webview.loadUrl(jsCallback);
-                }
+                String call = cameraManager.buildCallbackString(CameraManager.REMOTE, input.get(3).asRawValue().getByteArray());
+                EventBus.getDefault().post(new JsCall(call));
             } else if (action.equals("raven")) {
                 Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {
@@ -731,6 +728,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         photoCallback = e.getCallback();
     }
 
+    public void onEvent(JsCall e){
+        loadUrl(e.getCall());
+    }
     public void onEvent(CameraEvent e){
         double period = e.getPeriod();
         if(period > 0){

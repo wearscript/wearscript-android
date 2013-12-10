@@ -1,68 +1,63 @@
 package com.dappervision.wearscript;
 
+import android.content.Context;
+import android.view.MotionEvent;
+
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 
-import java.util.concurrent.ConcurrentHashMap;
-
-public class GestureManager extends GestureDetector implements GestureDetector.BaseListener, GestureDetector.FingerListener, GestureDetector.ScrollListener, GestureDetector.TwoFingerScrollListener, GestureDetector.VerticalScrollListener {
+public class GestureManager extends Manager  {
     private static final String TAG = "GestureManager";
-    ConcurrentHashMap<String, String> jsCallbacks;
-    private BackgroundService bs;
+    private MyGestureDetector detector;
 
-    GestureManager(MainActivity activity, BackgroundService bs) {
-        super(activity);
-        this.bs = bs;
+    GestureManager(Context activity, BackgroundService bs) {
+        super(bs);
+        detector = new MyGestureDetector(this, activity);
+    }
+
+    public void onEvent(MotionEvent e){
+        detector.onMotionEvent(e);
+    }
+}
+
+class MyGestureDetector extends GestureDetector implements GestureDetector.BaseListener, GestureDetector.FingerListener, GestureDetector.ScrollListener, GestureDetector.TwoFingerScrollListener, GestureDetector.VerticalScrollListener {
+    private GestureManager parent;
+
+    public MyGestureDetector(GestureManager parent, Context context) {
+        super(context);
+        this.parent = parent;
         setBaseListener(this);
         setFingerListener(this);
         setScrollListener(this);
         setTwoFingerScrollListener(this);
-        jsCallbacks = new ConcurrentHashMap<String, String>();
-    }
-
-    public void registerCallback(String type, String jsFunction) {
-        jsCallbacks.put(type, jsFunction);
-    }
-
-    public void unregister() {
-        jsCallbacks = new ConcurrentHashMap<String, String>();
-    }
-
-    protected void makeCall(String key, String data) {
-        Log.d(TAG, key + " " + data);
-        if (!jsCallbacks.contains(key))
-            return;
-        String url = String.format("javascript:%s(%s);", jsCallbacks.get(key), data);
-        Log.d(TAG, "Gesture: Call: " + url);
-        bs.loadUrl(url);
     }
 
     @Override
     public boolean onGesture(Gesture gesture) {
-        makeCall("onGesture", String.format("'%s'", gesture.name()));
+        parent.makeCall("onGesture", String.format("'%s'", gesture.name()));
         return false;
     }
 
     @Override
     public void onFingerCountChanged(int i, int i2) {
-        makeCall("onFingerCountChanged", String.format("%d, %d", i, i2));
+        parent.makeCall("onFingerCountChanged", String.format("%d, %d", i, i2));
     }
 
     @Override
     public boolean onScroll(float v, float v2, float v3) {
-        makeCall("onScroll", String.format("%f, %f, %f", v, v2, v3));
+        parent.makeCall("onScroll", String.format("%f, %f, %f", v, v2, v3));
         return false;
     }
 
     @Override
     public boolean onTwoFingerScroll(float v, float v2, float v3) {
-        makeCall("onTwoFingerScroll", String.format("%f, %f, %f", v, v2, v3));
+        parent.makeCall("onTwoFingerScroll", String.format("%f, %f, %f", v, v2, v3));
         return false;
     }
 
     @Override
     public boolean onVerticalScroll(float v, float v2, float v3) {
-        makeCall("onVerticalScroll", String.format("%f, %f, %f", v, v2, v3));
+        parent.makeCall("onVerticalScroll", String.format("%f, %f, %f", v, v2, v3));
         return false;
     }
 }

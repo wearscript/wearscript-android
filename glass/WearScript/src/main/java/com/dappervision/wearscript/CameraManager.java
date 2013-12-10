@@ -23,16 +23,16 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CameraManager extends Manager implements Camera.PreviewCallback {
     private static final String TAG = "CameraManager";
     private static final int MAGIC_TEXTURE_ID = 10;
+    public static final String LOCAL = "0";
+    public static final String REMOTE = "1";
     private Camera camera;
     private byte[] buffer;
     private SurfaceTexture surfaceTexture;
     private CameraFrame cameraFrame;
-    ConcurrentHashMap<Integer, String> jsCallbacks;
     private boolean paused;
     private boolean opencvLoaded;
 
@@ -76,7 +76,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     CameraManager(BackgroundService bs) {
         super(bs);
-        jsCallbacks = new ConcurrentHashMap<Integer, String>();
     }
 
     public void onEvent(CameraPhotoEvent e){
@@ -111,7 +110,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             }
             camera = null;
             if (resetCallbacks) {
-                jsCallbacks = new ConcurrentHashMap<Integer, String>();
+                super.unregister();
                 paused = false;
             }
         }
@@ -208,17 +207,11 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public void registerCallback(Integer type, String jsFunction) {
-        synchronized (this) {
-            jsCallbacks.put(type, jsFunction);
-        }
-    }
-
-    public String buildCallbackString(Integer type, byte[] frameJPEG) {
+    public String buildCallbackString(String type, byte[] frameJPEG) {
         synchronized (this) {
             if (frameJPEG == null || !jsCallbacks.containsKey(type))
                 return null;
-            return String.format("javascript:%s(\"%s\");", jsCallbacks.get(type), Base64.encodeToString(frameJPEG, Base64.NO_WRAP));
+            return buildCallbackString(type, Base64.encodeToString(frameJPEG, Base64.NO_WRAP));
         }
     }
 

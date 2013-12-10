@@ -9,10 +9,9 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 
-import java.lang.ref.WeakReference;
+import de.greenrobot.event.EventBus;
 
 public class MainActivity extends Activity {
     protected static final String TAG = "WearScript";
@@ -154,15 +153,10 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-        if (bs == null)
-            return false;
-        GestureManager gm = bs.getGestureManager();
-        if (gm == null)
-            return false;
         // NOTE(brandyn): If you return true then the cardscroll won't get the gesture
         // TODO(brandyn): Consider registering overrides
         //return gm.onMotionEvent(event);
-        gm.onMotionEvent(event);
+        EventBus.getDefault().post(event);
         return false;
     }
 }

@@ -11,7 +11,7 @@ public class CameraCallbackEvent extends CallbackJSBusEvent {
         this.type = type;
     }
 
-    public int getType(){
-        return type;
+    public String getType(){
+        return String.format("%i", type);
     }
 }
