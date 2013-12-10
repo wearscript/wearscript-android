@@ -23,6 +23,7 @@ import android.view.ViewGroup;
 
 import com.dappervision.picarus.IPicarusService;
 import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.SendBlobEvent;

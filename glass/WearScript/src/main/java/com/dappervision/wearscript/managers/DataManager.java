@@ -4,11 +4,11 @@ import android.content.Context;
 import android.hardware.SensorManager;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.DataPoint;
-import com.dappervision.wearscript.DataProvider;
-import com.dappervision.wearscript.GPSDataProvider;
-import com.dappervision.wearscript.NativeDataProvider;
-import com.dappervision.wearscript.RemoteDataProvider;
+import com.dappervision.wearscript.dataproviders.DataPoint;
+import com.dappervision.wearscript.dataproviders.DataProvider;
+import com.dappervision.wearscript.dataproviders.GPSDataProvider;
+import com.dappervision.wearscript.dataproviders.NativeDataProvider;
+import com.dappervision.wearscript.dataproviders.RemoteDataProvider;
 import com.dappervision.wearscript.jsevents.SensorJSEvent;
 
 import java.util.concurrent.ConcurrentHashMap;

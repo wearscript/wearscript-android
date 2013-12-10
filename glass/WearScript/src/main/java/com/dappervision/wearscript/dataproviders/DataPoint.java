@@ -1,4 +1,4 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.dataproviders;
 
 import org.json.simple.JSONObject;
 import org.msgpack.type.Value;
@@ -27,7 +27,7 @@ public class DataPoint {
         this.valuesV = new ArrayList<Value>();
     }
 
-    DataPoint(String name, int type, double timestamp, long timestampRaw) {
+    public DataPoint(String name, int type, double timestamp, long timestampRaw) {
         this.name = name;
         this.type = type;
         this.timestamp = timestamp;

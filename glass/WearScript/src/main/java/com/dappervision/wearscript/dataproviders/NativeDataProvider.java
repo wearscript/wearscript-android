@@ -1,4 +1,4 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.dataproviders;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;

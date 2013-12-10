@@ -1,5 +1,6 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.dataproviders;
 
+import com.dappervision.wearscript.dataproviders.DataProvider;
 import com.dappervision.wearscript.managers.DataManager;
 
 
