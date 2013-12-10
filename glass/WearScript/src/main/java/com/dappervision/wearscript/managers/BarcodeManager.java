@@ -26,8 +26,6 @@ public class BarcodeManager extends Manager {
             }
         };
         LocalBroadcastManager.getInstance(service).registerReceiver(receiver, QRIntentFilter);
-
-       EventBus.getDefault().register(this);
     }
 
     public void onEvent(BarcodeCallbackEvent e){

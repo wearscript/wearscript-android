@@ -27,6 +27,7 @@ import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraEvent;
+import com.dappervision.wearscript.jsevents.CameraFrameEvent;
 import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
@@ -69,8 +70,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     public WeakReference<MainActivity> activity;
-    public boolean dataRemote, dataLocal, dataImage, dataWifi;
-    public double lastSensorSaveTime, lastImageSaveTime, sensorDelay, imagePeriod;
+    public boolean dataRemote, dataLocal, dataWifi;
+    public double lastSensorSaveTime, sensorDelay;
     protected static String TAG = "WearScript";
     protected CameraManager cameraManager;
     protected TextToSpeech tts;
@@ -233,38 +234,50 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void handleImage(final CameraManager.CameraFrame frame) {
-        // TODO(brandyn): Move this timing logic into the camera manager
-        if (!dataImage || System.nanoTime() - lastImageSaveTime < imagePeriod)
-            return;
-        lastImageSaveTime = System.nanoTime();
-        byte[] frameJPEG = frame.getJPEG();
-        if (webview != null) {
-            String call = cameraManager.buildCallbackString(CameraManager.LOCAL, frameJPEG);
-            EventBus.getDefault().post(new JsCall(call));
-        }
-        if (dataLocal) {
-            // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
-            SaveData(frameJPEG, "data/", true, ".jpg");
-        }
-        if (dataRemote) {
-            List<Value> output = new ArrayList<Value>();
-            output.add(ValueFactory.createRawValue("image"));
-            output.add(ValueFactory.createRawValue(glassID));
-            output.add(ValueFactory.createFloatValue(System.currentTimeMillis() / 1000.));
-            output.add(ValueFactory.createRawValue(frameJPEG));
-            final byte[] dataStr;
-            try {
-                dataStr = msgpack.write(output);
-            } catch (IOException e) {
-                Log.e(TAG, "Couldn't serialize msgpack");
-                e.printStackTrace();
-                return;
-            }
-            if (clientConnected())
-                synchronized (lock) {
-                    client.send(dataStr);
+    public void onEventAsync(CameraFrameEvent frameEvent) {
+        try {
+            final CameraManager.CameraFrame frame = frameEvent.getCameraFrame();
+            // TODO(brandyn): Move this timing logic into the camera manager
+            Log.d(TAG, "handeImage Thread: " + Thread.currentThread().getName());
+            byte[] frameJPEG = null;
+            if (webview != null) {
+                if (frameJPEG == null)
+                    frameJPEG = frame.getJPEG();
+                String call = cameraManager.buildCallbackString(CameraManager.LOCAL, frameJPEG);
+                if (call != null) {
+                    Log.d(TAG, "Image JS Callback");
+                    EventBus.getDefault().post(new JsCall(call));
                 }
+            }
+            if (dataLocal) {
+                if (frameJPEG == null)
+                    frameJPEG = frame.getJPEG();
+                // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
+                SaveData(frameJPEG, "data/", true, ".jpg");
+            }
+            if (dataRemote) {
+                if (frameJPEG == null)
+                    frameJPEG = frame.getJPEG();
+                List<Value> output = new ArrayList<Value>();
+                output.add(ValueFactory.createRawValue("image"));
+                output.add(ValueFactory.createRawValue(glassID));
+                output.add(ValueFactory.createFloatValue(System.currentTimeMillis() / 1000.));
+                output.add(ValueFactory.createRawValue(frameJPEG));
+                final byte[] dataStr;
+                try {
+                    dataStr = msgpack.write(output);
+                } catch (IOException e) {
+                    Log.e(TAG, "Couldn't serialize msgpack");
+                    e.printStackTrace();
+                    return;
+                }
+                if (clientConnected())
+                    synchronized (lock) {
+                        client.send(dataStr);
+                    }
+            }
+        } finally {
+            frameEvent.done();
         }
     }
 
@@ -320,8 +333,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiScanCallback = null;
             photoCallback = null;
             blobCallbacks = new TreeMap<String, String>();
-            dataWifi = dataRemote = dataLocal = dataImage = false;
-            lastSensorSaveTime = lastImageSaveTime = sensorDelay = imagePeriod = 0.;
+            dataWifi = dataRemote = dataLocal =  false;
+            lastSensorSaveTime  = sensorDelay = 0.;
             dataManager.unregister();
             cameraManager.unregister(true);
             cardScrollAdapter.reset();
@@ -679,19 +692,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onEvent(JsCall e){
         loadUrl(e.getCall());
     }
-    public void onEvent(CameraEvent e){
-        double period = e.getPeriod();
-        if(period > 0){
-            dataImage = true;
-            imagePeriod = period * 1000000000L;
-        }else{
-            dataImage = false;
-            // NOTE(brandyn): This resets all callbacks, we should determine if that's the behavior we want
-        }
-    }
 
     public void onEvent(SayEvent e){
-        say("Script version incompatible with client");
+        say(e.getMsg());
     }
 
     public void onEvent(ActivityEvent e){

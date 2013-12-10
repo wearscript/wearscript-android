@@ -37,6 +37,8 @@ public class Log {
         setup();
         if (dsn == null)
             return;
+        if (activity == null)
+            return;
         activity.runOnUiThread(new Thread() {
             public void run() {
                 Sentry.captureEvent(new Sentry.SentryEventBuilder()

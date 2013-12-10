@@ -6,11 +6,13 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.view.ViewGroup;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
 import com.dappervision.wearscript.jsevents.CameraEvent;
+import com.dappervision.wearscript.jsevents.CameraFrameEvent;
 import com.dappervision.wearscript.jsevents.CameraPhotoEvent;
 import com.dappervision.wearscript.jsevents.CameraVideoEvent;
 import com.dappervision.wearscript.managers.Manager;
@@ -27,6 +29,8 @@ import org.opencv.imgproc.Imgproc;
 
 import java.util.List;
 
+import de.greenrobot.event.EventBus;
+
 public class CameraManager extends Manager implements Camera.PreviewCallback {
     private static final String TAG = "CameraManager";
     private static final int MAGIC_TEXTURE_ID = 10;
@@ -38,6 +42,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private CameraFrame cameraFrame;
     private boolean paused;
     private boolean opencvLoaded;
+    private long imagePeriod;
+    private double lastImageSaveTime;
 
     public class CameraFrame {
         private MatOfByte jpgFrame;
@@ -95,8 +101,10 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void onEvent(CameraEvent e){
-        double period = e.getPeriod();
-        if(period > 0){
+        imagePeriod  = Math.round(e.getPeriod() * 1000000000L);
+        lastImageSaveTime = 0.;
+
+        if(imagePeriod > 0){
             register();
         }else{
             unregister(true);
@@ -114,6 +122,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             camera = null;
             if (resetCallbacks) {
                 super.unregister();
+                lastImageSaveTime = 0.;
+                imagePeriod = 0;
                 paused = false;
             }
         }
@@ -137,6 +147,9 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void register() {
+        if (camera != null) {
+            Log.w(TAG, "Camera already registered");
+        }
         BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(service) {
             @Override
             public void onManagerConnected(int status) {
@@ -167,6 +180,9 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                     Log.e(TAG, "Camera #" + camIdx + "failed to open: " + e.getLocalizedMessage());
                 }
                 break;
+            }
+            if (camera == null) {
+                Log.e(TAG, "No camera available");
             }
             try {
                 Camera.Parameters params = camera.getParameters();
@@ -224,19 +240,33 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 return;
             }
             Log.d(TAG, "Preview Frame received. Frame size: " + data.length);
+            if (System.nanoTime() - lastImageSaveTime < imagePeriod) {
+                Log.d(TAG, "Frame skipping: " + (System.nanoTime() - lastImageSaveTime) + " < " + imagePeriod);
+                addCallbackBuffer();
+                return;
+            }
+            lastImageSaveTime = System.nanoTime();
             cameraFrame.setFrame(data);
-            service.handleImage(cameraFrame);
-            this.camera.addCallbackBuffer(buffer);
+            Log.d(TAG, "Frame on bus");
+            EventBus.getDefault().post(new CameraFrameEvent(cameraFrame, this));
         }
     }
 
-    public void cameraPhoto() {
+    public void addCallbackBuffer() {
+        synchronized (this) {
+            Log.d(TAG, "Frame addCallbackBuffer");
+            if (camera != null)
+                camera.addCallbackBuffer(buffer);
+        }
+    }
+
+    private void cameraPhoto() {
         pause();
         // TODO(brandyn): Get activity in a smarter way
         service.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000);
     }
 
-    public void cameraVideo() {
+    private void cameraVideo() {
         pause();
         // TODO(brandyn): Get activity in a smarter way
         service.activity.get().startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001);
