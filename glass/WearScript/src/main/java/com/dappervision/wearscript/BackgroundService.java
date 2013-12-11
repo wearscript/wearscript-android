@@ -855,6 +855,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public boolean onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.d(TAG, "Got request code: " + requestCode);
         if (requestCode == 1000) {
+            // TODO(brandyn): Move this into camera manager
             cameraManager.resume();
             if (resultCode == activity.get().RESULT_OK) {
                 String pictureFilePath = intent.getStringExtra(Camera.EXTRA_PICTURE_FILE_PATH);

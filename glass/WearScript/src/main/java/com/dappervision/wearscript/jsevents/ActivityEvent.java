@@ -9,7 +9,7 @@ public class ActivityEvent implements JSBusEvent {
         CARD_SCROLL
     }
 
-    public ActivityEvent(Mode m){
+    public ActivityEvent(Mode mode){
         this.mode = mode;
     }
 
