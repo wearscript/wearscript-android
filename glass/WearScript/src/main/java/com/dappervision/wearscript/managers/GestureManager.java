@@ -4,7 +4,6 @@ import android.content.Context;
 import android.view.MotionEvent;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.jsevents.GestureCallbackEvent;
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 
@@ -19,10 +18,6 @@ public class GestureManager extends Manager {
 
     public void onEvent(MotionEvent e){
         detector.onMotionEvent(e);
-    }
-
-    public void onEvent(GestureCallbackEvent e){
-        registerCallback(e.getEvent(), e.getCallback());
     }
 }
 

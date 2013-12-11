@@ -9,7 +9,7 @@ import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.activities.QRActivity;
-import com.dappervision.wearscript.jsevents.BarcodeCallbackEvent;
+import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
 public class BarcodeManager extends Manager {
     public BarcodeManager(BackgroundService bs) {
@@ -26,9 +26,11 @@ public class BarcodeManager extends Manager {
         LocalBroadcastManager.getInstance(service).registerReceiver(receiver, QRIntentFilter);
     }
 
-    public void onEvent(BarcodeCallbackEvent e){
-        registerCallback(e.getType(), e.getCallback());
-        startActivity();
+    public void onEvent(CallbackRegistration e){
+        if(e.getManager().equals(this.getClass())){
+            registerCallback(e.getEvent(), e.getCallback());
+            startActivity();
+        }
     }
 
     public void makeCall(byte[] data, String format) {

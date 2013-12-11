@@ -3,6 +3,7 @@ package com.dappervision.wearscript.managers;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.events.JsCall;
+import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,7 +23,17 @@ public abstract class Manager {
         jsCallbacks = new ConcurrentHashMap<String, String>();
     }
 
-    public void registerCallback(String type, String jsFunction) {
+    protected void setupCallback(CallbackRegistration e){
+        registerCallback(e.getEvent(), e.getCallback());
+    }
+
+    public void onEvent(CallbackRegistration r){
+        if(r.getManager().equals(this.getClass())){
+            setupCallback(r);
+        }
+    }
+
+    protected void registerCallback(String type, String jsFunction) {
         jsCallbacks.put(type, jsFunction);
     }
 

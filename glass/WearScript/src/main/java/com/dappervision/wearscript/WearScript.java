@@ -3,16 +3,12 @@ package com.dappervision.wearscript;
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.LogEvent;
-import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.BarcodeCallbackEvent;
-import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
-import com.dappervision.wearscript.jsevents.CameraCallbackEvent;
+import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
-import com.dappervision.wearscript.jsevents.GestureCallbackEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
@@ -20,9 +16,13 @@ import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.SensorJSEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
-import com.dappervision.wearscript.jsevents.WifiCallbackEvent;
 import com.dappervision.wearscript.jsevents.WifiEvent;
 import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.BlobManager;
+import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.WifiManager;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -133,15 +133,19 @@ public class WearScript {
     }
 
     public void cameraPhoto() {
-        getEventBus().post(new CameraEvents.Photo(null));
+        cameraPhoto(null);
     }
 
     public void cameraPhoto(String callback) {
-        getEventBus().post(new CameraEvents.Photo(callback));
+        CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
+        cr.setEvent(CameraManager.PHOTO);
+        getEventBus().post(cr);
     }
 
     public void cameraVideo() {
-        getEventBus().post(new CameraEvents.Video(null));
+        CallbackRegistration cr = new CallbackRegistration(CameraManager.class, null);
+        cr.setEvent(CameraManager.VIDEO);
+        getEventBus().post(cr);
     }
 
     public void cameraOn(double imagePeriod) {
@@ -149,7 +153,9 @@ public class WearScript {
     }
 
     public void cameraCallback(int type, String callback) {
-        getEventBus().post(new CameraCallbackEvent(type, callback));
+        CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
+        cr.setEvent(type);
+        getEventBus().post(cr);
     }
 
     public void activityCreate() {
@@ -169,7 +175,7 @@ public class WearScript {
     }
 
     public void wifiOn(String callback) {
-        getEventBus().post(new WifiCallbackEvent(callback));
+        getEventBus().post(new CallbackRegistration(WifiManager.class, callback));
         getEventBus().post(new WifiEvent(true));
     }
 
@@ -197,22 +203,23 @@ public class WearScript {
 
     public void qr(String cb) {
         Log.i(TAG, "QR");
-        getEventBus().post(new BarcodeCallbackEvent("QR_CODE", cb));
+        getEventBus().post(new CallbackRegistration(BarcodeManager.class, cb).setEvent("QR_CODE"));
     }
 
     public void blobCallback(String name, String cb) {
         Log.i(TAG, "blobCallback");
-        getEventBus().post(new BlobCallbackEvent(name, cb));
+        getEventBus().post(new CallbackRegistration(BlobManager.class, cb).setEvent(name));
     }
 
-    public void blobSend(String name, String blob) {
+    public void blobSend(String name, String payload) {
         Log.i(TAG, "blobSend");
-        getEventBus().post(new SendBlobEvent(name, blob));
+        Blob blob = new Blob(name, payload).outgoing();
+        getEventBus().post(blob);
     }
 
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
-        getEventBus().post(new GestureCallbackEvent(event, callback));
+        getEventBus().post(new CallbackRegistration(GestureManager.class, callback).setEvent(event));
     }
 
     public void speechRecognize(String prompt, String callback) {

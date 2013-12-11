@@ -21,11 +21,10 @@ import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LogEvent;
-import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.BlobCallbackEvent;
+import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
@@ -34,6 +33,7 @@ import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
@@ -89,10 +89,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected BarcodeManager BarcodeManager;
     protected DataManager dataManager;
     protected PicarusManager picarusManager;
+    private BlobManager blobManager;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
-    public TreeMap<String, String> blobCallbacks;
     public String wifiScanCallback;
     public String photoCallback;
     protected ScriptCardScrollAdapter cardScrollAdapter;
@@ -100,6 +100,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private View activityView;
     private String activityMode;
 
+    public SocketClient getSocketClient(){
+        return client;
+    }
     public void updateActivityView(final String mode) {
         if (activity == null)
             return;
@@ -330,7 +333,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             sensorTypes = new TreeMap<String, Integer>();
             wifiScanCallback = null;
             photoCallback = null;
-            blobCallbacks = new TreeMap<String, String>();
             dataWifi = dataRemote = dataLocal =  false;
             lastSensorSaveTime  = sensorDelay = 0.;
             dataManager.unregister();
@@ -497,11 +499,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             } else if (action.equals("blob")) {
                 String name = input.get(1).asRawValue().getString();
                 byte[] blob = input.get(2).asRawValue().getByteArray();
-                String blobCallback = blobCallbacks.get(name);
-                if (blobCallback != null && webview != null) {
-                    String data = String.format("javascript:%s(\"%s\");", blobCallback, Base64.encodeToString(blob, Base64.NO_WRAP));
-                    webview.loadUrl(data);
-                }
+                EventBus.getDefault().post(new Blob(name, blob));
             } else if (action.equals("version")) {
                 int versionExpected = 0;
                 int version = input.get(1).asIntegerValue().getInt();
@@ -636,6 +634,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         cameraManager = new CameraManager(this);
         BarcodeManager = new BarcodeManager(this);
         wifiManager = new WifiManager(this);
+        blobManager = new BlobManager(this);
 
         tts = new TextToSpeech(this, this);
 
@@ -683,8 +682,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
-    public void onEvent(CameraEvents.Photo e){
-        photoCallback = e.getCallback();
+    public void onEvent(CallbackRegistration e){
+        if(e.isManager(CameraManager.class)){
+            if(e.isEvent("PHOTO")){
+                photoCallback = e.getCallback();
+            }
+        }
     }
 
     public void onEvent(JsCall e){
@@ -721,14 +724,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void onEvent(PicarusEvent e){
         picarusManager = new PicarusManager(this);
-    }
-
-    public void onEvent(SendBlobEvent e){
-        blobSend(e.getName(), e.getBlob());
-    }
-
-    public void onEvent(BlobCallbackEvent e){
-        registerBlobCallback(e.getName(), e.getCallback());
     }
 
     public void onEvent(ScreenEvent e){
@@ -769,26 +764,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
             }
         }
-    }
-
-    public void blobSend(String type, String blob) {
-        synchronized (lock) {
-            if (client != null && client.isConnected()) {
-                List<Value> output = new ArrayList<Value>();
-                output.add(ValueFactory.createRawValue("blob"));
-                output.add(ValueFactory.createRawValue(type));
-                output.add(ValueFactory.createRawValue(blob));
-                try {
-                    client.send(msgpack.write(output));
-                } catch (IOException e) {
-                    Log.e(TAG, "blobSend: Couldn't serialize msgpack");
-                }
-            }
-        }
-    }
-
-    public void registerBlobCallback(String type, String jsFunction) {
-        blobCallbacks.put(type, jsFunction);
     }
 
     public void log(String m) {
