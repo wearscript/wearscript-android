@@ -3,7 +3,6 @@ package com.dappervision.wearscript;
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.LogEvent;
-import com.dappervision.wearscript.events.SendBlobEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
@@ -212,9 +211,10 @@ public class WearScript {
         getEventBus().post(new CallbackRegistration(BlobManager.class, cb).setEvent(name));
     }
 
-    public void blobSend(String name, String blob) {
+    public void blobSend(String name, String payload) {
         Log.i(TAG, "blobSend");
-        getEventBus().post(new SendBlobEvent(name, blob));
+        Blob blob = new Blob(name, payload).outgoing();
+        getEventBus().post(blob);
     }
 
     public void gestureCallback(String event, String callback) {
