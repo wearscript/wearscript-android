@@ -29,3 +29,4 @@ All encoding is done using `msgpack <http://msgpack.org>`_ with lists as the bas
 * ('timeline', timelineJS)
 * ('blob', name, blob)
 * ('widgetHeight', height): Used by widgets to tell the parent window how tall they should be
+* ('error', message): Used to convey fatal errors, message should be in a form speakable to the user using TTS
