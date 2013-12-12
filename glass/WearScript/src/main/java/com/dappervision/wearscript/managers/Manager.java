@@ -2,6 +2,7 @@ package com.dappervision.wearscript.managers;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
@@ -19,8 +20,12 @@ public abstract class Manager {
 
     public Manager(BackgroundService service){
         this.service = service;
-        EventBus.getDefault().register(this);
+        Utils.getEventBus().register(this);
         jsCallbacks = new ConcurrentHashMap<String, String>();
+    }
+
+    public void eventBusUnregister() {
+        Utils.getEventBus().unregister(this);
     }
 
     protected void setupCallback(CallbackRegistration e){
@@ -47,7 +52,7 @@ public abstract class Manager {
             return;
         String url = buildCallbackString(key, data);
         Log.d(TAG, "Gesture: Call: " + url);
-        EventBus.getDefault().post(new JsCall(url));
+        Utils.eventBusPost(new JsCall(url));
     }
 
     protected String buildCallbackString(String key, String data){

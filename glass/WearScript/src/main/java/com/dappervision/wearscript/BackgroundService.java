@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioRecord;
 import android.os.Binder;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.speech.RecognizerIntent;
@@ -24,6 +23,7 @@ import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
+import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
@@ -48,8 +48,6 @@ import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -58,8 +56,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
-
-import de.greenrobot.event.EventBus;
 
 import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
@@ -71,7 +67,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public boolean dataRemote, dataLocal, dataWifi;
     public double lastSensorSaveTime, sensorDelay;
     protected static String TAG = "WearScript";
-    protected CameraManager cameraManager;
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
@@ -86,10 +81,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     //Managers
     protected WifiManager wifiManager;
     protected GestureManager gestureManager;
-    protected BarcodeManager BarcodeManager;
+    protected BarcodeManager barcodeManager;
     protected DataManager dataManager;
     protected PicarusManager picarusManager;
     private BlobManager blobManager;
+    protected CameraManager cameraManager;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
@@ -135,7 +131,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void resetDefaultUrl() {
-        byte[] wsUrlArray = LoadData("", "qr.txt");
+        byte[] wsUrlArray = Utils.LoadData("", "qr.txt");
         if (wsUrlArray == null) {
             say("Must setup wear script");
             return;
@@ -225,7 +221,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             return;
         }
         if (dataLocal) {
-            SaveData(dataStr, "data/", true, ".msgpack");
+            Utils.SaveData(dataStr, "data/", true, ".msgpack");
         }
         if (dataRemote) {
             if (clientConnected())
@@ -247,14 +243,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 String call = cameraManager.buildCallbackString(CameraManager.LOCAL, frameJPEG);
                 if (call != null) {
                     Log.d(TAG, "Image JS Callback");
-                    EventBus.getDefault().post(new JsCall(call));
+                    Utils.eventBusPost(new JsCall(call));
                 }
             }
             if (dataLocal) {
                 if (frameJPEG == null)
                     frameJPEG = frame.getJPEG();
                 // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
-                SaveData(frameJPEG, "data/", true, ".jpg");
+                Utils.SaveData(frameJPEG, "data/", true, ".jpg");
             }
             if (dataRemote) {
                 if (frameJPEG == null)
@@ -296,6 +292,26 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void shutdown() {
         synchronized (lock) {
             reset();
+            if (broadcastReceiver != null) {
+                unregisterReceiver(broadcastReceiver);
+                broadcastReceiver = null;
+            }
+            if (cameraManager != null) {
+                cameraManager.unregister(true);
+            }
+            if (tts != null) {
+                tts.stop();
+                tts.shutdown();
+            }
+            Utils.getEventBus().unregister(this);
+            dataManager.eventBusUnregister();
+            cameraManager.eventBusUnregister();
+            barcodeManager.eventBusUnregister();
+            wifiManager.eventBusUnregister();
+            blobManager.eventBusUnregister();
+            gestureManager.eventBusUnregister();
+            if (picarusManager != null)
+                picarusManager.eventBusUnregister();
             Log.d(TAG, "Disconnecting client");
             if (client != null) {
                 client.shutdown();
@@ -455,7 +471,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     Log.w(TAG, "Unable to save script");
                     return;
                 }
-                SaveData(script.getBytes(), "scripts/", false, name + ".html");
+                Utils.SaveData(script.getBytes(), "scripts/", false, name + ".html");
             } else if (action.equals("startScriptUrl")) {
                 final String url = input.get(1).asRawValue().getString();
                 if (activity == null)
@@ -469,6 +485,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
                     }
                 });
+            } else if (action.equals("error")) {
+                client.shutdown();
+                String error = input.get(1).asRawValue().getString();
+                Log.e(TAG, "Lifecycle: Got server error: " + error);
+                sayInterrupt(error);
             } else if (action.equals("sensors")) {
                 TreeMap<String, Integer> types = new TreeMap<String, Integer>();
                 Value[] typesKeyValues = input.get(2).asMapValue().getKeyValueArray();
@@ -493,13 +514,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
             } else if (action.equals("image")) {
                 String call = cameraManager.buildCallbackString(CameraManager.REMOTE, input.get(3).asRawValue().getByteArray());
-                EventBus.getDefault().post(new JsCall(call));
+                Utils.eventBusPost(new JsCall(call));
             } else if (action.equals("raven")) {
                 Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {
                 String name = input.get(1).asRawValue().getString();
                 byte[] blob = input.get(2).asRawValue().getByteArray();
-                EventBus.getDefault().post(new Blob(name, blob));
+                Utils.eventBusPost(new Blob(name, blob));
             } else if (action.equals("version")) {
                 int versionExpected = 0;
                 int version = input.get(1).asIntegerValue().getInt();
@@ -518,66 +539,23 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void onSocketDisconnect(int code, String reason) {
         Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
-        synchronized (lock) {
-            if (client == null || client.getListener() != this)
-                return;
-        }
-        client.reconnect();
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                }
+                synchronized (lock) {
+                    if (client == null || client.getListener() != BackgroundService.this)
+                        return;
+                    client.reconnect();
+                }
+            }
+        }).start();
     }
 
     public void onSocketError(Exception error) {
         Log.e(TAG, "WS: Connection Error!", error);
-    }
-
-    public static String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
-        try {
-            try {
-                File dir = new File(dataPath() + path);
-                dir.mkdirs();
-                File file;
-                if (timestamp)
-                    file = new File(dir, Long.toString(System.currentTimeMillis()) + suffix);
-                else
-                    file = new File(dir, suffix);
-
-                FileOutputStream outputStream = new FileOutputStream(file);
-                outputStream.write(data);
-                outputStream.close();
-                return file.getAbsolutePath();
-            } catch (Exception e) {
-                return null;
-            }
-        } catch (Exception e) {
-            Log.e("SaveData", "Bad disc");
-            return null;
-        }
-    }
-
-    static public String dataPath() {
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/wearscript/";
-    }
-
-    protected byte[] LoadFile(File file) {
-        try {
-            try {
-                Log.i(TAG, "LoadFile: " + file.getAbsolutePath());
-                FileInputStream inputStream = new FileInputStream(file);
-                byte[] data = new byte[(int) file.length()];
-                inputStream.read(data);
-                inputStream.close();
-                return data;
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage());
-                return null;
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Bad file read");
-            return null;
-        }
-    }
-
-    public byte[] LoadData(String path, String suffix) {
-        return LoadFile(new File(new File(dataPath() + path), suffix));
     }
 
     public void runScript(String script) {
@@ -589,7 +567,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
             Log.d(TAG, "WebView:" + script);
-            String path = SaveData(script.getBytes(), "scripting/", false, "script.html");
+            String path = Utils.SaveData(script.getBytes(), "scripting/", false, "script.html");
             webview.setInitialScale(100);
             webview.loadUrl("file://" + path);
             Log.i(TAG, "WebView Ran");
@@ -620,7 +598,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
-        EventBus.getDefault().register(this);
+        Utils.getEventBus().register(this);
 
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
@@ -632,7 +610,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         //Plugin new Managers here
         dataManager = new DataManager(this);
         cameraManager = new CameraManager(this);
-        BarcodeManager = new BarcodeManager(this);
+        barcodeManager = new BarcodeManager(this);
         wifiManager = new WifiManager(this);
         blobManager = new BlobManager(this);
 
@@ -668,16 +646,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onDestroy() {
         Log.i(TAG, "Lifecycle: Service onDestroy");
-        EventBus.getDefault().unregister(this);
-        if (broadcastReceiver != null)
-            unregisterReceiver(broadcastReceiver);
-        if (cameraManager != null) {
-            cameraManager.unregister(true);
-        }
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
         shutdown();
         super.onDestroy();
     }
@@ -799,6 +767,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     null);
     }
 
+    public void sayInterrupt(String text) {
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+    }
+
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
@@ -852,7 +824,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return mCallback;
     }
 
-    public boolean onActivityResult(int requestCode, int resultCode, Intent intent) {
+    public void onEvent(ActivityResultEvent event) {
+        int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
+        Intent intent = event.getIntent();
         Log.d(TAG, "Got request code: " + requestCode);
         if (requestCode == 1000) {
             // TODO(brandyn): Move this into camera manager
@@ -864,7 +838,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     //pictureFilePath
                     byte imageData[] = null;
                     for (int i = 0; i < 100; i++) {
-                        imageData = LoadFile(new File(pictureFilePath));
+                        imageData = Utils.LoadFile(new File(pictureFilePath));
                         if (imageData == null) {
                             Log.w(TAG, "Waiting for photo...");
                             try {
@@ -896,15 +870,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 String spokenText = results.get(0);
                 Log.d(TAG, "Spoken Text: " + spokenText);
                 if (speechCallback == null)
-                    return true;
+                    return;
                 // TODO(brandyn): Check speech result for JS injection that can escape out of the quotes
                 loadUrl(String.format("javascript:%s(\"%s\");", speechCallback, spokenText));
             } else if (resultCode == activity.get().RESULT_CANCELED) {
 
             }
-        } else {
-            return false;
         }
-        return true;
     }
 }

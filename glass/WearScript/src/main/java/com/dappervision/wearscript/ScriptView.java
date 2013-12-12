@@ -27,7 +27,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
 
     ScriptView(final BackgroundService context) {
         super(context);
-        EventBus.getDefault().register(this);
+        Utils.getEventBus().register(this);
         this.context = context;
 	    clearCache(true);
         setWebChromeClient(new WebChromeClient() {
@@ -98,7 +98,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
     }
 
     public void onDestroy() {
-        EventBus.getDefault().unregister(this);
+        Utils.getEventBus().unregister(this);
         if (liveCard != null && liveCard.isPublished()) {
             Log.d(TAG, "Unpublishing LiveCard");
             liveCardUnpublish();

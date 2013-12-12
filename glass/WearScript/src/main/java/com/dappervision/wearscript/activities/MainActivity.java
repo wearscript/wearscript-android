@@ -7,12 +7,17 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.jsevents.ActivityResultEvent;
+import com.dappervision.wearscript.jsevents.CameraEvents;
+import com.dappervision.wearscript.jsevents.StartActivityEvent;
 
 import de.greenrobot.event.EventBus;
 
@@ -34,6 +39,7 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.register(this);
+        Utils.getEventBus().register(this);
         Log.i(TAG, "Lifecycle: Activity onCreate");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Intent thisIntent = getIntent();
@@ -88,8 +94,6 @@ public class MainActivity extends Activity {
     public void onPause() {
         Log.i(TAG, "Lifecycle: MainActivity: onPause");
         isForeground = false;
-        if (bs != null)
-            bs.getCameraManager().pause();
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onPause();
     }
@@ -106,10 +110,9 @@ public class MainActivity extends Activity {
     public void onDestroy() {
         Log.i(TAG, "Lifecycle: MainActivity: onDestroy");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        if (bs != null)
-            bs.getCameraManager().pause();
         if (mConnection != null)
             unbindService(mConnection);
+        Utils.getEventBus().unregister(this);
         super.onDestroy();
     }
 
@@ -123,23 +126,24 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void onEvent(StartActivityEvent event) {
+        startActivityForResult(event.getIntent(), event.getRequestCode());
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.i(TAG, "Request code: " + requestCode + " Result code: " + resultCode);
-        if (bs != null && bs.onActivityResult(requestCode, resultCode, intent))
-            return;
-        Log.i(TAG, "QR: Got activity result: V0");
         if (requestCode == 0) {
             String contents = null;
             if (resultCode == RESULT_OK) {
                 contents = intent.getStringExtra("SCAN_RESULT");
                 String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
                 Log.i(TAG, "QR: " + contents + " Format: " + format);
-                bs.SaveData(contents.getBytes(), "", false, "qr.txt");
+                Utils.SaveData(contents.getBytes(), "", false, "qr.txt");
             } else if (resultCode == RESULT_CANCELED) {
                 // Reuse local config
                 Log.i(TAG, "QR: Canceled, using previous scan");
-                byte[] contentsArray = bs.LoadData("", "qr.txt");
+                byte[] contentsArray = Utils.LoadData("", "qr.txt");
                 if (contentsArray == null) {
                     bs.say("Please exit and scan the QR code");
                     return;
@@ -151,6 +155,8 @@ public class MainActivity extends Activity {
             bs.reset();
             bs.wsUrl = contents;
             bs.runScript("<script>function s() {WS.say('Server connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
+        } else {
+            Utils.eventBusPost(new ActivityResultEvent(requestCode, resultCode, intent));
         }
     }
 
@@ -158,8 +164,9 @@ public class MainActivity extends Activity {
     public boolean onGenericMotionEvent(MotionEvent event) {
         // NOTE(brandyn): If you return true then the cardscroll won't get the gesture
         // TODO(brandyn): Consider registering overrides
+        // TODO(brandyn): We may need the return value here
         //return gm.onMotionEvent(event);
-        EventBus.getDefault().post(event);
+        Utils.eventBusPost(event);
         return false;
     }
 }

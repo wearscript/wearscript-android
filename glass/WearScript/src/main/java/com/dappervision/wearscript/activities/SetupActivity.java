@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.Utils;
 
 public class SetupActivity extends Activity {
     private static final String TAG = "SetupActivity";
@@ -27,7 +28,7 @@ public class SetupActivity extends Activity {
                 contents = intent.getStringExtra("SCAN_RESULT");
                 String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
                 Log.i(TAG, "QR: " + contents + " Format: " + format);
-                BackgroundService.SaveData(contents.getBytes(), "", false, "qr.txt");
+                Utils.SaveData(contents.getBytes(), "", false, "qr.txt");
             } else if (resultCode == RESULT_CANCELED) {
             }
         }

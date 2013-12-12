@@ -89,6 +89,8 @@ public class SocketClient {
 
         @Override
         public void onConnect() {
+            if (shutdown)
+                return;
             connected = true;
             Log.i(TAG, "Lifecycle: Calling server callback");
             parent.onSocketConnect(callback);
@@ -101,19 +103,25 @@ public class SocketClient {
 
         @Override
         public void onDisconnect(int i, String s) {
+            if (shutdown)
+                return;
             connected = false;
-            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket disconnected");
+            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket disconnected: i: " + i + " s: " + s);
             parent.onSocketDisconnect(i, s);
         }
 
         @Override
         public void onError(Exception e) {
-            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket errored");
+            if (shutdown)
+                return;
+            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket errored: " + e.getLocalizedMessage());
             parent.onSocketError(e);
         }
 
         @Override
         public void onMessage(byte[] s) {
+            if (shutdown)
+                return;
             parent.onSocketMessage(s);
         }
     }
