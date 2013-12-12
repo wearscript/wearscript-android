@@ -37,6 +37,7 @@ First we install/setup Android Studio
 
 * Download/unpack the canary version of Android Studio with Android SDK bundle http://tools.android.com/download/studio/canary/0-3-2 note that this is the latest version WITH the sdk bundled, you can update once it is installed but this simplifies the install
 * Locate the "sdk/platform-tools" and "sdk/tools" directories and add them to your system path (this lets you use the "adb and android" commands)
+* (OSX): echo "export PATH=$PATH:/Applications/Android\ Studio.app/sdk/platform-tools/:/Applications/Android\ Studio.app/sdk/tools/" >> ~/.profile
 * (Windows) from the command prompt(Without quotes) "set PATH=%PATH%;C:\YourFolderPath\whereadbIsLocated\sdk\platform-tools\"
 * NOTE: If it can't find the SDK then follow these steps
 

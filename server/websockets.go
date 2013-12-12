@@ -81,22 +81,30 @@ func MsgpackUnmarshal(data []byte, payloadType byte, v interface{}) (err error) 
 	return
 }
 
+func WSSend(c *websocket.Conn, request *[]interface{}) error {
+    msgcodec := websocket.Codec{MsgpackMarshal, MsgpackUnmarshal}
+    return msgcodec.Send(c, request)
+}
+
 func WSGlassHandler(c *websocket.Conn) {
 	defer c.Close()
 	fmt.Println("Connected with glass")
 	path := strings.Split(c.Request().URL.Path, "/")
 	if len(path) != 4 {
 		fmt.Println("Bad path")
+		WSSend(c, &[]interface{}{[]uint8("error"), "Bad url path"})
 		return
 	}
 	userId, err := getSecretUser("ws", secretHash(path[len(path)-1]))
 	if err != nil {
 		fmt.Println(err)
+		WSSend(c, &[]interface{}{[]uint8("error"), "Invalid credentials please setup glass"})
 		return
 	}
 	svc, err := mirror.New(authTransport(userId).Client())
 	if err != nil {
 		LogPrintf("ws: mirror")
+		WSSend(c, &[]interface{}{[]uint8("error"), "Unable to create mirror transport"})
 		return
 	}
 	// TODO: make buffer size configurable
