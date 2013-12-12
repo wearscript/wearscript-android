@@ -92,19 +92,19 @@ func WSGlassHandler(c *websocket.Conn) {
 	path := strings.Split(c.Request().URL.Path, "/")
 	if len(path) != 4 {
 		fmt.Println("Bad path")
-		WSSend(c, &[]interface{}{[]uint8("error"), "Bad url path"})
+		WSSend(c, &[]interface{}{[]uint8("error"), []uint8("Bad url path")})
 		return
 	}
 	userId, err := getSecretUser("ws", secretHash(path[len(path)-1]))
 	if err != nil {
 		fmt.Println(err)
-		WSSend(c, &[]interface{}{[]uint8("error"), "Invalid credentials please setup glass"})
+		WSSend(c, &[]interface{}{[]uint8("error"), []uint8("Invalid credentials please setup glass")})
 		return
 	}
 	svc, err := mirror.New(authTransport(userId).Client())
 	if err != nil {
 		LogPrintf("ws: mirror")
-		WSSend(c, &[]interface{}{[]uint8("error"), "Unable to create mirror transport"})
+		WSSend(c, &[]interface{}{[]uint8("error"), []uint8("Unable to create mirror transport")})
 		return
 	}
 	// TODO: make buffer size configurable
@@ -118,7 +118,7 @@ func WSGlassHandler(c *websocket.Conn) {
 	WSUpdateConnections(userId)
 	wsSendChan <- &[]interface{}{[]uint8("version"), version}
 	if ravenDSN != "" {
-		wsSendChan <- &[]interface{}{[]uint8("raven"), ravenDSN}
+		wsSendChan <- &[]interface{}{[]uint8("raven"), []uint8(ravenDSN)}
 	}
 	defer func () {
 		Locks[userId].Lock()
@@ -231,7 +231,7 @@ func WSWebHandler(c *websocket.Conn) {
 	versionRequestP := &[]interface{}{[]uint8("version"), version}
 	wsSendChan <- &versionRequestP
 	if ravenDSN != "" {
-		ravenRequestP := &[]interface{}{[]uint8("raven"), ravenDSN}
+		ravenRequestP := &[]interface{}{[]uint8("raven"), []uint8(ravenDSN)}
 		wsSendChan <- &ravenRequestP
 	}
 	defer func () {
