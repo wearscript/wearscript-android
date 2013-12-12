@@ -1,3 +1,5 @@
+.. _wire:
+
 Websocket Wire Format
 =====================
 

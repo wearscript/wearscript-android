@@ -36,7 +36,7 @@ import java.util.List;
 
 public class WearScriptHelper {
     private static final String TAG = "WearScriptHelper";
-    private static final String WEARSCRIPT_PATH = BackgroundService.dataPath() + "scripts/";
+    private static final String WEARSCRIPT_PATH = Utils.dataPath() + "scripts/";
     ;
     public static final String WS_PKG = "com.dappervision.wearscript";
     public static final String WS_ACTIVITY = "com.dappervision.wearscript.activities.MainActivity";

@@ -56,17 +56,13 @@ public class WearScript {
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
     }
 
-    public static EventBus getEventBus(){
-        return EventBus.getDefault();
-    }
-
     public int sensor(String name) {
         return this.sensors.get(name);
     }
 
     public void shutdown() {
         //Global event
-        getEventBus().post(new ShutdownEvent());
+        Utils.getEventBus().post(new ShutdownEvent());
     }
 
     public String sensors() {
@@ -74,44 +70,44 @@ public class WearScript {
     }
 
     public void say(String text) {
-        getEventBus().post(new SayEvent(text));
+        Utils.eventBusPost(new SayEvent(text));
         Log.i(TAG, "say: " + text);
     }
 
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
-        getEventBus().post(new ServerTimelineEvent(ti));
+        Utils.eventBusPost(new ServerTimelineEvent(ti));
     }
 
     public void sensorOn(int type, double sampleTime) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type));
-        getEventBus().post(new SensorJSEvent(type, true, sampleTime, null));
+        Utils.eventBusPost(new SensorJSEvent(type, true, sampleTime, null));
     }
 
     public void sensorOn(int type, double sampleTime, String callback) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type) + " callback: " + callback);
-        getEventBus().post(new SensorJSEvent(type, true, sampleTime, callback));
+        Utils.eventBusPost(new SensorJSEvent(type, true, sampleTime, callback));
     }
 
     public void log(String msg) {
         //Global event
-        getEventBus().post(new LogEvent(msg));
+        Utils.eventBusPost(new LogEvent(msg));
     }
 
     public void sensorOff(int type) {
         Log.i(TAG, "sensorOff: " + Integer.toString(type));
-        getEventBus().post(new SensorJSEvent(type, false));
+        Utils.eventBusPost(new SensorJSEvent(type, false));
     }
 
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
         //Global event
-        getEventBus().post(new ServerConnectEvent(server, callback));
+        Utils.eventBusPost(new ServerConnectEvent(server, callback));
     }
 
     public void displayWebView() {
         Log.i(TAG, "displayWebView");
-        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.WEBVIEW));
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.WEBVIEW));
     }
 
     public void data(int type, String name, String values) {
@@ -125,11 +121,11 @@ public class WearScript {
                 dp.addValue(((Long) j).doubleValue());
             }
         }
-        getEventBus().post(dp);
+        Utils.eventBusPost(dp);
     }
 
     public void cameraOff() {
-        getEventBus().post(new CameraEvents.Start(0));
+        Utils.eventBusPost(new CameraEvents.Start(0));
     }
 
     public void cameraPhoto() {
@@ -139,99 +135,99 @@ public class WearScript {
     public void cameraPhoto(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.PHOTO);
-        getEventBus().post(cr);
+        Utils.eventBusPost(cr);
     }
 
     public void cameraVideo() {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, null);
         cr.setEvent(CameraManager.VIDEO);
-        getEventBus().post(cr);
+        Utils.eventBusPost(cr);
     }
 
     public void cameraOn(double imagePeriod) {
-        getEventBus().post(new CameraEvents.Start(imagePeriod));
+        Utils.eventBusPost(new CameraEvents.Start(imagePeriod));
     }
 
     public void cameraCallback(int type, String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(type);
-        getEventBus().post(cr);
+        Utils.eventBusPost(cr);
     }
 
     public void activityCreate() {
-        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.CREATE));
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CREATE));
     }
 
     public void activityDestroy() {
-        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.DESTROY));
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.DESTROY));
     }
 
     public void wifiOff() {
-        getEventBus().post(new WifiEvent(false));
+        Utils.eventBusPost(new WifiEvent(false));
     }
 
     public void wifiOn() {
-        getEventBus().post(new WifiEvent(true));
+        Utils.eventBusPost(new WifiEvent(true));
     }
 
     public void wifiOn(String callback) {
-        getEventBus().post(new CallbackRegistration(WifiManager.class, callback));
-        getEventBus().post(new WifiEvent(true));
+        Utils.eventBusPost(new CallbackRegistration(WifiManager.class, callback));
+        Utils.eventBusPost(new WifiEvent(true));
     }
 
     public void wifiScan() {
-        getEventBus().post(new WifiScanEvent());
+        Utils.eventBusPost(new WifiScanEvent());
     }
 
     public void dataLog(boolean local, boolean server, double sensorDelay) {
-        getEventBus().post(new DataLogEvent(local, server, sensorDelay));
+        Utils.eventBusPost(new DataLogEvent(local, server, sensorDelay));
     }
 
     public boolean scriptVersion(int version) {
         if (version == 0) {
             return false;
         } else {
-            getEventBus().post(new SayEvent("Script version incompatible with client"));
+            Utils.eventBusPost(new SayEvent("Script version incompatible with client"));
             return true;
         }
     }
 
     public void wake() {
         Log.i(TAG, "wake");
-        getEventBus().post(new ScreenEvent(true));
+        Utils.eventBusPost(new ScreenEvent(true));
     }
 
     public void qr(String cb) {
         Log.i(TAG, "QR");
-        getEventBus().post(new CallbackRegistration(BarcodeManager.class, cb).setEvent("QR_CODE"));
+        Utils.eventBusPost(new CallbackRegistration(BarcodeManager.class, cb).setEvent("QR_CODE"));
     }
 
     public void blobCallback(String name, String cb) {
         Log.i(TAG, "blobCallback");
-        getEventBus().post(new CallbackRegistration(BlobManager.class, cb).setEvent(name));
+        Utils.eventBusPost(new CallbackRegistration(BlobManager.class, cb).setEvent(name));
     }
 
     public void blobSend(String name, String payload) {
         Log.i(TAG, "blobSend");
         Blob blob = new Blob(name, payload).outgoing();
-        getEventBus().post(blob);
+        Utils.eventBusPost(blob);
     }
 
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
-        getEventBus().post(new CallbackRegistration(GestureManager.class, callback).setEvent(event));
+        Utils.eventBusPost(new CallbackRegistration(GestureManager.class, callback).setEvent(event));
     }
 
     public void speechRecognize(String prompt, String callback) {
-        getEventBus().post(new SpeechRecognizeEvent(prompt, callback));
+        Utils.eventBusPost(new SpeechRecognizeEvent(prompt, callback));
     }
 
     public void liveCardCreate(boolean nonSilent, double period) {
-        getEventBus().post(new LiveCardEvent(nonSilent, period));
+        Utils.eventBusPost(new LiveCardEvent(nonSilent, period));
     }
 
     public void liveCardDestroy() {
-        getEventBus().post(new LiveCardEvent(false, 0));
+        Utils.eventBusPost(new LiveCardEvent(false, 0));
     }
 
     public void cardInsert(final int position, final String cardJSON) {
@@ -319,10 +315,10 @@ public class WearScript {
     }
 
     public void displayCardScroll() {
-        getEventBus().post(new ActivityEvent(ActivityEvent.Mode.CARD_SCROLL));
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CARD_SCROLL));
     }
 
     public void picarus(String config, String input, String callback) {
-        getEventBus().post(new PicarusEvent());
+        Utils.eventBusPost(new PicarusEvent());
     }
 }
