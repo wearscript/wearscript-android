@@ -101,6 +101,7 @@ func WSGlassHandler(c *websocket.Conn) {
 		WSSend(c, &[]interface{}{[]uint8("error"), []uint8("Invalid credentials please setup glass")})
 		return
 	}
+	userId = SanitizeUserId(userId)
 	svc, err := mirror.New(authTransport(userId).Client())
 	if err != nil {
 		LogPrintf("ws: mirror")
@@ -217,6 +218,7 @@ func WSWebHandler(c *websocket.Conn) {
 			return
 		}
 	}
+	userId = SanitizeUserId(userId)
 	fmt.Println("Websocket connected")
 	// TODO: make buffer size configurable
 	if Locks[userId] == nil {

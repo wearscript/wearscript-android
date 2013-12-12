@@ -127,7 +127,7 @@ func oauth2callbackHandler(w http.ResponseWriter, r *http.Request) {
 		LogPrintf("oauth: userinfo get")
 		return
 	}
-	userId := fmt.Sprintf("%s_%s", strings.Split(clientId, ".")[0], u.Id)
+	userId := fmt.Sprintf("%s_%s", strings.Split(strings.Split(clientId, ".")[0], "-")[0], u.Id)
 	if err = storeUserID(w, r, userId); err != nil {
 		w.WriteHeader(500)
 		LogPrintf("oauth: store userid")

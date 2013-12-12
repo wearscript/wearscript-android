@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gorilla/sessions"
 	"io"
+	"strings"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -55,6 +56,12 @@ func download(url string) []byte {
 		return nil
 	}
 	return contents
+}
+
+func SanitizeUserId(userId string) string {
+	// NOTE(brandyn): If you create multiple oauth keys it appends a hyphen with some text to the latter ones, we want to normalize it
+	parts0 := strings.Split(userId, "_")
+	return strings.Split(parts0[0], "-")[0] + "_" + parts0[1]
 }
 
 // OAuth2.0 configuration variables.
