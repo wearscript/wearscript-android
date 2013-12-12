@@ -1,22 +1,10 @@
 import base64
-import json
+import msgpack
 import glob
 import os
 import argparse
 import shutil
 import subprocess
-
-
-def load_images(input_dir, **kw):
-    for fn in glob.glob(input_dir + '/*.js'):
-        try:
-            try:
-                image = base64.b64decode(json.load(open(fn))['imageb64'])
-            except KeyError:
-                continue
-            open(input_dir + '/' + os.path.basename(fn) + '.jpg', 'w').write(image)
-        except:
-            print('Error[%s]: Skipping' % fn)
 
 
 def adb_pull(output_dir, **kw):
@@ -25,7 +13,7 @@ def adb_pull(output_dir, **kw):
 
 
 def adb_rmr(**kw):
-    c = 'adb shell rm -r sdcard/wearscript/data/'
+    c = 'adb shell rm sdcard/wearscript/data/*'
     subprocess.call(c.split())
 
 
@@ -35,18 +23,11 @@ def adb_ls(**kw):
 
 
 def update_sensor_count(sensors, total_counts):
-    counts = {}
-    for s in sensors:
+    for name, ss in sensors.items():
         try:
-            counts[s['type']] += 1
+            total_counts[name] += len(ss)
         except KeyError:
-            counts[s['type']] = 1
-    for t, c in counts.items():
-        total_type_c = total_counts.setdefault(t, {})
-        try:
-            total_type_c[c] += 1
-        except KeyError:
-            total_type_c[c] = 1
+            total_counts[name] = len(ss)
 
 
 def picarus_store(email, api_key, prefix, **kw):
@@ -72,39 +53,46 @@ def local_store(output_dir, **kw):
 
 
 def load_dir(input_dir, max_sensor_radius=2, **kw):
-    sensors = []
-    sensor_sample_hist = {}  # [type][count]
-    for fn in sorted(glob.glob(input_dir + '/*.js')):
+    sensor_samples = {}
+    sensor_types = {}
+    sensor_sample_hist = {}  # [name][count]
+    fn_to_time = lambda x: int(x.rsplit('/', 1)[-1].split('.', 1)[0])
+    for fn in sorted(glob.glob(input_dir + '/*'), key=fn_to_time):
+        fn_time = fn_to_time(fn) / 1000.
         print(fn)
-        try:
-            data = json.load(open(fn))
-        except ValueError:
-            print('Could not parse [%s]' % fn)
-            continue
-        sensors += data['sensors']
-        if 'imageb64' in data:
-            update_sensor_count(sensors, sensor_sample_hist)
+        if fn.endswith('.jpg'):
+            print(sensor_types)
+            print(sensor_samples)
             print(sensor_sample_hist)
-            for s in sensors:
-                sensor_time = data['Tsave'] - s['timestamp']
-                if sensor_time > max_sensor_radius:
-                    continue
-            print('NumSensors[%d]' % len(sensors))
-            yield str(data['Tsave'] * 1000), {'data:image': base64.b64decode(data['imageb64']),
-                                              'meta:filename': os.path.basename(fn),
-                                              'meta:sensors': json.dumps(sensors),
-                                              'meta:time': json.dumps(data['Tsave'])}
-            sensors = []
-    print('NumSensors At End[%d]' % len(sensors))
+
+            for name in sensor_samples.keys():
+                sensor_samples[name] = [s for s in sensor_samples[name] if abs(s[1] - fn_time) < max_sensor_radius]
+            update_sensor_count(sensor_samples, sensor_sample_hist)
+            sensor_types = {k: v for k, v in sensor_types.items() if k in sensor_samples}
+            yield str(fn_time * 1000), {'data:image': open(fn).read(),
+                                        'meta:filename': os.path.basename(fn),
+                                        'meta:sensor_samples': msgpack.dumps(sensor_samples),
+                                        'meta:sensor_types': msgpack.dumps(sensor_types),
+                                        'meta:time': msgpack.dumps(fn_time)}
+            sensor_samples = {}
+            sensor_types = {}
+        else:
+            try:
+                data = msgpack.load(open(fn))
+            except ValueError:
+                print('Could not parse [%s]' % fn)
+                continue
+            print(data)
+            for name, samples in data[3].items():
+                sensor_samples.setdefault(name, []).extend(samples)
+            for name, type_num in data[2].items():
+                sensor_types[name] = type_num
+        print(sensor_sample_hist)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
-
-    subparser = subparsers.add_parser('images')
-    subparser.add_argument('input_dir')
-    subparser.set_defaults(func=load_images)
 
     subparser = subparsers.add_parser('adb_pull')
     subparser.add_argument('output_dir')

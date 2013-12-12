@@ -1,16 +1,14 @@
 import gevent
 from gevent import monkey
 monkey.patch_all()
+import msgpack
 from event_model_create import _local_data, _picarus_data
 import bottle
 import argparse
 import bisect
 import cPickle as pickle
 from events import get_row_bounds, get_event_sensors
-try:
-    from image_server.auth import verify
-except ImportError:
-    from static_server.auth import verify
+from auth import verify
 from event_classification import classify_slice
 import event_classification
 bottle.debug(True)
@@ -97,7 +95,7 @@ def event(auth_key, event):
     for chart_num in [1, 2, 3, 4, 5, 9, 10, 11]:
         chart_id = 'chart_%d' % chart_count
         out.append('<h2>%s (%d)</h2><div id="%s"></div>' % (sensor_names[chart_num], chart_num, chart_id))
-        chart_values[chart_id] = [[x['timestamp'] for x in event_sensors[chart_num]]] + zip(*[x['values'] for x in event_sensors[chart_num]])
+        chart_values[chart_id] = [[x[1] for x in event_sensors[chart_num]]] + zip(*[x[0] for x in event_sensors[chart_num]])
         chart_count += 1
     out.append('</div>')
     return template.replace('{{events}}', ''.join(out)).replace('{{chartValues}}', json.dumps(chart_values)).replace('{{AUTH_KEY}}', auth_key).replace('{{EVENT}}', event).replace('{{THUMBWIDTH}}', ARGS.thumbwidth)
@@ -129,7 +127,7 @@ if __name__ == "__main__":
     ARGS = parser.parse_args()
     CLIENT = ARGS.func(**vars(ARGS))
     data_type, EVENT_ROWS, ROW_COLUMNS = pickle.load(open(ARGS.model))
-    EVENT_ROW_TIMES = {e: [float(ROW_COLUMNS[row]['meta:time']) for row in rows] for e, rows in EVENT_ROWS.items()}
+    EVENT_ROW_TIMES = {e: [msgpack.loads(ROW_COLUMNS[row]['meta:time']) for row in rows] for e, rows in EVENT_ROWS.items()}
     EVENT_CLASSIFICATIONS = {}  # [event_name] = list of (start_time, stop_time, classification results)
     for event_name, rows in EVENT_ROWS.items():
         EVENT_CLASSIFICATIONS[event_name] = list(classify_slice(rows, ROW_COLUMNS, EVENT_ROW_TIMES[event_name][0], EVENT_ROW_TIMES[event_name][-1]))

@@ -1,5 +1,5 @@
 import argparse
-import picarus
+import msgpack
 import cPickle as pickle
 from picarus_local import PicarusClientLocal
 
@@ -14,14 +14,13 @@ def detect_events(client, start_row, stop_row, max_event_delay=10., min_event_ro
     """
     prev_time = 0
     time_column = 'meta:time'
-    sensor_column = 'meta:sensors'
     event_boundaries = []
     event_rows = {}
     row_columns = {}
     cache_bytes = 0
-    for row, columns in client.scanner('images', start_row=start_row, stop_row=stop_row, columns=[time_column, sensor_column]):
+    for row, columns in client.scanner('images', start_row=start_row, stop_row=stop_row, columns=[time_column, 'meta:sensor_samples', 'meta:sensor_types']):
         cache_bytes += sum([len(x) for x in columns.values()])
-        cur_time = float(columns[time_column])
+        cur_time = msgpack.loads(columns[time_column])
         row_columns[row] = columns
         diff = cur_time - prev_time
         if diff > max_event_delay or not event_boundaries:
@@ -46,6 +45,7 @@ def detect_events(client, start_row, stop_row, max_event_delay=10., min_event_ro
 
 
 def _picarus_data(email, api_key, **kw):
+    import picarus
     return picarus.PicarusClient(email=email, api_key=api_key)
 
 

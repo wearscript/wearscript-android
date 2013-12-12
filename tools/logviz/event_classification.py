@@ -1,7 +1,7 @@
 import pickle
 import argparse
-import picarus
 import numpy as np
+import msgpack
 import json
 from event_training_data import DATA
 from events import get_row_bounds, get_event_sensors
@@ -57,7 +57,7 @@ def classify_sensors(sensor_values, window_size=10):
 
 def classify_slice(rows, row_columns, start_time, stop_time, window_size=10):
     sensors, sensor_names = get_event_sensors(rows, row_columns, start_time, stop_time)
-    sensor_values = {k: np.array([[v['timestamp']] + v['values'] for v in vs]) for k, vs in sensors.items()}
+    sensor_values = {k: np.array([[v[1]] + v[0] for v in vs]) for k, vs in sensors.items()}
     return classify_sensors(sensor_values)
     #print({k: len(v) for k, v in event_sensor_values.items()})
     #accel_mean_feature(event_sensor_values)
@@ -94,7 +94,8 @@ if __name__ == "__main__":
     parser.add_argument('--port', help='Run on this port (default 8080)', default='8080')
 
     ARGS = parser.parse_args()
+    import picarus
     CLIENT = picarus.PicarusClient(email=ARGS.email, api_key=ARGS.api_key)
     data_type, EVENT_ROWS, ROW_COLUMNS = pickle.load(open(ARGS.model))
-    EVENT_ROW_TIMES = {e: [float(ROW_COLUMNS[row]['meta:time']) for row in rows] for e, rows in EVENT_ROWS.items()}
+    EVENT_ROW_TIMES = {e: [msgpack.loads(ROW_COLUMNS[row]['meta:time']) for row in rows] for e, rows in EVENT_ROWS.items()}
     extract_data()
