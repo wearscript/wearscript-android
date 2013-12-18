@@ -57,7 +57,7 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
         } else if (type.equals("card")) {
             Card c = new Card(this.context);
             c.setText((String)card.get("text"));
-            c.setInfo((String) card.get("info"));
+            c.setFootnote((String) card.get("info"));
             return c.toView();
         } else if (type.equals("html")) {
             WebView wv = new WebView(this.context);

@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.os.Binder;
 import android.os.IBinder;
@@ -31,6 +32,7 @@ import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
+import com.dappervision.wearscript.jsevents.SoundEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.BlobManager;
@@ -39,7 +41,7 @@ import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
-import com.google.android.glass.media.Camera;
+import com.google.android.glass.media.Sounds;
 import com.google.android.glass.widget.CardScrollView;
 
 import org.msgpack.MessagePack;
@@ -93,6 +95,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public String photoCallback;
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
+    protected AudioManager audio;
     private View activityView;
     private String activityMode;
 
@@ -276,6 +279,22 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         } finally {
             frameEvent.done();
         }
+    }
+
+    public void onEvent(SoundEvent event) {
+        String type = event.getType();
+        if (type.equals("TAP"))
+           audio.playSoundEffect(Sounds.TAP);
+        else if (type.equals("DISALLOWED"))
+            audio.playSoundEffect(Sounds.DISALLOWED);
+        else if (type.equals("DISMISSED"))
+            audio.playSoundEffect(Sounds.DISMISSED);
+        else if (type.equals("ERROR"))
+            audio.playSoundEffect(Sounds.ERROR);
+        else if (type.equals("SELECTED"))
+            audio.playSoundEffect(Sounds.SELECTED);
+        else if (type.equals("SUCCESS"))
+            audio.playSoundEffect(Sounds.SUCCESS);
     }
 
     private boolean clientConnected() {
@@ -624,6 +643,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         cardScroller.activate();
         cardScroller.setOnItemSelectedListener(cardScrollAdapter);
         cardScroller.setOnItemClickListener(cardScrollAdapter);
+        audio = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
         reset();
     }
 
@@ -832,8 +852,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             // TODO(brandyn): Move this into camera manager
             cameraManager.resume();
             if (resultCode == activity.get().RESULT_OK) {
-                String pictureFilePath = intent.getStringExtra(Camera.EXTRA_PICTURE_FILE_PATH);
-                String thumbnailFilePath = intent.getStringExtra(Camera.EXTRA_THUMBNAIL_FILE_PATH);
+                String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
+                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 if (photoCallback != null && webview != null) {
                     //pictureFilePath
                     byte imageData[] = null;
@@ -857,8 +877,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         } else if (requestCode == 1001) {
             cameraManager.resume();
             if (resultCode == activity.get().RESULT_OK) {
-                String thumbnailFilePath = intent.getStringExtra(Camera.EXTRA_THUMBNAIL_FILE_PATH);
-                String videoFilePath = intent.getStringExtra(Camera.EXTRA_VIDEO_FILE_PATH);
+                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
+                String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
             } else if (resultCode == activity.get().RESULT_CANCELED) {
 
             }

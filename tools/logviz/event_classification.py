@@ -8,9 +8,14 @@ from events import get_row_bounds, get_event_sensors
 
 
 def fft_power_feature(sensors):
-    a = np.abs(np.fft.fft(sensors[10][:, 2]))
+    print('fft start')
+    print(sensors[10][:, 2].size)
+    sensors_sample = sensors[10][:, 2]
+    print(json.dumps(sensors_sample.tolist()))
+    a = np.abs(np.fft.fft(sensors_sample))
     a = np.max(a * a)
     print(a)
+    print('fft stop')
     return a
 
 
@@ -33,6 +38,7 @@ CLASSES = {'locomotion': ['walking', 'still', 'driving', 'biking']}
 def locomotion_classifier(sensors):
     if fft_power_feature(sensors) >= 10000:
         return 0
+    return 1
     accel_std = np.std(sensors[10][:, 2])
     if accel_std < .25:
         return 1
@@ -41,7 +47,7 @@ def locomotion_classifier(sensors):
     return 3
 
 
-def classify_sensors(sensor_values, window_size=10):
+def classify_sensors(sensor_values, window_size=8):
     if not len(sensor_values):
         return
     start_time = min(sensor_values[tp][0, 0] for tp in sensor_values)

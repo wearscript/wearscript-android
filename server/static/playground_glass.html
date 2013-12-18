@@ -25,9 +25,6 @@ function onScroll(v, v2, v3) {
 function onTwoFingerScroll(v, v2, v3) {
     WS.log('onTwoFingerScroll: ' + v + ', ' + v2 + ', ' + v3);
 }
-function onVerticalScroll(v, v2, v3) {
-    WS.log('onVerticalScroll: ' + v + ', ' + v2 + ', ' + v3);
-}
 function speech(data) {
     WS.log('speech: ' + data);
     WS.say('you said ' + data);
@@ -41,10 +38,11 @@ function server() {
         WS.sensorOn(WS.sensor(sensors[i]), .15, 'cb');
     WS.cameraOn(2);
     WS.dataLog(false, true, .15);
-    var gestures = ['onGesture', 'onFingerCountChanged', 'onScroll', 'onTwoFingerScroll', 'onVerticalScroll'];
+    var gestures = ['onGesture', 'onFingerCountChanged', 'onScroll', 'onTwoFingerScroll'];
     for (var i = 0; i < gestures.length; i++)
         WS.gestureCallback(gestures[i], gestures[i]);
     WS.liveCardCreate(false, .2);
+    WS.sound('SUCCESS')
     //WS.speechRecognize('Say Something', 'speech');
     //WS.cameraPhoto();
     //WS.cameraVideo();

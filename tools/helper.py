@@ -52,6 +52,30 @@ def local_store(output_dir, **kw):
             open(os.path.join(row_dir, base64.urlsafe_b64encode(k)), 'wb').write(v)
 
 
+def redis_store(input_dir, name, server, port, **kw):
+    import redis
+    r = redis.StrictRedis(server, port)
+    sensor_types = {}
+    fn_to_time = lambda x: int(x.rsplit('/', 1)[-1].split('.', 1)[0])
+    r.sadd('users', name)
+    for fn in sorted(glob.glob(input_dir + '/*'), key=fn_to_time):
+        fn_time = fn_to_time(fn) / 1000.
+        if fn.endswith('.jpg'):
+            r.zadd(name + ':images', fn_time, os.path.basename(fn))
+        else:
+            try:
+                data = msgpack.load(open(fn))
+            except ValueError:
+                print('Could not parse [%s]' % fn)
+                continue
+            print(data)
+            for sensor_name, type_num in data[2].items():
+                sensor_types[sensor_name] = str(type_num)
+            for sensor_name, samples in data[3].items():
+                for sample in samples:
+                    r.zadd(name + ':sensor:' + sensor_name, sample[1], msgpack.dumps(sample))
+    r.hmset(name + ':sensors', sensor_types)
+
 def load_dir(input_dir, max_sensor_radius=2, **kw):
     sensor_samples = {}
     sensor_types = {}
@@ -115,6 +139,13 @@ if __name__ == '__main__':
     subparser.add_argument('input_dir')
     subparser.add_argument('output_dir')
     subparser.set_defaults(func=local_store)
+
+    subparser = subparsers.add_parser('redis_store')
+    subparser.add_argument('input_dir')
+    subparser.add_argument('name')
+    subparser.add_argument('--server', default='localhost')
+    subparser.add_argument('--port', type=int, default=6379)
+    subparser.set_defaults(func=redis_store)
 
     args = parser.parse_args()
     args.func(**vars(args))

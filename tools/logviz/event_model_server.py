@@ -92,6 +92,16 @@ def event(auth_key, event):
     times = EVENT_ROW_TIMES[event]
     event_sensors, sensor_names = get_event_sensors(rows, ROW_COLUMNS, times[0], times[-1], max_samples=1000)
     out += ['<div class="event">'] + generate_event(auth_key, event)
+    chart_id = 'chart_%d' % chart_count
+    chart_num = 0
+    out.append('<h2>%s (%d)</h2><div id="%s"></div>' % ('locomotion', chart_num, chart_id))
+    chart_values[chart_id] = [[], []]
+    for start_time, stop_time, results in EVENT_CLASSIFICATIONS[event]:
+        chart_values[chart_id][0].append(start_time)
+        chart_values[chart_id][0].append(stop_time)
+        chart_values[chart_id][1].append(results['locomotion'])
+        chart_values[chart_id][1].append(results['locomotion'])
+    chart_count += 1
     for chart_num in [1, 2, 3, 4, 5, 9, 10, 11]:
         chart_id = 'chart_%d' % chart_count
         out.append('<h2>%s (%d)</h2><div id="%s"></div>' % (sensor_names[chart_num], chart_num, chart_id))

@@ -1,5 +1,7 @@
 package com.dappervision.wearscript;
 
+import android.media.AudioManager;
+
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.LogEvent;
@@ -15,6 +17,7 @@ import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.SensorJSEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
+import com.dappervision.wearscript.jsevents.SoundEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.jsevents.WifiEvent;
 import com.dappervision.wearscript.jsevents.WifiScanEvent;
@@ -23,6 +26,7 @@ import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.WifiManager;
+import com.google.android.glass.media.Sounds;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -320,5 +324,10 @@ public class WearScript {
 
     public void picarus(String config, String input, String callback) {
         Utils.eventBusPost(new PicarusEvent());
+    }
+
+    public void sound(String type) {
+        Log.i(TAG, "sound");
+        Utils.eventBusPost(new SoundEvent(type));
     }
 }

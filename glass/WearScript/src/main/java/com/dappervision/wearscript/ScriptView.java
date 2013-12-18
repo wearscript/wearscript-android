@@ -52,15 +52,16 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
         if (liveCard != null)
             return;
         this.drawFrequency = drawFrequency;
-        liveCard = TimelineManager.from(context).getLiveCard("myid");
+        liveCard = TimelineManager.from(context).createLiveCard("myid");
         Log.d(TAG, "Publishing LiveCard");
-        liveCard.enableDirectRendering(true).getSurfaceHolder().addCallback(this);
-        liveCard.setNonSilent(nonSilent);
+        liveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(this);
 
         Intent intent = new Intent(context, MenuActivity.class);
         liveCard.setAction(PendingIntent.getActivity(context, 0, intent, 0));
-
-        liveCard.publish();
+        if (nonSilent)
+            liveCard.publish(LiveCard.PublishMode.REVEAL);
+        else
+            liveCard.publish(LiveCard.PublishMode.SILENT);
         Log.d(TAG, "Done publishing LiveCard");
     }
 
