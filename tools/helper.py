@@ -51,16 +51,17 @@ def local_store(output_dir, **kw):
         for k, v in columns.items():
             open(os.path.join(row_dir, base64.urlsafe_b64encode(k)), 'wb').write(v)
 
-
 def redis_store(input_dir, name, server, port, **kw):
     import redis
     r = redis.StrictRedis(server, port)
+    times = set()
     sensor_types = {}
     fn_to_time = lambda x: int(x.rsplit('/', 1)[-1].split('.', 1)[0])
     r.sadd('users', name)
     for fn in sorted(glob.glob(input_dir + '/*'), key=fn_to_time):
         fn_time = fn_to_time(fn) / 1000.
         if fn.endswith('.jpg'):
+            times.add(sample[1])
             r.zadd(name + ':images', fn_time, os.path.basename(fn))
         else:
             try:
@@ -70,11 +71,13 @@ def redis_store(input_dir, name, server, port, **kw):
                 continue
             print(data)
             for sensor_name, type_num in data[2].items():
-                sensor_types[sensor_name] = str(type_num)
+                sensor_types[sensor_name] = msgpack.dumps(type_num)
             for sensor_name, samples in data[3].items():
                 for sample in samples:
+                    times.add(sample[1])
                     r.zadd(name + ':sensor:' + sensor_name, sample[1], msgpack.dumps(sample))
     r.hmset(name + ':sensors', sensor_types)
+    r.zadd(name + ':times', **{msgpack.dumps(x): x for x in times})
 
 def load_dir(input_dir, max_sensor_radius=2, **kw):
     sensor_samples = {}

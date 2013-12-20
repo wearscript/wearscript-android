@@ -47,16 +47,19 @@ public abstract class Manager {
     }
 
     protected void makeCall(String key, String data) {
-        Log.d(TAG, key + " " + data);
-        if (!jsCallbacks.contains(key))
+        Log.d(TAG, "(" + key + " " + data + ")");
+        Log.d(TAG, jsCallbacks.toString());
+        if (!jsCallbacks.containsKey(key)) {
+            Log.d(TAG, "Callback not found");
             return;
+        }
         String url = buildCallbackString(key, data);
         Log.d(TAG, "Gesture: Call: " + url);
         Utils.eventBusPost(new JsCall(url));
     }
 
     protected String buildCallbackString(String key, String data){
-        if (!jsCallbacks.contains(key))
+        if (!jsCallbacks.containsKey(key))
             throw new RuntimeException("No such callback registered");
         return String.format("javascript:%s(%s);", jsCallbacks.get(key), data);
     }

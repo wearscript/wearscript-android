@@ -8,22 +8,14 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.activities.QRActivity;
+import com.dappervision.wearscript.jsevents.BarcodeEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
 public class BarcodeManager extends Manager {
     public BarcodeManager(BackgroundService bs) {
         super(bs);
-        IntentFilter QRIntentFilter = new IntentFilter(QRActivity.ACTION_RESULT);
-        BroadcastReceiver receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
-                String contents = intent.getStringExtra("SCAN_RESULT");
-                makeCall(contents.getBytes(), format);
-            }
-        };
-        LocalBroadcastManager.getInstance(service).registerReceiver(receiver, QRIntentFilter);
     }
 
     public void onEvent(CallbackRegistration e){
@@ -33,8 +25,12 @@ public class BarcodeManager extends Manager {
         }
     }
 
+    public void onEvent(BarcodeEvent e){
+        makeCall(e.getResult().getBytes(), e.getFormat());
+    }
+
     public void makeCall(byte[] data, String format) {
-        makeCall(format, Base64.encodeToString(data, Base64.NO_WRAP) + "," + format);
+        makeCall(format, String.format("'%s','%s'", Base64.encodeToString(data, Base64.NO_WRAP), format));
     }
 
     public void startActivity() {

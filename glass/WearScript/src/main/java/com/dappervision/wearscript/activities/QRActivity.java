@@ -4,11 +4,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
+
+import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.jsevents.BarcodeEvent;
 
 public class QRActivity extends Activity {
     private static final String TAG = "QRActivity";
-    public static final String ACTION_RESULT = "QRResults";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,9 +23,7 @@ public class QRActivity extends Activity {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == 0) {
             if (resultCode == RESULT_OK) {
-                Log.d(TAG, "Sending QR broadcast");
-                intent.setAction(ACTION_RESULT);
-                LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+                Utils.eventBusPost(new BarcodeEvent(intent.getStringExtra("SCAN_RESULT_FORMAT"), intent.getStringExtra("SCAN_RESULT")));
             }
         }
         finish();
