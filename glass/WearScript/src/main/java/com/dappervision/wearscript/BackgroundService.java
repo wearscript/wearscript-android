@@ -43,6 +43,7 @@ import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.google.android.glass.media.Sounds;
 import com.google.android.glass.widget.CardScrollView;
+import com.kelsonprime.cardtree.Tree;
 
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
@@ -77,6 +78,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     protected SocketClient client;
     public ScriptView webview;
+    private Tree tree;
 
     public String wsUrl;
 
@@ -92,7 +94,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public String wifiScanCallback;
-    public String photoCallback;
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
     protected AudioManager audio;
@@ -367,7 +368,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             sensorBuffer = new TreeMap<String, ArrayList<Value>>();
             sensorTypes = new TreeMap<String, Integer>();
             wifiScanCallback = null;
-            photoCallback = null;
             dataWifi = dataRemote = dataLocal =  false;
             lastSensorSaveTime  = sensorDelay = 0.;
             dataManager.unregister();
@@ -655,6 +655,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activity.finish();
         }
         this.activity = new WeakReference<MainActivity>(a);
+        tree = new Tree(a);
     }
 
     @Override
@@ -668,14 +669,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.i(TAG, "Lifecycle: Service onDestroy");
         shutdown();
         super.onDestroy();
-    }
-
-    public void onEvent(CallbackRegistration e){
-        if(e.isManager(CameraManager.class)){
-            if(e.isEvent("PHOTO")){
-                photoCallback = e.getCallback();
-            }
-        }
     }
 
     public void onEvent(JsCall e){
@@ -848,41 +841,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
         Intent intent = event.getIntent();
         Log.d(TAG, "Got request code: " + requestCode);
-        if (requestCode == 1000) {
-            // TODO(brandyn): Move this into camera manager
-            cameraManager.resume();
-            if (resultCode == activity.get().RESULT_OK) {
-                String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
-                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
-                if (photoCallback != null && webview != null) {
-                    //pictureFilePath
-                    byte imageData[] = null;
-                    for (int i = 0; i < 100; i++) {
-                        imageData = Utils.LoadFile(new File(pictureFilePath));
-                        if (imageData == null) {
-                            Log.w(TAG, "Waiting for photo...");
-                            try {
-                                Thread.sleep(250);
-                            } catch (InterruptedException e) {
-                            }
-                        }
-                    }
-                    String data = String.format("javascript:%s(\"%s\");", photoCallback, Base64.encodeToString(imageData, Base64.NO_WRAP));
-                    photoCallback = null;
-                    webview.loadUrl(data);
-                }
-            } else if (resultCode == activity.get().RESULT_CANCELED) {
-
-            }
-        } else if (requestCode == 1001) {
-            cameraManager.resume();
-            if (resultCode == activity.get().RESULT_OK) {
-                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
-                String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
-            } else if (resultCode == activity.get().RESULT_CANCELED) {
-
-            }
-        } else if (requestCode == 1002) {
+        if (requestCode == 1002) {
             Log.d(TAG, "Spoken Text Result");
             if (resultCode == activity.get().RESULT_OK) {
                 List<String> results = intent.getStringArrayListExtra(

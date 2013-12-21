@@ -39,7 +39,8 @@ public abstract class Manager {
     }
 
     protected void registerCallback(String type, String jsFunction) {
-        jsCallbacks.put(type, jsFunction);
+        if (jsFunction != null)
+            jsCallbacks.put(type, jsFunction);
     }
 
     public void unregister() {
@@ -47,7 +48,6 @@ public abstract class Manager {
     }
 
     protected void makeCall(String key, String data) {
-        Log.d(TAG, "(" + key + " " + data + ")");
         Log.d(TAG, jsCallbacks.toString());
         if (!jsCallbacks.containsKey(key)) {
             Log.d(TAG, "Callback not found");

@@ -1,15 +1,18 @@
 package com.dappervision.wearscript.managers;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.provider.MediaStore;
+import android.speech.RecognizerIntent;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.OpenCVLoadedEvent;
@@ -25,6 +28,7 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
 import java.util.List;
 
 import de.greenrobot.event.EventBus;
@@ -89,12 +93,11 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void setupCallback(CallbackRegistration r){
+        super.setupCallback(r);
         if(r.getEvent().equals(PHOTO)){
             cameraPhoto();
         }else if(r.getEvent().equals(VIDEO)){
             cameraVideo();
-        }else{
-            registerCallback(r.getEvent(), r.getCallback());
         }
     }
 
@@ -112,6 +115,44 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             register();
         }else{
             unregister(true);
+        }
+    }
+
+    public void onEvent(ActivityResultEvent event) {
+        int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
+        Intent intent = event.getIntent();
+        Log.d(TAG, "Got request code: " + requestCode);
+        if (requestCode == 1000) {
+            resume();
+            if (resultCode == Activity.RESULT_OK) {
+                String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
+                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
+                Log.d(TAG, jsCallbacks.toString());
+                if (jsCallbacks.containsKey(PHOTO)) {
+                    byte imageData[] = null;
+                    for (int i = 0; i < 100; i++) {
+                        imageData = Utils.LoadFile(new File(pictureFilePath));
+                        if (imageData == null) {
+                            Log.w(TAG, "Waiting for photo...");
+                            try {
+                                Thread.sleep(250);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                    }
+                    makeCall(PHOTO, "'" + Base64.encodeToString(imageData,  Base64.NO_WRAP) + "'");
+                }
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+
+            }
+        } else if (requestCode == 1001) {
+            resume();
+            if (resultCode == Activity.RESULT_OK) {
+                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
+                String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+
+            }
         }
     }
 
