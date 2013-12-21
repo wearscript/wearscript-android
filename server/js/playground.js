@@ -320,7 +320,7 @@ function main(WSUrl) {
     graphs = {};
     seriesDatas = {};
     scriptRowDisabled = true;
-    blobHandlers = {url: function (x) {window.open(x)}};
+    blobHandlers = {};
     if ($('#iframe').attr('src').length) {
         iframeWindow = $('#iframe')[0].contentWindow;
         iframeHost = urlToHost($('#iframe').attr('src'));
