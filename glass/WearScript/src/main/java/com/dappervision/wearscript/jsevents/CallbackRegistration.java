@@ -17,7 +17,7 @@ public class CallbackRegistration implements JSBusEvent {
     }
 
     public CallbackRegistration setEvent(int t){
-        event = String.format("%i", t);
+        event = String.format("%d", t);
         return this;
     }
 

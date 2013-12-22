@@ -241,15 +241,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             // TODO(brandyn): Move this timing logic into the camera manager
             Log.d(TAG, "handeImage Thread: " + Thread.currentThread().getName());
             byte[] frameJPEG = null;
-            if (webview != null) {
-                if (frameJPEG == null)
-                    frameJPEG = frame.getJPEG();
-                String call = cameraManager.buildCallbackString(CameraManager.LOCAL, frameJPEG);
-                if (call != null) {
-                    Log.d(TAG, "Image JS Callback");
-                    Utils.eventBusPost(new JsCall(call));
-                }
-            }
             if (dataLocal) {
                 if (frameJPEG == null)
                     frameJPEG = frame.getJPEG();
@@ -532,8 +523,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     }
                 }
             } else if (action.equals("image")) {
-                String call = cameraManager.buildCallbackString(CameraManager.REMOTE, input.get(3).asRawValue().getByteArray());
-                Utils.eventBusPost(new JsCall(call));
+                cameraManager.remoteImage(input.get(3).asRawValue().getByteArray());
             } else if (action.equals("raven")) {
                 Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {

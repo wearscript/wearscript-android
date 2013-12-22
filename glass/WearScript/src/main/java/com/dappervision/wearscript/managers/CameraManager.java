@@ -12,6 +12,7 @@ import android.util.Base64;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
@@ -39,6 +40,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     public static final String LOCAL = "0";
     public static final String REMOTE = "1";
     public static final String PHOTO = "PHOTO";
+    public static final String PHOTO_PATH = "PHOTO_PATH";
     public static final String VIDEO = "VIDEO";
     private Camera camera;
     private byte[] buffer;
@@ -94,7 +96,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     public void setupCallback(CallbackRegistration r){
         super.setupCallback(r);
-        if(r.getEvent().equals(PHOTO)){
+        if(r.getEvent().equals(PHOTO) || r.getEvent().equals(PHOTO_PATH)){
             cameraPhoto();
         }else if(r.getEvent().equals(VIDEO)){
             cameraVideo();
@@ -128,8 +130,9 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 Log.d(TAG, jsCallbacks.toString());
-                if (jsCallbacks.containsKey(PHOTO)) {
+                if (jsCallbacks.containsKey(PHOTO) || jsCallbacks.containsKey(PHOTO_PATH)) {
                     byte imageData[] = null;
+                    // TODO(brandyn): Change to use FileObserver
                     for (int i = 0; i < 100; i++) {
                         imageData = Utils.LoadFile(new File(pictureFilePath));
                         if (imageData == null) {
@@ -140,7 +143,16 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                             }
                         }
                     }
-                    makeCall(PHOTO, "'" + Base64.encodeToString(imageData,  Base64.NO_WRAP) + "'");
+                    if (imageData == null)
+                        return;
+                    if (jsCallbacks.containsKey(PHOTO)) {
+                        makeCall(PHOTO, imageData);
+                        jsCallbacks.remove(PHOTO);
+                    }
+                    if (jsCallbacks.containsKey(PHOTO_PATH)) {
+                        makeCall(PHOTO_PATH, "'" + pictureFilePath + "'");
+                        jsCallbacks.remove(PHOTO_PATH);
+                    }
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
 
@@ -295,12 +307,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public String buildCallbackString(String type, byte[] frameJPEG) {
-        synchronized (this) {
-            if (frameJPEG == null || !jsCallbacks.containsKey(type))
-                return null;
-            return buildCallbackString(type, Base64.encodeToString(frameJPEG, Base64.NO_WRAP));
-        }
+    protected void makeCall(String key, byte[] frameJPEG) {
+        makeCall(key, "'" + Base64.encodeToString(frameJPEG,  Base64.NO_WRAP) + "'");
     }
 
     public void onPreviewFrame(byte[] data, Camera camera) {
@@ -317,6 +325,10 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             lastImageSaveTime = System.nanoTime();
             cameraFrame.setFrame(data);
             Log.d(TAG, "Frame on bus");
+            if (jsCallbacks.containsKey(CameraManager.LOCAL)) {
+                Log.d(TAG, "Image JS Callback");
+                makeCall(CameraManager.LOCAL, cameraFrame.getJPEG());
+            }
             Utils.eventBusPost(new CameraEvents.Frame(cameraFrame, this));
         }
     }
@@ -327,6 +339,10 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             if (camera != null)
                 camera.addCallbackBuffer(buffer);
         }
+    }
+
+    public void remoteImage(byte[] frameJPEG) {
+        makeCall(CameraManager.REMOTE, frameJPEG);
     }
 
     private void cameraPhoto() {
