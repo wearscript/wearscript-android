@@ -57,9 +57,12 @@ def websocket_server(callback, port, **kw):
 
 
 def parse(callback, parser):
+    global IMAGE_DIR
     parser.add_argument('port', type=int)
+    parser.add_argument('image_path')
     parser.set_defaults(func_=websocket_server)
     args = parser.parse_args()
+    IMAGE_DIR = args.image_path
     vargs = dict(vars(args))
     del vargs['func_']
     args.func_(callback, **vargs)
@@ -127,6 +130,5 @@ if __name__ == '__main__':
     STATIC_FILES = {os.path.basename(x):open(x).read()
                     for x in glob.glob('static/*')}
     TEMPLATE = open('static_private/template.html').read()
-    IMAGE_DIR = '../../../wsdata/images/'
     setup()
     parse(websocket_callback, argparse.ArgumentParser())
