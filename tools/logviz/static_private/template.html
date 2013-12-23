@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WearScript: Event Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="/static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/static/rickshaw.min.css" rel="stylesheet" media="screen">
+    <link type="text/css" rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css">
+  </head>
+  <body>
+    <div style="position:absolute"><img width="640px" id="scrubThumb"></div>
+    <div class="container">
+      <div class="row">
+        <h1>Overview</h1>
+      </div>
+      <div class="row">
+        <h1>Events</h1>
+	<div id="events"></div>
+      </div>
+      <div id="sliderParent"></div>
+      <div id="charts"></div>
+    </div> <!-- /container -->
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+    <script src="/static/bootstrap.min.js"></script>
+    <script src="/static/d3.v3.min.js"></script>
+    <script src="/static/fft.js"></script>
+    <script src="/static/lru.js"></script>
+    <script src="/static/reconnecting-websocket.min.js"></script>
+    <script src="/static/msgpack.js"></script>
+    <script src="/static/rickshaw.min.js"></script>
+    <script src="/static/jquery.peity.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.0/mustache.min.js"></script>
+
+    <script type="text/javascript">
+    function enc(data) {
+	var data_enc = msgpack.pack(data);
+	var data_out = new Uint8Array(data_enc.length);
+	var i;
+	for (i = 0; i < data_enc.length; i++) {
+	    data_out[i] = data_enc[i];
+	}
+	return data_out;
+    }
+    function connectWebsocket() {
+	var url = "ws://localhost:8080/"; // TODO use {{ws}}
+	var ws = new ReconnectingWebSocket(url);
+	ws.onopen = function () {
+
+	}
+	ws.onclose = function () {
+	}
+	ws.onmessage = function (event) {
+	    var reader = new FileReader();
+	    reader.addEventListener("loadend", function () {
+		var response = msgpack.unpack(reader.result);
+	        if (response[0] === 'slice_data') {
+		    sliceData = response;
+		    var template = "{{#charts}}<h2>{{name}}</h2><div id='{{id}}'></div>{{/charts}}";
+		    var templateData = [];
+		    chartData = {};
+		    _.each(sliceData[6], function (x, y) {
+			var chartId = _.uniqueId('chart_');
+			templateData.push({name: y, id: chartId});
+			arrayOfRows = _.map(x, function(z) {
+			    return [z[1]].concat(z[0]);
+			});
+		        if (arrayOfRows.length == 0) {
+			    console.log('No sensor samples in slice_data');
+		        } else {
+			    chartData[chartId] = _.zip.apply(_, arrayOfRows);
+			}
+		    });
+		    graphs = [];
+		    $('#charts').html(Mustache.render(template, {charts: templateData}));
+		    _.each(chartData, function (x, y) {
+			buildChart($('#' + y), x);
+		    });
+		    setupSlider(sliceData[1], sliceData[2], sliceData[3], sliceData[4], sliceData[5]);
+		} else if (response[0] === 'image_data') {
+		    var imageuri = 'data:image/jpeg;base64,' + btoa(response[3]);
+   	            IMAGE_CACHE.put(response[1] + ':' + response[2], imageuri);
+                    setThumbnail(imageuri);
+		} else if (response[0] === 'events') {
+		    var template = "<h1>{{user}}'s Events</h1>{{#events}}<a class='event-link' data-user='{{user}}' data-start-time='{{start_time}}' data-stop-time='{{stop_time}}' href='#{{user}}/{{start_time}}/{{stop_time}}'><h2 style='font-size: 10px'>{{start_time}} - {{stop_time}}</h2></a><div></div>{{/events}}";
+		    $('#events').append(Mustache.render(template, {events: response[2], user: response[1]}));
+		    $('.event-link').click(function (x) {
+			var target = $(x.target).parent();
+			var event_start_time = Number(target.attr('data-start-time'));
+			var event_stop_time = Number(target.attr('data-stop-time'));
+			var start_time = event_start_time;
+			var stop_time = Math.min(start_time + 60, event_stop_time);
+  	                ws.send(enc(['slice', target.attr('data-user'), event_start_time, start_time, stop_time, event_stop_time]))
+		    });
+		}
+	    })
+	    reader.readAsBinaryString(event.data);
+	}
+	return ws;
+    }
+    function setThumbnail(imageuri) {
+        $('#scrubThumb').attr('src', imageuri);
+	$('#scrubThumb').parent().css({'top': mouseY, 'left': mouseX});
+    }
+      function buildChart(chart, timeData) {
+          //element.append($('<div>').attr('class', 'chart'))
+          //element.append($('<div>').attr('class', 'slider'))
+          //var chart = element.find('.chart');
+          //var slider = element.find('.slider');
+          // data: Lists of sensor data (each list is a list of values)
+          var colors = ['red', 'green', 'blue'];
+          var minDomain = 1000;
+          var maxDomain = -1000;
+          var times = timeData[0];
+          var data = timeData.slice(1);
+          _.each(data, function (values, z) {
+              _.each(values, function (y) {
+                  minDomain = Math.min(minDomain, y);
+                  maxDomain = Math.max(maxDomain, y);
+              });
+          });
+          var seriesData = _.map(data, function (values, z) {
+              var curData = _.map(values, function (y, x) { return {x: times[x], y: y}});
+              return {data: curData, name: String(z), color: colors[z], scale: d3.scale.linear().domain([minDomain, maxDomain]).nice()};
+          });
+          var graph = new Rickshaw.Graph({
+              element: chart[0],
+              renderer: 'line',
+              width: 1200,
+              height: 200,
+              series: seriesData
+          });
+          graph.render();
+          graphs.push(graph);
+	  var getThumbnail = _.debounce(function (user, time) {
+              ws.send(enc(['image', user, time]));
+	  }, 100);
+          var scrub = function(x) {
+	      var images = sliceData[7];
+	      var user = sliceData[1];
+              var ind = _.sortedIndex(images, x);
+	      if (ind == images.length)
+                  ind = images.length - 1;
+	      var imageuri = IMAGE_CACHE.get(user + ':' + images[ind]);
+	      if (_.isUndefined(imageuri)) {
+	          getThumbnail(user, images[ind]);
+	      } else {
+                  setThumbnail(imageuri);
+              }
+	  };
+          var hoverDetail = new Rickshaw.Graph.HoverDetail({
+              graph: graph,
+              xFormatter: function (x) {scrub(x); lastScrub = x;var d = new Date(0);d.setUTCSeconds(x);return d.toString();}
+          });
+      }
+      function setupSlider(user, event_start_time, start_time, stop_time, event_stop_time) {
+          $('#sliderParent').html("<div id='slider'></div>");
+          var element = $('#slider');
+          var max_time = 60;
+          var onslide = _.debounce(function(event, ui) {
+              if (ui.values[1] <= ui.values[0]) return;
+              // We don't have this data, would be better to get what we need and cache it
+	      if (ui.values[0] < start_time) {
+                  ws.send(enc(['slice', user, event_start_time, ui.values[0], Math.min(ui.values[1], ui.values[0] + max_time), event_stop_time]));
+                  return;
+              }
+	      if (stop_time < ui.values[1]) {
+                  ws.send(enc(['slice', user, event_start_time, Math.max(ui.values[0], ui.values[1] - max_time), ui.values[1], event_stop_time]));
+                  return;
+              }
+              _.each(graphs, function (graph) {
+                  graph.window.xMin = ui.values[0];
+                  graph.window.xMax = ui.values[1];
+                  graph.update();
+              });
+              // if we're at an extreme, stick there
+              if (event_start_time == ui.values[0]) {
+                  _.each(graphs, function (graph) {
+                      graph.window.xMin = undefined;
+                  });
+              }
+              if (event_stop_time == ui.values[1]) {
+                  _.each(graphs, function (graph) {
+                      graph.window.xMax = undefined;
+                  });
+              }
+          }, 250);
+          $(element).slider( {
+              range: true,
+              min: event_start_time,
+              max: event_stop_time,
+              values: [ 
+                  start_time,
+                  stop_time
+              ],
+              slide: onslide,
+              change: onslide
+          } );
+          $(document).keypress (function (e) {
+              if (e.which == 97) { // a
+                  $('#slider').slider('values', 0, lastScrub);
+              } else if (e.which == 122) { // z
+                  $('#slider').slider('values', 1, lastScrub);
+              }
+          });
+      }
+      function main () {
+          IMAGE_CACHE = new LRUCache(25);
+          $(document).mousemove( function(e) {
+              mouseX = 0; 
+              mouseY = e.pageY - 75;
+          });
+          mouseX = mouseY = 0;
+	  ws = connectWebsocket();
+      }
+      $(main);
+    </script>
+  </body>
+</html>
