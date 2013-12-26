@@ -6,6 +6,7 @@ import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
+import com.dappervision.wearscript.jsevents.AudioEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
@@ -94,6 +95,14 @@ public class WearScript {
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
         Utils.eventBusPost(new ServerTimelineEvent(ti));
+    }
+
+    public void audioOn(){
+        Utils.eventBusPost(new AudioEvent(true));
+    }
+
+    public void audioOff(){
+        Utils.eventBusPost(new AudioEvent(false));
     }
 
     public void sensorOn(int type, double sampleTime) {
