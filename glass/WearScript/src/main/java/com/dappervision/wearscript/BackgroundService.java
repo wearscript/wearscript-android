@@ -13,7 +13,6 @@ import android.os.PowerManager;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
-import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -26,7 +25,6 @@ import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
-import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
@@ -51,7 +49,6 @@ import org.msgpack.type.ArrayValue;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URI;

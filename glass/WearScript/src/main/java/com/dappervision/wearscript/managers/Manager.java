@@ -8,8 +8,6 @@ import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import de.greenrobot.event.EventBus;
-
 /**
  * Created by kurt on 12/9/13.
  */

@@ -1,7 +1,5 @@
 package com.dappervision.wearscript;
 
-import android.media.AudioManager;
-
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.LogEvent;
@@ -26,15 +24,12 @@ import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.WifiManager;
-import com.google.android.glass.media.Sounds;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import java.util.TreeMap;
-
-import de.greenrobot.event.EventBus;
 
 public class WearScript {
     BackgroundService bs;

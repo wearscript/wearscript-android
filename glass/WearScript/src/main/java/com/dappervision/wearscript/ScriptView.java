@@ -15,8 +15,6 @@ import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
 
-import de.greenrobot.event.EventBus;
-
 public class ScriptView extends WebView implements SurfaceHolder.Callback {
     private static final String TAG = "ScriptView";
     private final BackgroundService context;
