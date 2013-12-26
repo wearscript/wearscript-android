@@ -46,6 +46,8 @@ public class DataManager extends Manager {
             dp = new GPSDataProvider(this, samplePeriod, type);
         else if (type == WearScript.SENSOR.PUPIL.id())
             dp = new RemoteDataProvider(this, samplePeriod, type, "Pupil Eyetracker");
+        else if (type == WearScript.SENSOR.BATTERY.id())
+            dp = new BatteryDataProvider(this, samplePeriod);
         else
             throw new RuntimeException("Invalid type: " + type);
         registerProvider(type, dp);
@@ -93,5 +95,9 @@ public class DataManager extends Manager {
         if (provider == null)
             return;
         provider.remoteSample(dp);
+    }
+
+    public DataProvider getProvider(int id) {
+        return providers.get(id);
     }
 }

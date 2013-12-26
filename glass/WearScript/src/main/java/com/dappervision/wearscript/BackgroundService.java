@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LogEvent;
@@ -801,7 +802,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
                 Log.d(TAG, "Screen on");
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
-                Log.d(TAG, "Battery changed");
+                BatteryDataProvider dp = (BatteryDataProvider) bs.dataManager.getProvider(WearScript.SENSOR.BATTERY.id());
+                if(dp != null)
+                    dp.post(intent);
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.d(TAG, "Wifi scan results");
                 bs.wifiManager.makeCall();
