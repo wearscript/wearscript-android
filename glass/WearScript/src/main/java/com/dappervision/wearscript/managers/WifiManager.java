@@ -36,8 +36,8 @@ public class WifiManager extends Manager {
             r.put("capabilities", new String(s.capabilities));
             r.put("SSID", new String(s.SSID));
             r.put("BSSID", new String(s.BSSID));
-            r.put("level", new Integer(s.level));
-            r.put("frequency", new Integer(s.frequency));
+            r.put("level", Integer.valueOf(s.level));
+            r.put("frequency", Integer.valueOf(s.frequency) );
             a.add(r);
         }
         return a.toJSONString();
