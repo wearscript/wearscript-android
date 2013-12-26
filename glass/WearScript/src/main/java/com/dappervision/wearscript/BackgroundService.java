@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.os.Binder;
 import android.os.IBinder;
@@ -31,8 +30,8 @@ import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
-import com.dappervision.wearscript.jsevents.SoundEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
+import com.dappervision.wearscript.managers.AudioManager;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
@@ -40,7 +39,6 @@ import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
-import com.google.android.glass.media.Sounds;
 import com.google.android.glass.widget.CardScrollView;
 import com.kelsonprime.cardtree.Tree;
 
@@ -88,13 +86,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected PicarusManager picarusManager;
     private BlobManager blobManager;
     protected CameraManager cameraManager;
+    protected AudioManager audioManager;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public String wifiScanCallback;
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
-    protected AudioManager audio;
     private View activityView;
     private String activityMode;
 
@@ -271,22 +269,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void onEvent(SoundEvent event) {
-        String type = event.getType();
-        if (type.equals("TAP"))
-           audio.playSoundEffect(Sounds.TAP);
-        else if (type.equals("DISALLOWED"))
-            audio.playSoundEffect(Sounds.DISALLOWED);
-        else if (type.equals("DISMISSED"))
-            audio.playSoundEffect(Sounds.DISMISSED);
-        else if (type.equals("ERROR"))
-            audio.playSoundEffect(Sounds.ERROR);
-        else if (type.equals("SELECTED"))
-            audio.playSoundEffect(Sounds.SELECTED);
-        else if (type.equals("SUCCESS"))
-            audio.playSoundEffect(Sounds.SUCCESS);
-    }
-
     private boolean clientConnected() {
         synchronized (lock) {
             if (client == null)
@@ -319,6 +301,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiManager.eventBusUnregister();
             blobManager.eventBusUnregister();
             gestureManager.eventBusUnregister();
+            audioManager.eventBusUnregister();
+
             if (picarusManager != null)
                 picarusManager.eventBusUnregister();
             Log.d(TAG, "Disconnecting client");
@@ -361,6 +345,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             lastSensorSaveTime  = sensorDelay = 0.;
             dataManager.unregister();
             cameraManager.unregister(true);
+            audioManager.unregister();
             cardScrollAdapter.reset();
             updateCardScrollView();
             speechCallback = null;
@@ -620,6 +605,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         barcodeManager = new BarcodeManager(this);
         wifiManager = new WifiManager(this);
         blobManager = new BlobManager(this);
+        audioManager = new AudioManager(this);
 
         tts = new TextToSpeech(this, this);
 
@@ -631,7 +617,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         cardScroller.activate();
         cardScroller.setOnItemSelectedListener(cardScrollAdapter);
         cardScroller.setOnItemClickListener(cardScrollAdapter);
-        audio = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
+
         reset();
     }
 
