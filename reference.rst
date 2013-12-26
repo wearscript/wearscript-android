@@ -37,6 +37,8 @@ In the JavaScript environment there is a WS object that has the following method
 * WS.displayWebView(): Display the WebView activity (this is the default, reserved for future use when we may have alternate views).
 * WS.shutdown(): Shuts down wearscript
 * WS.data(int type, String name, String valuesJSON): Log "fake" sensor data made inside the script, will be logged based on the WS.dataLog settings.
+* WS.audioOn(): Logs noise level to server
+* WS.audioOff(): Stops noise callbacks
 * WS.cameraOn(double period): Camera frames are output based on the WS.cameraCallback and WS.dataLog options.
 * WS.cameraPhoto(): Take a picture and save to the SD card.
 * WS.cameraVideo(): Record a video and save to the SD card.
