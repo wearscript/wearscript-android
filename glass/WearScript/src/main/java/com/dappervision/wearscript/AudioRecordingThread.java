@@ -69,7 +69,7 @@ public class AudioRecordingThread extends Thread {
 
         double rms = Math.sqrt(sum / mAudioBuffer.length);
         final double db = 20 * Math.log10(rms);
-
-        Log.d(TAG, "dbs " + db);
+        final double normalizedDb = 1 - db/-90;
+        Log.d(TAG, "dbs " + normalizedDb);
     }
 }
