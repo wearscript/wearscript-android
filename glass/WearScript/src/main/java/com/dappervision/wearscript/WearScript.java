@@ -42,21 +42,39 @@ public class WearScript {
     TreeMap<String, Integer> sensors;
     String sensorsJS;
 
+    public static enum SENSOR {
+        BATTERY("battery", -3),
+        PUPIL("pupil", -2),
+        GPS("gps", -1),
+        ACCELEROMETER("accelerometer", 1),
+        MAGNETIC_FIELD("magneticField", 2),
+        ORIENTATION("orientation", 3),
+        GYROSCOPE("gyroscope", 4),
+        LIGHT("light", 5),
+        GRAVITY("gravity", 9),
+        LINEAR_ACCELERATION("linearAcceleration", 10),
+        ROTATION_VECTOR("rotationVector", 11);
+
+        private final int id;
+        private final String name;
+
+        private SENSOR(String name, final int id) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public int id() { return id; }
+        public String toString() {return name;}
+    };
+
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
         this.sensors = new TreeMap<String, Integer>();
         // Sensor Types
-        this.sensors.put("pupil", -2);
-        this.sensors.put("gps", -1);
-        this.sensors.put("accelerometer", 1);
-        this.sensors.put("magneticField", 2);
-        this.sensors.put("orientation", 3);
-        this.sensors.put("gyroscope", 4);
-        this.sensors.put("light", 5);
-        this.sensors.put("gravity", 9);
-        this.sensors.put("linearAcceleration", 10);
-        this.sensors.put("rotationVector", 11);
+        for(SENSOR s : SENSOR.values()){
+            this.sensors.put(s.toString(), s.id());
+        }
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
     }
 
