@@ -1,14 +1,9 @@
 package com.dappervision.wearscript.managers;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.activities.QRActivity;
 import com.dappervision.wearscript.jsevents.BarcodeEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;

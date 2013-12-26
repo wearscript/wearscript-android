@@ -6,13 +6,11 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.provider.MediaStore;
-import android.speech.RecognizerIntent;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
@@ -31,8 +29,6 @@ import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.util.List;
-
-import de.greenrobot.event.EventBus;
 
 public class CameraManager extends Manager implements Camera.PreviewCallback {
     private static final String TAG = "CameraManager";
