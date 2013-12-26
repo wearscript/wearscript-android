@@ -19,7 +19,13 @@
 
     <uses-sdk
         android:minSdkVersion="15"
-        android:targetSdkVersion="17" />
+        android:targetSdkVersion="19" />
+
+    <supports-screens android:resizeable="true"
+                      android:smallScreens="true"
+                      android:normalScreens="true"
+                      android:largeScreens="true"
+                      android:anyDensity="true" />
 
     <application
         android:allowBackup="true"
@@ -97,10 +103,4 @@
             android:enabled="true" >
         </activity>
     </application>
-    <supports-screens android:resizeable="true"
-                      android:smallScreens="true"
-                      android:normalScreens="true"
-                      android:largeScreens="true"
-                      android:anyDensity="true" />
-
 </manifest>

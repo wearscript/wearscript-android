@@ -2,4 +2,6 @@
 <lint>
     <!-- Disable the given check in this project -->
     <issue id="InvalidPackage" severity="ignore" />
+    <!-- The whole point of the app is JS -->
+    <issue id="SetJavaScriptEnabled" severity="ignore" />
 </lint>
