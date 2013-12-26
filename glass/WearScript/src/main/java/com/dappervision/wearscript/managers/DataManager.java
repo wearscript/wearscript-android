@@ -4,6 +4,8 @@ import android.content.Context;
 import android.hardware.SensorManager;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.WearScript;
+import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.dataproviders.DataProvider;
 import com.dappervision.wearscript.dataproviders.GPSDataProvider;
@@ -40,10 +42,12 @@ public class DataManager extends Manager {
         DataProvider dp;
         if (type > 0)
             dp = new NativeDataProvider(this, samplePeriod, sensorManager.getDefaultSensor(type));
-        else if (type == -1)
+        else if (type == WearScript.SENSOR.GPS.id())
             dp = new GPSDataProvider(this, samplePeriod, type);
-        else if (type == -2)
+        else if (type == WearScript.SENSOR.PUPIL.id())
             dp = new RemoteDataProvider(this, samplePeriod, type, "Pupil Eyetracker");
+        else if (type == WearScript.SENSOR.BATTERY.id())
+            dp = new BatteryDataProvider(this, samplePeriod);
         else
             throw new RuntimeException("Invalid type: " + type);
         registerProvider(type, dp);
@@ -91,5 +95,9 @@ public class DataManager extends Manager {
         if (provider == null)
             return;
         provider.remoteSample(dp);
+    }
+
+    public DataProvider getProvider(int id) {
+        return providers.get(id);
     }
 }
