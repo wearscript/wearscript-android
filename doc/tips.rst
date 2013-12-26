@@ -4,7 +4,7 @@ Tips/Tricks
 * If you swipe down the script will continue to run in the background
 * To turn off WearScript open the webapp and press shutdown.
 * When calling WS.serverConnect, if the argument passed is exactly '{{WSUrl}}' then it will be replaced with the websocket url corresponding to the server the playground is running on and the last QR code generated.
-* If you use a script that doesn't make a server connection (i.e., WS.serverConnect('{{WSUrl}}'), 'callback') then you won't be able to control WearScript from the webapp
+* Unless you use a script that makes a server connection (i.e., WS.serverConnect('{{WSUrl}}'), 'callback') you will not be able to control WearScript from the webapp
 * More interesting uses of WS.serverConnect include making a custom server for your application and then Glass will connect to it and stream data while your app can continue to control Glass.
 * Every time you press the QR button on the webapp you get a unique auth key which replaces the previous.
 * Multiple Glass devices can use the same QR code and the webapp will give them separate rows.
