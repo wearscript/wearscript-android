@@ -1,6 +1,8 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 import cv2
+import wearscript
+import argparse
 import numpy as np
 import random
 import msgpack
@@ -28,9 +30,6 @@ MSER_KEYS = ['_delta', '_min_area', '_max_area',
 
 COLORS = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1]]
 
-def serialize(*args):
-    return msgpack.dumps(['sensors', 'Pupil Eyetracker', {'Pupil Eyetracker': -2}, {'Pupil Eyetracker': [[list(args), time.time(), int(time.time() * 1000000000)]]}])
-
 def handle_incoming_data(msg_data, kw, run):
     if not msg_data:
         return
@@ -46,79 +45,6 @@ def handle_incoming_data(msg_data, kw, run):
             consolidate(dump)
             kw['calib'] = 'calib.js'
             run[0] = 'RELOAD'
-
-def server(port, **kw):    
-    run = [None]
-    def websocket_app(environ, start_response):
-        print('Connected')
-        if environ["PATH_INFO"] == '/':
-            ws = environ["wsgi.websocket"]
-            if kw.get('command_server'):
-                prev_command_func = kw.get('command_func')
-                def command_func(cmd):
-                    if prev_command_func:
-                        prev_command_func(cmd)
-                    ws.send(serialize(float(cmd)), binary=True)
-                    gevent.sleep(0)
-                kw['command_func'] = command_func
-
-            def receive():
-                while run[0] != 'QUIT':
-                    handle_incoming_data(ws.receive(), kw, run)
-            g = gevent.spawn(receive)
-            kw.update(PARAMS)
-
-            while run[0] != 'QUIT':
-                run[0] = None
-                for box, frame, hull, timestamp in pupil_iter(**kw):
-                    if kw.get('debug'):
-                        run[0] = debug_iter(box, frame, hull, timestamp)
-                    if run[0]:
-                        break
-                    if box is None:
-                        continue
-                    ws.send(serialize(box[0][1], box[0][0], max(box[1][0], box[1][1])), binary=True)
-                    gevent.sleep(0)
-            g.kill()
-            wsgi_server.stop()
-    from gevent import pywsgi
-    from geventwebsocket.handler import WebSocketHandler
-    wsgi_server = pywsgi.WSGIServer(("", port), websocket_app,
-                                    handler_class=WebSocketHandler)
-    wsgi_server.serve_forever()
-
-def client(url, **kw):
-    G = None
-    kw.update(PARAMS)
-    ws = create_connection(url)
-    run = [None]
-    def receive():
-        while run[0] != 'QUIT':
-            handle_incoming_data(ws.recv(), kw, run)
-    g = gevent.spawn(receive)
-
-    while run[0] != 'QUIT':
-        run[0] = None
-        for box, frame, hull, timestamp in pupil_iter(**kw):
-            if kw.get('debug'):
-                run[0] = debug_iter(box, frame, hull, timestamp)
-            if run[0]:
-                break
-            if box is None:
-                continue
-            ws.send(serialize(box[0][1], box[0][0], max(box[1][0], box[1][1])), opcode=2)
-            gevent.sleep(0)
-
-def debug(**kw):
-    run = [None]
-    print(PARAMS)
-    kw.update(PARAMS)
-    while run[0] != 'QUIT':
-        run = [None]
-        for data in pupil_iter(debug=True, **kw):
-            run[0] = debug_iter(*data)
-            if run[0]:
-                break
 
 def debug_iter(box, frame, hull, timestamp):
     if box is not None:
@@ -260,38 +186,31 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
             yield None, frame, None, timestamp
 
 def main():
-    parser = argparse.ArgumentParser(description='Pupil tracking code')
-    subparsers = parser.add_subparsers()
+    def callback(ws, **kw):
+        print('Got args[%r]' % (kw,))
+        print('Demo callback, prints all inputs and sends nothing')
+        run = [None]
+        kw.update(PARAMS)
+        while run[0] != 'QUIT':
+            for box, frame, hull, timestamp in pupil_iter(**kw):
+                if kw.get('debug'):
+                    run[0] = debug_iter(box, frame, hull, timestamp)
+                if run[0]:
+                    break
+                if box is None:
+                    continue
+                ws.send('sensors', 'Pupil Eyetracker', {'Pupil Eyetracker': -2}, {'Pupil Eyetracker': [[[box[0][1], box[0][0], max(box[1][0], box[1][1])], time.time(), int(time.time() * 1000000000)]]})
+                gevent.sleep(0)
+
+            print(ws.receive())
+    parser = argparse.ArgumentParser()
     parser.add_argument('--dump')
     parser.add_argument('--load')
     parser.add_argument('--command_thresh', type=int, default=6)
     parser.add_argument('--calib')
-    parser.add_argument('--command_keyboard')
     parser.add_argument('--plot', action='store_true')
-    subparser = subparsers.add_parser('server')
-    subparser.add_argument('--port', type=int, default=8080)
-    subparser.add_argument('--debug', action='store_true')
-    subparser.add_argument('--command_server', action='store_true')
-    subparser.set_defaults(func=server)
-    subparser = subparsers.add_parser('client')
-    subparser.add_argument('url')
-    subparser.add_argument('--debug', action='store_true')
-    subparser.set_defaults(func=client)
-    subparser = subparsers.add_parser('debug')
-    subparser.set_defaults(func=debug)
-    args = parser.parse_args()
-    vargs = vars(args)    
-    if vargs.get('command_keyboard'):
-        def command_func(num):
-            requests.get(vargs['command_keyboard'] + '/cmd/' + CMDS[num]).content
-        vargs['command_func'] = command_func
-    if vargs.get('dump'):
-        vargs['dump'] = os.path.abspath(vargs['dump'])
-        try:
-            os.makedirs(vargs['dump'])
-        except OSError:
-            pass
-    args.func(**vargs)
+    parser.add_argument('--debug', action='store_true')
+    wearscript.parse(callback, parser)
 
 if __name__ == '__main__':
     main()
