@@ -361,7 +361,12 @@ function main(WSUrl) {
     $('#buttonClient').click(function () {
         createKey("client", function (x) {$('#secret-client').html(_.escape(WSUrl + "/ws/client/" + x))}, function () {alert("Could not get client endpoint")})
     });
-
+    
+    $('#emulateButton').click(function () {
+        console.log('emulate button is clicked');
+        console.log(editor.getValue());
+        $('#emulation').contents().find('html').html(editor.getValue());
+    });
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,
@@ -370,5 +375,5 @@ function main(WSUrl) {
         mode: "htmlmixed",
         indentUnit: 4
     });
-    ws = connectWebsocket(WSUrl);
+    //ws = connectWebsocket(WSUrl);
 }
