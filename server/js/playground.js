@@ -374,7 +374,11 @@ function main(WSUrl) {
         "    this.gestureCallbacks[event] = callback;" +
         "  };" +
         "  this.getGestureCallbacks = function () {" +
-        "    return this.gestureCallbacks;  " +
+        "    return this.gestureCallbacks;" +
+        "  };" +
+        "  this.say = function(data) {" +
+        "    var audio = new Audio('http://translate.google.com/translate_tts?tl=en&q='+encodeURIComponent(data));" +
+        "    audio.play();" +
         "  };" +
         "}" +
         "var WS = new WearScript();" +
@@ -382,7 +386,8 @@ function main(WSUrl) {
         document.getElementById('emulation').src = "data:text/html;charset=utf-8," + escape(WSScript+editor.getValue());
     });
     $('#gestureAgain').click(function() { 
-      console.log('gesture: '+$('#gestures option:selected').text());
+      onGestureCallback = $("#emulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      $("#emulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
     });
     $('#gestures').on('change', function (e) {
       var optionSelected = $("option:selected", this);
