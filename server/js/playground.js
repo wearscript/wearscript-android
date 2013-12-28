@@ -365,7 +365,9 @@ function main(WSUrl) {
     $('#emulateButton').click(function () {
         console.log('emulate button is clicked');
         console.log(editor.getValue());
-        $('#emulation').contents().find('html').html(editor.getValue());
+        //$('#emulation').contents().find('html').html(editor.getValue());
+        // I set src so that the styling of body is obeyed 
+        document.getElementById('emulation').src = "data:text/html;charset=utf-8," + escape(editor.getValue());
     });
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
