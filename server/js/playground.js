@@ -368,7 +368,8 @@ function main(WSUrl) {
         $('#emulation').contents().find('html').html(editor.getValue());
     });
     $('#gestureAgain').click(function() { 
-      console.log('gesture: '+$('#gestures option:selected').text());
+      onGestureCallback = $("#emulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      $("#emulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
     });
     $('#gestures').on('change', function (e) {
       var optionSelected = $("option:selected", this);
