@@ -367,8 +367,32 @@ function main(WSUrl) {
         console.log(editor.getValue());
         //$('#emulation').contents().find('html').html(editor.getValue());
         // I set src so that the styling of body is obeyed 
-        document.getElementById('emulation').src = "data:text/html;charset=utf-8," + escape(editor.getValue());
+        var WSScript = "<script>" +
+        "function WearScript(type) {" +
+        "  this.gestureCallbacks = {};" +
+        "  this.gestureCallback = function (event, callback) {" +
+        "    this.gestureCallbacks[event] = callback;" +
+        "  };" +
+        "  this.getGestureCallbacks = function () {" +
+        "    return this.gestureCallbacks;  " +
+        "  };" +
+        "}" +
+        "var WS = new WearScript();" +
+        "</script>";
+        document.getElementById('emulation').src = "data:text/html;charset=utf-8," + escape(WSScript+editor.getValue());
     });
+    $('#gestureAgain').click(function() { 
+      console.log('gesture: '+$('#gestures option:selected').text());
+    });
+    $('#gestures').on('change', function (e) {
+      var optionSelected = $("option:selected", this);
+      var valueSelected = this.value;
+      onGestureCallback = $("#emulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      console.log('onGestureCallback '+JSON.stringify(onGestureCallback));
+      $("#emulation")[0].contentWindow[onGestureCallback](valueSelected);
+      console.log('gesture: '+valueSelected);
+    });
+    //$("#emulation")[0].contentWindow.myFunction();
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,

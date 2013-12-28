@@ -50,8 +50,26 @@
       </div>
       <div class="row">
         <h1>Emulation</h1>
+        
         <p><strong>Note:</strong> Use rawgithub.com not raw<strong>.</strong>github.com and to disable same origin policy in Chrome launch with <em>google-chrome --disable-web-security</em></p>
-        <iframe id="emulation" src="javascript:void(0)" style="width:640px; height:360px; border:1px solid #000;"></iframe>
+        <iframe id="emulation" src="javascript:void(0)" style="float:left; margin-right:10px; width:640px; height:360px; border:1px solid #000;"></iframe>
+        <div id="emulationControls">
+          <strong>Gestures:</strong> 
+          <select id="gestures">
+            <option>LONG_PRESS</option>
+            <option>SWIPE_DOWN</option>
+            <option>SWIPE_LEFT</option>
+            <option>SWIPE_RIGHT</option>
+            <option>TAP</option>
+            <option>THREE_LONG_PRESS</option>
+            <option>THREE_TAP</option>
+            <option>TWO_LONG_PRESS</option>
+            <option>TWO_SWIPE_RIGHT</option>
+            <option>TWO_SWIPE_UP</option>
+            <option>TWO_TAP</option>
+          </select>
+          <button id="gestureAgain">Send gesture</button>
+        </div>
       </div>
       <div class="row" id="scriptRow">
         <h1>Scripting</h1>
