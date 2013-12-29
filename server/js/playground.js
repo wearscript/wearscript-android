@@ -367,8 +367,24 @@ function main(WSUrl) {
         console.log(editor.getValue());
         //$('#emulation').contents().find('html').html(editor.getValue());
         // I set src so that the styling of body is obeyed 
-        var WSScript = "<script>" +
-        "function WearScript(type) {" +
+        var WSScript = '<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script><script>' +
+        "function WearScriptSimulator(type) {" +
+        "    this.log = function (x) {console.log(x)};" +
+        "    this.displayWebView = function () {};" +
+        "    this.serverConnect = function (server, cb) {window[cb]()};" +
+        "    this.sensorCallback = function (cb) {this._scb = cb};" +
+        "    this._sensors = [];" +
+        "    this._sensorDelay = 100;" +
+        "    this.sensorOn = function (s) {this._sensors.push(s)};" +
+        "    this._sensorLoop = _.bind(function () {" +
+        "        if (!_.has(this, '_scb') || !_.has(window, this._scb))" +
+        "            return;" +
+        "        _.each(this._sensors, _.bind(function (x) {" +
+        "            window[this._scb]({type: x, values: [Math.random(), Math.random(), Math.random()], timestamp: (new Date).getTime() / 1000});" +
+        "        }, this));" +
+        "        _.delay(this._sensorLoop, this._sensorDelay);" +
+        "    }, this);" +
+        "    _.delay(this._sensorLoop, this._sensorDelay);" +
         "  this.gestureCallbacks = {};" +
         "  this.gestureCallback = function (event, callback) {" +
         "    this.gestureCallbacks[event] = callback;" +
@@ -377,11 +393,11 @@ function main(WSUrl) {
         "    return this.gestureCallbacks;" +
         "  };" +
         "  this.say = function(data) {" +
-        "    var audio = new Audio('http://translate.google.com/translate_tts?tl=en&q='+encodeURIComponent(data));" +
+        "    var audio = new Audio(\"http://translate.google.com/translate_tts?tl=en&q=\"+encodeURIComponent(data));" +
         "    audio.play();" +
         "  };" +
         "}" +
-        "var WS = new WearScript();" +
+        "var WS = new WearScriptSimulator();" +
         "</script>";
         document.getElementById('emulation').src = "data:text/html;charset=utf-8," + escape(WSScript+editor.getValue());
     });
