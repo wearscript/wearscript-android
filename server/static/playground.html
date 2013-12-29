@@ -105,7 +105,7 @@ if(!!window.speechRecognition) {
     recognition.interimResults = true;
  
     recognition.lang = "en-GB";
-    recognition.start();
+    //recognition.start();
  
     recognition.onstart = function() { console.log("Speech recognition started."); }
     recognition.onresult = function(event) {
