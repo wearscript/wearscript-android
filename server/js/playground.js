@@ -314,6 +314,13 @@ function urlToHost(url) {
     return protocol + '//' + host;
 }
 
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function replaceAll(find, replace, str) {
+  return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+}
 
 function main(WSUrl) {
     glassIdToNum = {};
@@ -498,7 +505,7 @@ function main(WSUrl) {
         "}" +
         "var WS = new WearScriptSimulator();" +
         "</script>";
-        document.getElementById('simulation').src = "data:text/html;charset=utf-8," + escape(WSScript+editor.getValue());
+        document.getElementById('simulation').src = "data:text/html;charset=utf-8," + escape(replaceAll('raw.github', 'rawgithub', WSScript+editor.getValue()));
     });
     $('#gestureAgain').click(function() { 
       onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
