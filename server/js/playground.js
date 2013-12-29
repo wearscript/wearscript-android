@@ -367,13 +367,111 @@ function main(WSUrl) {
         console.log(editor.getValue());
         //$('#emulation').contents().find('html').html(editor.getValue());
         // I set src so that the styling of body is obeyed 
-        var WSScript = '<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script><script>' +
+        var WSScript = "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js\"></script><script>" +
         "function WearScriptSimulator(type) {" +
+        "    this.activityCreate = function () {" +
+        "      console.log('Simulator warning: WS.activityCreate is not implemented');" +
+        "    };" +
+        "    this.activityDestroy = function () {" +
+        "      console.log('Simulator warning: WS.activityDestroy is not implemented');" +
+        "    };" +
+        "    this.audioOff = function () {" +
+        "      console.log('Simulator warning: WS.audioOff is not implemented');" +
+        "    };" +
+        "    this.audioOn = function () {" +
+        "      console.log('Simulator warning: WS.audioOn is not implemented');" +
+        "    };" +
+        "    this.blobCallback = function () {" +
+        "      console.log('Simulator warning: WS.blobCallback is not implemented');" +
+        "    };" +
+        "    this.blobSend = function () {" +
+        "      console.log('Simulator warning: WS.blobSend is not implemented');" +
+        "    };" +
+        "    this.cameraCallback = function () {" +
+        "      console.log('Simulator warning: WS.cameraCallback is not implemented');" +
+        "    };" +
+        "    this.cameraOff = function () {" +
+        "      console.log('Simulator warning: WS.cameraOff is not implemented');" +
+        "    };" +
+        "    this.cameraOn = function () {" +
+        "      console.log('Simulator warning: WS.cameraOn is not implemented');" +
+        "    };" +
+        "    this.cameraPhoto = function () {" +
+        "      console.log('Simulator warning: WS.cameraPhoto is not implemented');" +
+        "    };" +
+        "    this.cameraVideo = function () {" +
+        "      console.log('Simulator warning: WS.cameraVideo is not implemented');" +
+        "    };" +
+        "    this.cardCallback = function () {" +
+        "      console.log('Simulator warning: WS.cardCallback is not implemented');" +
+        "    };" +
+        "    this.cardDelete = function () {" +
+        "      console.log('Simulator warning: WS.cardDelete is not implemented');" +
+        "    };" +
+        "    this.cardFactory = function () {" +
+        "      console.log('Simulator warning: WS.cardFactory is not implemented');" +
+        "    };" +
+        "    this.cardInsert = function () {" +
+        "      console.log('Simulator warning: WS.cardInsert is not implemented');" +
+        "    };" +
+        "    this.cardModify = function () {" +
+        "      console.log('Simulator warning: WS.cardModify is not implemented');" +
+        "    };" +
+        "    this.data = function () {" +
+        "      console.log('Simulator warning: WS.data is not implemented');" +
+        "    };" +
+        "    this.dataLog = function () {" +
+        "      console.log('Simulator warning: WS.dataLog is not implemented');" +
+        "    };" +
+        "    this.displayCardScroll = function () {" +
+        "      console.log('Simulator warning: WS.displayCardScroll is not implemented');" +
+        "    };" +
+        "    this.liveCardCreate = function () {" +
+        "      console.log('Simulator warning: WS.liveCardCreate is not implemented');" +
+        "    };" +
+        "    this.liveCardDestroy = function () {" +
+        "      console.log('Simulator warning: WS.liveCardDestroy is not implemented');" +
+        "    };" +
+        "    this.qr = function () {" +
+        "      console.log('Simulator warning: WS.qr is not implemented');" +
+        "    };" +
+        "    this.sensorOff = function () {" +
+        "      console.log('Simulator warning: WS.sensorOff is not implemented');" +
+        "    };" +
+        "    this.sensors = function () {" +
+        "      console.log('Simulator warning: WS.sensors is not implemented');" +
+        "    };" +
+        "    this.serverTimeline = function () {" +
+        "      console.log('Simulator warning: WS.serverTimeline is not implemented');" +
+        "    };" +
+        "    this.shutdown = function () {" +
+        "      console.log('Simulator warning: WS.shutdown is not implemented');" +
+        "    };" +
+        "    this.speechRecognize = function () {" +
+        "      console.log('Simulator warning: WS.speechRecognize is not implemented');" +
+        "    };" +
+        "    this.wake = function () {" +
+        "      console.log('Simulator warning: WS.wake is not implemented');" +
+        "    };" +
+        "    this.wifiOff = function () {" +
+        "      console.log('Simulator warning: WS.wifiOff is not implemented');" +
+        "    };" +
+        "    this.wifiOn = function () {" +
+        "      console.log('Simulator warning: WS.wifiOn is not implemented');" +
+        "    };" +
+        "    this.wifiScan = function () {" +
+        "      console.log('Simulator warning: WS.wifiScan is not implemented');" +
+        "    };" +
+        "    this.scriptVersion = function(version) { return version != 0; };" +
         "    this.log = function (x) {console.log(x)};" +
         "    this.displayWebView = function () {};" +
         "    this.serverConnect = function (server, cb) {window[cb]()};" +
         "    this.sensorCallback = function (cb) {this._scb = cb};" +
         "    this._sensors = [];" +
+        "    this.sensor = function (x) {" +
+        "      var sensorValues = {pupil: -2,gps: -1,accelerometer: 1,magneticField: 2,orientation: 3,gyroscope: 4,light: 5,gravity: 9,linearAcceleration: 10,rotationVector: 11};" +
+        "      return sensorValues[x];" +
+        "    };" +
         "    this._sensorDelay = 100;" +
         "    this.sensorOn = function (s) {this._sensors.push(s)};" +
         "    this._sensorLoop = _.bind(function () {" +
