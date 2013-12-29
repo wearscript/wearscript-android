@@ -362,10 +362,11 @@ function main(WSUrl) {
         createKey("client", function (x) {$('#secret-client').html(_.escape(WSUrl + "/ws/client/" + x))}, function () {alert("Could not get client endpoint")})
     });
     
-    $('#emulateButton').click(function () {
-        console.log('emulate button is clicked');
+    $('#simulateButton').click(function () {
+        $('#simulator').show();
+        console.log('simulate button is clicked');
         console.log(editor.getValue());
-        //$('#emulation').contents().find('html').html(editor.getValue());
+        //$('#simulation').contents().find('html').html(editor.getValue());
         // I set src so that the styling of body is obeyed 
         var WSScript = "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js\"></script><script>" +
         "function WearScriptSimulator(type) {" +
@@ -497,21 +498,21 @@ function main(WSUrl) {
         "}" +
         "var WS = new WearScriptSimulator();" +
         "</script>";
-        document.getElementById('emulation').src = "data:text/html;charset=utf-8," + escape(WSScript+editor.getValue());
+        document.getElementById('simulation').src = "data:text/html;charset=utf-8," + escape(WSScript+editor.getValue());
     });
     $('#gestureAgain').click(function() { 
-      onGestureCallback = $("#emulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
-      $("#emulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
+      onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      $("#simulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
     });
     $('.gesture').click( function (e) {
       var optionSelected = $("option:selected", this);
       var valueSelected = $(this).text();
-      onGestureCallback = $("#emulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
       console.log('onGestureCallback '+JSON.stringify(onGestureCallback));
-      $("#emulation")[0].contentWindow[onGestureCallback](valueSelected);
+      $("#simulation")[0].contentWindow[onGestureCallback](valueSelected);
       console.log('gesture: '+valueSelected);
     });
-    //$("#emulation")[0].contentWindow.myFunction();
+    //$("#simulation")[0].contentWindow.myFunction();
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,
