@@ -389,9 +389,9 @@ function main(WSUrl) {
       onGestureCallback = $("#emulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
       $("#emulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
     });
-    $('#gestures').on('change', function (e) {
+    $('.gesture').click( function (e) {
       var optionSelected = $("option:selected", this);
-      var valueSelected = this.value;
+      var valueSelected = $(this).text();
       onGestureCallback = $("#emulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
       console.log('onGestureCallback '+JSON.stringify(onGestureCallback));
       $("#emulation")[0].contentWindow[onGestureCallback](valueSelected);

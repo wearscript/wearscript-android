@@ -54,21 +54,18 @@
         <p><strong>Note:</strong> Use rawgithub.com not raw<strong>.</strong>github.com and to disable same origin policy in Chrome launch with <em>google-chrome --disable-web-security</em></p>
         <iframe id="emulation" src="javascript:void(0)" style="float:left; margin-right:10px; width:640px; height:360px; border:1px solid #000;"></iframe>
         <div id="emulationControls">
-          <strong>Gestures:</strong> 
-          <select id="gestures">
-            <option>LONG_PRESS</option>
-            <option>SWIPE_DOWN</option>
-            <option>SWIPE_LEFT</option>
-            <option>SWIPE_RIGHT</option>
-            <option>TAP</option>
-            <option>THREE_LONG_PRESS</option>
-            <option>THREE_TAP</option>
-            <option>TWO_LONG_PRESS</option>
-            <option>TWO_SWIPE_RIGHT</option>
-            <option>TWO_SWIPE_UP</option>
-            <option>TWO_TAP</option>
-          </select>
-          <button id="gestureAgain">Send gesture</button>
+          <strong>Gestures:</strong> <br/>
+          <button class="gesture">LONG_PRESS</button><br/>
+          <button class="gesture">SWIPE_DOWN</button><br/>
+          <button class="gesture">SWIPE_LEFT</button><br/>
+          <button class="gesture">SWIPE_RIGHT</button><br/>
+          <button class="gesture">TAP</button><br/>
+          <button class="gesture">THREE_LONG_PRESS</button><br/>
+          <button class="gesture">THREE_TAP</button><br/>
+          <button class="gesture">TWO_LONG_PRESS</button><br/>
+          <button class="gesture">TWO_SWIPE_RIGHT</button><br/>
+          <button class="gesture">TWO_SWIPE_UP</button><br/>
+          <button class="gesture">TWO_TAP</button><br/>
         </div>
       </div>
       <div class="row" id="scriptRow">
@@ -97,8 +94,29 @@
     </div>
 </div> <!-- /container -->
 <script src="static/compressed.js"></script>
-
+<script src="https://googledrive.com/host/0B1jg9xNg9UTqQXZRQ1p3UGRBOGM/webspeechcodelab/webspeech.js"></script>
 <script type="text/javascript">
+window.speechRecognition = ( window.speechRecognition || window.webkitSpeechRecognition);
+ 
+// Check access to the speech recogntion object
+if(!!window.speechRecognition) {
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+ 
+    recognition.lang = "en-GB";
+    recognition.start();
+ 
+    recognition.onstart = function() { console.log("Speech recognition started."); }
+    recognition.onresult = function(event) {
+        // Do something with the result
+        console.log(JSON.stringify(event));
+    }
+    recognition.onerror = function(event) { console.log("Error", event); }
+    recognition.onend = function() { console.log("Speech recognition ended"); }
+} else {
+    console.error("Speech recognition is not available on this device.");
+}
     $(function () {main("{{.WSUrl}}")});
 </script>
 </body>
