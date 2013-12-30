@@ -74,6 +74,10 @@ function WearScriptSimulator(type) {
     this.getGestureCallbacks = function () {
       return this._gestureCallbacks;
     };
+    this.env = function() {
+      // Per https://github.com/OpenShades/wearscript/issues/41 lets developer know whether or not script is ran on Glass or web broswer
+      return 'browser';
+    }
     this.liveCardCreate = function () {
       console.log('Simulator warning: WS.liveCardCreate is not implemented');
     };
