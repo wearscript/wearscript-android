@@ -1,4 +1,14 @@
 function WearScriptSimulator(type) {
+    this._sensorLoop = _.bind(function () {
+        if (!_.has(this, '_scb') || !_.has(window, this._scb))
+            return;
+        _.each(this._sensors, _.bind(function (x) {
+            window[this._scb]({type: x, values: [Math.random(), Math.random(), Math.random()], timestamp: (new Date).getTime() / 1000});
+        }, this));
+        _.delay(this._sensorLoop, this._sensorDelay);
+    }, this);
+    this._sensors = [];
+    _.delay(this._sensorLoop, this._sensorDelay);
     this.activityCreate = function () {
       console.log('Simulator warning: WS.activityCreate is not implemented');
     };
@@ -56,20 +66,49 @@ function WearScriptSimulator(type) {
     this.displayCardScroll = function () {
       console.log('Simulator warning: WS.displayCardScroll is not implemented');
     };
+    this.displayWebView = function () {};
+    this._gestureCallbacks = {};
+    this.gestureCallback = function (event, callback) {
+      this.gestureCallbacks[event] = callback;
+    };
+    this.getGestureCallbacks = function () {
+      return this._gestureCallbacks;
+    };
     this.liveCardCreate = function () {
       console.log('Simulator warning: WS.liveCardCreate is not implemented');
     };
     this.liveCardDestroy = function () {
       console.log('Simulator warning: WS.liveCardDestroy is not implemented');
     };
+    this.log = function (x) {
+      console.log('WearScriptSimulator WS.log: '+x)
+    };
     this.qr = function () {
       console.log('Simulator warning: WS.qr is not implemented');
     };
+    this.say = function(data) {
+      var audio = new Audio("http://translate.google.com/translate_tts?tl=en&q="+encodeURIComponent(data));
+      audio.play();
+    };
+    this.scriptVersion = function(version) { return version != 0; };
     this.sensorOff = function () {
       console.log('Simulator warning: WS.sensorOff is not implemented');
     };
+    this.sensorCallback = function (cb) {
+      this._scb = cb;
+    };
+    this.sensorOn = function (s) {
+      this._sensors.push(s)
+    };
+    this.sensor = function (x) {
+      var sensorValues = {pupil: -2,gps: -1,accelerometer: 1,magneticField: 2,orientation: 3,gyroscope: 4,light: 5,gravity: 9,linearAcceleration: 10,rotationVector: 11};
+      return sensorValues[x];
+    };
     this.sensors = function () {
       console.log('Simulator warning: WS.sensors is not implemented');
+    };
+    this.serverConnect = function (server, cb) {
+      window[cb]()
     };
     this.serverTimeline = function () {
       console.log('Simulator warning: WS.serverTimeline is not implemented');
@@ -92,37 +131,5 @@ function WearScriptSimulator(type) {
     this.wifiScan = function () {
       console.log('Simulator warning: WS.wifiScan is not implemented');
     };
-    this.scriptVersion = function(version) { return version != 0; };
-    this.log = function (x) {console.log(x)};
-    this.displayWebView = function () {};
-    this.serverConnect = function (server, cb) {window[cb]()};
-    this.sensorCallback = function (cb) {this._scb = cb};
-    this._sensors = [];
-    this.sensor = function (x) {
-      var sensorValues = {pupil: -2,gps: -1,accelerometer: 1,magneticField: 2,orientation: 3,gyroscope: 4,light: 5,gravity: 9,linearAcceleration: 10,rotationVector: 11};
-      return sensorValues[x];
-    };
-    this._sensorDelay = 100;
-    this.sensorOn = function (s) {this._sensors.push(s)};
-    this._sensorLoop = _.bind(function () {
-        if (!_.has(this, '_scb') || !_.has(window, this._scb))
-            return;
-        _.each(this._sensors, _.bind(function (x) {
-            window[this._scb]({type: x, values: [Math.random(), Math.random(), Math.random()], timestamp: (new Date).getTime() / 1000});
-        }, this));
-        _.delay(this._sensorLoop, this._sensorDelay);
-    }, this);
-    _.delay(this._sensorLoop, this._sensorDelay);
-  this.gestureCallbacks = {};
-  this.gestureCallback = function (event, callback) {
-    this.gestureCallbacks[event] = callback;
-  };
-  this.getGestureCallbacks = function () {
-    return this.gestureCallbacks;
-  };
-  this.say = function(data) {
-    var audio = new Audio("http://translate.google.com/translate_tts?tl=en&q="+encodeURIComponent(data));
-    audio.play();
-  };
 }
 var WS = new WearScriptSimulator();
