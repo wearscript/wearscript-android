@@ -59,12 +59,7 @@ public class OpenGLManager  extends Manager {
         }
 
         public void onDrawFrame(GL10 gl) {
-            /*GLES20.glClearColor(1f, 0f, 0f, 1f);
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT
-                    | GLES20.GL_DEPTH_BUFFER_BIT);
-            if (true)
-                return;*/
-            Log.i(TAG, "OpenGL onDrawFrame");
+            Log.d(TAG, "OpenGL onDrawFrame");
             if (jsCallbacks.containsKey(OPENGL_DRAW_CALLBACK))
                 makeCall(OPENGL_DRAW_CALLBACK, "");
             OpenGLEvent statement;
@@ -76,11 +71,10 @@ public class OpenGLManager  extends Manager {
                     break;
                 }
                 if (statement.isDone()) {
-                    Log.i(TAG, "OpenGL Done");
+                    Log.d(TAG, "OpenGL Done");
                     break;
                 }
                 statement.execute();
-                Log.i(TAG, "OpenGL exec");
             }
         }
     }

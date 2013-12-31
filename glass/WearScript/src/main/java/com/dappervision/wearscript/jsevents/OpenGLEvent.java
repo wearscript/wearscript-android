@@ -20,8 +20,6 @@ public class OpenGLEvent {
     }
 
     public OpenGLEvent(String command) {
-
-
     }
 
     public OpenGLEvent(Method m, boolean ret, Object... a) {
@@ -56,9 +54,6 @@ public class OpenGLEvent {
 
     public void execute() {
         try {
-            Log.i(TAG, method.getName());
-            Log.i(TAG, Integer.toString(args.length));
-            Log.i(TAG, args.toString());
             try {
                 returnValue = method.invoke(GLES20.class, args);
             } catch (IllegalArgumentException e) {

@@ -13,7 +13,6 @@ public class OpenGLEventCustom extends OpenGLEvent {
         customCommand = name;
     }
     public void execute() {
-        Log.d(TAG, "Custom command: " + customCommand);
         if (customCommand.equals("glCreateBuffer")) {
             int array[] = new int[1];
             GLES20.glGenBuffers(1, array, 0);
