@@ -293,25 +293,25 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 broadcastReceiver = null;
             }
             if (cameraManager != null) {
-                cameraManager.unregister(true);
+                cameraManager.shutdown();
             }
             if (tts != null) {
                 tts.stop();
                 tts.shutdown();
             }
             Utils.getEventBus().unregister(this);
-            // TODO(brandyn): Replace with a list of managers
-            dataManager.eventBusUnregister();
-            cameraManager.eventBusUnregister();
-            barcodeManager.eventBusUnregister();
-            wifiManager.eventBusUnregister();
-            blobManager.eventBusUnregister();
-            gestureManager.eventBusUnregister();
-            audioManager.eventBusUnregister();
-            openglManager.eventBusUnregister();
+
+            dataManager.shutdown();
+            cameraManager.shutdown();
+            barcodeManager.shutdown();
+            wifiManager.shutdown();
+            blobManager.shutdown();
+            gestureManager.shutdown();
+            audioManager.shutdown();
+            openglManager.shutdown();
 
             if (picarusManager != null)
-                picarusManager.eventBusUnregister();
+                picarusManager.shutdown();
             Log.d(TAG, "Disconnecting client");
             if (client != null) {
                 client.shutdown();
@@ -350,16 +350,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiScanCallback = null;
             dataWifi = dataRemote = dataLocal =  false;
             lastSensorSaveTime  = sensorDelay = 0.;
-            // TODO(brandyn): Replace with a list of managers
-            audioManager.unregister();
-            barcodeManager.unregister();
-            blobManager.unregister();
-            dataManager.unregister();
-            cameraManager.unregister(true);
-            openglManager.unregister();
-            wifiManager.unregister();
-            if (picarusManager != null)
-                picarusManager.unregister();
+
+            dataManager.reset();
+            cameraManager.reset();
+            audioManager.reset();
+            openglManager.reset();
+
             cardScrollAdapter.reset();
             updateCardScrollView();
             speechCallback = null;
@@ -371,7 +367,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         gestureManager = new GestureManager(a, this);
                 }
             } else {
-                gestureManager.unregister();
+                gestureManager.reset();
             }
             updateActivityView("webview");
         }

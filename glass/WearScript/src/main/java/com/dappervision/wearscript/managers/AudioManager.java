@@ -28,9 +28,9 @@ public class AudioManager extends Manager {
 
     public void onEvent(AudioEvent e){
         if(e.isStart()){
-           start();
+           reset();
         }else if(e.isStop()){
-           stop();
+           shutdown();
         }
     }
 
@@ -50,22 +50,20 @@ public class AudioManager extends Manager {
             systemAudio.playSoundEffect(Sounds.SUCCESS);
     }
 
-    @Override
-    public void eventBusUnregister() {
-        stop();
-        super.eventBusUnregister();
+    public void reset(){
+        Log.d(TAG, "starting audio capture");
+        if(mAudioRecordingThread != null)
+            mAudioRecordingThread.stopRunning();
+
+        mAudioRecordingThread = new AudioRecordingThread(mBufferSize, mAudioBuffer);
+        mAudioRecordingThread.start();
     }
 
-    private void stop(){
+    public void shutdown(){
+        super.shutdown();
         Log.d(TAG, "stopping audio capture");
         if(mAudioRecordingThread != null)
             mAudioRecordingThread.stopRunning();
         mAudioRecordingThread = null;
-    }
-
-    private void start(){
-        Log.d(TAG, "starting audio capture");
-        mAudioRecordingThread = new AudioRecordingThread(mBufferSize, mAudioBuffer);
-        mAudioRecordingThread.start();
     }
 }
