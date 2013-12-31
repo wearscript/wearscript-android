@@ -19,12 +19,6 @@ public class OpenGLManager  extends Manager {
 
     public OpenGLManager(BackgroundService bs){
         super(bs);
-        openglCommandQueue = new LinkedBlockingQueue<OpenGLEvent>();
-        glView = new GLSurfaceView(bs);
-        glView.setEGLContextClientVersion(2);
-        glView.setPreserveEGLContextOnPause(true);
-        glView.setRenderer(new ClearRenderer());
-        glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 
     protected void registerCallback(String type, String jsFunction) {
@@ -42,6 +36,15 @@ public class OpenGLManager  extends Manager {
         } catch (InterruptedException e) {
             // TODO(brandyn): Handle
         }
+    }
+    public void reset() {
+        super.reset();
+        openglCommandQueue = new LinkedBlockingQueue<OpenGLEvent>();
+        glView = new GLSurfaceView(service);
+        glView.setEGLContextClientVersion(2);
+        glView.setPreserveEGLContextOnPause(true);
+        glView.setRenderer(new ClearRenderer());
+        glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 
     public void onEvent(OpenGLRenderEvent event) {

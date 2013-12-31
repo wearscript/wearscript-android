@@ -18,8 +18,12 @@ public class WifiManager extends Manager {
 
     public WifiManager(BackgroundService bs){
         super(bs);
+    }
+
+    public void reset() {
+        super.reset();
         enabled = false;
-        manager = (android.net.wifi.WifiManager) bs.getSystemService(Context.WIFI_SERVICE);
+        manager = (android.net.wifi.WifiManager) service.getSystemService(Context.WIFI_SERVICE);
     }
 
     public String getMacAddress() {
