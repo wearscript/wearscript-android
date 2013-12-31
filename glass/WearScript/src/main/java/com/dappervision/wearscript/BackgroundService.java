@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioRecord;
+import android.opengl.GLSurfaceView;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -37,6 +38,7 @@ import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.google.android.glass.widget.CardScrollView;
@@ -87,6 +89,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private BlobManager blobManager;
     protected CameraManager cameraManager;
     protected AudioManager audioManager;
+    protected OpenGLManager openglManager;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
@@ -112,6 +115,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     activityView = webview;
                 } else if (mode.equals("cardscroll")) {
                     activityView = cardScroller;
+                } else if (mode.equals("opengl")) {
+                    activityView = openglManager.getView();
                 } else {
                 }
                 if (activityView != null) {
@@ -295,6 +300,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 tts.shutdown();
             }
             Utils.getEventBus().unregister(this);
+            // TODO(brandyn): Replace with a list of managers
             dataManager.eventBusUnregister();
             cameraManager.eventBusUnregister();
             barcodeManager.eventBusUnregister();
@@ -302,6 +308,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             blobManager.eventBusUnregister();
             gestureManager.eventBusUnregister();
             audioManager.eventBusUnregister();
+            openglManager.eventBusUnregister();
 
             if (picarusManager != null)
                 picarusManager.eventBusUnregister();
@@ -343,9 +350,16 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiScanCallback = null;
             dataWifi = dataRemote = dataLocal =  false;
             lastSensorSaveTime  = sensorDelay = 0.;
+            // TODO(brandyn): Replace with a list of managers
+            audioManager.unregister();
+            barcodeManager.unregister();
+            blobManager.unregister();
             dataManager.unregister();
             cameraManager.unregister(true);
-            audioManager.unregister();
+            openglManager.unregister();
+            wifiManager.unregister();
+            if (picarusManager != null)
+                picarusManager.unregister();
             cardScrollAdapter.reset();
             updateCardScrollView();
             speechCallback = null;
@@ -606,6 +620,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         wifiManager = new WifiManager(this);
         blobManager = new BlobManager(this);
         audioManager = new AudioManager(this);
+        openglManager = new OpenGLManager(this);
 
         tts = new TextToSpeech(this, this);
 
@@ -662,6 +677,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             activity.get().finish();
         }else if(e.getMode() == ActivityEvent.Mode.WEBVIEW){
             updateActivityView("webview");
+        } else if (e.getMode() == ActivityEvent.Mode.OPENGL)  {
+            updateActivityView("opengl");
         }else if(e.getMode() == ActivityEvent.Mode.CARD_SCROLL){
             updateActivityView("cardscroll");
         }

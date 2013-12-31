@@ -3,6 +3,7 @@ package com.dappervision.wearscript;
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.LogEvent;
+import com.dappervision.wearscript.jsevents.OpenGLEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
@@ -11,6 +12,8 @@ import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
+import com.dappervision.wearscript.jsevents.OpenGLEventCustom;
+import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
@@ -24,18 +27,29 @@ import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.WifiManager;
+import android.opengl.GLES20;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class WearScript {
     BackgroundService bs;
     String TAG = "WearScript";
     TreeMap<String, Integer> sensors;
+    TreeMap<String, Method> openglMethods;
     String sensorsJS;
 
     public static enum SENSOR {
@@ -72,6 +86,13 @@ public class WearScript {
             this.sensors.put(s.toString(), s.id());
         }
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
+        this.openglMethods = new TreeMap<String, Method>();
+        for (Method m: GLES20.class.getMethods()) {
+            // Skips the overloaded variants we don't use
+            if (m.getName().equals("glVertexAttribPointer") && m.getParameterTypes()[5].equals(Buffer.class))
+                continue;
+            openglMethods.put(m.getName(), m);
+        }
     }
 
     public int sensor(String name) {
@@ -357,5 +378,201 @@ public class WearScript {
     public void sound(String type) {
         Log.i(TAG, "sound");
         Utils.eventBusPost(new SoundEvent(type));
+    }
+
+    private Object glConvert(Object v) {
+        Log.i(TAG, "GL: " + v);
+        return new Float((Double)v);
+        //return float.class;
+    }
+
+    private Class glClass(Float v) {
+        return float.class;
+    }
+
+    private Class glClass(Integer v) {
+        return int.class;
+    }
+
+    public void glCallback(String callback) {
+        Utils.eventBusPost(new CallbackRegistration(OpenGLManager.class, callback).setEvent(OpenGLManager.OPENGL_DRAW_CALLBACK));
+    }
+
+    public void displayGL() {
+        Log.i(TAG, "displayGL");
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.OPENGL));
+    }
+
+    public void glDone() {
+        Log.d(TAG, "glDone");
+        Utils.getEventBus().post(new OpenGLEvent());
+    }
+
+    public void glRender() {
+        Log.d(TAG, "glRender");
+        Utils.getEventBus().post(new OpenGLRenderEvent());
+    }
+
+    public void gl(String methodName, double p0, double p1, double p2, double p3) {
+        glHelper(methodName, false, p0, p1, p2, p3);
+    }
+
+    public void gl(String methodName) {
+        glHelper(methodName, false);
+    }
+
+    public void gl(String methodName, double p0) {
+        glHelper(methodName, false, p0);
+    }
+
+    public String glString(String methodName, double p0) {
+        return (String)glHelper(methodName, true, p0);
+    }
+
+    public void gl(String methodName, double p0, double p1) {
+        Log.d(TAG, "OpenGL: Double Double: " + methodName);
+        glHelper(methodName, false, p0, p1);
+    }
+
+    public void gl(String methodName, double p0, double p1, double p2) {
+        glHelper(methodName, false, p0, p1, p2);
+    }
+
+    public void gl(String methodName, double p0, double p1, double p2, boolean p3, double p4, double p5) {
+        glHelper(methodName, false, p0, p1, p2, p3, p4, p5);
+    }
+
+    public void glDoubleString(String methodName, double p0, String p1) {
+        Log.d(TAG, "OpenGL: Double string: " + methodName);
+        glHelper(methodName, false, p0, p1);
+    }
+
+    public int glDoubleStringRetInt(String methodName, double p0, String p1) {
+        Log.d(TAG, "OpenGL: Double string ret int: " + methodName);
+        return (Integer)glHelper(methodName, true, p0, p1);
+    }
+
+    private FloatBuffer stringToBufferF2(String data) {
+        JSONArray dataJSArray = (JSONArray) JSONValue.parse(data);
+        float dataArray[] = new float[dataJSArray.size()];
+        for (int i = 0; i < dataJSArray.size(); i++) {
+            try {
+                dataArray[i] = ((Double)dataJSArray.get(i)).floatValue();
+            } catch (ClassCastException e) {
+                dataArray[i] = (Long)dataJSArray.get(i);
+            }
+        }
+        return FloatBuffer.wrap(dataArray);
+    }
+
+    private FloatBuffer stringToBufferF(String data) {
+        JSONArray dataJSArray = (JSONArray) JSONValue.parse(data);
+        float dataArray[] = new float[dataJSArray.size()];
+        for (int i = 0; i < dataJSArray.size(); i++) {
+            try {
+                dataArray[i] = ((Double)dataJSArray.get(i)).floatValue();
+            } catch (ClassCastException e) {
+                dataArray[i] = ((Long)dataJSArray.get(i)).floatValue();
+            }
+        }
+        FloatBuffer fb = ByteBuffer.allocateDirect(dataArray.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        fb.put(dataArray).position(0);
+        return fb;
+    }
+
+    public void glBufferData(double target, double size, String data, double usage) {
+        glHelper("glBufferData", false, target, size, data, usage);
+    }
+
+    public void glUniformMatrix3fv(double location, double count, boolean transpose, String value) {
+        glHelper("glUniformMatrix3fv", false, location, count, transpose, value);
+    }
+
+    public int glCreateBuffer() {
+        Log.d(TAG, "glCreateBuffer");
+        return (Integer)postOpenGLEvent(new OpenGLEventCustom("glCreateBuffer", true));
+    }
+
+    public int glInt(String methodName) {
+        return (Integer)glHelper(methodName, true);
+    }
+
+    public int glInt(String methodName, double p0) {
+        return (Integer)glHelper(methodName, true, p0);
+    }
+
+    public boolean glBoolean(String methodName, double p0) {
+        return (Boolean)glHelper(methodName, true, p0);
+    }
+
+    private Object postOpenGLEvent(OpenGLEvent event) {
+        Utils.getEventBus().post(event);
+        if (event.hasReturn()) {
+            Log.i(TAG, "Waiting for return");
+            Object out = event.getReturn();
+            Log.i(TAG, "Got return: " + out);
+            return out;
+        } else {
+            Log.i(TAG, "Not waiting for return");
+        }
+        return null;
+    }
+
+    private Object glHelper(String methodName, boolean ret, Object...p) {
+        Log.i(TAG, "OpenGL Method[d...]: " + methodName);
+        Method m = openglMethods.get(methodName);
+        if (m == null) {
+            Log.e(TAG, "Method missing: " + methodName);
+            return null;
+        }
+        Class<?>[] types = m.getParameterTypes();
+        ArrayList<Object> args = new ArrayList<Object>();
+        for (int i = 0; i < p.length; i++) {
+            Class c = types[i];
+            try {
+                if (c.equals(float.class))
+                    args.add(((Double)p[i]).floatValue());
+                else if (c.equals(int.class))
+                    args.add(((Double)p[i]).intValue());
+                else if (c.equals(String.class))
+                    args.add(((String)p[i]));
+                else if (c.equals(Buffer.class))
+                    args.add(stringToBufferF((String)p[i]));
+                else if (c.equals(boolean.class))
+                    args.add((Boolean)p[i]);
+                else if (c.equals(FloatBuffer.class))
+                    args.add(stringToBufferF((String)p[i]));
+                else {
+                    Log.e(TAG, "Cannot cast!: " + c);
+                    return null;
+                }
+            } catch (ClassCastException e) {
+                Log.e(TAG, String.format("ClassCastException: %s %s %s", methodName, c.getName(), p[i].getClass().getName()));
+                return null;
+            }
+        }
+        Log.d(TAG, String.format("OpenGLMethod: %s Params: %d Args: %d", methodName, p.length, args.size()));
+        return postOpenGLEvent(new OpenGLEvent(m, ret, args.toArray()));
+    }
+
+    public String glConstants() {
+        JSONObject o = new JSONObject();
+        for (Field f : GLES20.class.getFields()) {
+            try {
+                o.put(f.getName(), f.getInt(o));
+            } catch (IllegalAccessException e) {
+                Log.w(TAG, "Illegal access in glConstants: " + f.getName());
+                continue;
+            }
+        }
+        return o.toJSONString();
+    }
+
+    public String glMethods() {
+        JSONArray o = new JSONArray();
+        for (Method m : GLES20.class.getMethods()) {
+            o.add(m.getName());
+        }
+        return o.toJSONString();
     }
 }
