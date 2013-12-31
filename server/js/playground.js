@@ -364,10 +364,9 @@ function main(WSUrl) {
 
     $('#simulateButton').click(function () {
         $('#simulator').show();
-        console.log('simulate button is clicked');
-        console.log(editor.getValue());
-        $('#simulation').contents().find('html').html(editor.getValue());
+        simulatorUrl = createKey("client", function (x) {$('#simulation')[0].contentWindow.start(WSUrl + "/ws/glass/" + x)}, function () {alert("Could not get client endpoint")})
     });
+
     $('#gestureAgain').click(function() { 
       onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
       $("#simulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());

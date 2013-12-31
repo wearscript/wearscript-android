@@ -1,3 +1,55 @@
+function start(WSUrl) {
+  console.log("starting simulator for "+WSUrl);
+  glass = new SimulatedGlass(WSUrl);
+  glass.connect(function() {
+  });
+}
+
+function SimulatedGlass(WSUrl) {
+  this.wsurl = WSUrl;
+  this.websocket = null;
+
+  this.connect = function (postConnect) {
+    this.websocket = new ReconnectingWebSocket(this.wsurl);
+    this.websocket.onopen = function(evt) { onOpen(evt); postConnect(); };
+    this.websocket.onclose = function(evt) { onClose(evt) };
+    this.websocket.onmessage = function(evt) { onMessage(evt) };
+  }
+
+  function onOpen(evt, post) {
+    console.log("simulator ws connected");
+    setStatus("connected");
+    say("WearScript connected");
+  }
+
+  function onClose(evt) {
+    console.log("simulator ws disconnected");
+    say("WearScript disconnected");
+    setStatus("disconnected");
+  }
+
+  function onMessage(evt) {
+    obj = msgpack.unpack(evt.data);
+    console.log("event msgpack: "+JSON.stringify(obj));
+    console.log("event raw: "+JSON.stringify(evt.data));
+  }
+
+  this.send = send;
+  function send(msg) {
+          this.websocket.send(msg);
+  }
+
+  this.say = say;
+  function say(data) {
+    var audio = new Audio("http://translate.google.com/translate_tts?tl=en&q="+encodeURIComponent(data));
+    audio.play();
+  };
+
+  function setStatus(msg) {
+    $('#status').text(msg);
+  }
+}
+
 function WearScriptSimulator(type) {
     this.activityCreate = function () {
       console.log('Simulator warning: WS.activityCreate is not implemented');
