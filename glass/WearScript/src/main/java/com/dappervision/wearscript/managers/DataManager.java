@@ -76,6 +76,7 @@ public class DataManager extends Manager {
     }
 
     public void unregister() {
+        super.unregister();
         for (Integer type : providers.keySet()) {
             unregister(type);
         }
