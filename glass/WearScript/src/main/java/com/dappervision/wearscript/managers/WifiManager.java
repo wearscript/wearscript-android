@@ -20,6 +20,7 @@ public class WifiManager extends Manager {
         super(bs);
         enabled = false;
         manager = (android.net.wifi.WifiManager) bs.getSystemService(Context.WIFI_SERVICE);
+        reset();
     }
 
     public String getMacAddress() {

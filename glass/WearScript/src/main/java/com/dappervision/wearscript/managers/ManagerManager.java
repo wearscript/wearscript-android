@@ -38,8 +38,8 @@ public class ManagerManager {
         return managers.remove(name);
     }
 
-    public Manager get(Class<? extends Manager> name) {
-        return managers.get(name);
+    public Manager get(Class<? extends Manager> c) {
+        return managers.get(c.getName());
     }
 
     public void resetAll(){

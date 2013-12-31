@@ -11,6 +11,7 @@ import com.dappervision.wearscript.jsevents.CallbackRegistration;
 public class BarcodeManager extends Manager {
     public BarcodeManager(BackgroundService bs) {
         super(bs);
+        reset();
     }
 
     public void onEvent(CallbackRegistration e){

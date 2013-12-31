@@ -579,7 +579,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         tts = new TextToSpeech(this, this);
 
-        glassID = ((WifiManager)ManagerManager.get().get(WifiManager.class)).getMacAddress();
+        glassID = getWifiManager().getMacAddress();
 
         cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
         cardScroller = new CardScrollView(this);

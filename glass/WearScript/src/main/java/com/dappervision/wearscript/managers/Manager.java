@@ -15,7 +15,6 @@ public abstract class Manager {
 
     public Manager(BackgroundService service){
         this.service = service;
-        reset();
     }
 
     protected void setupCallback(CallbackRegistration e){

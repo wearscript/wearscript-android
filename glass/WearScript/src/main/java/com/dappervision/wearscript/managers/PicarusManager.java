@@ -40,5 +40,6 @@ public class PicarusManager extends Manager {
         };
         Log.i(TAG, "Calling bindService");
         service.bindService(new Intent("com.dappervision.picarus.PicarusService"), picarusConnection, Context.BIND_AUTO_CREATE);
+        reset();
     }
 }

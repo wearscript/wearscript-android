@@ -24,11 +24,12 @@ public class AudioManager extends Manager {
         mAudioBuffer = new short[mBufferSize / 2];
 
         systemAudio = (android.media.AudioManager) service.getSystemService(Context.AUDIO_SERVICE);
+        reset();
     }
 
     public void onEvent(AudioEvent e){
         if(e.isStart()){
-           reset();
+            start();
         }else if(e.isStop()){
            shutdown();
         }
@@ -54,7 +55,9 @@ public class AudioManager extends Manager {
         Log.d(TAG, "starting audio capture");
         if(mAudioRecordingThread != null)
             mAudioRecordingThread.stopRunning();
-
+    }
+    public void start(){
+        reset();
         mAudioRecordingThread = new AudioRecordingThread(mBufferSize, mAudioBuffer);
         mAudioRecordingThread.start();
     }

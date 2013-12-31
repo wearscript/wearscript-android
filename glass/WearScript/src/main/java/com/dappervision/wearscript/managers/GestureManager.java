@@ -14,6 +14,7 @@ public class GestureManager extends Manager {
     public GestureManager(Context activity, BackgroundService bs) {
         super(bs);
         detector = new MyGestureDetector(this, activity);
+        reset();
     }
 
     public void onEvent(MotionEvent e){

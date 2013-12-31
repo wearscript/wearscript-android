@@ -60,6 +60,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             jpgFrame = null;
             frameRGBSet = false;
             paused = false;
+            reset();
         }
 
         void setFrame(byte[] data) {
