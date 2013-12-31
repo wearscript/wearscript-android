@@ -31,12 +31,10 @@ import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
-import com.dappervision.wearscript.managers.AudioManager;
-import com.dappervision.wearscript.managers.BarcodeManager;
-import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.google.android.glass.widget.CardScrollView;
@@ -76,17 +74,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public ScriptView webview;
     private Tree tree;
 
+    private ManagerManager managerManager;
     public String wsUrl;
-
-    //Managers
-    protected WifiManager wifiManager;
-    protected GestureManager gestureManager;
-    protected BarcodeManager barcodeManager;
-    protected DataManager dataManager;
-    protected PicarusManager picarusManager;
-    private BlobManager blobManager;
-    protected CameraManager cameraManager;
-    protected AudioManager audioManager;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
@@ -287,24 +276,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 unregisterReceiver(broadcastReceiver);
                 broadcastReceiver = null;
             }
-            if (cameraManager != null) {
-                cameraManager.unregister(true);
-            }
             if (tts != null) {
                 tts.stop();
                 tts.shutdown();
             }
             Utils.getEventBus().unregister(this);
-            dataManager.eventBusUnregister();
-            cameraManager.eventBusUnregister();
-            barcodeManager.eventBusUnregister();
-            wifiManager.eventBusUnregister();
-            blobManager.eventBusUnregister();
-            gestureManager.eventBusUnregister();
-            audioManager.eventBusUnregister();
+            managerManager.shutdownAll();
 
-            if (picarusManager != null)
-                picarusManager.eventBusUnregister();
             Log.d(TAG, "Disconnecting client");
             if (client != null) {
                 client.shutdown();
@@ -343,21 +321,17 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiScanCallback = null;
             dataWifi = dataRemote = dataLocal =  false;
             lastSensorSaveTime  = sensorDelay = 0.;
-            dataManager.unregister();
-            cameraManager.unregister(true);
-            audioManager.unregister();
             cardScrollAdapter.reset();
             updateCardScrollView();
             speechCallback = null;
 
-            if (gestureManager == null) {
+            managerManager.resetAll();
+            if (managerManager.get(GestureManager.class) == null) {
                 if (activity != null) {
                     MainActivity a = activity.get();
                     if (a != null)
-                        gestureManager = new GestureManager(a, this);
+                        managerManager.add(new GestureManager(a, this));
                 }
-            } else {
-                gestureManager.unregister();
             }
             updateActivityView("webview");
         }
@@ -502,11 +476,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         DataPoint dp = new DataPoint(name, type, sample.get(1).asFloatValue().getDouble(), sample.get(2).asIntegerValue().getLong());
                         for (Value k : sample.get(0).asArrayValue().getElementArray())
                             dp.addValue(k.asFloatValue().getDouble());
-                        dataManager.queueRemote(dp);
+                        ((DataManager)managerManager.get(DataManager.class)).queueRemote(dp);
                     }
                 }
             } else if (action.equals("image")) {
-                cameraManager.remoteImage(input.get(3).asRawValue().getByteArray());
+                ((CameraManager)managerManager.get(CameraManager.class)).remoteImage(input.get(3).asRawValue().getByteArray());
             } else if (action.equals("raven")) {
                 Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {
@@ -600,16 +574,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         registerReceiver(broadcastReceiver, intentFilter);
 
         //Plugin new Managers here
-        dataManager = new DataManager(this);
-        cameraManager = new CameraManager(this);
-        barcodeManager = new BarcodeManager(this);
-        wifiManager = new WifiManager(this);
-        blobManager = new BlobManager(this);
-        audioManager = new AudioManager(this);
+        managerManager.newManagers(this);
 
         tts = new TextToSpeech(this, this);
 
-        glassID = wifiManager.getMacAddress();
+        glassID = ((WifiManager)managerManager.get(WifiManager.class)).getMacAddress();
 
         cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
         cardScroller = new CardScrollView(this);
@@ -678,7 +647,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEvent(PicarusEvent e){
-        picarusManager = new PicarusManager(this);
+        managerManager.add(new PicarusManager(this));
     }
 
     public void onEvent(ScreenEvent e){
@@ -768,9 +737,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public CameraManager getCameraManager() {
-        return cameraManager;
+        return (CameraManager)managerManager.get(CameraManager.class);
     }
-
+    protected DataManager getDataManager() {
+        return (DataManager)managerManager.get(DataManager.class);
+    }
+    protected WifiManager getWifiManager() {
+        return (WifiManager)managerManager.get(WifiManager.class);
+    }
     class ScreenBroadcastReceiver extends BroadcastReceiver {
         BackgroundService bs;
 
@@ -780,17 +754,18 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            //TODO: Move recievers into managers when possible
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
                 Log.d(TAG, "Screen off");
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
                 Log.d(TAG, "Screen on");
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
-                BatteryDataProvider dp = (BatteryDataProvider) bs.dataManager.getProvider(WearScript.SENSOR.BATTERY.id());
+                BatteryDataProvider dp = (BatteryDataProvider) bs.getDataManager().getProvider(WearScript.SENSOR.BATTERY.id());
                 if(dp != null)
                     dp.post(intent);
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.d(TAG, "Wifi scan results");
-                bs.wifiManager.makeCall();
+                bs.getWifiManager().makeCall();
             }
         }
     }
