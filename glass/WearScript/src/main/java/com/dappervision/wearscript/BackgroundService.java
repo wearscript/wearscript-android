@@ -74,8 +74,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected SocketClient client;
     public ScriptView webview;
     private Tree tree;
-
-    private ManagerManager managerManager;
     public String wsUrl;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
@@ -284,8 +282,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 tts.shutdown();
             }
             Utils.getEventBus().unregister(this);
-
-            managerManager.shutdownAll();
+            ManagerManager.get().shutdownAll();
 
             Log.d(TAG, "Disconnecting client");
             if (client != null) {
@@ -329,12 +326,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             updateCardScrollView();
             speechCallback = null;
 
-            managerManager.resetAll();
-            if (managerManager.get(GestureManager.class) == null) {
+            ManagerManager.get().resetAll();
+            if (ManagerManager.get().get(GestureManager.class) == null) {
                 if (activity != null) {
                     MainActivity a = activity.get();
                     if (a != null)
-                        managerManager.add(new GestureManager(a, this));
+                        ManagerManager.get().add(new GestureManager(a, this));
                 }
             }
             updateActivityView("webview");
@@ -480,11 +477,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         DataPoint dp = new DataPoint(name, type, sample.get(1).asFloatValue().getDouble(), sample.get(2).asIntegerValue().getLong());
                         for (Value k : sample.get(0).asArrayValue().getElementArray())
                             dp.addValue(k.asFloatValue().getDouble());
-                        ((DataManager)managerManager.get(DataManager.class)).queueRemote(dp);
+                        ((DataManager)ManagerManager.get().get(DataManager.class)).queueRemote(dp);
                     }
                 }
             } else if (action.equals("image")) {
-                ((CameraManager)managerManager.get(CameraManager.class)).remoteImage(input.get(3).asRawValue().getByteArray());
+                ((CameraManager)ManagerManager.get().get(CameraManager.class)).remoteImage(input.get(3).asRawValue().getByteArray());
             } else if (action.equals("raven")) {
                 Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {
@@ -578,11 +575,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         registerReceiver(broadcastReceiver, intentFilter);
 
         //Plugin new Managers here
-        managerManager.newManagers(this);
+        ManagerManager.get().newManagers(this);
 
         tts = new TextToSpeech(this, this);
 
-        glassID = ((WifiManager)managerManager.get(WifiManager.class)).getMacAddress();
+        glassID = ((WifiManager)ManagerManager.get().get(WifiManager.class)).getMacAddress();
 
         cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
         cardScroller = new CardScrollView(this);
@@ -653,7 +650,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEvent(PicarusEvent e){
-        managerManager.add(new PicarusManager(this));
+        ManagerManager.get().add(new PicarusManager(this));
     }
 
     public void onEvent(ScreenEvent e){
@@ -743,16 +740,16 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public CameraManager getCameraManager() {
-        return (CameraManager)managerManager.get(CameraManager.class);
+        return (CameraManager)ManagerManager.get().get(CameraManager.class);
     }
     protected DataManager getDataManager() {
-        return (DataManager)managerManager.get(DataManager.class);
+        return (DataManager)ManagerManager.get().get(DataManager.class);
     }
     protected WifiManager getWifiManager() {
-        return (WifiManager)managerManager.get(WifiManager.class);
+        return (WifiManager)ManagerManager.get().get(WifiManager.class);
     }
     protected OpenGLManager getOpenGLManager(){
-        return (OpenGLManager)managerManager.get(OpenGLManager.class);
+        return (OpenGLManager)ManagerManager.get().get(OpenGLManager.class);
     }
     class ScreenBroadcastReceiver extends BroadcastReceiver {
         BackgroundService bs;

@@ -7,10 +7,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ManagerManager {
     Map<String, Manager> managers;
+    private static ManagerManager singleton;
     //Managers
     protected PicarusManager picarusManager;
 
-    public ManagerManager(){
+    private ManagerManager(){
         managers = new ConcurrentHashMap<String, Manager>();
     }
 
@@ -52,5 +53,13 @@ public class ManagerManager {
             Manager m = managers.remove(name);
             m.shutdown();
         }
+    }
+
+    public static ManagerManager get() {
+        if(singleton != null){
+            return singleton;
+        }
+        singleton = new ManagerManager();
+        return singleton;
     }
 }
