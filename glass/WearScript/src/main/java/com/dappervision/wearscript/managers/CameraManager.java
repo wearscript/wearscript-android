@@ -112,7 +112,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         if(imagePeriod > 0){
             register();
         }else{
-            unregister(true);
+            shutdown();
         }
     }
 
@@ -164,7 +164,20 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public void unregister(boolean resetCallbacks) {
+    public void reset(){
+        stop();
+        super.reset();
+        lastImageSaveTime = 0.;
+        imagePeriod = 0;
+        paused = false;
+    }
+
+    public void shutdown(){
+        reset();
+        super.shutdown();
+    }
+
+    public void stop() {
         synchronized (this) {
             if (camera != null) {
                 camera.stopPreview();
@@ -175,12 +188,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             camera = null;
             // NOTE(brandyn): This is to ensure it is loaded first, there may be a better way
             openCVLoaded = false;
-            if (resetCallbacks) {
-                super.unregister();
-                lastImageSaveTime = 0.;
-                imagePeriod = 0;
-                paused = false;
-            }
         }
     }
 
@@ -188,7 +195,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         synchronized (this) {
             if (camera != null)
                 paused = true;
-            unregister(false);
+            stop();
         }
     }
 

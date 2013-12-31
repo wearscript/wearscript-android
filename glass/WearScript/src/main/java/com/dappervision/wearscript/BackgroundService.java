@@ -288,23 +288,23 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 broadcastReceiver = null;
             }
             if (cameraManager != null) {
-                cameraManager.unregister(true);
+                cameraManager.shutdown();
             }
             if (tts != null) {
                 tts.stop();
                 tts.shutdown();
             }
             Utils.getEventBus().unregister(this);
-            dataManager.eventBusUnregister();
-            cameraManager.eventBusUnregister();
-            barcodeManager.eventBusUnregister();
-            wifiManager.eventBusUnregister();
-            blobManager.eventBusUnregister();
-            gestureManager.eventBusUnregister();
-            audioManager.eventBusUnregister();
+            dataManager.shutdown();
+            cameraManager.shutdown();
+            barcodeManager.shutdown();
+            wifiManager.shutdown();
+            blobManager.shutdown();
+            gestureManager.shutdown();
+            audioManager.shutdown();
 
             if (picarusManager != null)
-                picarusManager.eventBusUnregister();
+                picarusManager.shutdown();
             Log.d(TAG, "Disconnecting client");
             if (client != null) {
                 client.shutdown();
@@ -343,9 +343,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiScanCallback = null;
             dataWifi = dataRemote = dataLocal =  false;
             lastSensorSaveTime  = sensorDelay = 0.;
-            dataManager.unregister();
-            cameraManager.unregister(true);
-            audioManager.unregister();
+            dataManager.reset();
+            cameraManager.reset();
+            audioManager.reset();
             cardScrollAdapter.reset();
             updateCardScrollView();
             speechCallback = null;
@@ -357,7 +357,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         gestureManager = new GestureManager(a, this);
                 }
             } else {
-                gestureManager.unregister();
+                gestureManager.reset();
             }
             updateActivityView("webview");
         }
