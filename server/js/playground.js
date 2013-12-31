@@ -371,12 +371,13 @@ function main(WSUrl) {
     
     $('#simulateButton').click(function () {
         $('#simulator').show();
-        console.log('simulate button is clicked');
-        console.log(editor.getValue());
+        //console.log('simulate button is clicked');
+        //console.log(editor.getValue());
         //$('#simulation').contents().find('html').html(editor.getValue());
         // I set src so that the styling of body is obeyed 
+        
         var WSScript = "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js\"></script>" +
-        "<script src=\"/static/simulator.js\"></script>";
+        "<script src=\""+replaceAll('ws://', 'http://', WSUrl)+"/static/simulator.js\"></script>";
         document.getElementById('simulation').src = "data:text/html;charset=utf-8," + escape(replaceAll('raw.github', 'rawgithub', WSScript+editor.getValue()));
     });
     $('#gestureAgain').click(function() { 
@@ -401,4 +402,5 @@ function main(WSUrl) {
         indentUnit: 4
     });
     //ws = connectWebsocket(WSUrl);
+    
 }

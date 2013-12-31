@@ -69,7 +69,7 @@ function WearScriptSimulator(type) {
     this.displayWebView = function () {};
     this._gestureCallbacks = {};
     this.gestureCallback = function (event, callback) {
-      this.gestureCallbacks[event] = callback;
+      this._gestureCallbacks[event] = callback;
     };
     this.getGestureCallbacks = function () {
       return this._gestureCallbacks;
@@ -101,7 +101,12 @@ function WearScriptSimulator(type) {
     this.sensorCallback = function (cb) {
       this._scb = cb;
     };
-    this.sensorOn = function (s) {
+    this.sensorOn = function (s, d, cb) {
+      console.log(s);
+      if (s == -1) {
+          console.log('gps');
+          parent.getGPS();
+      }
       this._sensors.push(s)
     };
     this.sensor = function (x) {
@@ -119,6 +124,9 @@ function WearScriptSimulator(type) {
     };
     this.shutdown = function () {
       console.log('Simulator warning: WS.shutdown is not implemented');
+    };
+    this.sound = function () {
+      console.log('Simulator warning: WS.sound is not implemented');
     };
     this.speechRecognize = function () {
       console.log('Simulator warning: WS.speechRecognize is not implemented');
