@@ -388,5 +388,5 @@ function main(WSUrl) {
         mode: "htmlmixed",
         indentUnit: 4
     });
-    //ws = connectWebsocket(WSUrl);
+    ws = connectWebsocket(WSUrl);
 }

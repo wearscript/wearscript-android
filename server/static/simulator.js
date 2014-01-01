@@ -1,9 +1,7 @@
 function start(WSUrl) {
   console.log("starting simulator for "+WSUrl);
   glass = new SimulatedGlass(WSUrl);
-  glass.connect(function () {
-          glass.send(pack(['pingStatus']));
-  });
+  glass.connect();
 }
 
 function pack(data) {
@@ -16,20 +14,61 @@ function pack(data) {
     return data_out;
 }
 
-function unpack(data) {
-    return msgpack.unpack(data);
+function unpack(blob) {
+    var arrayBuffer;
+    var fileReader = new FileReader();
+    fileReader.onload = function() {
+                arrayBuffer = this.result;
+                uint8Array  = new Uint8Array(arrayBuffer);
+                msg = msgpack.unpack(uint8Array);
+                if(msg[0] == "shutdown") {
+                  glass.disconnect();
+                }else if(msg[0] == "startScript"){
+                  var newDoc = document.open("text/html", "replace");
+                  newDoc.write(msg[1]);
+                  newDoc.close();
+                  loadExternFile("//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js", "js");
+                  loadExternFile("simulator.js", "js");
+                  loadExternFile("msgpack.js", "js");
+                  console.log("startScript done");
+                }else{
+                  console.log(msg);
+                }
+    };
+    fileReader.readAsArrayBuffer(blob);
+}
+
+function loadExternFile(filename, filetype){
+         if (filetype=="js"){ //if filename is a external JavaScript file
+                   var fileref=document.createElement('script')
+                             fileref.setAttribute("type","text/javascript")
+                               fileref.setAttribute("src", filename)
+                                }
+          else if (filetype=="css"){ //if filename is an external CSS file
+                    var fileref=document.createElement("link")
+                              fileref.setAttribute("rel", "stylesheet")
+                                fileref.setAttribute("type", "text/css")
+                                  fileref.setAttribute("href", filename)
+                                   }
+           if (typeof fileref!="undefined")
+                     document.getElementsByTagName("head")[0].appendChild(fileref)
 }
 
 function SimulatedGlass(WSUrl) {
   this.wsurl = WSUrl;
   this.websocket = null;
 
-  this.connect = function (postcall) {
+  this.connect = function () {
     this.websocket = new WebSocket(this.wsurl);
-    this.websocket.onopen = function(evt) { onOpen(evt); postcall(); };
+    this.websocket.onopen = function(evt) { onOpen(evt) };
     this.websocket.onclose = function(evt) { onClose(evt) };
     this.websocket.onmessage = function(evt) { onMessage(evt) };
     this.websocket.onerror = function(evt) { onError(evt) };
+  }
+
+  this.disconnect = function () {
+    this.websocket.close();
+    this.websocket = null;
   }
 
   function onOpen(evt) {
@@ -41,13 +80,12 @@ function SimulatedGlass(WSUrl) {
   function onClose(evt) {
     console.log("simulator ws disconnected");
     say("WearScript disconnected");
+    document.location.reload(true);
     setStatus("disconnected");
   }
 
   function onMessage(evt) {
-    console.log("event raw: "+JSON.stringify(evt.data));
-    obj = unpack(evt.data);
-    console.log("event msgpack: "+JSON.stringify(obj));
+    unpack(evt.data);
   }
 
   function onError(evt) {
@@ -147,8 +185,11 @@ function WearScriptSimulator(type) {
       console.log('Simulator warning: WS.serverTimeline is not implemented');
     };
     this.shutdown = function () {
-      console.log('Simulator warning: WS.shutdown is not implemented');
+      glass.disconnect();
     };
+    this.sound = function() {
+      console.log("Simulator warning: WS.sound is not implemented");
+    }
     this.speechRecognize = function () {
       console.log('Simulator warning: WS.speechRecognize is not implemented');
     };
@@ -165,7 +206,10 @@ function WearScriptSimulator(type) {
       console.log('Simulator warning: WS.wifiScan is not implemented');
     };
     this.scriptVersion = function(version) { return version != 0; };
-    this.log = function (x) {console.log(x)};
+    this.log = function (x) {
+            console.log(x)
+           glass.send(pack(['log', x]));
+    };
     this.displayWebView = function () {};
     this.serverConnect = function (server, cb) {window[cb]()};
     this.sensorCallback = function (cb) {this._scb = cb};
@@ -192,6 +236,7 @@ function WearScriptSimulator(type) {
   this.getGestureCallbacks = function () {
     return this.gestureCallbacks;
   };
+
   this.say = function(data) {
     var audio = new Audio("http://translate.google.com/translate_tts?tl=en&q="+encodeURIComponent(data));
     audio.play();
