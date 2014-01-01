@@ -364,10 +364,10 @@ function main(WSUrl) {
 
     $('#simulateButton').click(function () {
         $('#simulator').show();
-        simulatorUrl = createKey("client", function (x) {$('#simulation')[0].contentWindow.start(WSUrl + "/ws/glass/" + x)}, function () {alert("Could not get client endpoint")})
+        simulatorUrl = createKey("ws", function (x) {$('#simulation')[0].contentWindow.start(WSUrl + "/ws/glass/" + x)}, function () {alert("Could not get client endpoint")})
     });
 
-    $('#gestureAgain').click(function() { 
+    $('#gestureAgain').click(function() {
       onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
       $("#simulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
     });
@@ -379,7 +379,7 @@ function main(WSUrl) {
       $("#simulation")[0].contentWindow[onGestureCallback](valueSelected);
       console.log('gesture: '+valueSelected);
     });
-    //$("#simulation")[0].contentWindow.myFunction();
+
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,

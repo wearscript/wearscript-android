@@ -1,22 +1,22 @@
 function start(WSUrl) {
   console.log("starting simulator for "+WSUrl);
   glass = new SimulatedGlass(WSUrl);
-  glass.connect(function() {
-  });
+  glass.connect();
 }
 
 function SimulatedGlass(WSUrl) {
   this.wsurl = WSUrl;
   this.websocket = null;
 
-  this.connect = function (postConnect) {
-    this.websocket = new ReconnectingWebSocket(this.wsurl);
-    this.websocket.onopen = function(evt) { onOpen(evt); postConnect(); };
+  this.connect = function () {
+    this.websocket = new WebSocket(this.wsurl);
+    this.websocket.onopen = function(evt) { onOpen(evt); };
     this.websocket.onclose = function(evt) { onClose(evt) };
     this.websocket.onmessage = function(evt) { onMessage(evt) };
+    this.websocket.onerror = function(evt) { onError(evt) };
   }
 
-  function onOpen(evt, post) {
+  function onOpen(evt) {
     console.log("simulator ws connected");
     setStatus("connected");
     say("WearScript connected");
@@ -32,6 +32,10 @@ function SimulatedGlass(WSUrl) {
     obj = msgpack.unpack(evt.data);
     console.log("event msgpack: "+JSON.stringify(obj));
     console.log("event raw: "+JSON.stringify(evt.data));
+  }
+
+  function onError(evt) {
+    console.log("WS Error: "+evt.data);
   }
 
   this.send = send;
