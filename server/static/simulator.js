@@ -1,16 +1,32 @@
 function start(WSUrl) {
   console.log("starting simulator for "+WSUrl);
   glass = new SimulatedGlass(WSUrl);
-  glass.connect();
+  glass.connect(function () {
+          glass.send(pack(['pingStatus']));
+  });
+}
+
+function pack(data) {
+    var data_enc = msgpack.pack(data);
+    var data_out = new Uint8Array(data_enc.length);
+    var i;
+    for (i = 0; i < data_enc.length; i++) {
+        data_out[i] = data_enc[i];
+    }
+    return data_out;
+}
+
+function unpack(data) {
+    return msgpack.unpack(data);
 }
 
 function SimulatedGlass(WSUrl) {
   this.wsurl = WSUrl;
   this.websocket = null;
 
-  this.connect = function () {
+  this.connect = function (postcall) {
     this.websocket = new WebSocket(this.wsurl);
-    this.websocket.onopen = function(evt) { onOpen(evt); };
+    this.websocket.onopen = function(evt) { onOpen(evt); postcall(); };
     this.websocket.onclose = function(evt) { onClose(evt) };
     this.websocket.onmessage = function(evt) { onMessage(evt) };
     this.websocket.onerror = function(evt) { onError(evt) };
@@ -29,9 +45,9 @@ function SimulatedGlass(WSUrl) {
   }
 
   function onMessage(evt) {
-    obj = msgpack.unpack(evt.data);
-    console.log("event msgpack: "+JSON.stringify(obj));
     console.log("event raw: "+JSON.stringify(evt.data));
+    obj = unpack(evt.data);
+    console.log("event msgpack: "+JSON.stringify(obj));
   }
 
   function onError(evt) {
