@@ -3,12 +3,14 @@ package com.dappervision.wearscript.jsevents;
 import com.dappervision.wearscript.managers.CameraManager;
 
 public class CameraEvents {
-    public static class Start{
+    public static class Start {
         private double period;
-        public Start(double period){
+
+        public Start(double period) {
             this.period = period;
         }
-        public double getPeriod(){
+
+        public double getPeriod() {
             return period;
         }
     }
@@ -21,6 +23,7 @@ public class CameraEvents {
             this.cameraFrame = cameraFrame;
             this.cm = cm;
         }
+
         public CameraManager.CameraFrame getCameraFrame() {
             return cameraFrame;
         }

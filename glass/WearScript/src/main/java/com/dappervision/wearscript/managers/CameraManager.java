@@ -90,11 +90,11 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         reset();
     }
 
-    public void setupCallback(CallbackRegistration r){
+    public void setupCallback(CallbackRegistration r) {
         super.setupCallback(r);
-        if(r.getEvent().equals(PHOTO) || r.getEvent().equals(PHOTO_PATH)){
+        if (r.getEvent().equals(PHOTO) || r.getEvent().equals(PHOTO_PATH)) {
             cameraPhoto();
-        }else if(r.getEvent().equals(VIDEO)){
+        } else if (r.getEvent().equals(VIDEO)) {
             cameraVideo();
         }
     }
@@ -105,13 +105,13 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public void onEvent(CameraEvents.Start e){
-        imagePeriod  = Math.round(e.getPeriod() * 1000000000L);
+    public void onEvent(CameraEvents.Start e) {
+        imagePeriod = Math.round(e.getPeriod() * 1000000000L);
         lastImageSaveTime = 0.;
 
-        if(imagePeriod > 0){
+        if (imagePeriod > 0) {
             register();
-        }else{
+        } else {
             shutdown();
         }
     }
@@ -164,7 +164,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public void reset(){
+    public void reset() {
         stop();
         super.reset();
         lastImageSaveTime = 0.;
@@ -172,7 +172,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         paused = false;
     }
 
-    public void shutdown(){
+    public void shutdown() {
         reset();
         super.shutdown();
     }
@@ -200,12 +200,12 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void resume() {
-	    synchronized (this) {
-	        if (paused) {
-		        paused = false;
-		        register();
-	        }
-	    }
+        synchronized (this) {
+            if (paused) {
+                paused = false;
+                register();
+            }
+        }
     }
 
     public void register() {
@@ -311,7 +311,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     protected void makeCall(String key, byte[] frameJPEG) {
-        makeCall(key, "'" + Base64.encodeToString(frameJPEG,  Base64.NO_WRAP) + "'");
+        makeCall(key, "'" + Base64.encodeToString(frameJPEG, Base64.NO_WRAP) + "'");
     }
 
     public void onPreviewFrame(byte[] data, Camera camera) {

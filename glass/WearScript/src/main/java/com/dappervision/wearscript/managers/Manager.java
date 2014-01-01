@@ -13,16 +13,16 @@ public abstract class Manager {
     protected BackgroundService service;
     protected ConcurrentHashMap<String, String> jsCallbacks;
 
-    public Manager(BackgroundService service){
+    public Manager(BackgroundService service) {
         this.service = service;
     }
 
-    protected void setupCallback(CallbackRegistration e){
+    protected void setupCallback(CallbackRegistration e) {
         registerCallback(e.getEvent(), e.getCallback());
     }
 
-    public void onEvent(CallbackRegistration r){
-        if(r.getManager().equals(this.getClass())){
+    public void onEvent(CallbackRegistration r) {
+        if (r.getManager().equals(this.getClass())) {
             setupCallback(r);
         }
     }
@@ -34,7 +34,7 @@ public abstract class Manager {
 
 
     public void reset() {
-        if(!Utils.getEventBus().isRegistered(this))
+        if (!Utils.getEventBus().isRegistered(this))
             Utils.getEventBus().register(this);
         jsCallbacks = new ConcurrentHashMap<String, String>();
     }
@@ -54,7 +54,7 @@ public abstract class Manager {
         Utils.eventBusPost(new JsCall(url));
     }
 
-    protected String buildCallbackString(String key, String data){
+    protected String buildCallbackString(String key, String data) {
         if (!jsCallbacks.containsKey(key))
             throw new RuntimeException("No such callback registered");
         return String.format("javascript:%s(%s);", jsCallbacks.get(key), data);

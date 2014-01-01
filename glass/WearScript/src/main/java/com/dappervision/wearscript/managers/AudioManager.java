@@ -22,11 +22,11 @@ public class AudioManager extends Manager {
         reset();
     }
 
-    public void onEvent(AudioEvent e){
-        if(e.isStart()){
+    public void onEvent(AudioEvent e) {
+        if (e.isStart()) {
             start();
-        }else if(e.isStop()){
-           shutdown();
+        } else if (e.isStop()) {
+            shutdown();
         }
     }
 
@@ -46,26 +46,27 @@ public class AudioManager extends Manager {
             systemAudio.playSoundEffect(Sounds.SUCCESS);
     }
 
-    public void reset(){
+    public void reset() {
         Log.d(TAG, "starting audio capture");
         super.reset();
         mBufferSize = AudioRecord.getMinBufferSize(AudioRecordingThread.SAMPLING_RATE, AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT);
         mAudioBuffer = new short[mBufferSize / 2];
         systemAudio = (android.media.AudioManager) service.getSystemService(Context.AUDIO_SERVICE);
-        if(mAudioRecordingThread != null)
+        if (mAudioRecordingThread != null)
             mAudioRecordingThread.stopRunning();
     }
-    public void start(){
+
+    public void start() {
         reset();
         mAudioRecordingThread = new AudioRecordingThread(mBufferSize, mAudioBuffer);
         mAudioRecordingThread.start();
     }
 
-    public void shutdown(){
+    public void shutdown() {
         super.shutdown();
         Log.d(TAG, "stopping audio capture");
-        if(mAudioRecordingThread != null)
+        if (mAudioRecordingThread != null)
             mAudioRecordingThread.stopRunning();
         mAudioRecordingThread = null;
     }

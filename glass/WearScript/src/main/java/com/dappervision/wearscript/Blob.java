@@ -15,14 +15,14 @@ public class Blob {
     private boolean outgoing;
     private boolean sent;
 
-    public Blob(String name, byte[] payload){
+    public Blob(String name, byte[] payload) {
         this.name = name;
         this.payload = payload;
         this.outgoing = false;
         this.sent = false;
     }
 
-    public Blob(String name, String payload){
+    public Blob(String name, String payload) {
         this(name, payload.getBytes());
     }
 
@@ -39,10 +39,13 @@ public class Blob {
         return this;
     }
 
-    public boolean isOutgoing(){
+    public boolean isOutgoing() {
         return outgoing;
     }
-    public boolean isSent(){ return sent; }
+
+    public boolean isSent() {
+        return sent;
+    }
 
     public void send(SocketClient client) {
         if (client != null && client.isConnected()) {

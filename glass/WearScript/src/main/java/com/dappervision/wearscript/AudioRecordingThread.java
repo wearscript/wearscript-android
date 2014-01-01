@@ -15,7 +15,7 @@ public class AudioRecordingThread extends Thread {
     private int mBufferSize;
     private short[] mAudioBuffer;
 
-    public AudioRecordingThread(int mBufferSize, short[] mAudioBuffer){
+    public AudioRecordingThread(int mBufferSize, short[] mAudioBuffer) {
         this.mBufferSize = mBufferSize;
         this.mAudioBuffer = mAudioBuffer;
     }
@@ -46,7 +46,9 @@ public class AudioRecordingThread extends Thread {
         return mShouldContinue;
     }
 
-    /** Notifies the thread that it should stop running at the next opportunity. */
+    /**
+     * Notifies the thread that it should stop running at the next opportunity.
+     */
     public synchronized void stopRunning() {
         mShouldContinue = false;
     }
@@ -69,7 +71,7 @@ public class AudioRecordingThread extends Thread {
 
         double rms = Math.sqrt(sum / mAudioBuffer.length);
         final double db = 20 * Math.log10(rms);
-        final double normalizedDb = 1 - db/-90;
+        final double normalizedDb = 1 - db / -90;
         Blob blob = new Blob("audio", Double.toString(normalizedDb)).outgoing();
         Utils.eventBusPost(blob);
         Log.d(TAG, "dbs " + normalizedDb);

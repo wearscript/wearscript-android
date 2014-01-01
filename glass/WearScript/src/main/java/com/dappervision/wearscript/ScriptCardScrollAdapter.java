@@ -47,8 +47,8 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
     }
 
     public View cardFactory(String cardJSON) {
-        JSONObject card = (JSONObject)JSONValue.parse(cardJSON);
-        String type = ((String)card.get("type"));
+        JSONObject card = (JSONObject) JSONValue.parse(cardJSON);
+        String type = ((String) card.get("type"));
         if (type == null)
             return null;
         if (type.equals("webviewmain")) {
@@ -56,7 +56,7 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
             return this.context.webview;
         } else if (type.equals("card")) {
             Card c = new Card(this.context);
-            c.setText((String)card.get("text"));
+            c.setText((String) card.get("text"));
             c.setFootnote((String) card.get("info"));
             return c.toView();
         } else if (type.equals("html")) {
@@ -82,7 +82,7 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
     }
 
     public void cardTrim(int position) {
-        for (int i = cards.size() -  1; i >= position; i--)
+        for (int i = cards.size() - 1; i >= position; i--)
             cards.remove(position);
     }
 

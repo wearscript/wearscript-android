@@ -8,7 +8,7 @@ public class ActivityResultEvent implements JSBusEvent {
     private Intent intent;
 
 
-    public ActivityResultEvent(int requestCode, int resultCode, Intent intent){
+    public ActivityResultEvent(int requestCode, int resultCode, Intent intent) {
         this.requestCode = requestCode;
         this.resultCode = resultCode;
         this.intent = intent;

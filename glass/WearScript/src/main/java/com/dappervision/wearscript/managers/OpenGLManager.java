@@ -2,8 +2,6 @@ package com.dappervision.wearscript.managers;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
@@ -12,12 +10,15 @@ import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class OpenGLManager  extends Manager {
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+public class OpenGLManager extends Manager {
     public static final String OPENGL_DRAW_CALLBACK = "DRAW_CALLBACK";
     LinkedBlockingQueue<OpenGLEvent> openglCommandQueue;
     private GLSurfaceView glView;
 
-    public OpenGLManager(BackgroundService bs){
+    public OpenGLManager(BackgroundService bs) {
         super(bs);
         // TODO(brandyn): OpenGL state is not cleared between reset(),
         // need to fix Looper.prepare issue since we may not have an activity and reset()
@@ -57,7 +58,7 @@ public class OpenGLManager  extends Manager {
         glView.requestRender();
     }
 
-        class ClearRenderer implements GLSurfaceView.Renderer {
+    class ClearRenderer implements GLSurfaceView.Renderer {
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             // Do nothing special.
             Log.d(TAG, "OpenGL onSurfaceCreated");
@@ -74,7 +75,7 @@ public class OpenGLManager  extends Manager {
             OpenGLEvent statement;
             while (true) {
                 try {
-                    statement = (OpenGLEvent)openglCommandQueue.take();
+                    statement = (OpenGLEvent) openglCommandQueue.take();
                 } catch (InterruptedException e) {
                     // TODO(brandyn): Handle
                     break;

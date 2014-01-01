@@ -4,7 +4,7 @@ public class LiveCardEvent implements JSBusEvent {
     private boolean nonSilent;
     private double period;
 
-    public LiveCardEvent(boolean nonSilent, double period){
+    public LiveCardEvent(boolean nonSilent, double period) {
         this.nonSilent = nonSilent;
         this.period = period;
     }

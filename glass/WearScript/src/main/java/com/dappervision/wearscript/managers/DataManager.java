@@ -27,13 +27,13 @@ public class DataManager extends Manager {
         reset();
     }
 
-    public void onEvent(SensorJSEvent e){
-        if(e.getStatus()){
+    public void onEvent(SensorJSEvent e) {
+        if (e.getStatus()) {
             registerProvider(e.getType(), Math.round(e.getSampleTime() * 1000000000L));
-            if(e.getCallback() != null){
+            if (e.getCallback() != null) {
                 registerCallback(e.getType(), e.getCallback());
             }
-        }else{
+        } else {
             unregisterProvider(e.getType());
         }
     }
@@ -63,7 +63,7 @@ public class DataManager extends Manager {
         dp.unregister();
     }
 
-    public void unregisterProviders(){
+    public void unregisterProviders() {
         for (Integer type : providers.keySet()) {
             unregisterProvider(type);
         }

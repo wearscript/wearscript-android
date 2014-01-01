@@ -7,7 +7,7 @@ public class StartActivityEvent implements JSBusEvent {
     private int requestCode;
 
 
-    public StartActivityEvent(Intent intent, int requestCode){
+    public StartActivityEvent(Intent intent, int requestCode) {
         this.intent = intent;
         this.requestCode = requestCode;
     }

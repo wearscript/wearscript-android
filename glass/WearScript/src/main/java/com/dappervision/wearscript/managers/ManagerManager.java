@@ -9,11 +9,11 @@ public class ManagerManager {
     Map<String, Manager> managers;
     private static ManagerManager singleton;
 
-    private ManagerManager(){
+    private ManagerManager() {
         managers = new ConcurrentHashMap<String, Manager>();
     }
 
-    public void newManagers(BackgroundService bs){
+    public void newManagers(BackgroundService bs) {
         add(new DataManager(bs));
         add(new CameraManager(bs));
         add(new BarcodeManager(bs));
@@ -23,15 +23,15 @@ public class ManagerManager {
         add(new OpenGLManager(bs));
     }
 
-    public void add(Manager manager){
+    public void add(Manager manager) {
         String name = manager.getClass().getName();
         Manager old = managers.remove(name);
-        if(old != null)
+        if (old != null)
             old.shutdown();
         managers.put(name, manager);
     }
 
-    public Manager remove(Class<? extends Manager> manager){
+    public Manager remove(Class<? extends Manager> manager) {
         String name = manager.getName();
         return managers.remove(name);
     }
@@ -40,21 +40,21 @@ public class ManagerManager {
         return managers.get(c.getName());
     }
 
-    public void resetAll(){
+    public void resetAll() {
         for (Manager m : managers.values()) {
             m.reset();
         }
     }
 
-    public void shutdownAll(){
-        for (String name : managers.keySet()){
+    public void shutdownAll() {
+        for (String name : managers.keySet()) {
             Manager m = managers.remove(name);
             m.shutdown();
         }
     }
 
     public static ManagerManager get() {
-        if(singleton != null){
+        if (singleton != null) {
             return singleton;
         }
         singleton = new ManagerManager();

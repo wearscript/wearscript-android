@@ -27,7 +27,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
         super(context);
         Utils.getEventBus().register(this);
         this.context = context;
-	    clearCache(true);
+        clearCache(true);
         setWebChromeClient(new WebChromeClient() {
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 String msg = cm.message() + " -- From line " + cm.lineNumber() + " of " + cm.sourceId();
@@ -39,13 +39,14 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
         handler = new Handler();
     }
 
-    public void onEvent(LiveCardEvent e){
-        if(e.getPeriod() > 0){
+    public void onEvent(LiveCardEvent e) {
+        if (e.getPeriod() > 0) {
             liveCardPublish(e.isNonSilent(), Math.round(e.getPeriod() * 1000.));
-        }else{
+        } else {
             liveCardUnpublish();
         }
     }
+
     public void liveCardPublish(boolean nonSilent, long drawFrequency) {
         if (liveCard != null)
             return;

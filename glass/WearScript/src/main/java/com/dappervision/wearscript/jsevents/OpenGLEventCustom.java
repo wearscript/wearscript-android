@@ -3,8 +3,6 @@ package com.dappervision.wearscript.jsevents;
 import android.opengl.GLES20;
 import android.util.Log;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class OpenGLEventCustom extends OpenGLEvent {
     String customCommand;
 
@@ -12,6 +10,7 @@ public class OpenGLEventCustom extends OpenGLEvent {
         super(null, ret, a);
         customCommand = name;
     }
+
     public void execute() {
         if (customCommand.equals("glCreateBuffer")) {
             int array[] = new int[1];

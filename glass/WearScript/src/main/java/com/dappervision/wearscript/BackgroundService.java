@@ -84,9 +84,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private View activityView;
     private String activityMode;
 
-    public SocketClient getSocketClient(){
+    public SocketClient getSocketClient() {
         return client;
     }
+
     public void updateActivityView(final String mode) {
         if (activity == null)
             return;
@@ -320,8 +321,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             sensorBuffer = new TreeMap<String, ArrayList<Value>>();
             sensorTypes = new TreeMap<String, Integer>();
             wifiScanCallback = null;
-            dataWifi = dataRemote = dataLocal =  false;
-            lastSensorSaveTime  = sensorDelay = 0.;
+            dataWifi = dataRemote = dataLocal = false;
+            lastSensorSaveTime = sensorDelay = 0.;
             cardScrollAdapter.reset();
             updateCardScrollView();
             speechCallback = null;
@@ -479,11 +480,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                         DataPoint dp = new DataPoint(name, type, sample.get(1).asFloatValue().getDouble(), sample.get(2).asIntegerValue().getLong());
                         for (Value k : sample.get(0).asArrayValue().getElementArray())
                             dp.addValue(k.asFloatValue().getDouble());
-                        ((DataManager)ManagerManager.get().get(DataManager.class)).queueRemote(dp);
+                        ((DataManager) ManagerManager.get().get(DataManager.class)).queueRemote(dp);
                     }
                 }
             } else if (action.equals("image")) {
-                ((CameraManager)ManagerManager.get().get(CameraManager.class)).remoteImage(input.get(3).asRawValue().getByteArray());
+                ((CameraManager) ManagerManager.get().get(CameraManager.class)).remoteImage(input.get(3).asRawValue().getByteArray());
             } else if (action.equals("raven")) {
                 Log.setDsn(input.get(1).asRawValue().getString());
             } else if (action.equals("blob")) {
@@ -617,67 +618,67 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
-    public void onEvent(JsCall e){
+    public void onEvent(JsCall e) {
         loadUrl(e.getCall());
     }
 
-    public void onEvent(SayEvent e){
+    public void onEvent(SayEvent e) {
         say(e.getMsg());
     }
 
-    public void onEvent(ActivityEvent e){
-        if(e.getMode() == ActivityEvent.Mode.CREATE){
+    public void onEvent(ActivityEvent e) {
+        if (e.getMode() == ActivityEvent.Mode.CREATE) {
             Intent i = new Intent(this, MainActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
-        }else if(e.getMode() == ActivityEvent.Mode.DESTROY){
+        } else if (e.getMode() == ActivityEvent.Mode.DESTROY) {
             activity.get().finish();
-        }else if(e.getMode() == ActivityEvent.Mode.WEBVIEW){
+        } else if (e.getMode() == ActivityEvent.Mode.WEBVIEW) {
             updateActivityView("webview");
-        } else if (e.getMode() == ActivityEvent.Mode.OPENGL)  {
+        } else if (e.getMode() == ActivityEvent.Mode.OPENGL) {
             updateActivityView("opengl");
-        }else if(e.getMode() == ActivityEvent.Mode.CARD_SCROLL){
+        } else if (e.getMode() == ActivityEvent.Mode.CARD_SCROLL) {
             updateActivityView("cardscroll");
         }
     }
 
-    public void onEvent(DataLogEvent e){
+    public void onEvent(DataLogEvent e) {
         dataRemote = e.isServer();
         dataLocal = e.isLocal();
         sensorDelay = e.getSensorDelay() * 1000000000L;
     }
 
-    public void onEvent(SpeechRecognizeEvent e){
+    public void onEvent(SpeechRecognizeEvent e) {
         speechRecognize(e.getPrompt(), e.getCallback());
     }
 
-    public void onEvent(PicarusEvent e){
+    public void onEvent(PicarusEvent e) {
         // TODO(brandyn): Needs to be fixed
         ManagerManager.get().add(new PicarusManager(this));
     }
 
-    public void onEvent(ScreenEvent e){
+    public void onEvent(ScreenEvent e) {
         wake();
     }
 
-    public void onEvent(DataPoint dp){
+    public void onEvent(DataPoint dp) {
         handleSensor(dp, null);
     }
 
-    public void onEvent(LogEvent e){
+    public void onEvent(LogEvent e) {
         Log.i(TAG, "log: " + e.getMsg());
         log(e.getMsg());
     }
 
-    public void onEvent(ServerTimelineEvent e){
+    public void onEvent(ServerTimelineEvent e) {
         serverTimeline(e.getMsg());
     }
 
-    public void onEvent(ShutdownEvent e){
+    public void onEvent(ShutdownEvent e) {
         shutdown();
     }
 
-    public void onEvent(ServerConnectEvent e){
+    public void onEvent(ServerConnectEvent e) {
         serverConnect(e.getServer(), e.getCallback());
     }
 
@@ -743,17 +744,21 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public CameraManager getCameraManager() {
-        return (CameraManager)ManagerManager.get().get(CameraManager.class);
+        return (CameraManager) ManagerManager.get().get(CameraManager.class);
     }
+
     protected DataManager getDataManager() {
-        return (DataManager)ManagerManager.get().get(DataManager.class);
+        return (DataManager) ManagerManager.get().get(DataManager.class);
     }
+
     protected WifiManager getWifiManager() {
-        return (WifiManager)ManagerManager.get().get(WifiManager.class);
+        return (WifiManager) ManagerManager.get().get(WifiManager.class);
     }
-    protected OpenGLManager getOpenGLManager(){
-        return (OpenGLManager)ManagerManager.get().get(OpenGLManager.class);
+
+    protected OpenGLManager getOpenGLManager() {
+        return (OpenGLManager) ManagerManager.get().get(OpenGLManager.class);
     }
+
     class ScreenBroadcastReceiver extends BroadcastReceiver {
         BackgroundService bs;
 
@@ -770,7 +775,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 Log.d(TAG, "Screen on");
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
                 BatteryDataProvider dp = (BatteryDataProvider) bs.getDataManager().getProvider(WearScript.SENSOR.BATTERY.id());
-                if(dp != null)
+                if (dp != null)
                     dp.post(intent);
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.d(TAG, "Wifi scan results");

@@ -14,14 +14,14 @@ public class BarcodeManager extends Manager {
         reset();
     }
 
-    public void onEvent(CallbackRegistration e){
-        if(e.getManager().equals(this.getClass())){
+    public void onEvent(CallbackRegistration e) {
+        if (e.getManager().equals(this.getClass())) {
             registerCallback(e.getEvent(), e.getCallback());
             startActivity();
         }
     }
 
-    public void onEvent(BarcodeEvent e){
+    public void onEvent(BarcodeEvent e) {
         makeCall(e.getResult().getBytes(), e.getFormat());
     }
 

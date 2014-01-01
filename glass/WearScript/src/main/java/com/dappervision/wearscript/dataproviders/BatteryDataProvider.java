@@ -18,7 +18,7 @@ public class BatteryDataProvider extends DataProvider {
         int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
         int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
         if (level >= 0 && scale >= 0) {
-            double pct = level / (double)scale;
+            double pct = level / (double) scale;
             Log.i(TAG, "Battery changed: " + pct);
             DataPoint dataPoint = new DataPoint("Battery", -3, System.currentTimeMillis() / 1000., System.nanoTime());
             dataPoint.addValue(pct);

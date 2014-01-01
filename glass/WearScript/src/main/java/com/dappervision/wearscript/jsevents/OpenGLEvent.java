@@ -15,6 +15,7 @@ public class OpenGLEvent {
     boolean done;
     boolean ret;
     Semaphore semaphore;
+
     public OpenGLEvent() {
         done = true;
     }

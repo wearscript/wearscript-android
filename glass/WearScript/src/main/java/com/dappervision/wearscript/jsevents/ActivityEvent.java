@@ -2,6 +2,7 @@ package com.dappervision.wearscript.jsevents;
 
 public class ActivityEvent implements JSBusEvent {
     private Mode mode;
+
     public enum Mode {
         CREATE,
         DESTROY,
@@ -10,11 +11,11 @@ public class ActivityEvent implements JSBusEvent {
         OPENGL
     }
 
-    public ActivityEvent(Mode mode){
+    public ActivityEvent(Mode mode) {
         this.mode = mode;
     }
 
-    public Mode getMode(){
+    public Mode getMode() {
         return mode;
     }
 }

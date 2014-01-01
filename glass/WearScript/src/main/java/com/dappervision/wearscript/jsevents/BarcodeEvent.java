@@ -4,7 +4,7 @@ public class BarcodeEvent implements JSBusEvent {
     private String format;
     private String result;
 
-    public BarcodeEvent(String format, String result){
+    public BarcodeEvent(String format, String result) {
         this.format = format;
         this.result = result;
     }

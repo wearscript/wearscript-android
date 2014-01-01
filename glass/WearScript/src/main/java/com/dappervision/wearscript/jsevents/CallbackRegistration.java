@@ -16,24 +16,25 @@ public class CallbackRegistration implements JSBusEvent {
         return manager;
     }
 
-    public CallbackRegistration setEvent(int t){
+    public CallbackRegistration setEvent(int t) {
         event = String.format("%d", t);
         return this;
     }
 
-    public boolean isEvent(String event){
+    public boolean isEvent(String event) {
         return this.event.equals(event);
     }
 
-    public boolean isManager(Class m){
+    public boolean isManager(Class m) {
         return m.getClass().equals(manager);
     }
 
-    public CallbackRegistration setEvent(String type){
+    public CallbackRegistration setEvent(String type) {
         this.event = type;
         return this;
     }
-    public String getEvent(){
+
+    public String getEvent() {
         return event;
     }
 

@@ -1,9 +1,11 @@
 package com.dappervision.wearscript;
 
+import android.opengl.GLES20;
+import android.util.Base64;
+
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.LogEvent;
-import com.dappervision.wearscript.jsevents.OpenGLEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
@@ -12,6 +14,7 @@ import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
+import com.dappervision.wearscript.jsevents.OpenGLEvent;
 import com.dappervision.wearscript.jsevents.OpenGLEventCustom;
 import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
@@ -29,8 +32,6 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.WifiManager;
-import android.opengl.GLES20;
-import android.util.Base64;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -41,10 +42,8 @@ import java.lang.reflect.Method;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.TreeMap;
 
 public class WearScript {
@@ -76,23 +75,30 @@ public class WearScript {
             this.name = name;
         }
 
-        public int id() { return id; }
-        public String toString() {return name;}
-    };
+        public int id() {
+            return id;
+        }
+
+        public String toString() {
+            return name;
+        }
+    }
+
+    ;
 
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
         this.sensors = new TreeMap<String, Integer>();
         // Sensor Types
-        for(SENSOR s : SENSOR.values()){
+        for (SENSOR s : SENSOR.values()) {
             this.sensors.put(s.toString(), s.id());
         }
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
         this.openglMethods = new TreeMap<String, Method>();
         this.openglTypes = new TreeMap<String, String>();
 
-        for (Method m: GLES20.class.getMethods()) {
+        for (Method m : GLES20.class.getMethods()) {
             // Skips the overloaded variants we don't use
             if (m.getName().equals("glVertexAttribPointer") && m.getParameterTypes()[5].equals(Buffer.class))
                 continue;
@@ -114,7 +120,7 @@ public class WearScript {
         else if (c.equals(boolean.class))
             return "B";
         else if (Buffer.class.isAssignableFrom(c) || c.equals(Buffer.class))
-             return "U";
+            return "U";
         else if (c.equals(void.class))
             return "V";
         return "?";
@@ -143,11 +149,11 @@ public class WearScript {
         Utils.eventBusPost(new ServerTimelineEvent(ti));
     }
 
-    public void audioOn(){
+    public void audioOn() {
         Utils.eventBusPost(new AudioEvent(true));
     }
 
-    public void audioOff(){
+    public void audioOff() {
         Utils.eventBusPost(new AudioEvent(false));
     }
 
@@ -407,7 +413,7 @@ public class WearScript {
 
     private Object glConvert(Object v) {
         Log.i(TAG, "GL: " + v);
-        return new Float((Double)v);
+        return new Float((Double) v);
         //return float.class;
     }
 
@@ -451,7 +457,7 @@ public class WearScript {
     }
 
     public String glDS(String methodName, double p0) {
-        return (String)glHelper(methodName, true, p0);
+        return (String) glHelper(methodName, true, p0);
     }
 
     public void glDDV(String methodName, double p0, double p1) {
@@ -482,7 +488,7 @@ public class WearScript {
 
     public int glDSD(String methodName, double p0, String p1) {
         Log.d(TAG, "OpenGL: Double string ret int: " + methodName);
-        return (Integer)glHelper(methodName, true, p0, p1);
+        return (Integer) glHelper(methodName, true, p0, p1);
     }
 
     private ByteBuffer stringToBuffer(String data) {
@@ -503,19 +509,19 @@ public class WearScript {
 
     public int glCreateBuffer() {
         Log.d(TAG, "glCreateBuffer");
-        return (Integer)postOpenGLEvent(new OpenGLEventCustom("glCreateBuffer", true));
+        return (Integer) postOpenGLEvent(new OpenGLEventCustom("glCreateBuffer", true));
     }
 
     public int glD(String methodName) {
-        return (Integer)glHelper(methodName, true);
+        return (Integer) glHelper(methodName, true);
     }
 
     public int glDD(String methodName, double p0) {
-        return (Integer)glHelper(methodName, true, p0);
+        return (Integer) glHelper(methodName, true, p0);
     }
 
     public boolean glDB(String methodName, double p0) {
-        return (Boolean)glHelper(methodName, true, p0);
+        return (Boolean) glHelper(methodName, true, p0);
     }
 
     private Object postOpenGLEvent(OpenGLEvent event) {
@@ -531,7 +537,7 @@ public class WearScript {
         return null;
     }
 
-    private Object glHelper(String methodName, boolean ret, Object...p) {
+    private Object glHelper(String methodName, boolean ret, Object... p) {
         Log.i(TAG, "OpenGL Method[d...]: " + methodName);
         Method m = openglMethods.get(methodName);
         if (m == null) {
@@ -544,17 +550,17 @@ public class WearScript {
             Class c = types[i];
             try {
                 if (c.equals(float.class))
-                    args.add(((Double)p[i]).floatValue());
+                    args.add(((Double) p[i]).floatValue());
                 else if (c.equals(int.class))
-                    args.add(((Double)p[i]).intValue());
+                    args.add(((Double) p[i]).intValue());
                 else if (c.equals(String.class))
-                    args.add(((String)p[i]));
+                    args.add(((String) p[i]));
                 else if (c.equals(Buffer.class))
                     args.add(stringToBuffer((String) p[i]));
                 else if (c.equals(boolean.class))
-                    args.add((Boolean)p[i]);
+                    args.add((Boolean) p[i]);
                 else if (c.equals(FloatBuffer.class))
-                    args.add(stringToFloatBuffer((String)p[i]));
+                    args.add(stringToFloatBuffer((String) p[i]));
                 else {
                     Log.e(TAG, "Cannot cast!: " + c);
                     return null;

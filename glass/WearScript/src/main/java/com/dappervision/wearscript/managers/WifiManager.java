@@ -16,7 +16,7 @@ public class WifiManager extends Manager {
     android.net.wifi.WifiManager manager;
     private boolean enabled;
 
-    public WifiManager(BackgroundService bs){
+    public WifiManager(BackgroundService bs) {
         super(bs);
         reset();
     }
@@ -26,7 +26,7 @@ public class WifiManager extends Manager {
         return info.getMacAddress();
     }
 
-    public String getScanResults(){
+    public String getScanResults() {
         Double timestamp = System.currentTimeMillis() / 1000.;
         JSONArray a = new JSONArray();
         for (ScanResult s : manager.getScanResults()) {
@@ -36,17 +36,17 @@ public class WifiManager extends Manager {
             r.put("SSID", new String(s.SSID));
             r.put("BSSID", new String(s.BSSID));
             r.put("level", Integer.valueOf(s.level));
-            r.put("frequency", Integer.valueOf(s.frequency) );
+            r.put("frequency", Integer.valueOf(s.frequency));
             a.add(r);
         }
         return a.toJSONString();
     }
 
-    public void onEvent(WifiScanEvent e){
+    public void onEvent(WifiScanEvent e) {
         manager.startScan();
     }
 
-    public void makeCall(){
+    public void makeCall() {
         makeCall("wifi", getScanResults());
     }
 
@@ -57,7 +57,7 @@ public class WifiManager extends Manager {
         manager = (android.net.wifi.WifiManager) service.getSystemService(Context.WIFI_SERVICE);
     }
 
-    public void onEvent(WifiEvent e){
+    public void onEvent(WifiEvent e) {
         enabled = e.getStatus();
     }
 }

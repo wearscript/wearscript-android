@@ -11,10 +11,10 @@ public class BlobManager extends Manager {
         reset();
     }
 
-    public void onEvent(Blob blob){
-        if(blob.isOutgoing()){
+    public void onEvent(Blob blob) {
+        if (blob.isOutgoing()) {
             blob.send(service.getSocketClient());
-        }else{
+        } else {
             makeCall(blob.getName(), Base64.encodeToString(blob.getPayload(), Base64.NO_WRAP));
         }
     }

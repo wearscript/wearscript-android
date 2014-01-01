@@ -62,7 +62,7 @@ public class Utils {
         return LoadFile(new File(new File(dataPath() + path), suffix));
     }
 
-    public static EventBus getEventBus(){
+    public static EventBus getEventBus() {
         return EventBus.getDefault();
     }
 

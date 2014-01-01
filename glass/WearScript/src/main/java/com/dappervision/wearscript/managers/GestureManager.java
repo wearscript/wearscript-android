@@ -17,7 +17,7 @@ public class GestureManager extends Manager {
         reset();
     }
 
-    public void onEvent(MotionEvent e){
+    public void onEvent(MotionEvent e) {
         detector.onMotionEvent(e);
     }
 }
