@@ -389,4 +389,5 @@ function main(WSUrl) {
         indentUnit: 4
     });
     ws = connectWebsocket(WSUrl);
+    var simulation = $('#simulation')[0].contentWindow;
 }
