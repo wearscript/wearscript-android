@@ -19,11 +19,6 @@ public class AudioManager extends Manager {
 
     public AudioManager(BackgroundService service) {
         super(service);
-        mBufferSize = AudioRecord.getMinBufferSize(AudioRecordingThread.SAMPLING_RATE, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
-        mAudioBuffer = new short[mBufferSize / 2];
-
-        systemAudio = (android.media.AudioManager) service.getSystemService(Context.AUDIO_SERVICE);
         reset();
     }
 
@@ -53,6 +48,11 @@ public class AudioManager extends Manager {
 
     public void reset(){
         Log.d(TAG, "starting audio capture");
+        super.reset();
+        mBufferSize = AudioRecord.getMinBufferSize(AudioRecordingThread.SAMPLING_RATE, AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT);
+        mAudioBuffer = new short[mBufferSize / 2];
+        systemAudio = (android.media.AudioManager) service.getSystemService(Context.AUDIO_SERVICE);
         if(mAudioRecordingThread != null)
             mAudioRecordingThread.stopRunning();
     }

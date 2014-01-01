@@ -55,12 +55,11 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         private Mat frame;
 
         CameraFrame(int width, int height) {
-            frame = new Mat(height + (height / 2), width, CvType.CV_8UC1);
-            frameRGB = new Mat(width, height, CvType.CV_8UC3);
             jpgFrame = null;
+            jpgB64 = null;
             frameRGBSet = false;
-            paused = false;
-            reset();
+            frameRGB = new Mat(width, height, CvType.CV_8UC3);
+            frame = new Mat(height + (height / 2), width, CvType.CV_8UC1);
         }
 
         void setFrame(byte[] data) {
@@ -88,7 +87,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     public CameraManager(BackgroundService bs) {
         super(bs);
-        Log.d(TAG, "Lifecycle: CameraManager new: camflow");
+        reset();
     }
 
     public void setupCallback(CallbackRegistration r){

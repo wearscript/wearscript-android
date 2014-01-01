@@ -19,12 +19,21 @@ public class OpenGLManager  extends Manager {
 
     public OpenGLManager(BackgroundService bs){
         super(bs);
-        openglCommandQueue = new LinkedBlockingQueue<OpenGLEvent>();
-        glView = new GLSurfaceView(bs);
+        // TODO(brandyn): OpenGL state is not cleared between reset(),
+        // need to fix Looper.prepare issue since we may not have an activity and reset()
+        // is called in BS's shutdown()
+        glView = new GLSurfaceView(service);
         glView.setEGLContextClientVersion(2);
         glView.setPreserveEGLContextOnPause(true);
         glView.setRenderer(new ClearRenderer());
         glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        reset();
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        openglCommandQueue = new LinkedBlockingQueue<OpenGLEvent>();
     }
 
     protected void registerCallback(String type, String jsFunction) {

@@ -287,8 +287,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             Log.d(TAG, "Disconnecting client");
             if (client != null) {
                 client.shutdown();
+                client = null;
             }
-            client = null;
             if (activity == null)
                 return;
             final MainActivity a = activity.get();
@@ -327,6 +327,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             speechCallback = null;
 
             ManagerManager.get().resetAll();
+            // TODO(brandyn): Verify that if we create a new activity that the gestures still work
             if (ManagerManager.get().get(GestureManager.class) == null) {
                 if (activity != null) {
                     MainActivity a = activity.get();
@@ -413,9 +414,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onSocketMessage(byte[] message) {
+        String action = "";
         try {
             List<Value> input = msgpack.read(message, tList(TValue));
-            String action = input.get(0).asRawValue().getString();
+            action = input.get(0).asRawValue().getString();
             Log.d(TAG, String.format("Got %s", action));
             // TODO: String to Mat, save and display in the loopback thread
             if (action.equals("startScript")) {
@@ -496,11 +498,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
             } else if (action.equals("shutdown")) {
                 Log.i(TAG, "Shutting down!");
-                shutdown();
+                Utils.getEventBus().post(new ShutdownEvent());
             }
-            Log.d(TAG, String.format("WS: Got string message! %d", message.length));
+            Log.d(TAG, String.format("WS: Got string message![%s] %d", action, message.length));
         } catch (Exception e) {
-            Log.e(TAG, e.toString());
+            Log.e(TAG, String.format("bs.onSocketMessage[%s]: %s", action, e.toString()));
         }
     }
 
@@ -650,6 +652,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEvent(PicarusEvent e){
+        // TODO(brandyn): Needs to be fixed
         ManagerManager.get().add(new PicarusManager(this));
     }
 

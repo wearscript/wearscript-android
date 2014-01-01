@@ -8,8 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ManagerManager {
     Map<String, Manager> managers;
     private static ManagerManager singleton;
-    //Managers
-    protected PicarusManager picarusManager;
 
     private ManagerManager(){
         managers = new ConcurrentHashMap<String, Manager>();

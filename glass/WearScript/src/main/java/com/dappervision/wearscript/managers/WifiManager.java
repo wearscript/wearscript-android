@@ -18,8 +18,6 @@ public class WifiManager extends Manager {
 
     public WifiManager(BackgroundService bs){
         super(bs);
-        enabled = false;
-        manager = (android.net.wifi.WifiManager) bs.getSystemService(Context.WIFI_SERVICE);
         reset();
     }
 
@@ -50,6 +48,13 @@ public class WifiManager extends Manager {
 
     public void makeCall(){
         makeCall("wifi", getScanResults());
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        enabled = false;
+        manager = (android.net.wifi.WifiManager) service.getSystemService(Context.WIFI_SERVICE);
     }
 
     public void onEvent(WifiEvent e){

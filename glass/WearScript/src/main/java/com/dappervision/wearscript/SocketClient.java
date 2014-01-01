@@ -48,22 +48,28 @@ public class SocketClient {
     }
 
     public void shutdown() {
-        this.shutdown = true;
-        disconnect();
+        synchronized (this) {
+            this.shutdown = true;
+            disconnect();
+        }
     }
 
     public void reconnect() {
-        if (shutdown)
-            return;
+        synchronized (this) {
+            if (shutdown)
+                return;
+        }
         Log.w(BackgroundService.TAG, "Lifecycle: Reconnecting socket");
 
         new Thread(new Runnable() {
             public void run() {
-                while (!client.isConnected()) {
-                    client.connect();
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
+                synchronized (this) {
+                    while (!client.isConnected()) {
+                        client.connect();
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                        }
                     }
                 }
             }
