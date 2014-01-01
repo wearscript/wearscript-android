@@ -8,6 +8,7 @@ import com.dappervision.wearscript.Blob;
 public class BlobManager extends Manager {
     public BlobManager(BackgroundService service) {
         super(service);
+        reset();
     }
 
     public void onEvent(Blob blob){

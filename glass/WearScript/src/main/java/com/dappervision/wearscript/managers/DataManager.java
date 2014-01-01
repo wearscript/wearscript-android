@@ -23,8 +23,8 @@ public class DataManager extends Manager {
     public DataManager(BackgroundService bs) {
         super(bs);
         this.sensorManager = (SensorManager) bs.getSystemService(Context.SENSOR_SERVICE);
-        providers = new ConcurrentHashMap<Integer, DataProvider>();
-        jsCallbacks = new ConcurrentHashMap<Integer, String>();
+        this.providers = new ConcurrentHashMap<Integer, DataProvider>();
+        reset();
     }
 
     public void onEvent(SensorJSEvent e){
@@ -34,7 +34,7 @@ public class DataManager extends Manager {
                 registerCallback(e.getType(), e.getCallback());
             }
         }else{
-            unregister(e.getType());
+            unregisterProvider(e.getType());
         }
     }
 
@@ -57,6 +57,22 @@ public class DataManager extends Manager {
         providers.put(type, p);
     }
 
+
+    public void unregisterProvider(Integer type) {
+        DataProvider dp = providers.remove(type);
+        dp.unregister();
+    }
+
+    public void unregisterProviders(){
+        for (Integer type : providers.keySet()) {
+            unregisterProvider(type);
+        }
+    }
+
+    public DataProvider getProvider(int id) {
+        return providers.get(id);
+    }
+
     public void registerCallback(Integer type, String jsFunction) {
         jsCallbacks.put(type, jsFunction);
     }
@@ -75,16 +91,15 @@ public class DataManager extends Manager {
         return String.format("javascript:%s(%s);", jsCallbacks.get(dp.getType()), dp.toJSONString());
     }
 
-    public void unregister() {
-        super.unregister();
-        for (Integer type : providers.keySet()) {
-            unregister(type);
-        }
+    public void reset() {
+        super.reset();
+        unregisterProviders();
+        jsCallbacks = new ConcurrentHashMap<Integer, String>();
     }
 
-    public void unregister(Integer type) {
-        DataProvider dp = providers.remove(type);
-        dp.unregister();
+    public void shutdown() {
+        super.shutdown();
+        unregisterProviders();
     }
 
     public SensorManager sensorManager() {
@@ -96,9 +111,5 @@ public class DataManager extends Manager {
         if (provider == null)
             return;
         provider.remoteSample(dp);
-    }
-
-    public DataProvider getProvider(int id) {
-        return providers.get(id);
     }
 }

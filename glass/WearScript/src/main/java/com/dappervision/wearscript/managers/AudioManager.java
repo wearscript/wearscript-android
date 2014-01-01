@@ -24,13 +24,14 @@ public class AudioManager extends Manager {
         mAudioBuffer = new short[mBufferSize / 2];
 
         systemAudio = (android.media.AudioManager) service.getSystemService(Context.AUDIO_SERVICE);
+        reset();
     }
 
     public void onEvent(AudioEvent e){
         if(e.isStart()){
-           start();
+            start();
         }else if(e.isStop()){
-           stop();
+           shutdown();
         }
     }
 
@@ -50,22 +51,22 @@ public class AudioManager extends Manager {
             systemAudio.playSoundEffect(Sounds.SUCCESS);
     }
 
-    @Override
-    public void eventBusUnregister() {
-        stop();
-        super.eventBusUnregister();
+    public void reset(){
+        Log.d(TAG, "starting audio capture");
+        if(mAudioRecordingThread != null)
+            mAudioRecordingThread.stopRunning();
+    }
+    public void start(){
+        reset();
+        mAudioRecordingThread = new AudioRecordingThread(mBufferSize, mAudioBuffer);
+        mAudioRecordingThread.start();
     }
 
-    private void stop(){
+    public void shutdown(){
+        super.shutdown();
         Log.d(TAG, "stopping audio capture");
         if(mAudioRecordingThread != null)
             mAudioRecordingThread.stopRunning();
         mAudioRecordingThread = null;
-    }
-
-    private void start(){
-        Log.d(TAG, "starting audio capture");
-        mAudioRecordingThread = new AudioRecordingThread(mBufferSize, mAudioBuffer);
-        mAudioRecordingThread.start();
     }
 }

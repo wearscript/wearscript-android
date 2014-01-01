@@ -8,9 +8,6 @@ import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by kurt on 12/9/13.
- */
 public abstract class Manager {
     protected static final String TAG = "Manager";
     protected BackgroundService service;
@@ -18,12 +15,6 @@ public abstract class Manager {
 
     public Manager(BackgroundService service){
         this.service = service;
-        Utils.getEventBus().register(this);
-        jsCallbacks = new ConcurrentHashMap<String, String>();
-    }
-
-    public void eventBusUnregister() {
-        Utils.getEventBus().unregister(this);
     }
 
     protected void setupCallback(CallbackRegistration e){
@@ -41,8 +32,15 @@ public abstract class Manager {
             jsCallbacks.put(type, jsFunction);
     }
 
-    public void unregister() {
+
+    public void reset() {
+        if(!Utils.getEventBus().isRegistered(this))
+            Utils.getEventBus().register(this);
         jsCallbacks = new ConcurrentHashMap<String, String>();
+    }
+
+    public void shutdown() {
+        Utils.getEventBus().unregister(this);
     }
 
     protected void makeCall(String key, String data) {
