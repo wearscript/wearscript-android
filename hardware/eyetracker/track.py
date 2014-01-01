@@ -143,6 +143,14 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
         if frames is None:
             rval, frame = camera.read()
             timestamp = time.time()
+            rows = frame.shape[0]
+            cols = frame.shape[1]
+            M = np.asfarray([[0, 1, 0],
+                             [-1, 0, 640]])
+            #M = cv2.getRotationMatrix2D((cols / 2, rows / 2), 90, 1)
+            frame = cv2.warpAffine(frame, M, (rows, cols))
+            frame = np.ascontiguousarray(frame[::-1, :, :])
+            print(frame.shape)
         else:
             try:
                 path = frames.pop()
@@ -177,6 +185,8 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
         if hulls:
             hulls.sort()
             print('Time[%f]' % (time.time() - st))
+            if hulls[0][2].shape[0] < 6:
+                continue
             box = cv2.fitEllipse(hulls[0][2])
             if debug: print('Gaze[%f,%f]' % (box[0][0], box[0][1]))
             if plot:
@@ -184,6 +194,7 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
             yield box, frame, hulls[0][2], timestamp
         else:
             yield None, frame, None, timestamp
+        gevent.sleep(.05)
 
 def main():
     def callback(ws, **kw):
