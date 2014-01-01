@@ -30,12 +30,16 @@ function unpack(blob) {
                   loadExternFile("//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js", "js");
                   loadExternFile("simulator.js", "js");
                   loadExternFile("msgpack.js", "js");
-                  console.log("startScript done");
+                  log("startScript");
                 }else{
-                  console.log(msg);
+                  log("Unhandled command: " + msg);
                 }
     };
     fileReader.readAsArrayBuffer(blob);
+}
+
+function log(msg) {
+  console.log("SIMULATOR: "+msg);
 }
 
 function loadExternFile(filename, filetype){
@@ -72,13 +76,13 @@ function SimulatedGlass(WSUrl) {
   }
 
   function onOpen(evt) {
-    console.log("simulator ws connected");
+    log("connected");
     setStatus("connected");
     say("WearScript connected");
   }
 
   function onClose(evt) {
-    console.log("simulator ws disconnected");
+    log("disconnected");
     say("WearScript disconnected");
     document.location.reload(true);
     setStatus("disconnected");
@@ -89,7 +93,7 @@ function SimulatedGlass(WSUrl) {
   }
 
   function onError(evt) {
-    console.log("WS Error: "+evt.data);
+    log("Websocket Error: "+evt.data);
   }
 
   this.send = send;
@@ -108,106 +112,106 @@ function SimulatedGlass(WSUrl) {
   }
 }
 
-function WearScriptSimulator(type) {
+function SimulatedWS(type) {
     this.activityCreate = function () {
-      console.log('Simulator warning: WS.activityCreate is not implemented');
+      log('WS.activityCreate is not implemented');
     };
     this.activityDestroy = function () {
-      console.log('Simulator warning: WS.activityDestroy is not implemented');
-    };
+      log('WS.activityDestroy is not implemented');
+    }
     this.audioOff = function () {
-      console.log('Simulator warning: WS.audioOff is not implemented');
+      log('WS.audioOff is not implemented');
     };
     this.audioOn = function () {
-      console.log('Simulator warning: WS.audioOn is not implemented');
+      log('WS.audioOn is not implemented');
     };
     this.blobCallback = function () {
-      console.log('Simulator warning: WS.blobCallback is not implemented');
+      log('WS.blobCallback is not implemented');
     };
     this.blobSend = function () {
-      console.log('Simulator warning: WS.blobSend is not implemented');
+      log('WS.blobSend is not implemented');
     };
     this.cameraCallback = function () {
-      console.log('Simulator warning: WS.cameraCallback is not implemented');
-    };
+      log('WS.cameraCallback is not implemented');
+    }
     this.cameraOff = function () {
-      console.log('Simulator warning: WS.cameraOff is not implemented');
+      log('WS.cameraOff is not implemented');
     };
     this.cameraOn = function () {
-      console.log('Simulator warning: WS.cameraOn is not implemented');
+      log('WS.cameraOn is not implemented');
     };
     this.cameraPhoto = function () {
-      console.log('Simulator warning: WS.cameraPhoto is not implemented');
+      log('WS.cameraPhoto is not implemented');
     };
     this.cameraVideo = function () {
-      console.log('Simulator warning: WS.cameraVideo is not implemented');
+      log('WS.cameraVideo is not implemented');
     };
     this.cardCallback = function () {
-      console.log('Simulator warning: WS.cardCallback is not implemented');
+      log('WS.cardCallback is not implemented');
     };
     this.cardDelete = function () {
-      console.log('Simulator warning: WS.cardDelete is not implemented');
+      log('WS.cardDelete is not implemented');
     };
     this.cardFactory = function () {
-      console.log('Simulator warning: WS.cardFactory is not implemented');
+      log('WS.cardFactory is not implemented');
     };
     this.cardInsert = function () {
-      console.log('Simulator warning: WS.cardInsert is not implemented');
+      log('WS.cardInsert is not implemented');
     };
     this.cardModify = function () {
-      console.log('Simulator warning: WS.cardModify is not implemented');
+      log('WS.cardModify is not implemented');
     };
     this.data = function () {
-      console.log('Simulator warning: WS.data is not implemented');
+      log('WS.data is not implemented');
     };
     this.dataLog = function () {
-      console.log('Simulator warning: WS.dataLog is not implemented');
+      log('WS.dataLog is not implemented');
     };
     this.displayCardScroll = function () {
-      console.log('Simulator warning: WS.displayCardScroll is not implemented');
+      log('WS.displayCardScroll is not implemented');
     };
     this.liveCardCreate = function () {
-      console.log('Simulator warning: WS.liveCardCreate is not implemented');
+      log('WS.liveCardCreate is not implemented');
     };
     this.liveCardDestroy = function () {
-      console.log('Simulator warning: WS.liveCardDestroy is not implemented');
+      log('WS.liveCardDestroy is not implemented');
     };
     this.qr = function () {
-      console.log('Simulator warning: WS.qr is not implemented');
+      log('WS.qr is not implemented');
     };
     this.sensorOff = function () {
-      console.log('Simulator warning: WS.sensorOff is not implemented');
+      log('WS.sensorOff is not implemented');
     };
     this.sensors = function () {
-      console.log('Simulator warning: WS.sensors is not implemented');
+      log('WS.sensors is not implemented');
     };
     this.serverTimeline = function () {
-      console.log('Simulator warning: WS.serverTimeline is not implemented');
+      log('WS.serverTimeline is not implemented');
     };
     this.shutdown = function () {
       glass.disconnect();
     };
     this.sound = function() {
-      console.log("Simulator warning: WS.sound is not implemented");
+      log("WS.sound is not implemented");
     }
     this.speechRecognize = function () {
-      console.log('Simulator warning: WS.speechRecognize is not implemented');
+      log('WS.speechRecognize is not implemented');
     };
     this.wake = function () {
-      console.log('Simulator warning: WS.wake is not implemented');
+      log('WS.wake is not implemented');
     };
     this.wifiOff = function () {
-      console.log('Simulator warning: WS.wifiOff is not implemented');
+      log('WS.wifiOff is not implemented');
     };
     this.wifiOn = function () {
-      console.log('Simulator warning: WS.wifiOn is not implemented');
+      log('WS.wifiOn is not implemented');
     };
     this.wifiScan = function () {
-      console.log('Simulator warning: WS.wifiScan is not implemented');
+      log('WS.wifiScan is not implemented');
     };
     this.scriptVersion = function(version) { return version != 0; };
     this.log = function (x) {
-            console.log(x)
+           console.log("SIMULATOR LOG: " +x);
            glass.send(pack(['log', x]));
     };
     this.displayWebView = function () {};
@@ -242,4 +246,4 @@ function WearScriptSimulator(type) {
     audio.play();
   };
 }
-var WS = new WearScriptSimulator();
+var WS = new SimulatedWS();
