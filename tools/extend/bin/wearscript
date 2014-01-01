@@ -1,0 +1,26 @@
+#!/usr/bin/env python2
+
+import wearscript
+import argparse
+
+def main():
+    def callback(ws, **kw):
+        if kw['say']:
+            ws.send('startScript',"<script>WS.say('%s')</script>" % kw['say'])
+        if (kw['start'] or kw['save']):
+            script_name = kw['start'] or kw['save']
+            with open (script_name, "r") as script:
+                script_data=script.read()
+            if kw['start']:
+                ws.send('startScript',script_data)
+            if kw['save']:
+                ws.send('saveScript',script_data,kw['save'].split('.')[0])
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--say')
+    parser.add_argument('--start')
+    parser.add_argument('--save')
+    wearscript.parse(callback,parser)
+
+if __name__ == '__main__':
+    main()
