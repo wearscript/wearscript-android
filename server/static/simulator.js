@@ -1,3 +1,16 @@
+jQuery.cachedScript = function( url, options ) {
+        // Allow user to set any option except for dataType, cache, and url
+        options = $.extend( options || {}, {
+                dataType: "script",
+                cache: true,
+                url: url
+        });
+
+        // Use $.ajax() since it is more flexible than $.getScript
+        // Return the jqXHR object so we can chain callbacks
+        return jQuery.ajax( options );
+};
+
 function start(WSUrl) {
         log("starting");
         console.log(" ---INSTRUCTIONS--- ");
@@ -34,7 +47,7 @@ function unpack(blob) {
                                 url: msg[1],
                                 dataType: 'jsonp', // Notice! JSONP <-- P (lowercase)
                                 success:function(json){
-                                  runScript(json);      
+                                        runScript(json);
                                 },
                                 error:function(){
                                         alert("Bad things happened");
@@ -55,25 +68,23 @@ function runScript(script) {
         var newDoc = document.open("text/html", "replace");
         newDoc.write(msg[1]);
         newDoc.close();
-        loadExternFile("//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js", "js");
-        loadExternFile("simulator.js", "js");
-        loadExternFile("msgpack.js", "js");
 }
 
-function loadExternFile(filename, filetype){
-        if (filetype=="js"){ //if filename is a external JavaScript file
-                var fileref=document.createElement('script')
-                        fileref.setAttribute("type","text/javascript")
-                        fileref.setAttribute("src", filename)
-        }
-        else if (filetype=="css"){ //if filename is an external CSS file
-                var fileref=document.createElement("link")
-                        fileref.setAttribute("rel", "stylesheet")
-                        fileref.setAttribute("type", "text/css")
-                        fileref.setAttribute("href", filename)
-        }
-        if (typeof fileref!="undefined")
-                document.getElementsByTagName("head")[0].appendChild(fileref)
+function loadLibraries() {
+        $.cachedScript("msgpack.js");
+        $.cachedScript("reconnecting-websocket.min.js");
+        $.cachedScript("mespeak.js").done(function(a,b) {
+                if (!meSpeak.isConfigLoaded()){
+                        meSpeak.loadConfig("mespeak_config.json");
+                }
+                if (!meSpeak.isVoiceLoaded('en-us')) {
+                        meSpeak.loadVoice('en-us.json');
+                }
+        });
+}
+
+function say(msg) {
+        meSpeak.speak(msg);
 }
 
 function SimulatedGlass(WSUrl) {
@@ -81,7 +92,7 @@ function SimulatedGlass(WSUrl) {
         this.websocket = null;
 
         this.connect = function () {
-                this.websocket = new WebSocket(this.wsurl);
+                this.websocket = new ReconnectingWebSocket(this.wsurl);
                 this.websocket.onopen = function(evt) { onOpen(evt) };
                 this.websocket.onclose = function(evt) { onClose(evt) };
                 this.websocket.onmessage = function(evt) { onMessage(evt) };
@@ -102,8 +113,15 @@ function SimulatedGlass(WSUrl) {
         function onClose(evt) {
                 log("disconnected");
                 say("WearScript disconnected");
-                document.location.reload(true);
-                setStatus("disconnected");
+                $.ajax({
+                        url: "simulator.html",
+                        success:function(data){
+                                var newDoc = document.open("text/html", "replace");
+                                newDoc.write(data);
+                                newDoc.close();
+                        },
+                        dataType: "html"
+                });
         }
 
         function onMessage(evt) {
@@ -118,12 +136,6 @@ function SimulatedGlass(WSUrl) {
         function send(msg) {
                 this.websocket.send(msg);
         }
-
-        this.say = say;
-        function say(data) {
-                var audio = new Audio("http://translate.google.com/translate_tts?tl=en&q="+encodeURIComponent(data));
-                audio.play();
-        };
 
         function setStatus(msg) {
                 $('#status').text(msg);
@@ -242,17 +254,17 @@ function SimulatedWS(type) {
         };
         this._sensorDelay = 100;
         this.sensorOn = function (s, delay, cb) {
-          this._sensors[s] = [delay, cb]
-          return true;
+                this._sensors[s] = [delay, cb]
+                        return true;
         };
         this._sensorLoop = _.bind(function () {
                 if (!_.has(this, '_scb') || !_.has(window, this._scb))
-                  return;
+                return;
 
-                _.each(this._sensors, _.bind(function (x) {
-                  window[this._scb]({type: x, values: [Math.random(), Math.random(), Math.random()], timestamp: (new Date).getTime() / 1000});
-                }, this));
-                _.delay(this._sensorLoop, this._sensorDelay);
+        _.each(this._sensors, _.bind(function (x) {
+                window[this._scb]({type: x, values: [Math.random(), Math.random(), Math.random()], timestamp: (new Date).getTime() / 1000});
+        }, this));
+        _.delay(this._sensorLoop, this._sensorDelay);
         }, this);
         _.delay(this._sensorLoop, this._sensorDelay);
         this.gestureCallbacks = {};
@@ -264,8 +276,12 @@ function SimulatedWS(type) {
         };
 
         this.say = function(data) {
-                var audio = new Audio("http://translate.google.com/translate_tts?tl=en&q="+encodeURIComponent(data));
-                audio.play();
+                say(data);
         };
 }
-var WS = new SimulatedWS();
+
+var WS;
+$(function() {
+        loadLibraries();
+        WS = new SimulatedWS();
+});
