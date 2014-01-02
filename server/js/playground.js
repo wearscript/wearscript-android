@@ -314,6 +314,13 @@ function urlToHost(url) {
     return protocol + '//' + host;
 }
 
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function replaceAll(find, replace, str) {
+  return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+}
 
 function main(WSUrl) {
     glassIdToNum = {};
@@ -361,7 +368,31 @@ function main(WSUrl) {
     $('#buttonClient').click(function () {
         createKey("client", function (x) {$('#secret-client').html(_.escape(WSUrl + "/ws/client/" + x))}, function () {alert("Could not get client endpoint")})
     });
-
+    
+    $('#simulateButton').click(function () {
+        $('#simulator').show();
+        //console.log('simulate button is clicked');
+        //console.log(editor.getValue());
+        //$('#simulation').contents().find('html').html(editor.getValue());
+        // I set src so that the styling of body is obeyed 
+        
+        var WSScript = "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js\"></script>" +
+        "<script src=\""+replaceAll('ws://', 'http://', WSUrl)+"/static/simulator.js\"></script>";
+        document.getElementById('simulation').src = "data:text/html;charset=utf-8," + escape(replaceAll('raw.github', 'rawgithub', WSScript+editor.getValue()));
+    });
+    $('#gestureAgain').click(function() { 
+      onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      $("#simulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
+    });
+    $('.gesture').click( function (e) {
+      var optionSelected = $("option:selected", this);
+      var valueSelected = $(this).text();
+      onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      console.log('onGestureCallback '+JSON.stringify(onGestureCallback));
+      $("#simulation")[0].contentWindow[onGestureCallback](valueSelected);
+      console.log('gesture: '+valueSelected);
+    });
+    //$("#simulation")[0].contentWindow.myFunction();
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,
@@ -370,5 +401,6 @@ function main(WSUrl) {
         mode: "htmlmixed",
         indentUnit: 4
     });
-    ws = connectWebsocket(WSUrl);
+    //ws = connectWebsocket(WSUrl);
+    
 }
