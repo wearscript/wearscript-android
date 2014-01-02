@@ -45,7 +45,7 @@ function unpack(blob) {
                         log("startScriptUrl");
                         $.ajax({
                                 url: msg[1],
-                                dataType: 'jsonp', // Notice! JSONP <-- P (lowercase)
+                                dataType: 'html', // Notice! JSONP <-- P (lowercase)
                                 success:function(json){
                                         runScript(json);
                                 },
