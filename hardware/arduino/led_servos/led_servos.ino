@@ -2,7 +2,6 @@
 
 #define NUM_SERVOS 3
 Servo servos[NUM_SERVOS];
-int servo_poss[NUM_SERVOS];
 int servo_pins[] = {9, 10, 11};
 
 #define NUM_LEDS 2
@@ -16,13 +15,14 @@ int i;
  
 void setup() 
 { 
-  for (i = 0; i < NUM_SERVOS; i++)
-    servos[i].attach(servo_pins[i]);
+  for (i = 0; i < NUM_SERVOS; i++) {
+    servos[i].attach(servo_pins[i], MIN_PULSE, MAX_PULSE);
+  }
   Serial.begin(9600);
 } 
  
 void loop() 
-{ 
+{     
   if (Serial.available() < 3)
     return;
   data[0] = Serial.read();
