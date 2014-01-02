@@ -7,9 +7,17 @@ function onScroll(v, v2, v3) {
     WS.log('V: ' + v);
     WS.blobSend('arduino', JSON.stringify([0, Math.round(v)]));
 }
+function onGesture(v) {
+    WS.log('Gesture: ' + v);
+    if (v == 'TAP')
+        WS.blobSend('arduino', JSON.stringify([3, 0]));
+    else if (v == 'TWO_TAP')
+        WS.blobSend('arduino', JSON.stringify([3, 1]));
+}   
 function server() {
     WS.log('Welcome to WearScript');
     WS.gestureCallback('onScroll', 'onScroll');
+    WS.gestureCallback('onGesture', 'onGesture');
 }
 function main() {
     if (WS.scriptVersion(0)) return;

@@ -15,9 +15,10 @@ int i;
  
 void setup() 
 { 
-  for (i = 0; i < NUM_SERVOS; i++) {
+  for (i = 0; i < NUM_SERVOS; i++)
     servos[i].attach(servo_pins[i], MIN_PULSE, MAX_PULSE);
-  }
+  for (i = 0; i < NUM_LEDS; i++)
+    pinMode(led_pins[i], OUTPUT);
   Serial.begin(9600);
 } 
  
