@@ -23,51 +23,59 @@ function onGesture(v) {
         WS.blobSend('arduino', enc([3, 0]));
     else if (v == 'TWO_TAP')
         WS.blobSend('arduino', enc([3, 1]));
-}   
-function setPixelColor(led, r, g, b) {
-    return [255, 0, led, r, g, b];
 }
-function setBrightness(l) {
-    return [255, 1, l, 0, 0, 0];
-}
-function show() {
-    return [255, 2, 0, 0, 0, 0];
-}
-function delay(l) {
-    return [255, 3, l, 0, 0, 0];
-}
-
-function startLoop() {
-    return [255, 4, 0, 0, 0, 0];
-}
-
-function finishLoop() {
-    return [255, 5, 0, 0, 0, 0];
-}
+function NeoPixel() {
+    this.buffer = [];
+    this.concat = function (x) {
+        this.buffer = this.buffer.concat(x);
+    }
+    this.setPixelColor = function (led, r, g, b) {
+        this.concat([255, 0, led, r, g, b]);
+    }
+    this.setBrightness = function (l) {
+        this.concat([255, 1, l, 0, 0, 0]);
+    }
+    this.show = function () {
+        this.concat([255, 2, 0, 0, 0, 0]);
+    }
+    this.delay = function (l) {
+        this.concat([255, 3, l, 0, 0, 0]);
+    }
     
-function send(data) {
-    WS.blobSend('arduino', enc(data));
+    this.startLoop = function () {
+        this.concat([255, 4, 0, 0, 0, 0]);
+    }
+    
+    this.finishLoop = function () {
+        this.concat([255, 5, 0, 0, 0, 0]);
+    }
+    this.send = function () {
+        WS.blobSend('arduino', enc(this.buffer));
+        this.buffer = [];
+    }
 }
+
 
 function server() {
     WS.log('Welcome to WearScript');
-    //setPixelColor(1, 255, 255, 255);
-    //show();
-        var data = [];
-    data = data.concat(startLoop());
+    var pixel = new NeoPixel();
+    pixel.setBrightness(20);
+    pixel.setPixelColor(0, 0, 0, 0);
+    pixel.setPixelColor(0, 0, 0, 0);
+    pixel.setPixelColor(0, 0, 0, 0);
+    pixel.setPixelColor(0, 0, 0, 0);
+
+    pixel.startLoop();
     for (var i = 0; i < 32; i++)
-      data = data.concat(setPixelColor(i, 0, 0, 0));
-    data = data.concat(show());
+      pixel.setPixelColor(i, 0, 0, 0);
+			pixel.show();
     for (var i = 0; i < 32; i++) {
-			data = data.concat(setPixelColor(i, i * 50 % 256, i * 17 % 256, i * 98 % 256));
-        //delay(100);
-			data = data.concat(show());
+			pixel.setPixelColor(i, (i * 50 + 70) % 256, i * 17 % 256, i * 98 % 256);
+        pixel.delay(10);
+			pixel.show();
     }
-    data = data.concat(finishLoop());
-    send(data)
-    //setBrightness(200);
-    //WS.gestureCallback('onScroll', 'onScroll');
-    //WS.gestureCallback('onGesture', 'onGesture');
+			pixel.finishLoop();
+    pixel.send();
 }
 function main() {
     if (WS.scriptVersion(0)) return;
