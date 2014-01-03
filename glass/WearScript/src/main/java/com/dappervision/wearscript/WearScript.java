@@ -181,7 +181,9 @@ public class WearScript {
     }
 
     public void wifiOn(String callback) {
-        Utils.eventBusPost(new CallbackRegistration(WifiManager.class, callback));
+        CallbackRegistration cr = new CallbackRegistration(WifiManager.class, callback);
+        cr.setEvent("wifi");
+        Utils.eventBusPost(cr);
         Utils.eventBusPost(new WifiEvent(true));
     }
 
