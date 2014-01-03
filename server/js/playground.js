@@ -362,6 +362,24 @@ function main(WSUrl) {
         createKey("client", function (x) {$('#secret-client').html(_.escape(WSUrl + "/ws/client/" + x))}, function () {alert("Could not get client endpoint")})
     });
 
+    $('#simulateButton').click(function () {
+        $('#simulator').show();
+        simulatorUrl = createKey("ws", function (x) {$('#simulation')[0].contentWindow.start(WSUrl + "/ws/glass/" + x)}, function () {alert("Could not get client endpoint")})
+    });
+
+    $('#gestureAgain').click(function() {
+      onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      $("#simulation")[0].contentWindow[onGestureCallback]($('#gestures option:selected').text());
+    });
+    $('.gesture').click( function (e) {
+      var optionSelected = $("option:selected", this);
+      var valueSelected = $(this).text();
+      onGestureCallback = $("#simulation")[0].contentWindow.WS.getGestureCallbacks()['onGesture'];
+      console.log('onGestureCallback '+JSON.stringify(onGestureCallback));
+      $("#simulation")[0].contentWindow[onGestureCallback](valueSelected);
+      console.log('gesture: '+valueSelected);
+    });
+
     editor = CodeMirror.fromTextArea(document.getElementById("script"), {
         lineNumbers: true,
         styleActiveLine: true,
@@ -371,4 +389,5 @@ function main(WSUrl) {
         indentUnit: 4
     });
     ws = connectWebsocket(WSUrl);
+    var simulation = $('#simulation')[0].contentWindow;
 }
