@@ -94,69 +94,7 @@
 <script src="static/compressed.js"></script>
 <script src="https://googledrive.com/host/0B1jg9xNg9UTqQXZRQ1p3UGRBOGM/webspeechcodelab/webspeech.js"></script>
 <script type="text/javascript">
-var speechRecognitionCallback = '';
-var ignore_onend;
-var final_transcript = '';
-
-function speechRecognition(callback) {
-    speechRecognitionCallback = callback;
-    recognition.start();
-}
-
-if (!('webkitSpeechRecognition' in window)) {
-  upgrade();
-} else {
-  var recognition = new webkitSpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-
-  recognition.onstart = function() {
-    recognizing = true;
-  };
-
-  recognition.onerror = function(event) {
-    if (event.error == 'no-speech') {
-      ignore_onend = true;
-    }
-    if (event.error == 'audio-capture') {
-      ignore_onend = true;
-    }
-    if (event.error == 'not-allowed') {
-      ignore_onend = true;
-    }
-  };
-
-  recognition.onend = function() {
-    recognizing = false;
-    if (ignore_onend) {
-      return;
-    }
-    if (!final_transcript) {
-      return;
-    }
-  };
-
-  recognition.onresult = function(event) {
-    var interim_transcript = '';
-    for (var i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        final_transcript = event.results[i][0].transcript;
-        $('#simulation').contents().find('#voice_recognition_prompt').remove();
-        console.log('speechRecognitionCallback: '+speechRecognitionCallback);
-        $("#simulation")[0].contentWindow[speechRecognitionCallback](final_transcript);
-        recognition.stop();
-      } else {
-        interim_transcript += event.results[i][0].transcript;
-      }
-    }
-    
-    
-  };
-}
-
-
-
-    $(function () {main("{{.WSUrl}}")});
+$(function () {main("{{.WSUrl}}")});
 </script>
 </body>
 </html>
