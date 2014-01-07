@@ -224,8 +224,10 @@ function SimulatedWS(type) {
         this.sound = function() {
                 log("WS.sound is not implemented");
         }
-        this.speechRecognize = function () {
-                log('WS.speechRecognize is not implemented');
+        this.speechRecognize = function (prompt, callback) {
+                $('body').prepend('<link href="http://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css"><div id="voice_recognition_prompt" style="background:#000; width:560px; height:280px; position: absolute; left: 0; top: 0; padding:40px; z-index: 1; font:40px Roboto; color:#FFF; font-weight:100;">'+prompt+'</div>');
+                parent.speechRecognition(callback);
+                log('WS.speechRecognize called');
         };
         this.wake = function () {
                 log('WS.wake is not implemented');

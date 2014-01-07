@@ -94,27 +94,68 @@
 <script src="static/compressed.js"></script>
 <script src="https://googledrive.com/host/0B1jg9xNg9UTqQXZRQ1p3UGRBOGM/webspeechcodelab/webspeech.js"></script>
 <script type="text/javascript">
-window.speechRecognition = ( window.speechRecognition || window.webkitSpeechRecognition);
+var speechRecognitionCallback = '';
+var ignore_onend;
+var final_transcript = '';
 
-// Check access to the speech recogntion object
-if(!!window.speechRecognition) {
-    recognition = new webkitSpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.lang = "en-US";
-    //recognition.start();
-
-    recognition.onstart = function() { console.log("Speech recognition started."); }
-    recognition.onresult = function(event) {
-        // Do something with the result
-        console.log(JSON.stringify(event));
-    }
-    recognition.onerror = function(event) { console.log("Error", event); }
-    recognition.onend = function() { console.log("Speech recognition ended"); }
-} else {
-    console.error("Speech recognition is not available on this device.");
+function speechRecognition(callback) {
+    speechRecognitionCallback = callback;
+    recognition.start();
 }
+
+if (!('webkitSpeechRecognition' in window)) {
+  upgrade();
+} else {
+  var recognition = new webkitSpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onstart = function() {
+    recognizing = true;
+  };
+
+  recognition.onerror = function(event) {
+    if (event.error == 'no-speech') {
+      ignore_onend = true;
+    }
+    if (event.error == 'audio-capture') {
+      ignore_onend = true;
+    }
+    if (event.error == 'not-allowed') {
+      ignore_onend = true;
+    }
+  };
+
+  recognition.onend = function() {
+    recognizing = false;
+    if (ignore_onend) {
+      return;
+    }
+    if (!final_transcript) {
+      return;
+    }
+  };
+
+  recognition.onresult = function(event) {
+    var interim_transcript = '';
+    for (var i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        final_transcript = event.results[i][0].transcript;
+        $('#simulation').contents().find('#voice_recognition_prompt').remove();
+        console.log('speechRecognitionCallback: '+speechRecognitionCallback);
+        $("#simulation")[0].contentWindow[speechRecognitionCallback](final_transcript);
+        recognition.stop();
+      } else {
+        interim_transcript += event.results[i][0].transcript;
+      }
+    }
+    
+    
+  };
+}
+
+
+
     $(function () {main("{{.WSUrl}}")});
 </script>
 </body>
