@@ -29,7 +29,7 @@ In the JavaScript environment there is a WS object that has the following method
 * WS.qr(String callback): Open a QR scanner, return scan results via a callback from zxing
 
   * Callback has parameters of the form function callback(data, format)
-  * data(string): The scanned data (e.g., http://wearscript.com)
+  * data(string): The scanned data (e.g., http://wearscript.com) base64 encoded (e.g., aHR0cDovL3dlYXJzY3JpcHQuY29t) as a security precaution.  Decode by doing atob(data) in javascript.
   * format(string): The format of the data (e.g., QR_CODE)
 
 
