@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.os.FileObserver;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Base64;
 
@@ -28,9 +30,11 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class CameraManager extends Manager implements Camera.PreviewCallback {
+    private static final boolean DBG = false;
     private static final String TAG = "CameraManager";
     private static final int MAGIC_TEXTURE_ID = 10;
     public static final String LOCAL = "0";
@@ -46,6 +50,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private long imagePeriod;
     private double lastImageSaveTime;
     private boolean openCVLoaded;
+    private FileObserver mFileObserver;
+    private Handler mHandler;
 
     public class CameraFrame {
         private MatOfByte jpgFrame;
@@ -123,32 +129,52 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         if (requestCode == 1000) {
             resume();
             if (resultCode == Activity.RESULT_OK) {
-                String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
+                final String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 Log.d(TAG, jsCallbacks.toString());
                 if (jsCallbacks.containsKey(PHOTO) || jsCallbacks.containsKey(PHOTO_PATH)) {
-                    byte imageData[] = null;
-                    // TODO(brandyn): Change to use FileObserver
-                    for (int i = 0; i < 100; i++) {
-                        imageData = Utils.LoadFile(new File(pictureFilePath));
-                        if (imageData == null) {
-                            Log.w(TAG, "Waiting for photo...");
-                            try {
-                                Thread.sleep(250);
-                            } catch (InterruptedException e) {
-                            }
+                    // create empty file if it doesn't exist
+                    // else FileObserver won't work (as per documentation)
+                    File pictureFile = new File(pictureFilePath);
+                    if (!pictureFile.exists()) {
+                        try {
+                            Log.d(TAG, "Creating file at " + pictureFilePath);
+                            pictureFile.createNewFile();
+                        } catch (IOException e) {
+                            Log.e(TAG, "Couldn't create pictureFile.", e);
                         }
                     }
-                    if (imageData == null)
-                        return;
-                    if (jsCallbacks.containsKey(PHOTO)) {
-                        makeCall(PHOTO, imageData);
-                        jsCallbacks.remove(PHOTO);
-                    }
-                    if (jsCallbacks.containsKey(PHOTO_PATH)) {
-                        makeCall(PHOTO_PATH, "'" + pictureFilePath + "'");
-                        jsCallbacks.remove(PHOTO_PATH);
-                    }
+                    // use a Handler to keep WebView method from being called
+                    // on FileObserver thread (bad form, elicits warning)
+                    mHandler = new Handler();
+                    mFileObserver = new FileObserver(pictureFilePath) {
+                        @Override
+                        protected void finalize() {
+                            super.finalize();
+                            if (DBG) Log.d(TAG, "FileObserver finalized.");
+                        }
+
+                        @Override
+                        public void onEvent(int event, String path) {
+                            if (DBG) Log.d(TAG, "FileObserver got event " + event);
+                            if (event == FileObserver.CLOSE_WRITE) {
+                                Log.d(TAG, "Detected photo file write. "
+                                        + "Now I'll hit the callbacks and quit.");
+                                byte imageData[] = Utils.LoadFile(new File(pictureFilePath));
+                                mHandler.post(
+                                        new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                photoCallback(pictureFilePath);
+                                            }
+                                        }
+                                );
+                                this.stopWatching();
+                            }
+                        }
+                    };
+                    Log.d(TAG, "Starting FileObserver.");
+                    mFileObserver.startWatching();
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
 
@@ -161,6 +187,24 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             } else if (resultCode == Activity.RESULT_CANCELED) {
 
             }
+        }
+    }
+
+    // Called when FileObserver sees that the picture has been written
+    private void photoCallback(String pictureFilePath) {
+        byte imageData[] = Utils.LoadFile(new File(pictureFilePath));
+        if (imageData == null) {
+            Log.w(TAG, "Boo, no image after FileObserver saw write?");
+            return;
+        }
+        if (jsCallbacks.containsKey(PHOTO)) {
+            makeCall(PHOTO, imageData);
+            jsCallbacks.remove(PHOTO);
+        }
+
+        if (jsCallbacks.containsKey(PHOTO_PATH)) {
+            makeCall(PHOTO_PATH, "'" + pictureFilePath + "'");
+            jsCallbacks.remove(PHOTO_PATH);
         }
     }
 
