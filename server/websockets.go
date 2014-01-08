@@ -197,6 +197,11 @@ func WSGlassHandler(c *websocket.Conn) {
 		} else if action == "image" {
 			latestImage = requestP
 			WSSendWeb(userId, &latestImage)
+		} else if strings.HasPrefix(action, "gist_") {
+			responseGH := GithubGistHandle(userId, request)
+			if responseGH != nil {
+				wsSendChan <- responseGH
+			}
 		} else {
 			WSSendWeb(userId, &requestP)
 		}
@@ -303,6 +308,11 @@ func WSWebHandler(c *websocket.Conn) {
 		    request[1] = scriptBytes
 			requestP := &request
 			wsSendChan <- &requestP
+		} else if strings.HasPrefix(action, "gist_") {
+			responseGH := GithubGistHandle(userId, request)
+			if responseGH != nil {
+				wsSendChan <- &responseGH
+			}
 		} else {
 			WSSendDevice(userId, &request)
 		}

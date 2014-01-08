@@ -98,6 +98,7 @@ func setupUser(r *http.Request, client *http.Client, userId string) {
 // auth is the HTTP handler that redirects the user to authenticate
 // with OAuth.
 func authHandler(w http.ResponseWriter, r *http.Request) {
+     fmt.Println("Authing google")
 	url := config(r.Host).AuthCodeURL(r.URL.RawQuery)
 	http.Redirect(w, r, url, http.StatusFound)
 }
@@ -181,8 +182,15 @@ func signoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer response.Body.Close()
-	storeUserID(w, r, "")
 	deleteCredential(userId)
+	// TODO(brandyn): Also revoke this token with github
+	err = deleteUserAttribute(userId, "oauth_token_gh")
+	if err != nil {
+		w.WriteHeader(500)
+		LogPrintf("signout: oauth github del")
+		return
+	}
+	deleteUserCookie(w)
 	http.Redirect(w, r, fullUrl, http.StatusFound)
 }
 
@@ -213,10 +221,15 @@ func main() {
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
 
+	// Control flow is: /authgh -> github -> /oauth2callbackgh
+	m.Get("/authgh", http.HandlerFunc(AuthHandlerGH))
+	m.Get("/oauth2callbackgh", http.HandlerFunc(Oauth2callbackHandlerGH))
+
 	// Control flow is: /auth -> google -> /oauth2callback
 	m.Get("/auth", http.HandlerFunc(authHandler))
 	m.Get("/oauth2callback", http.HandlerFunc(oauth2callbackHandler))
 
+	m.Get("/signout", http.HandlerFunc(signoutHandler))
 	m.Post("/signout", http.HandlerFunc(signoutHandler))
 	m.Post("/signature", http.HandlerFunc(SignatureVerifyHandler))
 	http.Handle("/ws/glass/", websocket.Handler(WSGlassHandler))

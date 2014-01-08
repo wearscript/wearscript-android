@@ -92,6 +92,10 @@ func storeUserID(w http.ResponseWriter, r *http.Request, userId string) error {
 	return session.Save(r, w)
 }
 
+func deleteUserCookie(w http.ResponseWriter) {
+     http.SetCookie(w, &http.Cookie{Name: sessionName, MaxAge: -1, Path: "/"})
+}
+
 // userID retrieves the current user's ID from the session's cookies.
 func userID(r *http.Request) (string, error) {
         if singleUserMode {

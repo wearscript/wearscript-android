@@ -23,7 +23,8 @@
           <div class="col-md-6">
             <h2>User</h2>
             <div>
-              <button id="buttonAuth" class="btn btn-large btn-primary" type="button">Authenticate</button>
+              <button id="buttonAuth" class="btn btn-large btn-primary" type="button">Auth Google</button>
+              <button id="buttonAuthGH" class="btn btn-large btn-primary" type="button">Auth Github</button>
               <button id="buttonSignout" class="btn btn-large" type="button">Sign Out</button>
               <button id="buttonSetup" class="btn btn-large btn-primary" type="button">Setup</button>
             </div>
@@ -73,13 +74,13 @@
             <button class="btn btn-primary" type="button" id="shutdownButton">Shutdown</button>
             <button class="btn btn-primary" type="button" id="resetButton">Reset</button>
             <button class="btn btn-primary" type="button" id="gistButton">Save to Gist</button>
-            <button class="btn btn-primary" type="button" id="simulateButton">Simulate</button>
+            <button class="btn btn-primary" type="button" id="simulateButton" style="display:none;">Simulate</button>
             <button class="btn btn-primary scriptel" type="button" id="scriptButton">Wear This Script</button>
             <button class="btn btn-primary scriptel" type="button" id="scriptSaveButton">Save Script</button>
             <button class="btn btn-primary scriptel" type="button" id="scriptUrlButton">Wear Script From URL</button>
             <div class="input-group input-group-sm">
                 <span class="input-group-addon">Script URL</span>
-              <input type="text" name="script-url" class="form-control" id="script-url" value="http://wearscript.com/colors.html"/>
+              <input type="text" name="script-url" class="form-control" id="script-url" value=""/>
             </div>
             <div class="input-group  input-group-sm">
                 <span class="input-group-addon">Script Name</span>

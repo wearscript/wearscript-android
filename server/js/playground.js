@@ -37,6 +37,10 @@ function pingStatus() {
     _.delay(pingStatus, 500);
 }
 
+function lambda(command) {
+    ws.send(enc(['lambda', command]));
+}
+
 function enc(data) {
     var data_enc = msgpack.pack(data);
     var data_out = new Uint8Array(data_enc.length);
@@ -96,6 +100,11 @@ function connectWebsocket(WSUrl) {
             } else if (action == 'blob') {
                 if (_.has(blobHandlers, response[1]))
                     blobHandlers[response[1]](response[2]);
+            } else if (action.slice(0, 5) == 'gist_') {
+                var cb = gistCallbacks[action];
+                if (!_.isUndefined(cb)) {
+                    cb(JSON.parse(response[1]));
+                }
             } else if (action == "sensors" || action == "image" || action == "pongStatus") {
                 var glassID = response[1];
                 if (!_.has(glassIdToNum, glassID)) {
@@ -314,6 +323,9 @@ function urlToHost(url) {
     return protocol + '//' + host;
 }
 
+function simulatorShow() {
+    $('#simulateButton').show();
+}
 
 function main(WSUrl) {
     glassIdToNum = {};
@@ -321,6 +333,7 @@ function main(WSUrl) {
     seriesDatas = {};
     scriptRowDisabled = true;
     blobHandlers = {};
+    gistCallbacks = {};
     if ($('#iframe').attr('src').length) {
         iframeWindow = $('#iframe')[0].contentWindow;
         iframeHost = urlToHost($('#iframe').attr('src'));
@@ -350,8 +363,11 @@ function main(WSUrl) {
     $('#buttonAuth').click(function () {
         window.location.replace('auth');
     });
+    $('#buttonAuthGH').click(function () {
+        window.location.replace('authgh');
+    });
     $('#buttonSignout').click(function () {
-        $.post('signout', {success: function () {location.reload()}});
+	window.location.replace("signout");
     });
 
     $('#buttonSetup').click(function () {

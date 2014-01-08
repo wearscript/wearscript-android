@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func randString() (string, error) {
+func RandString() (string, error) {
 	nBytes := 12
 	b := make([]byte, nBytes)
 	n, err := io.ReadFull(rand.Reader, b)
@@ -49,7 +49,7 @@ func SecretKeySetupHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	secret, err := randString()
+	secret, err := RandString()
 	if err != nil {
 		w.WriteHeader(500)
 		return
