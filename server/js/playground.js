@@ -404,6 +404,17 @@ function main(WSUrl) {
         mode: "htmlmixed",
         indentUnit: 4
     });
+    function unloadSet(cm, change) {
+        editor.off("change", unloadSet);
+        window.onbeforeunload = function(e) {
+            e = e || window.event;
+            var message = "You will lose any unsaved changes.";
+            if (e)
+                e.returnValue = message;
+            return message;
+        }
+    }
+    editor.on("change", unloadSet);
     ws = connectWebsocket(WSUrl);
     var simulation = $('#simulation')[0].contentWindow;
 }

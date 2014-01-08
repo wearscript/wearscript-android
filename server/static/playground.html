@@ -118,31 +118,5 @@ if(!!window.speechRecognition) {
 }
 $(function () {main("{{.WSUrl}}")});
 </script>
-<script type="text/javascript">
-(function(){
-    var scriptArea = document.getElementById('script');
-
-    // Turn on warning message when a user edits the default wearscript code.
-    var enableBeforeUnload = function() {
-        window.onbeforeunload = function(e) {
-            e = e || window.event;
-            var message = "You will lose any unsaved changes.";
-            // For IE6-8 and Firefox prior to version 4
-            if (e) {
-                e.returnValue = message;
-            }
-            // For Chrome, Safari, IE8+ and Opera 12+
-            return message;
-        }
-        scriptArea.onchange = null;
-        scriptArea.onkeyup = null;
-    };
-    scriptArea.onchange = enableBeforeUnload;
-    scriptArea.onkeyup = enableBeforeUnload;
-    var diableBeforeUnload = function(){
-        window.onbeforeunload = null;
-    }
-})();
-</script>
 </body>
 </html>
