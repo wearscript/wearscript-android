@@ -9,7 +9,7 @@ import com.joshdholtz.sentry.Sentry.SentryEventBuilder.SentryEventLevel;
 public class Log {
     private static final String TAG = "Log";
     private static boolean inited = false;
-    private static String dsn = "https://528123420aa94452a7dfb6dc08ff4a34:5e26315ac6d54b94bc23c6cb05f55854@app.getsentry.com/16563";
+    private static String dsn = null;
     private static MainActivity activity;
 
     public static void register(MainActivity act) {
@@ -74,13 +74,18 @@ public class Log {
     }
 
     public static int i(String tag, String message) {
-        logRaven(tag, message, SentryEventLevel.INFO);
+        //logRaven(tag, message, SentryEventLevel.INFO);
         return android.util.Log.i(tag, message);
     }
 
     public static int w(String tag, String message) {
-        logRaven(tag, message, SentryEventLevel.WARNING);
+        //logRaven(tag, message, SentryEventLevel.WARNING);
         return android.util.Log.w(tag, message);
+    }
+
+    public static int w(String tag, String message, Throwable tr) {
+        logRaven(tag, message, SentryEventLevel.WARNING);
+        return android.util.Log.w(tag, message, tr);
     }
 
     public static int e(String tag, String message) {

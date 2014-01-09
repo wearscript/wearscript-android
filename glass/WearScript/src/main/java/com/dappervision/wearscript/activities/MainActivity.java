@@ -91,6 +91,9 @@ public class MainActivity extends Activity {
         Log.i(TAG, "Lifecycle: MainActivity: onPause");
         isForeground = false;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (bs != null) {
+            bs.getOpenGLManager().getView().onPause();
+        }
         super.onPause();
     }
 
@@ -98,16 +101,20 @@ public class MainActivity extends Activity {
     public void onResume() {
         Log.i(TAG, "Lifecycle: MainActivity: onResume");
         isForeground = true;
-        if (bs != null)
+        if (bs != null) {
             bs.getCameraManager().resume();
+            bs.getOpenGLManager().getView().onResume();
+        }
         super.onResume();
     }
 
     public void onDestroy() {
         Log.i(TAG, "Lifecycle: MainActivity: onDestroy");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        if (mConnection != null)
+        if (mConnection != null) {
             unbindService(mConnection);
+            mConnection = null;
+        }
         Utils.getEventBus().unregister(this);
         super.onDestroy();
     }

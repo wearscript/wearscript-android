@@ -64,10 +64,10 @@ public class SocketClient {
         new Thread(new Runnable() {
             public void run() {
                 synchronized (this) {
-                    while (!client.isConnected()) {
+                    while (!client.isConnected() && !shutdown) {
                         client.connect();
                         try {
-                            Thread.sleep(100);
+                            Thread.sleep(500);
                         } catch (InterruptedException e) {
                         }
                     }
@@ -109,18 +109,18 @@ public class SocketClient {
 
         @Override
         public void onDisconnect(int i, String s) {
+            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket disconnected: i: " + i + " s: " + s);
             if (shutdown)
                 return;
             connected = false;
-            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket disconnected: i: " + i + " s: " + s);
             parent.onSocketDisconnect(i, s);
         }
 
         @Override
         public void onError(Exception e) {
+            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket errored: " + e.getLocalizedMessage());
             if (shutdown)
                 return;
-            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket errored: " + e.getLocalizedMessage());
             parent.onSocketError(e);
         }
 

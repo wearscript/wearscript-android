@@ -318,7 +318,7 @@ public class WearScript {
     }
 
     public void cardInsert(final int position, final String cardJSON) {
-        MainActivity a = bs.activity.get();
+        MainActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -331,7 +331,7 @@ public class WearScript {
     }
 
     public void cardModify(final int position, final String cardJSON) {
-        MainActivity a = bs.activity.get();
+        MainActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -345,7 +345,7 @@ public class WearScript {
     }
 
     public void cardTrim(final int position) {
-        MainActivity a = bs.activity.get();
+        MainActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -358,7 +358,7 @@ public class WearScript {
     }
 
     public void cardDelete(final int position) {
-        MainActivity a = bs.activity.get();
+        MainActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -371,7 +371,7 @@ public class WearScript {
     }
 
     public void cardPosition(final int position) {
-        MainActivity a = bs.activity.get();
+        MainActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
