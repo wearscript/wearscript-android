@@ -18,6 +18,11 @@ const (
 	// Created at http://code.google.com/apis/console, these identify our app for the OAuth protocol.
 	clientId     = ""
 	clientSecret = ""
+	
+	
+        // Created at https://github.com/settings/applications/new to support Gist integration
+        clientIdGH     = ""
+        clientSecretGH = ""
 
     // Server info
 	fullUrl      = "http://localhost:8080"  // Url to the server (e.g., https://example.com) for mirror api, this is the base url that you can connect to the server with.  If you are using a load balancer or other front end, use that url here.  If not then it is often http://yourhot:servePort
