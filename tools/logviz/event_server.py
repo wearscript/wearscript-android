@@ -38,7 +38,7 @@ def websocket_server(callback, port, **kw):
         logging.info('Glass connected')
         if environ["PATH_INFO"].startswith('/static/'):
             f = os.path.basename(os.path.abspath(environ["PATH_INFO"]))
-            mime = {'js': 'application/javascript', 'html': 'text/html', 'css': 'text/css'}
+            mime = {'js': 'application/javascript', 'html': 'text/html', 'css': 'text/css', 'png': 'image/png'}
             start_response("200 OK", [("Content-Type", mime[f.split('.')[-1]])])
             return STATIC_FILES[f]
         elif environ["PATH_INFO"] == '/':
@@ -137,7 +137,9 @@ def websocket_callback(ws, **kw):
 
 if __name__ == '__main__':
     STATIC_FILES = {os.path.basename(x):open(x).read()
-                    for x in glob.glob('static/*')}
+                    for x in glob.glob('static/*') if not os.path.isdir(x)}
+    STATIC_FILES.update({os.path.basename(x):open(x).read()
+                         for x in glob.glob('static/images/*')})
     TEMPLATE = open('static_private/template.html').read()
     #setup()
     parse(websocket_callback, argparse.ArgumentParser())
