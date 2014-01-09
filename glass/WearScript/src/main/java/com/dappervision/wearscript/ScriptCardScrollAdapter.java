@@ -48,6 +48,10 @@ public class ScriptCardScrollAdapter extends CardScrollAdapter implements Adapte
 
     public View cardFactory(String cardJSON) {
         JSONObject card = (JSONObject) JSONValue.parse(cardJSON);
+        return cardFactory(card);
+    }
+
+    public View cardFactory(JSONObject card) {
         String type = ((String) card.get("type"));
         if (type == null)
             return null;

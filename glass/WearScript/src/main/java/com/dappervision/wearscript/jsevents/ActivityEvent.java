@@ -8,7 +8,8 @@ public class ActivityEvent implements JSBusEvent {
         DESTROY,
         WEBVIEW,
         CARD_SCROLL,
-        OPENGL
+        OPENGL,
+        CARD_TREE
     }
 
     public ActivityEvent(Mode mode) {

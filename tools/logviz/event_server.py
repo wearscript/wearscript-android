@@ -118,17 +118,26 @@ def websocket_callback(ws, **kw):
         elif data[0] == 'slice':
             sensor_samples = {}
             user = data[1]
+            tags = db.smembers('%s:tags' % user)
             print(data)
             event_start_time, start_time, stop_time, event_stop_time = data[2:6]
             for sensor in sensors:
                 sensor_samples[sensor] = map(msgpack.loads, db.zrangebyscore(user + ':sensor:' + sensor, start_time, stop_time))
+            for tag in tags:
+                sensor_samples[tag] = map(msgpack.loads, db.zrangebyscore('%s:tag:%s' % (user, tag), start_time, stop_time))
+                print(sensor_samples[tag])
             images = db.zrangebyscore(user + ':images', start_time, stop_time, withscores=True)
             images = [x for _, x in images]
             ws.send('slice_data', user, event_start_time, start_time, stop_time, event_stop_time, sensor_samples, images)
+        elif data[0] == 'tag':  # 'tag', user, time, tag, value
+            db.zadd('%s:tag:%s' % (data[1], data[3]), data[2], msgpack.dumps([[data[4]], data[2], int(data[2] * 10**9)]))
+            db.sadd('%s:tags' % user, data[3])
+        elif data[0] == 'untag':  # 'untag', user, startTime, stopTime, tag
+            db.zremrangebyscore('%s:tag:%s' % (data[1], data[4]), data[2], data[3])
 
 if __name__ == '__main__':
     STATIC_FILES = {os.path.basename(x):open(x).read()
                     for x in glob.glob('static/*')}
     TEMPLATE = open('static_private/template.html').read()
-    setup()
+    #setup()
     parse(websocket_callback, argparse.ArgumentParser())

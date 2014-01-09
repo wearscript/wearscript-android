@@ -12,6 +12,7 @@ import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.AudioEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
+import com.dappervision.wearscript.jsevents.CardTreeEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.dappervision.wearscript.jsevents.OpenGLEvent;
@@ -404,6 +405,10 @@ public class WearScript {
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CARD_SCROLL));
     }
 
+    public void displayCardTree() {
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CARD_TREE));
+    }
+
     public void picarus(String config, String input, String callback) {
         Utils.eventBusPost(new PicarusEvent());
     }
@@ -411,6 +416,10 @@ public class WearScript {
     public void sound(String type) {
         Log.i(TAG, "sound");
         Utils.eventBusPost(new SoundEvent(type));
+    }
+
+    public void cardTree(String treeJS) {
+        Utils.eventBusPost(new CardTreeEvent(treeJS));
     }
 
     private Object glConvert(Object v) {

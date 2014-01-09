@@ -9,7 +9,7 @@
     <link type="text/css" rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css">
   </head>
   <body>
-    <div style="position:absolute"><img width="640px" id="scrubThumb"></div>
+    <div style="position:absolute;z-index: -1000;"><img width="640px" id="scrubThumb"></div>
     <div class="container">
       <div class="row">
         <h1>Overview</h1>
@@ -92,7 +92,7 @@
 			var event_start_time = Number(target.attr('data-start-time'));
 			var event_stop_time = Number(target.attr('data-stop-time'));
 			var start_time = event_start_time;
-			var stop_time = Math.min(start_time + 60, event_stop_time);
+			var stop_time = Math.min(start_time + 120, event_stop_time);
   	                ws.send(enc(['slice', target.attr('data-user'), event_start_time, start_time, stop_time, event_stop_time]))
 		    });
 		}
@@ -159,7 +159,8 @@
       function setupSlider(user, event_start_time, start_time, stop_time, event_stop_time) {
           $('#sliderParent').html("<div id='slider'></div>");
           var element = $('#slider');
-          var max_time = 60;
+          var max_time = 120;
+	  currentUser = user;
           var onslide = _.debounce(function(event, ui) {
               if (ui.values[1] <= ui.values[0]) return;
               // We don't have this data, would be better to get what we need and cache it
@@ -204,8 +205,16 @@
                   $('#slider').slider('values', 0, lastScrub);
               } else if (e.which == 122) { // z
                   $('#slider').slider('values', 1, lastScrub);
+              } else if (e.which == 116) { // t
+                  
               }
           });
+      }
+      function tag(t, v) {
+          ws.send(enc(['tag', currentUser, lastScrub, t, v]))
+      }
+      function untag(t) {
+          ws.send(enc(['untag', currentUser, sliceData[2], sliceData[5], t]))
       }
       function main () {
           IMAGE_CACHE = new LRUCache(25);

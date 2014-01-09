@@ -25,6 +25,7 @@ import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CameraEvents;
+import com.dappervision.wearscript.jsevents.CardTreeEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
@@ -38,9 +39,15 @@ import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
+import com.google.android.glass.app.Card;
 import com.google.android.glass.widget.CardScrollView;
+import com.kelsonprime.cardtree.Level;
+import com.kelsonprime.cardtree.Node;
 import com.kelsonprime.cardtree.Tree;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.msgpack.MessagePack;
 import org.msgpack.type.ArrayValue;
 import org.msgpack.type.Value;
@@ -73,7 +80,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     protected SocketClient client;
     public ScriptView webview;
-    private Tree tree;
     public String wsUrl;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
@@ -82,6 +88,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
     private View activityView;
+    private Tree cardTree;
     private String activityMode;
 
     public SocketClient getSocketClient() {
@@ -103,6 +110,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     activityView = cardScroller;
                 } else if (mode.equals("opengl")) {
                     activityView = getOpenGLManager().getView();
+                } else if (mode.equals("cardtree")) {
+                    activityView = cardTree;
                 } else {
                 }
                 if (activityView != null) {
@@ -341,7 +350,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void startDefaultScript() {
-        runScript("<script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
+        runScript("<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>");
     }
 
 
@@ -461,6 +470,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 String error = input.get(1).asRawValue().getString();
                 Log.e(TAG, "Lifecycle: Got server error: " + error);
                 sayInterrupt(error);
+            } else if (action.equals("lambda")) {
+                webview.loadUrl("javascript:" + input.get(1).asRawValue().getString());
             } else if (action.equals("sensors")) {
                 TreeMap<String, Integer> types = new TreeMap<String, Integer>();
                 Value[] typesKeyValues = input.get(2).asMapValue().getKeyValueArray();
@@ -594,6 +605,28 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         reset();
     }
 
+    public Level cardArrayToLevel(JSONArray array, Level level, Tree tree) {
+        for (Object o : array) {
+            JSONObject cardJS = (JSONObject)o;
+            JSONArray children = (JSONArray)cardJS.get("children");
+            if (children != null) {
+                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject)cardJS.get("card")), cardArrayToLevel(children, new Level(tree), tree)));
+            } else {
+                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject)cardJS.get("card"))));
+            }
+        }
+        return level;
+    }
+
+    public void onEventMainThread(CardTreeEvent e) {
+        // TODO(brandyn): This is a temporary solution, fix it
+        cardTree = new Tree(this.activity.get());
+        refreshActivityView();
+        JSONArray cardArray = (JSONArray)JSONValue.parse(e.getTreeJS());
+        cardArrayToLevel(cardArray, cardTree.getRoot(), cardTree);
+        cardTree.showRoot();
+    }
+
     public void setMainActivity(MainActivity a) {
         Log.i(TAG, "Lifecycle: BackgroundService: setMainActivity");
         if (this.activity != null) {
@@ -602,7 +635,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activity.finish();
         }
         this.activity = new WeakReference<MainActivity>(a);
-        tree = new Tree(a);
+        if (cardTree == null)
+            cardTree = new Tree(a);
     }
 
     @Override
@@ -627,6 +661,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEvent(ActivityEvent e) {
+        // TODO(brandyn): Change these strings to use the modes
         if (e.getMode() == ActivityEvent.Mode.CREATE) {
             Intent i = new Intent(this, MainActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -637,6 +672,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             updateActivityView("webview");
         } else if (e.getMode() == ActivityEvent.Mode.OPENGL) {
             updateActivityView("opengl");
+        } else if (e.getMode() == ActivityEvent.Mode.CARD_TREE) {
+            updateActivityView("cardtree");
         } else if (e.getMode() == ActivityEvent.Mode.CARD_SCROLL) {
             updateActivityView("cardscroll");
         }
