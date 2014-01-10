@@ -229,6 +229,12 @@ public class WearScript {
         Utils.eventBusPost(cr);
     }
 
+    public void cameraVideo(String callback) {
+        CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
+        cr.setEvent(CameraManager.VIDEO_PATH);
+        Utils.eventBusPost(cr);
+    }
+
     public void cameraOn(double imagePeriod) {
         Utils.eventBusPost(new CameraEvents.Start(imagePeriod));
     }

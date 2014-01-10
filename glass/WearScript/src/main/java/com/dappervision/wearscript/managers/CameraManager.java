@@ -38,6 +38,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     public static final String PHOTO = "PHOTO";
     public static final String PHOTO_PATH = "PHOTO_PATH";
     public static final String VIDEO = "VIDEO";
+    public static final String VIDEO_PATH = "VIDEO_PATH";
+
     private Camera camera;
     private byte[] buffer;
     private SurfaceTexture surfaceTexture;
@@ -94,7 +96,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         super.setupCallback(r);
         if (r.getEvent().equals(PHOTO) || r.getEvent().equals(PHOTO_PATH)) {
             cameraPhoto();
-        } else if (r.getEvent().equals(VIDEO)) {
+        } else if (r.getEvent().equals(VIDEO) || r.getEvent().equals(VIDEO_PATH)) {
             cameraVideo();
         }
     }
@@ -158,6 +160,11 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             if (resultCode == Activity.RESULT_OK) {
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
+                // TODO: Wait until video has been written
+                if (jsCallbacks.containsKey(VIDEO_PATH)) {
+                    makeCall(VIDEO_PATH, "'" + videoFilePath + "'");
+                    jsCallbacks.remove(VIDEO_PATH);
+                }
             } else if (resultCode == Activity.RESULT_CANCELED) {
 
             }
