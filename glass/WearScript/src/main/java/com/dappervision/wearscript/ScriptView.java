@@ -25,6 +25,8 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
 
     ScriptView(final BackgroundService context) {
         super(context);
+        // Enable localStorage in webview
+        getSettings().setDomStorageEnabled(true);
         Utils.getEventBus().register(this);
         this.context = context;
         clearCache(true);
