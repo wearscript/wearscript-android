@@ -4,15 +4,5 @@ config.go
 *.pyc
 *.swp
 *.swo
-glass/gen/
-glass/Glass/build/
-glass/.idea/
-glass/WearScript/WearScript.iml
-glass/glass.iml
-glass/opencv-android/build/
-glass/local.properties
-glass/.gradle/
-glass/Glass/Glass.iml
-glass/opencv-android/opencv-android.iml
 server/server
 vagrant/.vagrant
