@@ -118,7 +118,7 @@ def parse_calibration(calib, command_func, command_thresh):
     return plot_point
 
 def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, plot=False, calib=None, func=None, command_func=None, **kw):
-    camera_id = 0
+    camera_id = kw.get('camera_id', 0)
     camera = cv2.VideoCapture(camera_id)
     camera.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)
     camera.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
@@ -219,6 +219,7 @@ def main():
     parser.add_argument('--load')
     parser.add_argument('--command_thresh', type=int, default=6)
     parser.add_argument('--calib')
+    parser.add_argument('--camera_id', type=int, default=0)
     parser.add_argument('--plot', action='store_true')
     parser.add_argument('--debug', action='store_true')
     wearscript.parse(callback, parser)
