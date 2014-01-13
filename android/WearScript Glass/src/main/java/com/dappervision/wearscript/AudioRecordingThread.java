@@ -4,6 +4,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
+import com.dappervision.wearscript.core.Blob;
 import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.core.Utils;
 

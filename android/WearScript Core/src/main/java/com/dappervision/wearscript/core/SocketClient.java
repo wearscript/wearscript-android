@@ -1,7 +1,6 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.core;
 
 import com.codebutler.android_websockets.WebSocketClient;
-import com.dappervision.wearscript.core.Log;
 
 import org.apache.http.message.BasicNameValuePair;
 
@@ -18,13 +17,13 @@ public class SocketClient {
     private URI uri;
     private boolean connected;
 
-    SocketClient(URI uri, SocketListener listener, String callback) {
+    public SocketClient(URI uri, SocketListener listener, String callback) {
         this.listener = listener;
         this.uri = uri;
         this.callback = callback;
         this.shutdown = false;
         List<BasicNameValuePair> extraHeaders = Arrays.asList();
-        Log.i(BackgroundService.TAG, "Lifecycle: Socket connecting");
+        Log.i(TAG, "Lifecycle: Socket connecting");
         client = new WebSocketClient(uri, new LocalListener(listener), extraHeaders);
     }
 
@@ -60,7 +59,7 @@ public class SocketClient {
             if (shutdown)
                 return;
         }
-        Log.w(BackgroundService.TAG, "Lifecycle: Reconnecting socket");
+        Log.w(TAG, "Lifecycle: Reconnecting socket");
 
         new Thread(new Runnable() {
             public void run() {
@@ -77,7 +76,7 @@ public class SocketClient {
         }).start();
     }
 
-    interface SocketListener {
+    public interface SocketListener {
         public void onSocketConnect(String callback);
 
         public void onSocketDisconnect(int i, String s);
@@ -110,7 +109,7 @@ public class SocketClient {
 
         @Override
         public void onDisconnect(int i, String s) {
-            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket disconnected: i: " + i + " s: " + s);
+            Log.w(TAG, "Lifecycle: Underlying socket disconnected: i: " + i + " s: " + s);
             if (shutdown)
                 return;
             connected = false;
@@ -119,7 +118,7 @@ public class SocketClient {
 
         @Override
         public void onError(Exception e) {
-            Log.w(BackgroundService.TAG, "Lifecycle: Underlying socket errored: " + e.getLocalizedMessage());
+            Log.w(TAG, "Lifecycle: Underlying socket errored: " + e.getLocalizedMessage());
             if (shutdown)
                 return;
             parent.onSocketError(e);
