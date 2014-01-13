@@ -5,7 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.core.Utils;
 
 public class SetupActivity extends Activity {
     private static final String TAG = "SetupActivity";

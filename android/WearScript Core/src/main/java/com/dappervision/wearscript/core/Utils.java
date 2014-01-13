@@ -1,8 +1,6 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.core;
 
 import android.os.Environment;
-
-import com.dappervision.wearscript.core.Log;
 
 import java.io.File;
 import java.io.FileInputStream;

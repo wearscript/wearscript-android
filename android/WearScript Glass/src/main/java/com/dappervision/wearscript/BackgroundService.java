@@ -17,6 +17,7 @@ import android.view.ViewGroup;
 
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;

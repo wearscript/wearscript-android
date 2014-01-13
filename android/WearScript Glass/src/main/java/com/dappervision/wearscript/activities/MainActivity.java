@@ -13,7 +13,7 @@ import android.view.WindowManager;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.core.Log;
-import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.StartActivityEvent;
 

@@ -30,6 +30,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
