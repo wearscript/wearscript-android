@@ -1,3 +1,64 @@
+var speechRecognitionCallback = '';
+var ignore_onend;
+var final_transcript = '';
+
+function speechRecognition(callback) {
+    speechRecognitionCallback = callback;
+    recognition.start();
+}
+
+if (!('webkitSpeechRecognition' in window)) {
+  upgrade();
+} else {
+  var recognition = new webkitSpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onstart = function() {
+    recognizing = true;
+  };
+
+  recognition.onerror = function(event) {
+    if (event.error == 'no-speech') {
+      ignore_onend = true;
+    }
+    if (event.error == 'audio-capture') {
+      ignore_onend = true;
+    }
+    if (event.error == 'not-allowed') {
+      ignore_onend = true;
+    }
+  };
+
+  recognition.onend = function() {
+    recognizing = false;
+    if (ignore_onend) {
+      return;
+    }
+    if (!final_transcript) {
+      return;
+    }
+  };
+
+  recognition.onresult = function(event) {
+    var interim_transcript = '';
+    for (var i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        final_transcript = event.results[i][0].transcript;
+        $('#voice_recognition_prompt').remove();
+        console.log('speechRecognitionCallback: '+speechRecognitionCallback);
+        window[speechRecognitionCallback](final_transcript);
+        recognition.stop();
+      } else {
+        interim_transcript += event.results[i][0].transcript;
+      }
+    }
+    
+    
+  };
+}
+
+
 jQuery.cachedScript = function( url, options ) {
         // Allow user to set any option except for dataType, cache, and url
         options = $.extend( options || {}, {
@@ -224,8 +285,10 @@ function SimulatedWS(type) {
         this.sound = function() {
                 log("WS.sound is not implemented");
         }
-        this.speechRecognize = function () {
-                log('WS.speechRecognize is not implemented');
+        this.speechRecognize = function (prompt, callback) {
+                $('body').prepend('<link href="http://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css"><div id="voice_recognition_prompt" style="background:#000; width:560px; height:280px; position: absolute; left: 0; top: 0; padding:40px; z-index: 1; font:40px Roboto; color:#FFF; font-weight:100;">'+prompt+'</div>');
+                speechRecognition(callback);
+                log('WS.speechRecognize called');
         };
         this.wake = function () {
                 log('WS.wake is not implemented');
