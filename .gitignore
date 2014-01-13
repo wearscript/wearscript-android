@@ -2,6 +2,8 @@ config.go
 *.class
 *~
 *.pyc
+*.swp
+*.swo
 glass/gen/
 glass/Glass/build/
 glass/.idea/
