@@ -1,7 +1,7 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.core;
 
+import android.app.Activity;
 
-import com.dappervision.wearscript.activities.MainActivity;
 import com.joshdholtz.sentry.Sentry;
 import com.joshdholtz.sentry.Sentry.SentryEventBuilder.SentryEventLevel;
 
@@ -10,15 +10,15 @@ public class Log {
     private static final String TAG = "Log";
     private static boolean inited = false;
     private static String dsn = null;
-    private static MainActivity activity;
+    private static Activity activity;
 
-    public static void register(MainActivity act) {
+    public static void register(Activity act) {
         setup();
         activity = act;
         Sentry.init(activity, dsn);
     }
 
-    static void setDsn(String dsn) {
+    public static void setDsn(String dsn) {
         setup();
         Log.dsn = dsn;
         if (activity != null) {

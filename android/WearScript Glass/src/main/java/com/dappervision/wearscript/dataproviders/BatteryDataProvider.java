@@ -3,7 +3,7 @@ package com.dappervision.wearscript.dataproviders;
 import android.content.Intent;
 import android.os.BatteryManager;
 
-import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.WearScript;
 import com.dappervision.wearscript.managers.DataManager;
 

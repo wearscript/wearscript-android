@@ -1,7 +1,7 @@
 package com.dappervision.wearscript.managers;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;

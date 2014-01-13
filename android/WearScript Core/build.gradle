@@ -30,4 +30,5 @@ android {
 
 dependencies {
     compile 'de.greenrobot:eventbus:2.2.0'
+    compile files('libs/sentry-0.1.4.jar')
 }

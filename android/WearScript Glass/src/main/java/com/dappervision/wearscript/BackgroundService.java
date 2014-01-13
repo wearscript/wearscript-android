@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
@@ -39,7 +40,6 @@ import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
-import com.google.android.glass.app.Card;
 import com.google.android.glass.widget.CardScrollView;
 import com.kelsonprime.cardtree.Level;
 import com.kelsonprime.cardtree.Node;

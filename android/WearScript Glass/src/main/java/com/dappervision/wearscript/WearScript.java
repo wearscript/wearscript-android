@@ -4,6 +4,7 @@ import android.opengl.GLES20;
 import android.util.Base64;
 
 import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.LogEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
