@@ -5,10 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="/static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/static/bootstrap-glyphicons.css" rel="stylesheet">
     <link href="/static/rickshaw.min.css" rel="stylesheet" media="screen">
     <link type="text/css" rel="stylesheet" href="/static/jquery-ui.css">
   </head>
   <body>
+<div class="modal fade" id="tagModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Tags</h4>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
     <div style="position:absolute;z-index: -1000;"><img width="640px" id="scrubThumb"></div>
     <div class="container">
       <div class="row">
@@ -74,25 +90,43 @@
 			    chartData[chartId] = _.zip.apply(_, arrayOfRows);
 			}
 		    });
+		    templateData.sort(function (x, y) {if (x.name < y.name) return -1; else return 1;})
 		    graphs = [];
 		    $('#charts').html(Mustache.render(template, {charts: templateData}));
+		    chartData = padData(chartData, sliceData[3], sliceData[4]);
 		    _.each(chartData, function (x, y) {
 			buildChart($('#' + y), x);
 		    });
 		    setupSlider(sliceData[1], sliceData[2], sliceData[3], sliceData[4], sliceData[5]);
+              _.each(graphs, function (graph) {
+                  graph.window.xMin = sliceData[3];
+                  graph.window.xMax = sliceData[4];
+                  graph.update();
+              });
 		} else if (response[0] === 'image_data') {
 		    var imageuri = 'data:image/jpeg;base64,' + btoa(response[3]);
    	            IMAGE_CACHE.put(response[1] + ':' + response[2], imageuri);
                     setThumbnail(imageuri);
+		} else if (response[0] === 'tags') {
+		    var template = '<table>{{#tags}}<tr><td>{{.}}</td><td><div class="btn-group annotation-buttons"><button type="button" class="btn btn-default btn-small">-1</button><button type="button" class="btn btn-default btn-small">-1 to 0</button><button type="button" class="btn btn-default btn-small">-1 to 1</button><button type="button" class="btn btn-default btn-small">0</button><button type="button" class="btn btn-default btn-small">0 to -1</button><button type="button" class="btn btn-default btn-small">0 to 1</button><button type="button" class="btn btn-default btn-small">1</button><button type="button" class="btn btn-default btn-small">1 to 0</button><button type="button" class="btn btn-default btn-small">1 to -1</button></div></td></tr>{{/tags}}</table>';
+		    $('#tagModal .modal-body').html(Mustache.render(template, {tags: response[2]}));
+		    $('.annotation-buttons .btn').click(function () {
+			var $this = $(this);
+			var vals = _.map($this.text().split(' to '), function (x) {return Number(x)});
+			var name = $($(this).parent().parent().parent().children()[0]).text();
+			tag(lastScrubTag, name, vals[0]);
+			if (vals.length == 2)
+			    tag(lastScrubTag + .000001, name, vals[1]);
+		    });
 		} else if (response[0] === 'events') {
-		    var template = "<h1>{{user}}'s Events</h1>{{#events}}<a class='event-link' data-user='{{user}}' data-start-time='{{start_time}}' data-stop-time='{{stop_time}}' href='#{{user}}/{{start_time}}/{{stop_time}}'><h2 style='font-size: 10px'>{{start_time}} - {{stop_time}}</h2></a><div></div>{{/events}}";
+		    var template = "<h1>{{user}}'s Events</h1>{{#events}}<a class='event-link' data-user='{{user}}' data-start-time='{{start_time}}' data-stop-time='{{stop_time}}' href='#{{user}}/{{start_time}}/{{stop_time}}'><h2 style='font-size: 10px'>{{start_time}} - {{stop_time}} : {{unique_times}}</h2></a><div></div>{{/events}}";
 		    $('#events').append(Mustache.render(template, {events: response[2], user: response[1]}));
 		    $('.event-link').click(function (x) {
 			var target = $(x.target).parent();
 			var event_start_time = Number(target.attr('data-start-time'));
 			var event_stop_time = Number(target.attr('data-stop-time'));
 			var start_time = event_start_time;
-			var stop_time = Math.min(start_time + 120, event_stop_time);
+			var stop_time = Math.min(start_time + 240, event_stop_time);
   	                ws.send(enc(['slice', target.attr('data-user'), event_start_time, start_time, stop_time, event_stop_time]))
 		    });
 		}
@@ -105,6 +139,32 @@
         $('#scrubThumb').attr('src', imageuri);
 	$('#scrubThumb').parent().css({'top': mouseY, 'left': mouseX});
     }
+
+      function padData(chartData, startTime, stopTime) {
+          var chartDataOut = {};
+	  _.each(chartData, function (timeData, y) {
+              var times = timeData[0];
+              var data = timeData.slice(1);
+	      if (startTime < times[0]) {
+                  chartDataOut[y] = [[startTime].concat(times, [stopTime])];
+                  _.each(data, function (values, z) {
+		      chartDataOut[y].push([0].concat(values, [0]));
+                  });
+              } else {
+                  chartDataOut[y] = [times];
+                  _.each(data, function (values, z) {
+		      chartDataOut[y].push(values);
+                  });
+              }
+	      if (times[times.length - 1] < stopTime) {
+                  chartDataOut[y][0].push(stopTime);
+                  _.each(data, function (values, z) {
+                      chartDataOut[y][z + 1].push(0);
+                  });
+              }
+	  });
+          return chartDataOut;
+      }
       function buildChart(chart, timeData) {
           //element.append($('<div>').attr('class', 'chart'))
           //element.append($('<div>').attr('class', 'slider'))
@@ -112,10 +172,10 @@
           //var slider = element.find('.slider');
           // data: Lists of sensor data (each list is a list of values)
           var colors = ['red', 'green', 'blue'];
-          var minDomain = 1000;
-          var maxDomain = -1000;
           var times = timeData[0];
           var data = timeData.slice(1);
+          var minDomain = 1000;
+          var maxDomain = -1000;
           _.each(data, function (values, z) {
               _.each(values, function (y) {
                   minDomain = Math.min(minDomain, y);
@@ -124,12 +184,13 @@
           });
           var seriesData = _.map(data, function (values, z) {
               var curData = _.map(values, function (y, x) { return {x: times[x], y: y}});
-              return {data: curData, name: String(z), color: colors[z], scale: d3.scale.linear().domain([minDomain, maxDomain]).nice()};
+              return {data: curData, name: String(z), color: colors[z], scale: d3.scale.linear().domain([minDomain, maxDomain])};
           });
           var graph = new Rickshaw.Graph({
               element: chart[0],
               renderer: 'line',
               width: 1200,
+	      interpolation: 'step-after',
               height: 200,
               series: seriesData
           });
@@ -159,7 +220,7 @@
       function setupSlider(user, event_start_time, start_time, stop_time, event_stop_time) {
           $('#sliderParent').html("<div id='slider'></div>");
           var element = $('#slider');
-          var max_time = 120;
+          var max_time = 240;
 	  currentUser = user;
           var onslide = _.debounce(function(event, ui) {
               if (ui.values[1] <= ui.values[0]) return;
@@ -206,12 +267,13 @@
               } else if (e.which == 122) { // z
                   $('#slider').slider('values', 1, lastScrub);
               } else if (e.which == 116) { // t
-                  
+                  lastScrubTag = lastScrub;
+                  $('#tagModal').modal();
               }
           });
       }
-      function tag(t, v) {
-          ws.send(enc(['tag', currentUser, lastScrub, t, v]))
+      function tag(curTime, name, value) {
+          ws.send(enc(['tag', currentUser, curTime, name, value]))
       }
       function untag(t) {
           ws.send(enc(['untag', currentUser, sliceData[2], sliceData[5], t]))
