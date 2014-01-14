@@ -1,4 +1,6 @@
-package com.dappervision.wearscript.jsevents;
+package com.dappervision.wearscript.core.jsevents;
+
+import com.dappervision.wearscript.core.jsevents.JSBusEvent;
 
 public class BarcodeEvent implements JSBusEvent {
     private String format;

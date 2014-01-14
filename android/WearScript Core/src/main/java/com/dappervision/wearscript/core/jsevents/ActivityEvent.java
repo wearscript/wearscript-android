@@ -1,4 +1,6 @@
-package com.dappervision.wearscript.jsevents;
+package com.dappervision.wearscript.core.jsevents;
+
+import com.dappervision.wearscript.core.jsevents.JSBusEvent;
 
 public class ActivityEvent implements JSBusEvent {
     private Mode mode;

@@ -1,6 +1,8 @@
-package com.dappervision.wearscript.jsevents;
+package com.dappervision.wearscript.core.jsevents;
 
 import android.content.Intent;
+
+import com.dappervision.wearscript.core.jsevents.JSBusEvent;
 
 public class ActivityResultEvent implements JSBusEvent {
     private int requestCode;

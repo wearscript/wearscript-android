@@ -1,5 +1,6 @@
 package com.dappervision.wearscript.jsevents;
 
+import com.dappervision.wearscript.core.jsevents.JSBusEvent;
 import com.dappervision.wearscript.managers.CameraManager;
 
 public class CameraEvents {

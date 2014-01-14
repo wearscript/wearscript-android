@@ -1,4 +1,4 @@
-package com.dappervision.wearscript.jsevents;
+package com.dappervision.wearscript.core.jsevents;
 
 import android.content.Intent;
 
