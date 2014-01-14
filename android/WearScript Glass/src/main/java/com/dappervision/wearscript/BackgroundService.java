@@ -1,6 +1,6 @@
 package com.dappervision.wearscript;
 
-import android.app.Service;
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,14 +10,15 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.speech.RecognizerIntent;
-import android.speech.tts.TextToSpeech;
-import android.speech.tts.TextToSpeech.OnInitListener;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.core.Blob;
 import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.ScriptActivity;
+import com.dappervision.wearscript.core.ScriptService;
+import com.dappervision.wearscript.core.ScriptView;
 import com.dappervision.wearscript.core.SocketClient;
 import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
@@ -29,7 +30,7 @@ import com.dappervision.wearscript.core.events.ShutdownEvent;
 import com.dappervision.wearscript.core.jsevents.ActivityEvent;
 import com.dappervision.wearscript.core.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CameraEvents;
-import com.dappervision.wearscript.core.jsevents.CardTreeEvent;
+import com.dappervision.wearscript.jsevents.CardTreeEvent;
 import com.dappervision.wearscript.core.jsevents.DataLogEvent;
 import com.dappervision.wearscript.core.jsevents.PicarusEvent;
 import com.dappervision.wearscript.core.jsevents.SayEvent;
@@ -60,29 +61,23 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import static org.msgpack.template.Templates.TValue;
 import static org.msgpack.template.Templates.tList;
 
-public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SocketClient.SocketListener {
+public class BackgroundService extends ScriptService implements AudioRecord.OnRecordPositionUpdateListener {
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
-    public MainActivity activity;
     public boolean dataRemote, dataLocal, dataWifi;
     public double lastSensorSaveTime, sensorDelay;
     protected static String TAG = "WearScript";
-    protected TextToSpeech tts;
+
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
     MessagePack msgpack = new MessagePack();
     private String speechCallback;
-
-    protected SocketClient client;
-    public ScriptView webview;
-    public String wsUrl;
 
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
@@ -98,9 +93,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void updateActivityView(final String mode) {
-        if (activity == null)
+        if (getScriptActivity() == null)
             return;
-        final MainActivity a = activity;
+        final Activity a = getScriptActivity();
         a.runOnUiThread(new Thread() {
             public void run() {
                 activityMode = mode;
@@ -130,13 +125,18 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         updateActivityView(activityMode);
     }
 
-    public void resetDefaultUrl() {
-        byte[] wsUrlArray = Utils.LoadData("", "qr.txt");
-        if (wsUrlArray == null) {
-            say("Must setup wear script");
-            return;
-        }
-        wsUrl = (new String(wsUrlArray)).trim();
+    @Override
+    public void onPause() {
+        getCameraManager().pause();
+        getOpenGLManager().getView().onPause();
+    }
+
+    @Override
+    public void onResume() {
+        removeAllViews();
+        refreshActivityView();
+        getCameraManager().resume();
+        getOpenGLManager().getView().onResume();
     }
 
     public View getActivityView() {
@@ -281,17 +281,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void shutdown() {
+        super.shutdown();
         synchronized (lock) {
             reset();
             if (broadcastReceiver != null) {
                 unregisterReceiver(broadcastReceiver);
                 broadcastReceiver = null;
             }
-            if (tts != null) {
-                tts.stop();
-                tts.shutdown();
-            }
-            Utils.getEventBus().unregister(this);
+
             ManagerManager.get().shutdownAll();
 
             Log.d(TAG, "Disconnecting client");
@@ -299,9 +296,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 client.shutdown();
                 client = null;
             }
-            if (activity == null)
+            if (getScriptActivity() == null)
                 return;
-            final MainActivity a = activity;
+            final ScriptActivity a = getScriptActivity();
             if (a == null) {
                 Log.d(TAG, "Stop self not activity");
                 stopSelf();
@@ -311,7 +308,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 public void run() {
                     Log.d(TAG, "Lifecycle: Stop self activity");
                     a.bs.stopSelf();
-                    a.bs.activity = null;
+                    a.bs.setScriptActivity(null);
                     a.bs = null;
                     a.finish();
                 }
@@ -340,8 +337,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             ManagerManager.get().resetAll();
             // TODO(brandyn): Verify that if we create a new activity that the gestures still work
             if (ManagerManager.get().get(GestureManager.class) == null) {
-                if (activity != null) {
-                    MainActivity a = activity;
+                if (getScriptActivity() != null) {
+                    Activity a = getScriptActivity();
                     if (a != null)
                         ManagerManager.get().add(new GestureManager(a, this));
                 }
@@ -350,7 +347,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
-    public void startDefaultScript() {
+    public void runDefaultScript() {
         runScript("<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>");
     }
 
@@ -371,9 +368,9 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void updateCardScrollView() {
-        if (activity == null)
+        if (getScriptActivity() == null)
             return;
-        final MainActivity a = activity;
+        final Activity a = getScriptActivity();
         if (a == null)
             return;
         a.runOnUiThread(new Thread() {
@@ -434,9 +431,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (action.equals("startScript")) {
                 final String script = input.get(1).asRawValue().getString();
                 Log.i(TAG, "WebView:" + Integer.toString(script.length()));
-                if (activity == null)
-                    return;
-                final MainActivity a = activity;
+                final Activity a = getScriptActivity();
                 if (a == null)
                     return;
                 a.runOnUiThread(new Thread() {
@@ -455,9 +450,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 Utils.SaveData(script.getBytes(), "scripts/", false, name + ".html");
             } else if (action.equals("startScriptUrl")) {
                 final String url = input.get(1).asRawValue().getString();
-                if (activity == null)
-                    return;
-                final MainActivity a = activity;
+                final Activity a = getScriptActivity();
                 if (a == null)
                     return;
                 a.runOnUiThread(new Thread() {
@@ -540,22 +533,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.w(TAG, "WS: Connection Error!", error);
     }
 
-    public void runScript(String script) {
-        reset();
-        synchronized (lock) {
-            // TODO(brandyn): Refactor these as they are similar
-            webview = createScriptView();
-            updateActivityView("webview");
-            webview.getSettings().setJavaScriptEnabled(true);
-            webview.addJavascriptInterface(new WearScript(this), "WS");
-            Log.d(TAG, "WebView:" + script);
-            String path = Utils.SaveData(script.getBytes(), "scripting/", false, "script.html");
-            webview.setInitialScale(100);
-            webview.loadUrl("file://" + path);
-            Log.i(TAG, "WebView Ran");
-        }
-    }
-
     public void runScriptUrl(String url) {
         reset();
         synchronized (lock) {
@@ -579,8 +556,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     @Override
     public void onCreate() {
+        super.onCreate();
         Log.i(TAG, "Lifecycle: Service onCreate");
-        Utils.getEventBus().register(this);
 
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
@@ -591,8 +568,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         //Plugin new Managers here
         ManagerManager.get().newManagers(this);
-
-        tts = new TextToSpeech(this, this);
 
         glassID = getWifiManager().getMacAddress();
 
@@ -621,34 +596,24 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void onEventMainThread(CardTreeEvent e) {
         // TODO(brandyn): This is a temporary solution, fix it
-        cardTree = new Tree(this.activity);
+        cardTree = new Tree(getScriptActivity());
         refreshActivityView();
         JSONArray cardArray = (JSONArray)JSONValue.parse(e.getTreeJS());
         cardArrayToLevel(cardArray, cardTree.getRoot(), cardTree);
         cardTree.showRoot();
     }
 
-    public void setMainActivity(MainActivity a) {
-        Log.i(TAG, "Lifecycle: BackgroundService: setMainActivity");
-        if (this.activity != null) {
-            activity.finish();
-        }
-        this.activity = a;
+    @Override
+    public void setScriptActivity(ScriptActivity activity) {
+        super.setScriptActivity(activity);
         if (cardTree == null)
-            cardTree = new Tree(a);
+            cardTree = new Tree(activity);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Service onStartCommand");
         return START_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-        Log.i(TAG, "Lifecycle: Service onDestroy");
-        shutdown();
-        super.onDestroy();
     }
 
     public void onEvent(JsCall e) {
@@ -666,7 +631,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
         } else if (e.getMode() == ActivityEvent.Mode.DESTROY) {
-            activity.finish();
+            getScriptActivity().finish();
         } else if (e.getMode() == ActivityEvent.Mode.WEBVIEW) {
             updateActivityView("webview");
         } else if (e.getMode() == ActivityEvent.Mode.OPENGL) {
@@ -758,27 +723,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.i(TAG, "Audio period");
     }
 
-    public void say(String text) {
-        if (tts == null)
-            return;
-        if (!tts.isSpeaking())
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH,
-                    null);
-    }
-
-    public void sayInterrupt(String text) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-    }
-
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            int result = tts.setLanguage(Locale.US);
-            // TODO: Check result
-        }
-        // TODO: Check result on else
-    }
-
     public CameraManager getCameraManager() {
         return (CameraManager) ManagerManager.get().get(CameraManager.class);
     }
@@ -830,11 +774,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         speechCallback = callback;
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT, prompt);
-        activity.startActivityForResult(intent, 1002);
+        getScriptActivity().startActivityForResult(intent, 1002);
     }
 
     public ScriptView createScriptView() {
-        ScriptView mCallback = new ScriptView(this);
+        ScriptView mCallback = new GlassScriptView(this);
         return mCallback;
     }
 
@@ -844,7 +788,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.d(TAG, "Got request code: " + requestCode);
         if (requestCode == 1002) {
             Log.d(TAG, "Spoken Text Result");
-            if (resultCode == activity.RESULT_OK) {
+            if (resultCode == MainActivity.RESULT_OK) {
                 List<String> results = intent.getStringArrayListExtra(
                         RecognizerIntent.EXTRA_RESULTS);
                 String spokenText = results.get(0);
@@ -853,7 +797,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     return;
                 // TODO(brandyn): Check speech result for JS injection that can escape out of the quotes
                 loadUrl(String.format("javascript:%s(\"%s\");", speechCallback, spokenText));
-            } else if (resultCode == activity.RESULT_CANCELED) {
+            } else if (resultCode == MainActivity.RESULT_CANCELED) {
 
             }
         }

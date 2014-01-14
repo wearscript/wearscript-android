@@ -3,7 +3,6 @@ package com.dappervision.wearscript;
 import android.opengl.GLES20;
 import android.util.Base64;
 
-import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.core.Blob;
 import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.core.Utils;
@@ -15,9 +14,9 @@ import com.dappervision.wearscript.core.jsevents.ActivityEvent;
 import com.dappervision.wearscript.core.jsevents.AudioEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
-import com.dappervision.wearscript.core.jsevents.CardTreeEvent;
+import com.dappervision.wearscript.jsevents.CardTreeEvent;
 import com.dappervision.wearscript.core.jsevents.DataLogEvent;
-import com.dappervision.wearscript.core.jsevents.LiveCardEvent;
+import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.dappervision.wearscript.core.jsevents.OpenGLEvent;
 import com.dappervision.wearscript.core.jsevents.OpenGLEventCustom;
 import com.dappervision.wearscript.core.jsevents.OpenGLRenderEvent;
@@ -327,22 +326,17 @@ public class WearScript {
     }
 
     public void cardInsert(final int position, final String cardJSON) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardInsert: " + position);
                     bs.getCardScrollAdapter().cardInsert(position, cardJSON);
                     bs.updateCardScrollView();
-                }
+           }
             });
-        }
     }
 
     public void cardModify(final int position, final String cardJSON) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardModify: " + position);
                     bs.getCardScrollAdapter().cardModify(position, cardJSON);
@@ -350,45 +344,35 @@ public class WearScript {
                     bs.updateCardScrollView();
                 }
             });
-        }
     }
 
     public void cardTrim(final int position) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardTrim: " + position);
                     bs.getCardScrollAdapter().cardTrim(position);
                     bs.updateCardScrollView();
                 }
             });
-        }
     }
 
     public void cardDelete(final int position) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardDelete: " + position);
                     bs.getCardScrollAdapter().cardDelete(position);
                     bs.updateCardScrollView();
                 }
             });
-        }
     }
 
     public void cardPosition(final int position) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardPosition: " + position);
                     bs.cardPosition(position);
                 }
             });
-        }
     }
 
     public String cardFactory(String text, String info) {

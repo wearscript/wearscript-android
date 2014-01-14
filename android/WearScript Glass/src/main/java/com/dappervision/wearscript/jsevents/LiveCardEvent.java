@@ -1,4 +1,6 @@
-package com.dappervision.wearscript.core.jsevents;
+package com.dappervision.wearscript.jsevents;
+
+import com.dappervision.wearscript.core.jsevents.JSBusEvent;
 
 public class LiveCardEvent implements JSBusEvent {
     private boolean nonSilent;

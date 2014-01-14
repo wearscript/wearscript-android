@@ -8,16 +8,16 @@ import android.view.SurfaceHolder;
 import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
-import android.webkit.WebView;
 
 import com.dappervision.wearscript.activities.MenuActivity;
 import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.ScriptView;
 import com.dappervision.wearscript.core.Utils;
-import com.dappervision.wearscript.core.jsevents.LiveCardEvent;
+import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
 
-public class ScriptView extends WebView implements SurfaceHolder.Callback {
+public class GlassScriptView extends ScriptView {
     private static final String TAG = "ScriptView";
     private final BackgroundService context;
     private LiveCard liveCard;
@@ -25,7 +25,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
     private final Handler handler;
     private long drawFrequency;
 
-    ScriptView(final BackgroundService context) {
+    GlassScriptView(final BackgroundService context) {
         super(context);
         // Enable localStorage in webview
         getSettings().setDomStorageEnabled(true);
