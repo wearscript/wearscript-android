@@ -5,7 +5,7 @@ import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.activities.QRActivity;
-import com.dappervision.wearscript.jsevents.BarcodeEvent;
+import com.dappervision.wearscript.core.jsevents.BarcodeEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
 public class BarcodeManager extends Manager {

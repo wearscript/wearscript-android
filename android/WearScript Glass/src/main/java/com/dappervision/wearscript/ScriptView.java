@@ -13,7 +13,7 @@ import android.webkit.WebView;
 import com.dappervision.wearscript.activities.MenuActivity;
 import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.core.Utils;
-import com.dappervision.wearscript.jsevents.LiveCardEvent;
+import com.dappervision.wearscript.core.jsevents.LiveCardEvent;
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
 

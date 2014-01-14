@@ -14,8 +14,8 @@ import android.view.WindowManager;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.core.Utils;
-import com.dappervision.wearscript.jsevents.ActivityResultEvent;
-import com.dappervision.wearscript.jsevents.StartActivityEvent;
+import com.dappervision.wearscript.core.jsevents.ActivityResultEvent;
+import com.dappervision.wearscript.core.jsevents.StartActivityEvent;
 
 public class MainActivity extends Activity {
     protected static final String TAG = "WearScript";

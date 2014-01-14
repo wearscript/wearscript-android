@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 
 import com.dappervision.wearscript.core.Utils;
-import com.dappervision.wearscript.events.ShutdownEvent;
+import com.dappervision.wearscript.core.events.ShutdownEvent;
 
 public class StopActivity extends Activity {
     @Override

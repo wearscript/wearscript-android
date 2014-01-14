@@ -11,7 +11,7 @@ import com.dappervision.wearscript.dataproviders.DataProvider;
 import com.dappervision.wearscript.dataproviders.GPSDataProvider;
 import com.dappervision.wearscript.dataproviders.NativeDataProvider;
 import com.dappervision.wearscript.dataproviders.RemoteDataProvider;
-import com.dappervision.wearscript.jsevents.SensorJSEvent;
+import com.dappervision.wearscript.core.jsevents.SensorJSEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
 
