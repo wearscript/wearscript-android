@@ -53,8 +53,6 @@ if (!('webkitSpeechRecognition' in window)) {
         interim_transcript += event.results[i][0].transcript;
       }
     }
-    
-    
   };
 }
 
@@ -134,18 +132,11 @@ function runScript(script) {
 function loadLibraries() {
         $.cachedScript("msgpack.js");
         $.cachedScript("reconnecting-websocket.min.js");
-        $.cachedScript("mespeak.js").done(function(a,b) {
-                if (!meSpeak.isConfigLoaded()){
-                        meSpeak.loadConfig("mespeak_config.json");
-                }
-                if (!meSpeak.isVoiceLoaded('en-us')) {
-                        meSpeak.loadVoice('en-us.json');
-                }
-        });
 }
 
 function say(msg) {
-        meSpeak.speak(msg);
+        var foo = new SpeechSynthesisUtterance(msg);
+        window.speechSynthesis.speak(foo);
 }
 
 function SimulatedGlass(WSUrl) {
