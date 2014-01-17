@@ -18,7 +18,7 @@ public class Log {
         Sentry.init(activity, dsn);
     }
 
-    static void setDsn(String dsn) {
+    static public void setDsn(String dsn) {
         setup();
         Log.dsn = dsn;
         if (activity != null) {

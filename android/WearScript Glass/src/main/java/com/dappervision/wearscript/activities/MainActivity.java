@@ -16,6 +16,8 @@ import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.StartActivityEvent;
+import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.OpenGLManager;
 
 public class MainActivity extends Activity {
     protected static final String TAG = "WearScript";
@@ -60,15 +62,15 @@ public class MainActivity extends Activity {
                     Log.i(TAG, "Lifecycle: Recycling webview");
                     bs.removeAllViews();
                     bs.refreshActivityView();
-                    bs.getCameraManager().resume();
+                    ((CameraManager)bs.getManager(CameraManager.class)).resume();
                     return;
                 }
                 Log.i(TAG, "Lifecycle: Creating new webview");
 
-                bs.resetDefaultUrl();
                 if (extra != null) {
-                    Log.i(TAG, "Extra script");
-                    bs.runScriptUrl(extra);
+                    Log.i(TAG, "Extra script: " + extra);
+                    // TODO(brandyn): Get launcher scripts working again
+                    //bs.runScriptUrl(extra);
                 } else {
                     Log.i(TAG, "Default script");
                     bs.startDefaultScript();
@@ -92,7 +94,7 @@ public class MainActivity extends Activity {
         isForeground = false;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
-            bs.getOpenGLManager().getView().onPause();
+            ((OpenGLManager)bs.getManager(OpenGLManager.class)).getView().onPause();
         }
         super.onPause();
     }
@@ -102,8 +104,8 @@ public class MainActivity extends Activity {
         Log.i(TAG, "Lifecycle: MainActivity: onResume");
         isForeground = true;
         if (bs != null) {
-            bs.getCameraManager().resume();
-            bs.getOpenGLManager().getView().onResume();
+            ((CameraManager)bs.getManager(CameraManager.class)).resume();
+            ((OpenGLManager)bs.getManager(OpenGLManager.class)).getView().onResume();
         }
         super.onResume();
     }
@@ -122,7 +124,7 @@ public class MainActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_CAMERA) {
             if (bs != null)
-                bs.getCameraManager().pause();
+                ((CameraManager)bs.getManager(CameraManager.class)).pause();
             return false;
         } else {
             return super.onKeyDown(keyCode, event);
@@ -136,31 +138,7 @@ public class MainActivity extends Activity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.i(TAG, "Request code: " + requestCode + " Result code: " + resultCode);
-        if (requestCode == 0) {
-            String contents = null;
-            if (resultCode == RESULT_OK) {
-                contents = intent.getStringExtra("SCAN_RESULT");
-                String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
-                Log.i(TAG, "QR: " + contents + " Format: " + format);
-                Utils.SaveData(contents.getBytes(), "", false, "qr.txt");
-            } else if (resultCode == RESULT_CANCELED) {
-                // Reuse local config
-                Log.i(TAG, "QR: Canceled, using previous scan");
-                byte[] contentsArray = Utils.LoadData("", "qr.txt");
-                if (contentsArray == null) {
-                    bs.say("Please exit and scan the QR code");
-                    return;
-                }
-                contents = (new String(contentsArray)).trim();
-                // TODO: We want to allow reentry into a running app
-            }
-            // TODO(brandyn): Handle case where we want to re-enter webview and not reset it
-            bs.reset();
-            bs.wsUrl = contents;
-            bs.runScript("<script>function s() {WS.say('Server connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script>");
-        } else {
-            Utils.eventBusPost(new ActivityResultEvent(requestCode, resultCode, intent));
-        }
+        Utils.eventBusPost(new ActivityResultEvent(requestCode, resultCode, intent));
     }
 
     @Override

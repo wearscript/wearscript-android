@@ -11,6 +11,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
 import com.dappervision.wearscript.activities.MenuActivity;
+import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
@@ -34,7 +35,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 String msg = cm.message() + " -- From line " + cm.lineNumber() + " of " + cm.sourceId();
                 Log.w("WearScriptWebView", msg);
-                context.log("WebView: " + msg);
+                Utils.eventBusPost(new SendEvent("log", "WebView: " + msg));
                 return true;
             }
         });
