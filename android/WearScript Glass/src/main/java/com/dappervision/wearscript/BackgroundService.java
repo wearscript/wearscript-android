@@ -19,7 +19,9 @@ import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
-import com.dappervision.wearscript.events.LogEvent;
+import com.dappervision.wearscript.events.LambdaEvent;
+import com.dappervision.wearscript.events.ScriptEvent;
+import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
@@ -33,13 +35,14 @@ import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
-import com.google.android.glass.app.Card;
 import com.google.android.glass.widget.CardScrollView;
 import com.kelsonprime.cardtree.Level;
 import com.kelsonprime.cardtree.Node;
@@ -49,50 +52,39 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.msgpack.MessagePack;
-import org.msgpack.type.ArrayValue;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
-import static org.msgpack.template.Templates.TValue;
-import static org.msgpack.template.Templates.tList;
-
-public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener, SocketClient.SocketListener {
+public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
+    protected static String TAG = "WearScript";
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     public MainActivity activity;
     public boolean dataRemote, dataLocal, dataWifi;
     public double lastSensorSaveTime, sensorDelay;
-    protected static String TAG = "WearScript";
-    protected TextToSpeech tts;
-    protected ScreenBroadcastReceiver broadcastReceiver;
-    protected String glassID;
-    MessagePack msgpack = new MessagePack();
-    private String speechCallback;
-
-    protected SocketClient client;
     public ScriptView webview;
     public String wsUrl;
-
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public String wifiScanCallback;
+    protected TextToSpeech tts;
+    protected ScreenBroadcastReceiver broadcastReceiver;
+    protected String glassID;
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
+    MessagePack msgpack = new MessagePack();
+    private String speechCallback;
     private View activityView;
     private Tree cardTree;
     private String activityMode;
-
-    public SocketClient getSocketClient() {
-        return client;
-    }
 
     public void updateActivityView(final String mode) {
         if (activity == null)
@@ -106,7 +98,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 } else if (mode.equals("cardscroll")) {
                     activityView = cardScroller;
                 } else if (mode.equals("opengl")) {
-                    activityView = getOpenGLManager().getView();
+                    activityView = ((OpenGLManager) getManager(OpenGLManager.class)).getView();
                 } else if (mode.equals("cardtree")) {
                     activityView = cardTree;
                 } else {
@@ -127,13 +119,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         updateActivityView(activityMode);
     }
 
-    public void resetDefaultUrl() {
+    static public String getDefaultUrl() {
         byte[] wsUrlArray = Utils.LoadData("", "qr.txt");
         if (wsUrlArray == null) {
-            say("Must setup wear script");
-            return;
+            Utils.eventBusPost(new SayEvent("Must setup wear script", false));
+            return "";
         }
-        wsUrl = (new String(wsUrlArray)).trim();
+        return (new String(wsUrlArray)).trim();
     }
 
     public View getActivityView() {
@@ -190,11 +182,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         final TreeMap<String, ArrayList<Value>> curSensorBuffer = sensorBuffer;
         if (curSensorBuffer.isEmpty())
             return;
+        ConnectionManager cm = (ConnectionManager) getManager(ConnectionManager.class);
+        ArrayList<Value> output = new ArrayList<Value>();
+        String channel = cm.getChannelFromSubChannel(ConnectionManager.SENSORS_SUBCHAN);
+        output.add(ValueFactory.createRawValue(channel));
         sensorBuffer = new TreeMap<String, ArrayList<Value>>();
+        if (!(dataRemote && cm.channelExists(channel)) && !dataLocal)
+            return;
 
-        List<Value> output = new ArrayList<Value>();
-        output.add(ValueFactory.createRawValue("sensors"));
-        output.add(ValueFactory.createRawValue(glassID));
         ArrayList<Value> sensorTypes = new ArrayList();
         for (String k : this.sensorTypes.navigableKeySet()) {
             sensorTypes.add(ValueFactory.createRawValue(k));
@@ -217,15 +212,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             e.printStackTrace();
             return;
         }
-        if (dataLocal) {
+        if (dataRemote && cm.channelExists(channel))
+            Utils.eventBusPost(new SendEvent(channel, dataStr));
+        if (dataLocal)
             Utils.SaveData(dataStr, "data/", true, ".msgpack");
-        }
-        if (dataRemote) {
-            if (clientConnected())
-                synchronized (lock) {
-                    client.send(dataStr);
-                }
-        }
     }
 
     public void onEventAsync(CameraEvents.Frame frameEvent) {
@@ -240,40 +230,15 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
                 Utils.SaveData(frameJPEG, "data/", true, ".jpg");
             }
-            if (dataRemote) {
+            ConnectionManager cm = (ConnectionManager) getManager(ConnectionManager.class);
+            String channel = cm.getChannelFromSubChannel(ConnectionManager.IMAGE_SUBCHAN);
+            if (dataRemote && cm.channelExists(channel)) {
                 if (frameJPEG == null)
                     frameJPEG = frame.getJPEG();
-                List<Value> output = new ArrayList<Value>();
-                output.add(ValueFactory.createRawValue("image"));
-                output.add(ValueFactory.createRawValue(glassID));
-                output.add(ValueFactory.createFloatValue(System.currentTimeMillis() / 1000.));
-                output.add(ValueFactory.createRawValue(frameJPEG));
-                final byte[] dataStr;
-                try {
-                    dataStr = msgpack.write(output);
-                } catch (IOException e) {
-                    Log.e(TAG, "Couldn't serialize msgpack");
-                    e.printStackTrace();
-                    return;
-                }
-                if (clientConnected())
-                    synchronized (lock) {
-                        client.send(dataStr);
-                    }
+                Utils.eventBusPost(new SendEvent(channel, System.currentTimeMillis() / 1000., ValueFactory.createRawValue(frameJPEG)));
             }
         } finally {
             frameEvent.done();
-        }
-    }
-
-    private boolean clientConnected() {
-        synchronized (lock) {
-            if (client == null)
-                return false;
-            if (!client.isConnected()) {
-                client.reconnect();
-            }
-            return client.isConnected();
         }
     }
 
@@ -291,11 +256,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             Utils.getEventBus().unregister(this);
             ManagerManager.get().shutdownAll();
 
-            Log.d(TAG, "Disconnecting client");
-            if (client != null) {
-                client.shutdown();
-                client = null;
-            }
             if (activity == null)
                 return;
             final MainActivity a = activity;
@@ -348,9 +308,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void startDefaultScript() {
-        runScript("<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>");
+        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
+        String path = Utils.SaveData(data, "scripting/", false, "glass.html");
+        Utils.eventBusPost(new ScriptEvent(path));
     }
-
 
     public void wake() {
         final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -380,191 +341,23 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         });
     }
 
-    public void serverConnect(String url, final String callback) {
-        Log.i(TAG, "WS Setup");
-        synchronized (lock) {
-            if (url.equals("{{WSUrl}}")) {
-                // NOTE(brandyn): This means that we use the system default and not the previously
-                // set url (e.g., if it was changed manually by a script)
-                resetDefaultUrl();
-                url = wsUrl;
-            }
-            if (url == null) {
-                Log.e(TAG, "Lifecycle: Invalid url provided");
-                return;
-            }
-            if (client != null && client.isConnected() && wsUrl.equals(url)) {
-                Log.i(TAG, "WS Reusing client and calling callback");
-                if (callback != null && webview != null) {
-                    webview.loadUrl(String.format("javascript:%s();", callback));
-                }
-                return;
-            }
-
-            //We are starting a new connection or switching URLs.
-            if (client != null) {
-                client.disconnect();
-                client = null;
-            }
-            wsUrl = url;
-            client = new SocketClient(URI.create(url), this, callback);
-            client.reconnect();
-        }
-    }
-
-    public void onSocketConnect(String cb) {
-        Log.i(TAG, "WS Connected!");
-        synchronized (lock) {
-            if (cb != null && webview != null) {
-                webview.loadUrl(String.format("javascript:%s();", cb));
-            }
-        }
-    }
-
-    public void onSocketMessage(byte[] message) {
-        String action = "";
-        try {
-            List<Value> input = msgpack.read(message, tList(TValue));
-            action = input.get(0).asRawValue().getString();
-            Log.d(TAG, String.format("Got %s", action));
-            // TODO: String to Mat, save and display in the loopback thread
-            if (action.equals("startScript")) {
-                final String script = input.get(1).asRawValue().getString();
-                Log.i(TAG, "WebView:" + Integer.toString(script.length()));
-                if (activity == null)
-                    return;
-                final MainActivity a = activity;
-                if (a == null)
-                    return;
-                a.runOnUiThread(new Thread() {
-                    public void run() {
-                        runScript(script);
-                    }
-                });
-            } else if (action.equals("saveScript")) {
-                final String script = input.get(1).asRawValue().getString();
-                final String name = input.get(2).asRawValue().getString();
-                Pattern p = Pattern.compile("[^a-zA-Z0-9]");
-                if (name == null || name.isEmpty() || p.matcher(name).find()) {
-                    Log.w(TAG, "Unable to save script");
-                    return;
-                }
-                Utils.SaveData(script.getBytes(), "scripts/", false, name + ".html");
-            } else if (action.equals("startScriptUrl")) {
-                final String url = input.get(1).asRawValue().getString();
-                if (activity == null)
-                    return;
-                final MainActivity a = activity;
-                if (a == null)
-                    return;
-                a.runOnUiThread(new Thread() {
-                    public void run() {
-                        runScriptUrl(url);
-
-                    }
-                });
-            } else if (action.equals("error")) {
-                client.shutdown();
-                String error = input.get(1).asRawValue().getString();
-                Log.e(TAG, "Lifecycle: Got server error: " + error);
-                sayInterrupt(error);
-            } else if (action.equals("lambda")) {
-                webview.loadUrl("javascript:" + input.get(1).asRawValue().getString());
-            } else if (action.equals("sensors")) {
-                TreeMap<String, Integer> types = new TreeMap<String, Integer>();
-                Value[] typesKeyValues = input.get(2).asMapValue().getKeyValueArray();
-                for (int i = 0; i < typesKeyValues.length / 2; i++)
-                    types.put(typesKeyValues[i * 2].asRawValue().getString(), typesKeyValues[i * 2 + 1].asIntegerValue().getInt());
-                Value[] samplesKeyValues = input.get(3).asMapValue().getKeyValueArray();
-                for (int i = 0; i < samplesKeyValues.length / 2; i++) {
-                    String name = samplesKeyValues[i * 2].asRawValue().getString();
-                    Integer type = types.get(name);
-                    if (type == null) {
-                        Log.w(TAG, "Unknown type in sensors: " + name);
-                        continue;
-                    }
-                    Value[] samples = samplesKeyValues[i * 2 + 1].asArrayValue().getElementArray();
-                    for (int j = 0; j < samples.length; j++) {
-                        ArrayValue sample = samples[j].asArrayValue();
-                        DataPoint dp = new DataPoint(name, type, sample.get(1).asFloatValue().getDouble(), sample.get(2).asIntegerValue().getLong());
-                        for (Value k : sample.get(0).asArrayValue().getElementArray())
-                            dp.addValue(k.asFloatValue().getDouble());
-                        ((DataManager) ManagerManager.get().get(DataManager.class)).queueRemote(dp);
-                    }
-                }
-            } else if (action.equals("image")) {
-                ((CameraManager) ManagerManager.get().get(CameraManager.class)).remoteImage(input.get(3).asRawValue().getByteArray());
-            } else if (action.equals("raven")) {
-                Log.setDsn(input.get(1).asRawValue().getString());
-            } else if (action.equals("blob")) {
-                String name = input.get(1).asRawValue().getString();
-                byte[] blob = input.get(2).asRawValue().getByteArray();
-                Utils.eventBusPost(new Blob(name, blob));
-            } else if (action.equals("version")) {
-                int versionExpected = 0;
-                int version = input.get(1).asIntegerValue().getInt();
-                if (version != versionExpected) {
-                    say("Version mismatch!  Got " + version + " and expected " + versionExpected + ".  Visit wear script .com for information.");
-                }
-            } else if (action.equals("shutdown")) {
-                Log.i(TAG, "Shutting down!");
-                Utils.getEventBus().post(new ShutdownEvent());
-            }
-            Log.d(TAG, String.format("WS: Got string message![%s] %d", action, message.length));
-        } catch (Exception e) {
-            Log.e(TAG, String.format("bs.onSocketMessage[%s]: %s", action, e.toString()));
-        }
-    }
-
-    public void onSocketDisconnect(int code, String reason) {
-        Log.d(TAG, String.format("WS: Disconnected! Code: %d Reason: %s", code, reason));
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                }
-                synchronized (lock) {
-                    if (client == null || client.getListener() != BackgroundService.this)
-                        return;
-                    client.reconnect();
-                }
-            }
-        }).start();
-    }
-
-    public void onSocketError(Exception error) {
-        Log.w(TAG, "WS: Connection Error!", error);
-    }
-
-    public void runScript(String script) {
+    public void onEventMainThread(ScriptEvent e) {
         reset();
         synchronized (lock) {
-            // TODO(brandyn): Refactor these as they are similar
             webview = createScriptView();
             updateActivityView("webview");
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WS");
-            Log.d(TAG, "WebView:" + script);
-            String path = Utils.SaveData(script.getBytes(), "scripting/", false, "script.html");
             webview.setInitialScale(100);
-            webview.loadUrl("file://" + path);
+            Log.i(TAG, "WebView: " + e.getScriptPath());
+            webview.loadUrl("file://" + e.getScriptPath());
             Log.i(TAG, "WebView Ran");
         }
     }
 
-    public void runScriptUrl(String url) {
-        reset();
+    public void onEventMainThread(LambdaEvent e) {
         synchronized (lock) {
-            // TODO(brandyn): Refactor these as they are similar
-            webview = createScriptView();
-            webview.getSettings().setJavaScriptEnabled(true);
-            webview.addJavascriptInterface(new WearScript(this), "WS");
-            Log.d(TAG, "WebView:" + url);
-            webview.setInitialScale(100);
-            webview.loadUrl(url);
-            Log.i(TAG, "WebView Ran");
-            updateActivityView("webview");
+            webview.loadUrl("javascript:" + e.getCommand());
         }
     }
 
@@ -591,7 +384,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         tts = new TextToSpeech(this, this);
 
-        glassID = getWifiManager().getMacAddress();
+        glassID = ((WifiManager) getManager(WifiManager.class)).getMacAddress();
 
         cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
         cardScroller = new CardScrollView(this);
@@ -605,12 +398,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public Level cardArrayToLevel(JSONArray array, Level level, Tree tree) {
         for (Object o : array) {
-            JSONObject cardJS = (JSONObject)o;
-            JSONArray children = (JSONArray)cardJS.get("children");
+            JSONObject cardJS = (JSONObject) o;
+            JSONArray children = (JSONArray) cardJS.get("children");
             if (children != null) {
-                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject)cardJS.get("card")), cardArrayToLevel(children, new Level(tree), tree)));
+                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject) cardJS.get("card")), cardArrayToLevel(children, new Level(tree), tree)));
             } else {
-                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject)cardJS.get("card"))));
+                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject) cardJS.get("card"))));
             }
         }
         return level;
@@ -620,7 +413,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         // TODO(brandyn): This is a temporary solution, fix it
         cardTree = new Tree(this.activity);
         refreshActivityView();
-        JSONArray cardArray = (JSONArray)JSONValue.parse(e.getTreeJS());
+        JSONArray cardArray = (JSONArray) JSONValue.parse(e.getTreeJS());
         cardArrayToLevel(cardArray, cardTree.getRoot(), cardTree);
         cardTree.showRoot();
     }
@@ -653,7 +446,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEvent(SayEvent e) {
-        say(e.getMsg());
+        say(e.getMsg(), e.getInterrupt());
     }
 
     public void onEvent(ActivityEvent e) {
@@ -694,55 +487,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         wake();
     }
 
-    public void onEvent(DataPoint dp) {
-        handleSensor(dp, null);
-    }
-
-    public void onEvent(LogEvent e) {
-        Log.i(TAG, "log: " + e.getMsg());
-        log(e.getMsg());
-    }
-
-    public void onEvent(ServerTimelineEvent e) {
-        serverTimeline(e.getMsg());
-    }
-
     public void onEvent(ShutdownEvent e) {
         shutdown();
-    }
-
-    public void onEvent(ServerConnectEvent e) {
-        serverConnect(e.getServer(), e.getCallback());
-    }
-
-    public void serverTimeline(String ti) {
-        synchronized (lock) {
-            if (client != null && client.isConnected()) {
-                List<Value> output = new ArrayList<Value>();
-                output.add(ValueFactory.createRawValue("timeline"));
-                output.add(ValueFactory.createRawValue(ti));
-                try {
-                    client.send(msgpack.write(output));
-                } catch (IOException e) {
-                    Log.e(TAG, "serverTimeline: Couldn't serialize msgpack");
-                }
-            }
-        }
-    }
-
-    public void log(String m) {
-        synchronized (lock) {
-            if (client != null && client.isConnected()) {
-                List<Value> output = new ArrayList<Value>();
-                output.add(ValueFactory.createRawValue("log"));
-                output.add(ValueFactory.createRawValue(m));
-                try {
-                    client.send(msgpack.write(output));
-                } catch (IOException e) {
-                    Log.e(TAG, "serverTimeline: Couldn't serialize msgpack");
-                }
-            }
-        }
     }
 
     @Override
@@ -755,16 +501,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.i(TAG, "Audio period");
     }
 
-    public void say(String text) {
+    public void say(String text, boolean interrupt) {
         if (tts == null)
             return;
-        if (!tts.isSpeaking())
+        if (!tts.isSpeaking() || interrupt)
             tts.speak(text, TextToSpeech.QUEUE_FLUSH,
                     null);
-    }
-
-    public void sayInterrupt(String text) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
     }
 
     @Override
@@ -776,20 +518,43 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         // TODO: Check result on else
     }
 
-    public CameraManager getCameraManager() {
-        return (CameraManager) ManagerManager.get().get(CameraManager.class);
+    public Manager getManager(Class<? extends Manager> cls) {
+        return ManagerManager.get().get(cls);
     }
 
-    protected DataManager getDataManager() {
-        return (DataManager) ManagerManager.get().get(DataManager.class);
+    public void speechRecognize(String prompt, String callback) {
+        // TODO(brandyn): We should probably add a speech manager
+        speechCallback = callback;
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, prompt);
+        activity.startActivityForResult(intent, 1002);
     }
 
-    protected WifiManager getWifiManager() {
-        return (WifiManager) ManagerManager.get().get(WifiManager.class);
+    public ScriptView createScriptView() {
+        ScriptView mCallback = new ScriptView(this);
+        return mCallback;
     }
 
-    public OpenGLManager getOpenGLManager() {
-        return (OpenGLManager) ManagerManager.get().get(OpenGLManager.class);
+    public void onEvent(ActivityResultEvent event) {
+        int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
+        Intent intent = event.getIntent();
+        Log.d(TAG, "Got request code: " + requestCode);
+        if (requestCode == 1002) {
+            // TODO(brandyn): We should probably add a speech manager
+            Log.d(TAG, "Spoken Text Result");
+            if (resultCode == activity.RESULT_OK) {
+                List<String> results = intent.getStringArrayListExtra(
+                        RecognizerIntent.EXTRA_RESULTS);
+                String spokenText = results.get(0);
+                Log.d(TAG, "Spoken Text: " + spokenText);
+                if (speechCallback == null)
+                    return;
+                // TODO(brandyn): Check speech result for JS injection that can escape out of the quotes
+                loadUrl(String.format("javascript:%s(\"%s\");", speechCallback, spokenText));
+            } else if (resultCode == activity.RESULT_CANCELED) {
+
+            }
+        }
     }
 
     class ScreenBroadcastReceiver extends BroadcastReceiver {
@@ -807,12 +572,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
                 Log.d(TAG, "Screen on");
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
-                BatteryDataProvider dp = (BatteryDataProvider) bs.getDataManager().getProvider(WearScript.SENSOR.BATTERY.id());
+                BatteryDataProvider dp = (BatteryDataProvider) ((DataManager) bs.getManager(DataManager.class)).getProvider(WearScript.SENSOR.BATTERY.id());
                 if (dp != null)
                     dp.post(intent);
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.d(TAG, "Wifi scan results");
-                bs.getWifiManager().makeCall();
+                // TODO(brandyn): Fix this use of makeCall (confusing overloading, may be a good event)
+                ((WifiManager) bs.getManager(WifiManager.class)).makeCall();
             }
         }
     }
@@ -820,39 +586,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public class LocalBinder extends Binder {
         public BackgroundService getService() {
             return BackgroundService.this;
-        }
-    }
-
-    public void speechRecognize(String prompt, String callback) {
-        speechCallback = callback;
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, prompt);
-        activity.startActivityForResult(intent, 1002);
-    }
-
-    public ScriptView createScriptView() {
-        ScriptView mCallback = new ScriptView(this);
-        return mCallback;
-    }
-
-    public void onEvent(ActivityResultEvent event) {
-        int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
-        Intent intent = event.getIntent();
-        Log.d(TAG, "Got request code: " + requestCode);
-        if (requestCode == 1002) {
-            Log.d(TAG, "Spoken Text Result");
-            if (resultCode == activity.RESULT_OK) {
-                List<String> results = intent.getStringArrayListExtra(
-                        RecognizerIntent.EXTRA_RESULTS);
-                String spokenText = results.get(0);
-                Log.d(TAG, "Spoken Text: " + spokenText);
-                if (speechCallback == null)
-                    return;
-                // TODO(brandyn): Check speech result for JS injection that can escape out of the quotes
-                loadUrl(String.format("javascript:%s(\"%s\");", speechCallback, spokenText));
-            } else if (resultCode == activity.RESULT_CANCELED) {
-
-            }
         }
     }
 }

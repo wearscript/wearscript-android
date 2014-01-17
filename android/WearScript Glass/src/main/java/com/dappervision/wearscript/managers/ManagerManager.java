@@ -18,9 +18,9 @@ public class ManagerManager {
         add(new CameraManager(bs));
         add(new BarcodeManager(bs));
         add(new WifiManager(bs));
-        add(new BlobManager(bs));
         add(new AudioManager(bs));
         add(new OpenGLManager(bs));
+        add(new ConnectionManager(bs));
     }
 
     public void add(Manager manager) {

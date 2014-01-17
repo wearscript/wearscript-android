@@ -5,7 +5,10 @@ import android.util.Base64;
 
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.dataproviders.DataPoint;
-import com.dappervision.wearscript.events.LogEvent;
+import com.dappervision.wearscript.events.ChannelSubscribeEvent;
+import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
+import com.dappervision.wearscript.events.SendEvent;
+import com.dappervision.wearscript.events.SendSubEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
@@ -28,7 +31,6 @@ import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.jsevents.WifiEvent;
 import com.dappervision.wearscript.jsevents.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
-import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
@@ -40,6 +42,8 @@ import org.json.simple.JSONValue;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -147,7 +151,7 @@ public class WearScript {
 
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
-        Utils.eventBusPost(new ServerTimelineEvent(ti));
+        Utils.eventBusPost(new SendSubEvent("timeline", ti));
     }
 
     public void audioOn() {
@@ -170,7 +174,7 @@ public class WearScript {
 
     public void log(String msg) {
         //Global event
-        Utils.eventBusPost(new LogEvent(msg));
+        Utils.eventBusPost(new SendEvent("log", msg));
     }
 
     public void sensorOff(int type) {
@@ -180,8 +184,17 @@ public class WearScript {
 
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
-        //Global event
-        Utils.eventBusPost(new ServerConnectEvent(server, callback));
+        if (server.equals("{{WSUrl}}"))
+           server = bs.getDefaultUrl();
+        if (server == null) {
+            Log.e(TAG, "Lifecycle: Invalid url provided");
+            return;
+        }
+        try {
+            Utils.eventBusPost(new ServerConnectEvent(new URI(server), callback));
+        } catch (URISyntaxException e) {
+            // TODO(brandyn): Handle
+        }
     }
 
     public void displayWebView() {
@@ -295,15 +308,19 @@ public class WearScript {
         Utils.eventBusPost(new CallbackRegistration(BarcodeManager.class, cb).setEvent("QR_CODE"));
     }
 
-    public void blobCallback(String name, String cb) {
-        Log.i(TAG, "blobCallback");
-        Utils.eventBusPost(new CallbackRegistration(BlobManager.class, cb).setEvent(name));
+    public void subscribe(String name, String cb) {
+        Log.i(TAG, "subscribe");
+        Utils.eventBusPost(new ChannelSubscribeEvent(name, cb));
     }
 
-    public void blobSend(String name, String payload) {
-        Log.i(TAG, "blobSend");
-        Blob blob = new Blob(name, payload).outgoing();
-        Utils.eventBusPost(blob);
+    public void unsubscribe(String name) {
+        Log.i(TAG, "unsubscribe");
+        Utils.eventBusPost(new ChannelUnsubscribeEvent(name));
+    }
+
+    public void publish(String channel, String data) {
+        Log.i(TAG, "publish");
+        Utils.eventBusPost(new SendEvent(channel, data));
     }
 
     public void gestureCallback(String event, String callback) {
