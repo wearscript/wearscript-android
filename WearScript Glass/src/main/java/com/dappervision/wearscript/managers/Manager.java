@@ -27,6 +27,10 @@ public abstract class Manager {
         }
     }
 
+    protected void unregisterCallback(String type) {
+        jsCallbacks.remove(type);
+    }
+
     protected void registerCallback(String type, String jsFunction) {
         if (jsFunction != null)
             jsCallbacks.put(type, jsFunction);
@@ -50,7 +54,6 @@ public abstract class Manager {
             return;
         }
         String url = buildCallbackString(key, data);
-        Log.d(TAG, "Gesture: Call: " + url);
         Utils.eventBusPost(new JsCall(url));
     }
 
