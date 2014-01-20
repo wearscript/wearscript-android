@@ -4,6 +4,8 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
+import com.dappervision.wearscript.core.Log;
+
 /**
  * A background thread that receives audio from the microphone and sends it to the waveform
  * visualizing view.
