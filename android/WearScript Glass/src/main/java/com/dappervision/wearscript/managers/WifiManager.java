@@ -5,8 +5,8 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.jsevents.WifiEvent;
-import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.dappervision.wearscript.core.jsevents.WifiEvent;
+import com.dappervision.wearscript.core.jsevents.WifiScanEvent;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

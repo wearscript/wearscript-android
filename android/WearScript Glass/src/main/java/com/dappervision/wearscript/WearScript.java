@@ -3,30 +3,32 @@ package com.dappervision.wearscript;
 import android.opengl.GLES20;
 import android.util.Base64;
 
-import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.core.Blob;
+import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.dataproviders.DataPoint;
-import com.dappervision.wearscript.events.LogEvent;
-import com.dappervision.wearscript.events.ServerConnectEvent;
-import com.dappervision.wearscript.events.ShutdownEvent;
-import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.AudioEvent;
+import com.dappervision.wearscript.core.events.LogEvent;
+import com.dappervision.wearscript.core.events.ServerConnectEvent;
+import com.dappervision.wearscript.core.events.ShutdownEvent;
+import com.dappervision.wearscript.core.jsevents.ActivityEvent;
+import com.dappervision.wearscript.core.jsevents.AudioEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.CardTreeEvent;
-import com.dappervision.wearscript.jsevents.DataLogEvent;
+import com.dappervision.wearscript.core.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
-import com.dappervision.wearscript.jsevents.OpenGLEvent;
-import com.dappervision.wearscript.jsevents.OpenGLEventCustom;
-import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
-import com.dappervision.wearscript.jsevents.PicarusEvent;
-import com.dappervision.wearscript.jsevents.SayEvent;
-import com.dappervision.wearscript.jsevents.ScreenEvent;
-import com.dappervision.wearscript.jsevents.SensorJSEvent;
-import com.dappervision.wearscript.jsevents.ServerTimelineEvent;
-import com.dappervision.wearscript.jsevents.SoundEvent;
-import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
-import com.dappervision.wearscript.jsevents.WifiEvent;
-import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.dappervision.wearscript.core.jsevents.OpenGLEvent;
+import com.dappervision.wearscript.core.jsevents.OpenGLEventCustom;
+import com.dappervision.wearscript.core.jsevents.OpenGLRenderEvent;
+import com.dappervision.wearscript.core.jsevents.PicarusEvent;
+import com.dappervision.wearscript.core.jsevents.SayEvent;
+import com.dappervision.wearscript.core.jsevents.ScreenEvent;
+import com.dappervision.wearscript.core.jsevents.SensorJSEvent;
+import com.dappervision.wearscript.core.jsevents.ServerTimelineEvent;
+import com.dappervision.wearscript.core.jsevents.SoundEvent;
+import com.dappervision.wearscript.core.jsevents.SpeechRecognizeEvent;
+import com.dappervision.wearscript.core.jsevents.WifiEvent;
+import com.dappervision.wearscript.core.jsevents.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.BlobManager;
 import com.dappervision.wearscript.managers.CameraManager;
@@ -324,22 +326,17 @@ public class WearScript {
     }
 
     public void cardInsert(final int position, final String cardJSON) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardInsert: " + position);
                     bs.getCardScrollAdapter().cardInsert(position, cardJSON);
                     bs.updateCardScrollView();
-                }
+           }
             });
-        }
     }
 
     public void cardModify(final int position, final String cardJSON) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardModify: " + position);
                     bs.getCardScrollAdapter().cardModify(position, cardJSON);
@@ -347,45 +344,35 @@ public class WearScript {
                     bs.updateCardScrollView();
                 }
             });
-        }
     }
 
     public void cardTrim(final int position) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardTrim: " + position);
                     bs.getCardScrollAdapter().cardTrim(position);
                     bs.updateCardScrollView();
                 }
             });
-        }
     }
 
     public void cardDelete(final int position) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardDelete: " + position);
                     bs.getCardScrollAdapter().cardDelete(position);
                     bs.updateCardScrollView();
                 }
             });
-        }
     }
 
     public void cardPosition(final int position) {
-        MainActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
+        bs.runOnUiThread(new Thread() {
                 public void run() {
                     Log.i(TAG, "cardPosition: " + position);
                     bs.cardPosition(position);
                 }
             });
-        }
     }
 
     public String cardFactory(String text, String info) {

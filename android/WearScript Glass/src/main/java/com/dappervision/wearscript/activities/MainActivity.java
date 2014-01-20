@@ -1,6 +1,5 @@
 package com.dappervision.wearscript.activities;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -12,17 +11,15 @@ import android.view.MotionEvent;
 import android.view.WindowManager;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.jsevents.ActivityResultEvent;
-import com.dappervision.wearscript.jsevents.StartActivityEvent;
+import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.ScriptActivity;
+import com.dappervision.wearscript.core.Utils;
+import com.dappervision.wearscript.core.jsevents.ActivityResultEvent;
+import com.dappervision.wearscript.core.jsevents.StartActivityEvent;
 
-public class MainActivity extends Activity {
-    protected static final String TAG = "WearScript";
+public class MainActivity extends ScriptActivity {
     private static final String EXTRA_NAME = "extra";
     public boolean isGlass = true, isForeground = true;
-    public BackgroundService bs;
-    ServiceConnection mConnection;
     private String extra;
     private boolean mHadUrlExtra = false;
 
@@ -34,9 +31,7 @@ public class MainActivity extends Activity {
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.register(this);
-        Utils.getEventBus().register(this);
-        Log.i(TAG, "Lifecycle: Activity onCreate");
+        super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Intent thisIntent = getIntent();
         if (thisIntent.getStringExtra(EXTRA_NAME) != null) {
@@ -47,20 +42,17 @@ public class MainActivity extends Activity {
             Log.d(TAG, "Did not find extra.");
         }
         // Bind Service
-        super.onCreate(savedInstanceState);
         mConnection = new ServiceConnection() {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 Log.i(TAG, "Service Connected");
                 bs = ((BackgroundService.LocalBinder) service).getService();
-                bs.setMainActivity(MainActivity.this);
+                bs.setScriptActivity(MainActivity.this);
 
                 // If we already have a view and aren't specifying a script to run, reuse the old script
                 if (bs.webview != null && extra == null) {
                     // Remove view's parent so that we can re-add it later to a new activity
                     Log.i(TAG, "Lifecycle: Recycling webview");
-                    bs.removeAllViews();
-                    bs.refreshActivityView();
-                    bs.getCameraManager().resume();
+                    bs.onResume();
                     return;
                 }
                 Log.i(TAG, "Lifecycle: Creating new webview");
@@ -71,7 +63,7 @@ public class MainActivity extends Activity {
                     bs.runScriptUrl(extra);
                 } else {
                     Log.i(TAG, "Default script");
-                    bs.startDefaultScript();
+                    bs.runDefaultScript();
                 }
             }
 
@@ -92,7 +84,7 @@ public class MainActivity extends Activity {
         isForeground = false;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
-            bs.getOpenGLManager().getView().onPause();
+            bs.onPause();
         }
         super.onPause();
     }
@@ -102,8 +94,7 @@ public class MainActivity extends Activity {
         Log.i(TAG, "Lifecycle: MainActivity: onResume");
         isForeground = true;
         if (bs != null) {
-            bs.getCameraManager().resume();
-            bs.getOpenGLManager().getView().onResume();
+            bs.onResume();
         }
         super.onResume();
     }
@@ -122,7 +113,7 @@ public class MainActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_CAMERA) {
             if (bs != null)
-                bs.getCameraManager().pause();
+                bs.onPause();
             return false;
         } else {
             return super.onKeyDown(keyCode, event);

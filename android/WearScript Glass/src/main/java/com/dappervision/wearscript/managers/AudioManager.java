@@ -6,9 +6,9 @@ import android.media.AudioRecord;
 
 import com.dappervision.wearscript.AudioRecordingThread;
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.jsevents.AudioEvent;
-import com.dappervision.wearscript.jsevents.SoundEvent;
+import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.jsevents.AudioEvent;
+import com.dappervision.wearscript.core.jsevents.SoundEvent;
 import com.google.android.glass.media.Sounds;
 
 public class AudioManager extends Manager {

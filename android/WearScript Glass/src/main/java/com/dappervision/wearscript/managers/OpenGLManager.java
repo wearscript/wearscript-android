@@ -4,9 +4,9 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.jsevents.OpenGLEvent;
-import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
+import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.jsevents.OpenGLEvent;
+import com.dappervision.wearscript.core.jsevents.OpenGLRenderEvent;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
