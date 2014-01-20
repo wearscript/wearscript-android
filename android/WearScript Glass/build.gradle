@@ -33,7 +33,6 @@ dependencies {
     compile files('libs/jackson-core-2.2.3.jar')
     compile files('libs/protocol-1.0.4.jar')
     compile files('libs/CardTree.jar')
-    compile files('libs/sentry-0.1.4.jar')
     compile project(':WearScript Core')
     compile project(':opencv-android')
     compile files('libs/android-support-v13.jar')

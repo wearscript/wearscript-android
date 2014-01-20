@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
-import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.jsevents.BarcodeEvent;
 
 public class QRActivity extends Activity {
