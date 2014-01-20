@@ -4,8 +4,8 @@ import android.util.Base64;
 
 import com.codebutler.android_websockets.WebSocketClient;
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
 import com.dappervision.wearscript.events.LambdaEvent;

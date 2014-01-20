@@ -1,6 +1,7 @@
 package com.dappervision.wearscript;
 
 import com.codebutler.android_websockets.WebSocketClient;
+import com.dappervision.wearscript.core.Log;
 
 import org.apache.http.message.BasicNameValuePair;
 
