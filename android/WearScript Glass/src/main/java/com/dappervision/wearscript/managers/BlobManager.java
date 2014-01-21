@@ -15,7 +15,7 @@ public class BlobManager extends Manager {
         if (blob.isOutgoing()) {
             blob.send(service.getSocketClient());
         } else {
-            makeCall(blob.getName(), Base64.encodeToString(blob.getPayload(), Base64.NO_WRAP));
+            makeCall(blob.getName(), "'" + Base64.encodeToString(blob.getPayload(), Base64.NO_WRAP) + "'");
         }
     }
 }
