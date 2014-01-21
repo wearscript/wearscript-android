@@ -156,6 +156,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void loadUrl(String url) {
         synchronized (lock) {
             if (webview != null && url != null) {
+                Log.d(TAG, "Loading url: " + url);
                 webview.loadUrl(url);
             }
         }

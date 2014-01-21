@@ -53,6 +53,7 @@ public class Blob {
             output.add(ValueFactory.createRawValue("blob"));
             output.add(ValueFactory.createRawValue(name));
             output.add(ValueFactory.createRawValue(payload));
+            Log.d(TAG, "Sending blob with payload: " + payload);
             try {
                 MessagePack msgpack = new MessagePack();
                 client.send(msgpack.write(output));
