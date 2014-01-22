@@ -9,7 +9,6 @@ import android.media.AudioRecord;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.view.View;
@@ -26,7 +25,6 @@ import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.CardTreeEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
@@ -34,6 +32,7 @@ import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
+import com.dappervision.wearscript.jsevents.WifiScanResultsEvent;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.DataManager;
@@ -57,7 +56,6 @@ import org.msgpack.type.ValueFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 
@@ -69,7 +67,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public boolean dataRemote, dataLocal, dataWifi;
     public double lastSensorSaveTime, sensorDelay;
     public ScriptView webview;
-    public String wsUrl;
     public TreeMap<String, ArrayList<Value>> sensorBuffer;
     public TreeMap<String, Integer> sensorTypes;
     public String wifiScanCallback;
@@ -79,10 +76,18 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
     MessagePack msgpack = new MessagePack();
-    private String speechCallback;
     private View activityView;
     private Tree cardTree;
     private String activityMode;
+
+    static public String getDefaultUrl() {
+        byte[] wsUrlArray = Utils.LoadData("", "qr.txt");
+        if (wsUrlArray == null) {
+            Utils.eventBusPost(new SayEvent("Must setup wear script", false));
+            return "";
+        }
+        return (new String(wsUrlArray)).trim();
+    }
 
     public void updateActivityView(final String mode) {
         if (activity == null)
@@ -99,7 +104,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     activityView = ((OpenGLManager) getManager(OpenGLManager.class)).getView();
                 } else if (mode.equals("cardtree")) {
                     activityView = cardTree;
-                } else {
                 }
                 if (activityView != null) {
                     ViewGroup parentViewGroup = (ViewGroup) activityView.getParent();
@@ -115,15 +119,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void refreshActivityView() {
         updateActivityView(activityMode);
-    }
-
-    static public String getDefaultUrl() {
-        byte[] wsUrlArray = Utils.LoadData("", "qr.txt");
-        if (wsUrlArray == null) {
-            Utils.eventBusPost(new SayEvent("Must setup wear script", false));
-            return "";
-        }
-        return (new String(wsUrlArray)).trim();
     }
 
     public View getActivityView() {
@@ -188,19 +183,19 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         if (!(dataRemote && cm.channelExists(channel)) && !dataLocal)
             return;
 
-        ArrayList<Value> sensorTypes = new ArrayList();
+        ArrayList<Value> sensorTypes = new ArrayList<Value>();
         for (String k : this.sensorTypes.navigableKeySet()) {
             sensorTypes.add(ValueFactory.createRawValue(k));
             sensorTypes.add(ValueFactory.createIntegerValue(this.sensorTypes.get(k)));
         }
-        output.add(ValueFactory.createMapValue(sensorTypes.toArray(new Value[0])));
+        output.add(ValueFactory.createMapValue(sensorTypes.toArray(new Value[sensorTypes.size()])));
 
-        ArrayList<Value> sensors = new ArrayList();
+        ArrayList<Value> sensors = new ArrayList<Value>();
         for (String k : curSensorBuffer.navigableKeySet()) {
             sensors.add(ValueFactory.createRawValue(k));
-            sensors.add(ValueFactory.createArrayValue(curSensorBuffer.get(k).toArray(new Value[0])));
+            sensors.add(ValueFactory.createArrayValue(curSensorBuffer.get(k).toArray(new Value[curSensorBuffer.get(k).size()])));
         }
-        output.add(ValueFactory.createMapValue(sensors.toArray(new Value[0])));
+        output.add(ValueFactory.createMapValue(sensors.toArray(new Value[sensors.size()])));
 
         final byte[] dataStr;
         try {
@@ -223,8 +218,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             Log.d(TAG, "handeImage Thread: " + Thread.currentThread().getName());
             byte[] frameJPEG = null;
             if (dataLocal) {
-                if (frameJPEG == null)
-                    frameJPEG = frame.getJPEG();
+                frameJPEG = frame.getJPEG();
                 // TODO(brandyn): We can improve timestamp precision by capturing it pre-encoding
                 Utils.SaveData(frameJPEG, "data/", true, ".jpg");
             }
@@ -257,11 +251,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             if (activity == null)
                 return;
             final MainActivity a = activity;
-            if (a == null) {
-                Log.d(TAG, "Stop self not activity");
-                stopSelf();
-                return;
-            }
             a.runOnUiThread(new Thread() {
                 public void run() {
                     Log.d(TAG, "Lifecycle: Stop self activity");
@@ -290,15 +279,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             lastSensorSaveTime = sensorDelay = 0.;
             cardScrollAdapter.reset();
             updateCardScrollView();
-            speechCallback = null;
 
             ManagerManager.get().resetAll();
             // TODO(brandyn): Verify that if we create a new activity that the gestures still work
             if (ManagerManager.get().get(GestureManager.class) == null) {
                 if (activity != null) {
                     MainActivity a = activity;
-                    if (a != null)
-                        ManagerManager.get().add(new GestureManager(a, this));
+                    ManagerManager.get().add(new GestureManager(a, this));
                 }
             }
             updateActivityView("webview");
@@ -322,16 +309,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return cardScrollAdapter;
     }
 
-    public CardScrollView getCardScrollView() {
-        return cardScroller;
-    }
 
     public void updateCardScrollView() {
         if (activity == null)
             return;
         final MainActivity a = activity;
-        if (a == null)
-            return;
         a.runOnUiThread(new Thread() {
             public void run() {
                 cardScroller.updateViews(true);
@@ -472,10 +454,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         sensorDelay = e.getSensorDelay() * 1000000000L;
     }
 
-    public void onEvent(SpeechRecognizeEvent e) {
-        speechRecognize(e.getPrompt(), e.getCallback());
-    }
-
     public void onEvent(PicarusEvent e) {
         // TODO(brandyn): Needs to be fixed
         ManagerManager.get().add(new PicarusManager(this));
@@ -511,48 +489,18 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
             int result = tts.setLanguage(Locale.US);
-            // TODO: Check result
+            // TODO(brandyn): Check result
         }
-        // TODO: Check result on else
+        // TODO(brandyn): Check result on else
     }
 
     public Manager getManager(Class<? extends Manager> cls) {
         return ManagerManager.get().get(cls);
     }
 
-    public void speechRecognize(String prompt, String callback) {
-        // TODO(brandyn): We should probably add a speech manager
-        speechCallback = callback;
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, prompt);
-        activity.startActivityForResult(intent, 1002);
-    }
-
     public ScriptView createScriptView() {
         ScriptView mCallback = new ScriptView(this);
         return mCallback;
-    }
-
-    public void onEvent(ActivityResultEvent event) {
-        int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
-        Intent intent = event.getIntent();
-        Log.d(TAG, "Got request code: " + requestCode);
-        if (requestCode == 1002) {
-            // TODO(brandyn): We should probably add a speech manager
-            Log.d(TAG, "Spoken Text Result");
-            if (resultCode == activity.RESULT_OK) {
-                List<String> results = intent.getStringArrayListExtra(
-                        RecognizerIntent.EXTRA_RESULTS);
-                String spokenText = results.get(0);
-                Log.d(TAG, "Spoken Text: " + spokenText);
-                if (speechCallback == null)
-                    return;
-                // TODO(brandyn): Check speech result for JS injection that can escape out of the quotes
-                loadUrl(String.format("javascript:%s(\"%s\");", speechCallback, spokenText));
-            } else if (resultCode == activity.RESULT_CANCELED) {
-
-            }
-        }
     }
 
     class ScreenBroadcastReceiver extends BroadcastReceiver {
@@ -575,8 +523,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     dp.post(intent);
             } else if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 Log.d(TAG, "Wifi scan results");
-                // TODO(brandyn): Fix this use of makeCall (confusing overloading, may be a good event)
-                ((WifiManager) bs.getManager(WifiManager.class)).makeCall();
+                Utils.eventBusPost(new WifiScanResultsEvent());
             }
         }
     }

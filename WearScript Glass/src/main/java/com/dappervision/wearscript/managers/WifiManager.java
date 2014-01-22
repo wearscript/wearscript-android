@@ -7,6 +7,7 @@ import android.net.wifi.WifiInfo;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.jsevents.WifiEvent;
 import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.dappervision.wearscript.jsevents.WifiScanResultsEvent;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -14,6 +15,7 @@ import org.json.simple.JSONObject;
 public class WifiManager extends Manager {
     public static final String SCAN_RESULTS_AVAILABLE_ACTION = android.net.wifi.WifiManager.SCAN_RESULTS_AVAILABLE_ACTION;
     android.net.wifi.WifiManager manager;
+    public static String WIFI = "WIFI";
     private boolean enabled;
 
     public WifiManager(BackgroundService bs) {
@@ -46,8 +48,8 @@ public class WifiManager extends Manager {
         manager.startScan();
     }
 
-    public void makeCall() {
-        makeCall("wifi", getScanResults());
+    public void onEvent(WifiScanResultsEvent e) {
+        makeCall(WIFI, getScanResults());
     }
 
     @Override
