@@ -2,6 +2,8 @@ package com.dappervision.wearscript;
 
 import android.opengl.GLES20;
 import android.util.Base64;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
 
 import com.dappervision.wearscript.activities.MainActivity;
 import com.dappervision.wearscript.core.Log;
@@ -132,57 +134,69 @@ public class WearScript {
         return "?";
     }
 
+    @JavascriptInterface
     public int sensor(String name) {
         return this.sensors.get(name);
     }
 
+    @JavascriptInterface
     public void shutdown() {
         //Global event
         Utils.getEventBus().post(new ShutdownEvent());
     }
 
+    @JavascriptInterface
     public String sensors() {
         return this.sensorsJS;
     }
 
+    @JavascriptInterface
     public void say(String text) {
         Utils.eventBusPost(new SayEvent(text));
         Log.i(TAG, "say: " + text);
     }
 
+    @JavascriptInterface
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
         Utils.eventBusPost(new SendSubEvent("timeline", ti));
     }
 
+    @JavascriptInterface
     public void audioOn() {
         Utils.eventBusPost(new AudioEvent(true));
     }
 
+    @JavascriptInterface
     public void audioOff() {
         Utils.eventBusPost(new AudioEvent(false));
     }
 
+    @JavascriptInterface
     public void sensorOn(int type, double sampleTime) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type));
         Utils.eventBusPost(new SensorJSEvent(type, true, sampleTime, null));
     }
 
+    @JavascriptInterface
     public void sensorOn(int type, double sampleTime, String callback) {
         Log.i(TAG, "sensorOn: " + Integer.toString(type) + " callback: " + callback);
         Utils.eventBusPost(new SensorJSEvent(type, true, sampleTime, callback));
     }
 
+    @JavascriptInterface
     public void log(String msg) {
         //Global event
         Utils.eventBusPost(new SendEvent("log", msg));
     }
 
+    @JavascriptInterface
     public void sensorOff(int type) {
         Log.i(TAG, "sensorOff: " + Integer.toString(type));
         Utils.eventBusPost(new SensorJSEvent(type, false));
     }
 
+    @JavascriptInterface
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
         if (server.equals("{{WSUrl}}"))
@@ -198,100 +212,104 @@ public class WearScript {
         }
     }
 
+    @JavascriptInterface
     public void displayWebView() {
         Log.i(TAG, "displayWebView");
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.WEBVIEW));
     }
 
-    public void data(int type, String name, String values) {
-        Log.i(TAG, "data");
-        DataPoint dp = new DataPoint(name, type, System.currentTimeMillis() / 1000., System.nanoTime());
-        JSONArray valuesArray = (JSONArray) JSONValue.parse(values);
-        for (Object j : valuesArray) {
-            try {
-                dp.addValue((Double) j);
-            } catch (ClassCastException e) {
-                dp.addValue(((Long) j).doubleValue());
-            }
-        }
-        Utils.eventBusPost(dp);
-    }
-
+    @JavascriptInterface
     public void cameraOff() {
         Utils.eventBusPost(new CameraEvents.Start(0));
     }
 
+    @JavascriptInterface
     public void cameraPhoto() {
         cameraPhoto(null);
     }
 
+    @JavascriptInterface
     public void cameraPhoto(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.PHOTO);
         Utils.eventBusPost(cr);
     }
 
+    @JavascriptInterface
     public void cameraPhotoPath(String callback) {
+        // TODO(brandyn): we may only want this one
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.PHOTO_PATH);
         Utils.eventBusPost(cr);
     }
 
+    @JavascriptInterface
     public void cameraVideo() {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, null);
         cr.setEvent(CameraManager.VIDEO);
         Utils.eventBusPost(cr);
     }
 
+    @JavascriptInterface
     public void cameraVideo(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.VIDEO_PATH);
         Utils.eventBusPost(cr);
     }
 
+    @JavascriptInterface
     public void cameraOn(double imagePeriod) {
         Utils.eventBusPost(new CameraEvents.Start(imagePeriod));
     }
 
+    @JavascriptInterface
     public void cameraCallback(int type, String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(type);
         Utils.eventBusPost(cr);
     }
 
+    @JavascriptInterface
     public void activityCreate() {
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CREATE));
     }
 
+    @JavascriptInterface
     public void activityDestroy() {
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.DESTROY));
     }
 
+    @JavascriptInterface
     public void wifiOff() {
         Utils.eventBusPost(new WifiEvent(false));
     }
 
+    @JavascriptInterface
     public void wifiOn() {
         Utils.eventBusPost(new WifiEvent(true));
     }
 
+    @JavascriptInterface
     public void wifiOn(String callback) {
         CallbackRegistration cr = new CallbackRegistration(WifiManager.class, callback);
-        cr.setEvent("wifi");
+        cr.setEvent(WifiManager.WIFI);
         Utils.eventBusPost(cr);
         Utils.eventBusPost(new WifiEvent(true));
     }
 
+    @JavascriptInterface
     public void wifiScan() {
         Utils.eventBusPost(new WifiScanEvent());
     }
 
+    @JavascriptInterface
     public void dataLog(boolean local, boolean server, double sensorDelay) {
         Utils.eventBusPost(new DataLogEvent(local, server, sensorDelay));
     }
 
+    @JavascriptInterface
     public boolean scriptVersion(int version) {
-        if (version == 0) {
+        if (version == 1) {
             return false;
         } else {
             Utils.eventBusPost(new SayEvent("Script version incompatible with client"));
@@ -299,48 +317,58 @@ public class WearScript {
         }
     }
 
+    @JavascriptInterface
     public void wake() {
         Log.i(TAG, "wake");
         Utils.eventBusPost(new ScreenEvent(true));
     }
 
+    @JavascriptInterface
     public void qr(String cb) {
         Log.i(TAG, "QR");
-        Utils.eventBusPost(new CallbackRegistration(BarcodeManager.class, cb).setEvent("QR_CODE"));
+        Utils.eventBusPost(new CallbackRegistration(BarcodeManager.class, cb).setEvent(BarcodeManager.QR_CODE));
     }
 
+    @JavascriptInterface
     public void subscribe(String name, String cb) {
         Log.i(TAG, "subscribe");
         Utils.eventBusPost(new ChannelSubscribeEvent(name, cb));
     }
 
+    @JavascriptInterface
     public void unsubscribe(String name) {
         Log.i(TAG, "unsubscribe");
         Utils.eventBusPost(new ChannelUnsubscribeEvent(name));
     }
 
+    @JavascriptInterface
     public void publish(String channel, String data) {
         Log.i(TAG, "publish");
         Utils.eventBusPost(new SendEvent(channel, data));
     }
 
+    @JavascriptInterface
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
         Utils.eventBusPost(new CallbackRegistration(GestureManager.class, callback).setEvent(event));
     }
 
+    @JavascriptInterface
     public void speechRecognize(String prompt, String callback) {
         Utils.eventBusPost(new SpeechRecognizeEvent(prompt, callback));
     }
 
+    @JavascriptInterface
     public void liveCardCreate(boolean nonSilent, double period) {
         Utils.eventBusPost(new LiveCardEvent(nonSilent, period));
     }
 
+    @JavascriptInterface
     public void liveCardDestroy() {
         Utils.eventBusPost(new LiveCardEvent(false, 0));
     }
 
+    @JavascriptInterface
     public void cardInsert(final int position, final String cardJSON) {
         MainActivity a = bs.activity;
         if (a != null) {
@@ -354,6 +382,7 @@ public class WearScript {
         }
     }
 
+    @JavascriptInterface
     public void cardModify(final int position, final String cardJSON) {
         MainActivity a = bs.activity;
         if (a != null) {
@@ -368,6 +397,7 @@ public class WearScript {
         }
     }
 
+    @JavascriptInterface
     public void cardTrim(final int position) {
         MainActivity a = bs.activity;
         if (a != null) {
@@ -381,6 +411,7 @@ public class WearScript {
         }
     }
 
+    @JavascriptInterface
     public void cardDelete(final int position) {
         MainActivity a = bs.activity;
         if (a != null) {
@@ -394,6 +425,7 @@ public class WearScript {
         }
     }
 
+    @JavascriptInterface
     public void cardPosition(final int position) {
         MainActivity a = bs.activity;
         if (a != null) {
@@ -406,6 +438,7 @@ public class WearScript {
         }
     }
 
+    @JavascriptInterface
     public String cardFactory(String text, String info) {
         JSONObject o = new JSONObject();
         o.put("type", "card");
@@ -414,6 +447,7 @@ public class WearScript {
         return o.toJSONString();
     }
 
+    @JavascriptInterface
     public String cardFactoryHTML(String html) {
         JSONObject o = new JSONObject();
         o.put("type", "html");
@@ -421,27 +455,33 @@ public class WearScript {
         return o.toJSONString();
     }
 
+    @JavascriptInterface
     public void cardCallback(String event, String callback) {
         bs.getCardScrollAdapter().registerCallback(event, callback);
     }
 
+    @JavascriptInterface
     public void displayCardScroll() {
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CARD_SCROLL));
     }
 
+    @JavascriptInterface
     public void displayCardTree() {
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CARD_TREE));
     }
 
+    @JavascriptInterface
     public void picarus(String config, String input, String callback) {
         Utils.eventBusPost(new PicarusEvent());
     }
 
+    @JavascriptInterface
     public void sound(String type) {
         Log.i(TAG, "sound");
         Utils.eventBusPost(new SoundEvent(type));
     }
 
+    @JavascriptInterface
     public void cardTree(String treeJS) {
         Utils.eventBusPost(new CardTreeEvent(treeJS));
     }
@@ -460,67 +500,82 @@ public class WearScript {
         return int.class;
     }
 
+    @JavascriptInterface
     public void glCallback(String callback) {
         Utils.eventBusPost(new CallbackRegistration(OpenGLManager.class, callback).setEvent(OpenGLManager.OPENGL_DRAW_CALLBACK));
     }
 
+    @JavascriptInterface
     public void displayGL() {
         Log.i(TAG, "displayGL");
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.OPENGL));
     }
 
+    @JavascriptInterface
     public void glDone() {
         Log.d(TAG, "glDone");
         Utils.getEventBus().post(new OpenGLEvent());
     }
 
+    @JavascriptInterface
     public void glRender() {
         Log.d(TAG, "glRender");
         Utils.getEventBus().post(new OpenGLRenderEvent());
     }
 
+    @JavascriptInterface
     public void glDDDDV(String methodName, double p0, double p1, double p2, double p3) {
         glHelper(methodName, false, p0, p1, p2, p3);
     }
 
+    @JavascriptInterface
     public void glV(String methodName) {
         glHelper(methodName, false);
     }
 
+    @JavascriptInterface
     public void glDV(String methodName, double p0) {
         glHelper(methodName, false, p0);
     }
 
+    @JavascriptInterface
     public String glDS(String methodName, double p0) {
         return (String) glHelper(methodName, true, p0);
     }
 
+    @JavascriptInterface
     public void glDDV(String methodName, double p0, double p1) {
         Log.d(TAG, "OpenGL: Double Double: " + methodName);
         glHelper(methodName, false, p0, p1);
     }
 
+    @JavascriptInterface
     public void glDDDV(String methodName, double p0, double p1, double p2) {
         glHelper(methodName, false, p0, p1, p2);
     }
 
+    @JavascriptInterface
     public void glDDSDV(String methodName, double p0, double p1, String p2, double p3) {
         glHelper(methodName, false, p0, p1, p2, p3);
     }
 
+    @JavascriptInterface
     public void glDDDBDDV(String methodName, double p0, double p1, double p2, boolean p3, double p4, double p5) {
         glHelper(methodName, false, p0, p1, p2, p3, p4, p5);
     }
 
+    @JavascriptInterface
     public void glDDBSV(String methodName, double p0, double p1, boolean p2, String p3) {
         glHelper(methodName, false, p0, p1, p2, p3);
     }
 
+    @JavascriptInterface
     public void glDSV(String methodName, double p0, String p1) {
         Log.d(TAG, "OpenGL: Double string: " + methodName);
         glHelper(methodName, false, p0, p1);
     }
 
+    @JavascriptInterface
     public int glDSD(String methodName, double p0, String p1) {
         Log.d(TAG, "OpenGL: Double string ret int: " + methodName);
         return (Integer) glHelper(methodName, true, p0, p1);
@@ -538,23 +593,28 @@ public class WearScript {
         return stringToBuffer(data).order(ByteOrder.nativeOrder()).asFloatBuffer();
     }
 
+    @JavascriptInterface
     public void glBufferData(double target, double size, String data, double usage) {
         glHelper("glBufferData", false, target, size, data, usage);
     }
 
+    @JavascriptInterface
     public int glCreateBuffer() {
         Log.d(TAG, "glCreateBuffer");
         return (Integer) postOpenGLEvent(new OpenGLEventCustom("glCreateBuffer", true));
     }
 
+    @JavascriptInterface
     public int glD(String methodName) {
         return (Integer) glHelper(methodName, true);
     }
 
+    @JavascriptInterface
     public int glDD(String methodName, double p0) {
         return (Integer) glHelper(methodName, true, p0);
     }
 
+    @JavascriptInterface
     public boolean glDB(String methodName, double p0) {
         return (Boolean) glHelper(methodName, true, p0);
     }
@@ -609,6 +669,7 @@ public class WearScript {
         return postOpenGLEvent(new OpenGLEvent(m, ret, args.toArray()));
     }
 
+    @JavascriptInterface
     public String glConstants() {
         JSONObject o = new JSONObject();
         for (Field f : GLES20.class.getFields()) {
@@ -622,6 +683,7 @@ public class WearScript {
         return o.toJSONString();
     }
 
+    @JavascriptInterface
     public String glMethods() {
         return (new JSONObject(openglTypes)).toJSONString();
     }

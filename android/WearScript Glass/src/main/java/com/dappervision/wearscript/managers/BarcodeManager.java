@@ -9,6 +9,8 @@ import com.dappervision.wearscript.jsevents.BarcodeEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 
 public class BarcodeManager extends Manager {
+    public static String QR_CODE = "QR_CODE";
+
     public BarcodeManager(BackgroundService bs) {
         super(bs);
         reset();
