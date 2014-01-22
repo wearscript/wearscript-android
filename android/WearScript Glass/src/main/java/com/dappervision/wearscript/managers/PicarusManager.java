@@ -10,7 +10,7 @@ import android.util.Base64;
 
 import com.dappervision.picarus.IPicarusService;
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.core.Log;
 
 public class PicarusManager extends Manager {
     public PicarusManager(BackgroundService service) {

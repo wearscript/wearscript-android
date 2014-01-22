@@ -1,6 +1,6 @@
 package com.dappervision.wearscript.events;
 
-import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.core.Log;
 
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
