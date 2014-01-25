@@ -1,4 +1,4 @@
-package com.dappervision.wearscript.activities;
+package com.dappervision.wearscript.ui;
 
 import android.app.Activity;
 import android.os.Bundle;
