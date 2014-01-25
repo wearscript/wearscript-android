@@ -1,1 +1,1 @@
-include ':opencv-android', ':WearScript Core', 'WearScript Glass'
+include ':opencv-android', 'WearScript'
