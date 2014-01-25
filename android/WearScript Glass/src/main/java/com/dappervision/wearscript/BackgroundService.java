@@ -283,7 +283,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
             ManagerManager.get().resetAll();
             // TODO(brandyn): Verify that if we create a new activity that the gestures still work
-            if (ManagerManager.get().get(GestureManager.class) == null) {
+            if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
                 if (activity != null) {
                     MainActivity a = activity;
                     ManagerManager.get().add(new GestureManager(a, this));
