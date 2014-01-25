@@ -170,6 +170,7 @@ public class WearScriptHelper {
             mWearScripts = new ArrayList<WearScriptInfo>(mFiles.size());
         }
         mWearScripts.clear();
+        mWearScripts.add(WearScriptInfo.playground());
         for (String file : mFiles) {
             String filePath = "file://" + WEARSCRIPT_PATH + file;
             WearScriptInfo wsInfo = new WearScriptInfo();
