@@ -5,8 +5,8 @@ import android.content.Intent;
 import android.speech.RecognizerIntent;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.core.Log;
+import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.jsevents.StartActivityEvent;
