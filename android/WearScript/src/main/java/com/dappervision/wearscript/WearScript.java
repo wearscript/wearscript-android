@@ -4,7 +4,7 @@ import android.opengl.GLES20;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
-import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.ui.MainActivity;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
 import com.dappervision.wearscript.events.SendEvent;

@@ -49,7 +49,7 @@
         android:label="@string/app_name"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         <activity
-            android:name=".activities.MainActivity"
+            android:name=".ui.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme"
             android:configChanges="keyboardHidden"
@@ -62,12 +62,12 @@
                 android:resource="@xml/voice_trigger_start" />
         </activity>
         <activity
-            android:name=".activities.QRActivity"
+            android:name=".ui.QRActivity"
             android:label="WearScript QR"
             android:screenOrientation="landscape"
             android:configChanges="keyboardHidden"></activity>
         <activity
-            android:name=".activities.SetupActivity"
+            android:name=".ui.SetupActivity"
             android:clearTaskOnLaunch="true"
             android:label="WearScript (Setup)"
             android:screenOrientation="landscape"
@@ -80,7 +80,7 @@
                 android:resource="@xml/voice_trigger_setup" />
         </activity>
         <activity
-            android:name=".activities.StopActivity"
+            android:name=".ui.StopActivity"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleInstance"
             android:label="WearScript (Stop)"
@@ -94,7 +94,7 @@
                 android:resource="@xml/voice_trigger_stop" />
         </activity>
         <activity
-            android:name=".activities.LauncherActivity"
+            android:name=".ui.LauncherActivity"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleInstance"
             android:label="@string/app_name"
@@ -109,7 +109,7 @@
                 android:resource="@xml/voice_trigger_launcher" />
         </activity>
         <activity
-            android:name=".activities.MenuActivity"
+            android:name=".ui.MenuActivity"
             android:label="@string/app_name"
             android:theme="@style/MenuTheme"
             android:enabled="true"></activity>

@@ -25,26 +25,38 @@ import android.graphics.drawable.Drawable;
  * and an icon.
  */
 public class WearScriptInfo {
+    public static final String WS_PKG = "com.dappervision.wearscript";
+    public static final String WS_ACTIVITY = "com.dappervision.wearscript.ui.MainActivity";
     private static final String EXTRA_NAME = "extra";
     /**
      * The application name.
      */
-    CharSequence title;
+    private CharSequence title;
 
     /**
      * The intent used to start the application.
      */
-    Intent intent;
+    private Intent intent;
 
     /**
      * The application icon.
      */
-    Drawable icon;
+    private Drawable icon;
 
     /**
      * When set to true, indicates that the icon has been resized.
      */
     boolean filtered;
+
+    public WearScriptInfo(String title){
+        this.title = title;
+    }
+
+    public WearScriptInfo(String title, String filePath) {
+        this.title = title;
+        setActivity(new ComponentName(WS_PKG, WS_ACTIVITY),
+                Intent.FLAG_ACTIVITY_CLEAR_TOP, filePath);
+    }
 
     /**
      * Creates the application intent based on a component name and various launch flags.
@@ -52,7 +64,7 @@ public class WearScriptInfo {
      * @param className   the class name of the component representing the intent
      * @param launchFlags the launch flags
      */
-    final void setActivity(ComponentName className, int launchFlags, String file) {
+    public final void setActivity(ComponentName className, int launchFlags, String file) {
         intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
         intent.setComponent(className);
@@ -98,9 +110,16 @@ public class WearScriptInfo {
     }
 
     public static WearScriptInfo playground() {
-        WearScriptInfo wsi = new WearScriptInfo();
-        wsi.setActivity(new ComponentName(WearScriptHelper.WS_PKG, WearScriptHelper.WS_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        wsi.title = "Playground";
+        WearScriptInfo wsi = new WearScriptInfo("Playground");
+        wsi.setActivity(new ComponentName(WS_PKG, WS_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return wsi;
+    }
+
+    public Intent getIntent() {
+        return intent;
+    }
+
+    public CharSequence getTitle() {
+        return title;
     }
 }

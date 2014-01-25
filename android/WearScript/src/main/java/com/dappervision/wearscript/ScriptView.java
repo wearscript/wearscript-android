@@ -10,7 +10,7 @@ import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
-import com.dappervision.wearscript.activities.MenuActivity;
+import com.dappervision.wearscript.ui.MenuActivity;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.google.android.glass.timeline.LiveCard;
