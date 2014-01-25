@@ -8,7 +8,7 @@ import android.support.v4.app.FragmentManager;
 import com.dappervision.wearscript.R;
 import com.dappervision.wearscript.WearScriptInfo;
 
-public class LauncherActivity extends FragmentActivity implements ScriptListFragment.Callbacks {
+public class MainActivity extends FragmentActivity implements ScriptListFragment.Callbacks {
     protected Fragment createFragment() {
         return ScriptListFragment.newInstance();
     }
