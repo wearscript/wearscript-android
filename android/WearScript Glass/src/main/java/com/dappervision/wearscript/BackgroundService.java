@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.core.HardwareDetector;
 import com.dappervision.wearscript.core.Log;
 import com.dappervision.wearscript.core.Utils;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
@@ -276,12 +277,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiScanCallback = null;
             dataWifi = dataRemote = dataLocal = false;
             lastSensorSaveTime = sensorDelay = 0.;
-            cardScrollAdapter.reset();
+            if(cardScrollAdapter != null)
+                cardScrollAdapter.reset();
             updateCardScrollView();
 
             ManagerManager.get().resetAll();
             // TODO(brandyn): Verify that if we create a new activity that the gestures still work
-            if (ManagerManager.get().get(GestureManager.class) == null) {
+            if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
                 if (activity != null) {
                     MainActivity a = activity;
                     ManagerManager.get().add(new GestureManager(a, this));
@@ -310,7 +312,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
 
     public void updateCardScrollView() {
-        if (activity == null)
+        if (activity == null || cardScroller == null)
             return;
         final MainActivity a = activity;
         a.runOnUiThread(new Thread() {
@@ -365,12 +367,14 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         glassID = ((WifiManager) getManager(WifiManager.class)).getMacAddress();
 
-        cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
-        cardScroller = new CardScrollView(this);
-        cardScroller.setAdapter(cardScrollAdapter);
-        cardScroller.activate();
-        cardScroller.setOnItemSelectedListener(cardScrollAdapter);
-        cardScroller.setOnItemClickListener(cardScrollAdapter);
+        if(HardwareDetector.isGlass){
+            cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
+            cardScroller = new CardScrollView(this);
+            cardScroller.setAdapter(cardScrollAdapter);
+            cardScroller.activate();
+            cardScroller.setOnItemSelectedListener(cardScrollAdapter);
+            cardScroller.setOnItemClickListener(cardScrollAdapter);
+        }
 
         reset();
     }
@@ -403,7 +407,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             activity.finish();
         }
         this.activity = a;
-        if (cardTree == null)
+        if (cardTree == null && HardwareDetector.isGlass)
             cardTree = new Tree(a);
     }
 

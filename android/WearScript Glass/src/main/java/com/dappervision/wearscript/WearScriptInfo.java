@@ -60,6 +60,19 @@ public class WearScriptInfo {
         intent.putExtra(EXTRA_NAME, file);
     }
 
+    /**
+     * Creates the application intent based on a component name and various launch flags.
+     *
+     * @param className   the class name of the component representing the intent
+     * @param launchFlags the launch flags
+     */
+    final void setActivity(ComponentName className, int launchFlags) {
+        intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.setComponent(className);
+        intent.setFlags(launchFlags);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -82,5 +95,12 @@ public class WearScriptInfo {
         final String name = intent.getComponent().getClassName();
         result = 31 * result + (name != null ? name.hashCode() : 0);
         return result;
+    }
+
+    public static WearScriptInfo playground() {
+        WearScriptInfo wsi = new WearScriptInfo();
+        wsi.setActivity(new ComponentName(WearScriptHelper.WS_PKG, WearScriptHelper.WS_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        wsi.title = "Playground";
+        return wsi;
     }
 }
