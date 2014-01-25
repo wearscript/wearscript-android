@@ -187,7 +187,7 @@ public class WearScript {
     @JavascriptInterface
     public void log(String msg) {
         //Global event
-        Utils.eventBusPost(new SendEvent("log", msg));
+        Utils.eventBusPost(new SendSubEvent("log", msg));
     }
 
     @JavascriptInterface
