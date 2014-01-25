@@ -1,5 +1,4 @@
 package com.google.android.glass.eye;
-
 import android.content.Context;
 
 public class EyeGestureManager {

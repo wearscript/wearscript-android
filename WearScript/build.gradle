@@ -1,0 +1,39 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.+'
+    }
+}
+apply plugin: 'android'
+
+repositories {
+    mavenCentral()
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.0"
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 19
+    }
+}
+
+dependencies {
+    compile 'de.greenrobot:eventbus:2.2.0'
+    compile files('libs/android-websockets.jar')
+    compile files('libs/commons-codec-1.6.jar')
+    compile files('libs/gdk.jar')
+    compile files('libs/java_websocket.jar')
+    compile files('libs/json-simple-1.1.1.jar')
+    compile files('libs/msgpack-0.6.9-SNAPSHOT.jar')
+    compile files('libs/jackson-core-2.2.3.jar')
+    compile files('libs/protocol-1.0.4.jar')
+    compile files('libs/sentry-0.1.4.jar')
+    compile files('libs/CardTree.jar')
+    compile project(':opencv-android')
+    compile files('libs/android-support-v13.jar')
+}
