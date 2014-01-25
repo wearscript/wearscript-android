@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">WearScript</string>
-    <string name="launch">Launch... </string>
     <string name="open">Open</string>
     <string name="stop">Stop</string>
-    <string name="start_wearscript">wear a script</string>
+    <string name="setup">Setup</string>
+    <string name="glass_voice_trigger">wear a script</string>
 </resources>
