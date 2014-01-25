@@ -26,7 +26,7 @@ import android.graphics.drawable.Drawable;
  */
 public class WearScriptInfo {
     public static final String WS_PKG = "com.dappervision.wearscript";
-    public static final String WS_SCRIPT_ACTIVITY = "com.dappervision.wearscript.ui.MainActivity";
+    public static final String WS_SCRIPT_ACTIVITY = "com.dappervision.wearscript.ui.ScriptActivity";
     public static final String WS_STOP_ACTIVITY = "com.dappervision.wearscript.ui.StopActivity";
     public static final String WS_SETUP_ACTIVITY = "com.dappervision.wearscript.ui.SetupActivity";
     private static final String EXTRA_NAME = "extra";

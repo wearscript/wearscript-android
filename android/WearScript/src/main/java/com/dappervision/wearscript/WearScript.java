@@ -4,7 +4,7 @@ import android.opengl.GLES20;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
-import com.dappervision.wearscript.ui.MainActivity;
+import com.dappervision.wearscript.ui.ScriptActivity;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -364,7 +364,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void cardInsert(final int position, final String cardJSON) {
-        MainActivity a = bs.activity;
+        ScriptActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -378,7 +378,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void cardModify(final int position, final String cardJSON) {
-        MainActivity a = bs.activity;
+        ScriptActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -393,7 +393,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void cardTrim(final int position) {
-        MainActivity a = bs.activity;
+        ScriptActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -407,7 +407,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void cardDelete(final int position) {
-        MainActivity a = bs.activity;
+        ScriptActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {
@@ -421,7 +421,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void cardPosition(final int position) {
-        MainActivity a = bs.activity;
+        ScriptActivity a = bs.activity;
         if (a != null) {
             a.runOnUiThread(new Thread() {
                 public void run() {

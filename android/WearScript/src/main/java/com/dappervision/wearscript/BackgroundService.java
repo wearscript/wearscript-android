@@ -14,7 +14,7 @@ import android.speech.tts.TextToSpeech.OnInitListener;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.dappervision.wearscript.ui.MainActivity;
+import com.dappervision.wearscript.ui.ScriptActivity;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
@@ -60,7 +60,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected static String TAG = "WearScript";
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
-    public MainActivity activity;
+    public ScriptActivity activity;
     public boolean dataRemote, dataLocal, dataWifi;
     public double lastSensorSaveTime, sensorDelay;
     public ScriptView webview;
@@ -89,7 +89,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void updateActivityView(final String mode) {
         if (activity == null)
             return;
-        final MainActivity a = activity;
+        final ScriptActivity a = activity;
         a.runOnUiThread(new Thread() {
             public void run() {
                 activityMode = mode;
@@ -247,7 +247,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
             if (activity == null)
                 return;
-            final MainActivity a = activity;
+            final ScriptActivity a = activity;
             a.runOnUiThread(new Thread() {
                 public void run() {
                     Log.d(TAG, "Lifecycle: Stop self activity");
@@ -282,7 +282,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             // TODO(brandyn): Verify that if we create a new activity that the gestures still work
             if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
                 if (activity != null) {
-                    MainActivity a = activity;
+                    ScriptActivity a = activity;
                     ManagerManager.get().add(new GestureManager(a, this));
                 }
             }
@@ -311,7 +311,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void updateCardScrollView() {
         if (activity == null || cardScroller == null)
             return;
-        final MainActivity a = activity;
+        final ScriptActivity a = activity;
         a.runOnUiThread(new Thread() {
             public void run() {
                 cardScroller.updateViews(true);
@@ -398,7 +398,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         cardTree.showRoot();
     }
 
-    public void setMainActivity(MainActivity a) {
+    public void setMainActivity(ScriptActivity a) {
         Log.i(TAG, "Lifecycle: BackgroundService: setMainActivity");
         if (this.activity != null) {
             activity.finish();
@@ -432,7 +432,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onEvent(ActivityEvent e) {
         // TODO(brandyn): Change these strings to use the modes
         if (e.getMode() == ActivityEvent.Mode.CREATE) {
-            Intent i = new Intent(this, MainActivity.class);
+            Intent i = new Intent(this, ScriptActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
         } else if (e.getMode() == ActivityEvent.Mode.DESTROY) {
