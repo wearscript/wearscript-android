@@ -37,6 +37,8 @@ public class InstalledScripts {
         }
         mWearScripts.clear();
         mWearScripts.add(WearScriptInfo.playground());
+        mWearScripts.add(WearScriptInfo.stop());
+        mWearScripts.add(WearScriptInfo.setup());
         for (String file : mFiles) {
             String filePath = "file://" + WEARSCRIPT_PATH + file;
             WearScriptInfo wsInfo = new WearScriptInfo(file, filePath);

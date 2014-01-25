@@ -26,8 +26,11 @@ import android.graphics.drawable.Drawable;
  */
 public class WearScriptInfo {
     public static final String WS_PKG = "com.dappervision.wearscript";
-    public static final String WS_ACTIVITY = "com.dappervision.wearscript.ui.MainActivity";
+    public static final String WS_SCRIPT_ACTIVITY = "com.dappervision.wearscript.ui.MainActivity";
+    public static final String WS_STOP_ACTIVITY = "com.dappervision.wearscript.ui.StopActivity";
+    public static final String WS_SETUP_ACTIVITY = "com.dappervision.wearscript.ui.SetupActivity";
     private static final String EXTRA_NAME = "extra";
+
     /**
      * The application name.
      */
@@ -54,7 +57,7 @@ public class WearScriptInfo {
 
     public WearScriptInfo(String title, String filePath) {
         this.title = title;
-        setActivity(new ComponentName(WS_PKG, WS_ACTIVITY),
+        setActivity(new ComponentName(WS_PKG, WS_SCRIPT_ACTIVITY),
                 Intent.FLAG_ACTIVITY_CLEAR_TOP, filePath);
     }
 
@@ -111,7 +114,18 @@ public class WearScriptInfo {
 
     public static WearScriptInfo playground() {
         WearScriptInfo wsi = new WearScriptInfo("Playground");
-        wsi.setActivity(new ComponentName(WS_PKG, WS_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        wsi.setActivity(new ComponentName(WS_PKG, WS_SCRIPT_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        return wsi;
+    }
+
+    public static WearScriptInfo stop() {
+        WearScriptInfo wsi = new WearScriptInfo("Stop");
+        wsi.setActivity(new ComponentName(WS_PKG, WS_STOP_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        return wsi;
+    }
+    public static WearScriptInfo setup() {
+        WearScriptInfo wsi = new WearScriptInfo("Setup");
+        wsi.setActivity(new ComponentName(WS_PKG, WS_SETUP_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return wsi;
     }
 

@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.view.LayoutInflater;
@@ -12,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
+import com.dappervision.wearscript.HardwareDetector;
 import com.dappervision.wearscript.WearScriptInfo;
 import com.dappervision.wearscript.WearScriptsAdapter;
 import com.dappervision.wearscript.models.InstalledScripts;
@@ -33,7 +36,7 @@ public class ScriptListFragment extends ListFragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        mCallbacks = (Callbacks)activity;
+        mCallbacks = (Callbacks) activity;
     }
 
     @Override
@@ -62,6 +65,14 @@ public class ScriptListFragment extends ListFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = super.onCreateView(inflater, container, savedInstanceState);
         listView = (ListView) v.findViewById(android.R.id.list);
+        //Style things for Glass
+        if (HardwareDetector.isGlass) {
+            listView.setHorizontalScrollBarEnabled(false);
+            listView.setVerticalScrollBarEnabled(false);
+            listView.setSelector(new ColorDrawable(Color.TRANSPARENT));
+            listView.setDivider(new ColorDrawable(Color.TRANSPARENT));
+            listView.setDividerHeight(10);
+        }
         return v;
     }
 
