@@ -14,7 +14,7 @@ import android.speech.tts.TextToSpeech.OnInitListener;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.dappervision.wearscript.activities.MainActivity;
+import com.dappervision.wearscript.ui.MainActivity;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;

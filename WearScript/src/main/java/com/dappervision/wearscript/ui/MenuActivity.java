@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dappervision.wearscript.activities;
+package com.dappervision.wearscript.ui;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -27,7 +27,7 @@ import android.view.MenuItem;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
-import com.dappervision.wearscript.WearScriptHelper;
+import com.dappervision.wearscript.WearScriptInfo;
 
 /**
  * Activity showing the options menu.
@@ -68,7 +68,7 @@ public class MenuActivity extends Activity {
                 Log.d(TAG, "opening activity");
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.addCategory(Intent.CATEGORY_LAUNCHER);
-                intent.setComponent(new ComponentName(WearScriptHelper.WS_PKG, WearScriptHelper.WS_ACTIVITY));
+                intent.setComponent(new ComponentName(WearScriptInfo.WS_PKG, WearScriptInfo.WS_ACTIVITY));
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 return true;
