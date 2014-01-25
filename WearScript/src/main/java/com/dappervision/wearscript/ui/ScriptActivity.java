@@ -19,7 +19,7 @@ import com.dappervision.wearscript.jsevents.StartActivityEvent;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 
-public class MainActivity extends Activity {
+public class ScriptActivity extends Activity {
     protected static final String TAG = "WearScript";
     private static final String EXTRA_NAME = "extra";
     public boolean isGlass = true, isForeground = true;
@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     private String extra;
     private boolean mHadUrlExtra = false;
 
-    public MainActivity() {
+    public ScriptActivity() {
     }
 
     /**
@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
             public void onServiceConnected(ComponentName className, IBinder service) {
                 Log.i(TAG, "Service Connected");
                 bs = ((BackgroundService.LocalBinder) service).getService();
-                bs.setMainActivity(MainActivity.this);
+                bs.setMainActivity(ScriptActivity.this);
 
                 // If we already have a view and aren't specifying a script to run, reuse the old script
                 if (bs.webview != null && extra == null) {
@@ -90,7 +90,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onPause() {
-        Log.i(TAG, "Lifecycle: MainActivity: onPause");
+        Log.i(TAG, "Lifecycle: ScriptActivity: onPause");
         isForeground = false;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
@@ -101,7 +101,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onResume() {
-        Log.i(TAG, "Lifecycle: MainActivity: onResume");
+        Log.i(TAG, "Lifecycle: ScriptActivity: onResume");
         isForeground = true;
         if (bs != null) {
             ((CameraManager)bs.getManager(CameraManager.class)).resume();
@@ -111,7 +111,7 @@ public class MainActivity extends Activity {
     }
 
     public void onDestroy() {
-        Log.i(TAG, "Lifecycle: MainActivity: onDestroy");
+        Log.i(TAG, "Lifecycle: ScriptActivity: onDestroy");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (mConnection != null) {
             unbindService(mConnection);
