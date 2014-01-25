@@ -55,8 +55,6 @@
             android:configChanges="keyboardHidden"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
                 <action android:name="com.google.android.glass.action.VOICE_TRIGGER" />
             </intent-filter>
             <meta-data
@@ -99,10 +97,11 @@
             android:name=".activities.LauncherActivity"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleInstance"
-            android:label="WearScript (Launcher)"
-            android:screenOrientation="landscape"
+            android:label="@string/app_name"
             android:configChanges="keyboardHidden">
             <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
                 <action android:name="com.google.android.glass.action.VOICE_TRIGGER" />
             </intent-filter>
             <meta-data
