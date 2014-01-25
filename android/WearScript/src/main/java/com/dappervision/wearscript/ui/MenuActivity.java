@@ -68,7 +68,7 @@ public class MenuActivity extends Activity {
                 Log.d(TAG, "opening activity");
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.addCategory(Intent.CATEGORY_LAUNCHER);
-                intent.setComponent(new ComponentName(WearScriptInfo.WS_PKG, WearScriptInfo.WS_ACTIVITY));
+                intent.setComponent(new ComponentName(WearScriptInfo.WS_PKG, WearScriptInfo.WS_SCRIPT_ACTIVITY));
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 return true;
