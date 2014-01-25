@@ -31,7 +31,6 @@ import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
-import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
 import com.dappervision.wearscript.jsevents.WifiScanResultsEvent;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
@@ -177,10 +176,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             return;
         ConnectionManager cm = (ConnectionManager) getManager(ConnectionManager.class);
         ArrayList<Value> output = new ArrayList<Value>();
-        String channel = cm.getChannelFromSubChannel(ConnectionManager.SENSORS_SUBCHAN);
+        String channel = cm.subchannel(ConnectionManager.SENSORS_SUBCHAN);
         output.add(ValueFactory.createRawValue(channel));
         sensorBuffer = new TreeMap<String, ArrayList<Value>>();
-        if (!(dataRemote && cm.channelExists(channel)) && !dataLocal)
+        if (!(dataRemote && cm.exists(channel)) && !dataLocal)
             return;
 
         ArrayList<Value> sensorTypes = new ArrayList<Value>();
@@ -205,7 +204,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             e.printStackTrace();
             return;
         }
-        if (dataRemote && cm.channelExists(channel))
+        if (dataRemote && cm.exists(channel))
             Utils.eventBusPost(new SendEvent(channel, dataStr));
         if (dataLocal)
             Utils.SaveData(dataStr, "data/", true, ".msgpack");
@@ -223,8 +222,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 Utils.SaveData(frameJPEG, "data/", true, ".jpg");
             }
             ConnectionManager cm = (ConnectionManager) getManager(ConnectionManager.class);
-            String channel = cm.getChannelFromSubChannel(ConnectionManager.IMAGE_SUBCHAN);
-            if (dataRemote && cm.channelExists(channel)) {
+            String channel = cm.subchannel(ConnectionManager.IMAGE_SUBCHAN);
+            if (dataRemote && cm.exists(channel)) {
                 if (frameJPEG == null)
                     frameJPEG = frame.getJPEG();
                 Utils.eventBusPost(new SendEvent(channel, System.currentTimeMillis() / 1000., ValueFactory.createRawValue(frameJPEG)));
