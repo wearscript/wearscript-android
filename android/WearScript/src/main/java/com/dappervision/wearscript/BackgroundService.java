@@ -274,7 +274,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             wifiScanCallback = null;
             dataWifi = dataRemote = dataLocal = false;
             lastSensorSaveTime = sensorDelay = 0.;
-            if(cardScrollAdapter != null)
+            if (cardScrollAdapter != null)
                 cardScrollAdapter.reset();
             updateCardScrollView();
 
@@ -364,7 +364,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         glassID = ((WifiManager) getManager(WifiManager.class)).getMacAddress();
 
-        if(HardwareDetector.isGlass){
+        if (HardwareDetector.isGlass) {
             cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
             cardScroller = new CardScrollView(this);
             cardScroller.setAdapter(cardScrollAdapter);
@@ -421,7 +421,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         super.onDestroy();
     }
 
-    public void onEvent(JsCall e) {
+    public void onEventMainThread(JsCall e) {
         loadUrl(e.getCall());
     }
 
@@ -481,17 +481,38 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         if (tts == null)
             return;
         if (!tts.isSpeaking() || interrupt)
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH,
+            tts.speak(text, TextToSpeech.QUEUE_ADD,
                     null);
     }
 
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
-            int result = tts.setLanguage(Locale.US);
-            // TODO(brandyn): Check result
+            Log.i(TAG, "TTS initialized");
+            if(HardwareDetector.isGlass){
+                //The TTS engine works almost instantly on Glass, and is always the right language. No need to try and configure.
+                return;
+            }
+            Locale userLocale = Locale.ENGLISH;
+            int result = tts.isLanguageAvailable(userLocale);
+            if (result == TextToSpeech.LANG_AVAILABLE) {
+                result = tts.setLanguage(userLocale);
+                if (result == TextToSpeech.SUCCESS) {
+                    Log.i(TAG, "TTS language set");
+                } else {
+                    Log.w(TAG, "TTS language failed " + result);
+                }
+            } else if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Intent installIntent = new Intent();
+                installIntent.setAction(
+                        TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                startActivity(installIntent);
+            } else {
+                Log.e(TAG, "User Locale not available for TTS: " + result);
+            }
+        } else {
+            Log.w(TAG, "TTS initialization failed: " + status);
         }
-        // TODO(brandyn): Check result on else
     }
 
     public Manager getManager(Class<? extends Manager> cls) {
