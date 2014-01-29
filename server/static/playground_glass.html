@@ -50,7 +50,7 @@ function server() {
     //WS.shutdown();
 }
 function main() {
-    if (WS.scriptVersion(0)) return;
+    if (WS.scriptVersion(1)) return;
     ctx = document.getElementById('canvas').getContext("2d");
     WS.serverConnect('{{WSUrl}}', 'server');
 }
