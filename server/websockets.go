@@ -25,7 +25,8 @@ func WSHandler(ws *websocket.Conn) {
 	userId, err := userID(ws.Request())
         if err != nil || userId == "" {
                 path := strings.Split(ws.Request().URL.Path, "/")
-                if len(path) != 2 {
+		fmt.Println(path)
+                if len(path) != 3 {
                         fmt.Println("Bad path")
                         return
                 }

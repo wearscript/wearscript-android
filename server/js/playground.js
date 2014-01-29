@@ -23,7 +23,7 @@ function biosScriptUrl(x) {
 }
 
 function createQR(WSUrl) {
-    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div class="col-md-9"><pre>adb shell \"mkdir -p /sdcard/wearscript && echo \'{{url}}\' > /sdcard/wearscript/qr.txt\"</pre></div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: WSUrl + '/ws/glass/' + x}))}, function () {alert("Could not get ws.  Are you whitelisted on this server?  See the docs for details.")});
+    createKey("ws", function (x) {glassSecret = x; $('#qr').html(Mustache.render('<div class="col-md-9"><pre>adb shell \"mkdir -p /sdcard/wearscript && echo \'{{url}}\' > /sdcard/wearscript/qr.txt\"</pre></div><img src="https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl={{url}}&chld=H|4&choe=UTF-8"\>', {url: WSUrl + '/ws/' + x}))}, function () {alert("Could not get ws.  Are you whitelisted on this server?  See the docs for details.")});
 }
 
 function pingStatus() {
@@ -388,10 +388,6 @@ function main(WSUrl) {
 
     $('#buttonSetup').click(function () {
         $.post('setup').error(function () {alert("Could not setup")});
-    });
-
-    $('#buttonClient').click(function () {
-        createKey("client", function (x) {$('#secret-client').html(_.escape(WSUrl + "/ws/client/" + x))}, function () {alert("Could not get client endpoint")})
     });
 
     $('#simulateButton').click(function () {
