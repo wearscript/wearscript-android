@@ -54,7 +54,10 @@ function enc(data) {
 function connectWebsocket(WSUrl) {
     var url = WSUrl + "/ws/client";
     console.log(url);
-    var ws = new ReconnectingWebSocket(url);
+    return new WearScriptConnection(new ReconnectingWebSocket(url), "playground", "0");
+}
+
+function connectOld() {    
     ws.onopen = function () {
         pingStatus();
         function receiveMessage(event) {
@@ -343,7 +346,7 @@ function main(WSUrl) {
     $(".scriptel").prop('disabled', true);
     $('#qrButton').click(function () {createQR(WSUrl)});
     $('#scriptButton').click(function () {
-        ws.send(enc(['startScript', editor.getValue()]));
+        ws.publish('glass', 'script', {'glass.html': editor.getValue()});
     });
     $('#scriptSaveButton').click(function () {
         ws.send(enc(['saveScript', editor.getValue(), $('#script-name').val()]));
