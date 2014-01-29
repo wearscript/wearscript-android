@@ -12,7 +12,7 @@ def main():
                 'codemirror.js', 'bootstrap-switch.min.js', 'd3.v3.min.js',
                 'rickshaw.min.js', 'playground.js', 'matchbrackets.js', 'active-line.js',
                 'css.js', 'javascript.js', 'xml.js', 'htmlmixed.js', 'underscore-min.js',
-                'mustache.min.js']
+                'mustache.min.js', 'wearscript-client.js']
     includes = ['js/' + x for x in includes]
     css = ['codemirror.css', 'bootstrap.min.css',
            'bootstrap-switch.css', 'cube.css', 'rickshaw.min.css']
