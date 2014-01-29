@@ -52,9 +52,22 @@ function enc(data) {
 }
 
 function connectWebsocket(WSUrl) {
-    var url = WSUrl + "/ws/client";
-    console.log(url);
-    return new WearScriptConnection(new ReconnectingWebSocket(url), "playground", "0");
+    var url = WSUrl + "/ws";
+    console.log('Connecting: ' + url);
+    websocket = new ReconnectingWebSocket(url)
+    websocket.onopen = function () {
+	console.log('checking')
+	subscription_cb();
+	ws.subscribe('subscriptions', subscription_cb);
+    }
+    var ws = new WearScriptConnection(websocket, "playground", "0");
+    function subscription_cb() {
+	if (!ws.exists('glass'))
+            $(".scriptel").prop('disabled', true);
+        else
+            $(".scriptel").prop('disabled', false);
+    }
+    return ws;
 }
 
 function connectOld() {    
