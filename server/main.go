@@ -17,6 +17,7 @@ import (
 
 const revokeEndpointFmt = "https://accounts.google.com/o/oauth2/revoke?token=%s"
 
+/*
 func StaticServer(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Query().Get(":path")
 	if strings.ContainsAny(path, "/\\") {
@@ -24,11 +25,26 @@ func StaticServer(w http.ResponseWriter, req *http.Request) {
 	}
 	http.ServeFile(w, req, "static/"+path)
 }
+*/
 
 type PlaygroundTemplate struct {
 	WSUrl     string
 	GlassBody string
 	WidgetUrl string
+}
+
+func noDirListing(h http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			PlaygroundServer(w, r)
+			return
+		}
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }
 
 func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
@@ -37,7 +53,7 @@ func PlaygroundServer(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, fullUrl+"/auth", http.StatusFound)
 		return
 	}
-	t, err := template.ParseFiles("static/playground.html")
+	t, err := template.ParseFiles("dist/index.html")
 	var glassBody []byte
 	script := req.URL.Query().Get("script")
 	if script == "" {
@@ -217,7 +233,7 @@ func main() {
 		return
 	}
 	m := pat.New()
-	m.Get("/static/{path}", http.HandlerFunc(StaticServer))
+	//m.Get("/static/{path}", http.HandlerFunc(StaticServer))
 	m.Post("/setup", http.HandlerFunc(SetupHandler))
 	m.Post("/user/key/{type}", http.HandlerFunc(SecretKeySetupHandler))
 
@@ -234,7 +250,7 @@ func main() {
 	m.Post("/signature", http.HandlerFunc(SignatureVerifyHandler))
 	http.Handle("/ws", websocket.Handler(WSHandler))
 	http.Handle("/ws/", websocket.Handler(WSHandler))
-	m.Get("/", http.HandlerFunc(PlaygroundServer))
+	m.Get("/", noDirListing(http.FileServer(http.Dir("dist"))))
 	http.Handle("/", m)
 	err = http.ListenAndServe(":"+servePort, nil)
 	if err != nil {
