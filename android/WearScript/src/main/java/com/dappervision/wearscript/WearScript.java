@@ -153,7 +153,7 @@ public class WearScript {
     @JavascriptInterface
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
-        Utils.eventBusPost(new SendSubEvent("timeline", ti));
+        Utils.eventBusPost(new SendSubEvent("mirror", ti));
     }
 
     @JavascriptInterface

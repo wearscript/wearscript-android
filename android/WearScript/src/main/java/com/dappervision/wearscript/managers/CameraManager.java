@@ -9,6 +9,7 @@ import android.os.FileObserver;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.view.WindowManager;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
@@ -17,6 +18,7 @@ import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.OpenCVLoadedEvent;
+import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.StartActivityEvent;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -285,7 +287,12 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                     }
                 }
             };
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, service, mLoaderCallback);
+            try {
+                OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, service, mLoaderCallback);
+            } catch (WindowManager.BadTokenException e) {
+                Log.w(TAG, "OpenCV apk not installed");
+                Utils.eventBusPost(new SayEvent("Please install open CV.  See wearscript.com for details"));
+            }
         }
     }
 

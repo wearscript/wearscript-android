@@ -1,10 +1,14 @@
 package com.dappervision.wearscript;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Environment;
+import android.speech.tts.TextToSpeech;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.Locale;
 
 import de.greenrobot.event.EventBus;
 
@@ -70,5 +74,34 @@ public class Utils {
         long startTime = System.nanoTime();
         getEventBus().post(event);
         Log.d(TAG, "Event: " + event.getClass().getName() + " Time: " + (System.nanoTime() - startTime) / 1000000000.);
+    }
+
+    public static boolean setupTTS(Context context, TextToSpeech tts) {
+        Log.i(TAG, "TTS initialized");
+        if(HardwareDetector.isGlass){
+            //The TTS engine works almost instantly on Glass, and is always the right language. No need to try and configure.
+            return true;
+        }
+        Locale userLocale = Locale.ENGLISH;
+        int result = tts.isLanguageAvailable(userLocale);
+        if (result == TextToSpeech.LANG_AVAILABLE) {
+            result = tts.setLanguage(userLocale);
+            if (result == TextToSpeech.SUCCESS) {
+                Log.i(TAG, "TTS language set");
+                return true;
+            } else {
+                Log.w(TAG, "TTS language failed " + result);
+                return false;
+            }
+        } else if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Intent installIntent = new Intent();
+            installIntent.setAction(
+                    TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+            context.startActivity(installIntent);
+            return true;
+        } else {
+            Log.e(TAG, "User Locale not available for TTS: " + result);
+            return false;
+        }
     }
 }

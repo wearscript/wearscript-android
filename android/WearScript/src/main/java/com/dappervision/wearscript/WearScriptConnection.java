@@ -169,7 +169,8 @@ public abstract class WearScriptConnection {
                 for (String channel : deviceChannels)
                     externalChannelsNew.add(channel);
             externalChannels = externalChannelsNew;
-            Log.d(TAG, "External: " + externalChannels.size() + " " + externalChannels.first());
+            for (String c : externalChannels)
+                Log.d(TAG, "External: " + c);
         }
     }
 
@@ -192,7 +193,7 @@ public abstract class WearScriptConnection {
     }
 
     public String subchannel(String part) {
-        return channel(this.groupDevice, part);
+        return channel(part, this.groupDevice);
     }
 
     public TreeSet<String> channelsInternal() {
