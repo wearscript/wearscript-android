@@ -19,6 +19,7 @@ public class ManagerManager {
         add(new BarcodeManager(bs));
         add(new WifiManager(bs));
         add(new AudioManager(bs));
+        add(new SpeechManager(bs));
         add(new OpenGLManager(bs));
         add(new ConnectionManager(bs));
     }
