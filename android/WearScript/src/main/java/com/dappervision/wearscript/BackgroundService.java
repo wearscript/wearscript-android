@@ -488,28 +488,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
-            Log.i(TAG, "TTS initialized");
-            if(HardwareDetector.isGlass){
-                //The TTS engine works almost instantly on Glass, and is always the right language. No need to try and configure.
-                return;
-            }
-            Locale userLocale = Locale.ENGLISH;
-            int result = tts.isLanguageAvailable(userLocale);
-            if (result == TextToSpeech.LANG_AVAILABLE) {
-                result = tts.setLanguage(userLocale);
-                if (result == TextToSpeech.SUCCESS) {
-                    Log.i(TAG, "TTS language set");
-                } else {
-                    Log.w(TAG, "TTS language failed " + result);
-                }
-            } else if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Intent installIntent = new Intent();
-                installIntent.setAction(
-                        TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
-                startActivity(installIntent);
-            } else {
-                Log.e(TAG, "User Locale not available for TTS: " + result);
-            }
+            Utils.setupTTS(this, tts);
         } else {
             Log.w(TAG, "TTS initialization failed: " + status);
         }

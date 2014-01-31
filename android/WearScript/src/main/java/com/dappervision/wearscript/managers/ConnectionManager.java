@@ -98,8 +98,8 @@ public class ConnectionManager extends Manager {
         }
     }
 
-    public String subchannel(String sensorsSubchan) {
-        return connection.subchannel(sensorsSubchan);
+    public String subchannel(String subchan) {
+        return connection.subchannel(subchan);
     }
 
     public boolean exists(String channel) {
