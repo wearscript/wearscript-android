@@ -18,6 +18,11 @@ public class Utils {
     public static String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
         try {
             try {
+                // TODO(brandyn): Ensure that suffix can't be modified to get out of the directory
+                if (suffix.contains("/") || suffix.contains("\\")) {
+                    Log.e(TAG, "Suffix contains invalid character: " + suffix);
+                    return null;
+                }
                 File dir = new File(dataPath() + path);
                 dir.mkdirs();
                 File file;
