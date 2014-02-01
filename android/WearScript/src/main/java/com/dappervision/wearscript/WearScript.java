@@ -4,6 +4,7 @@ import android.opengl.GLES20;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
+import com.dappervision.wearscript.jsevents.GistSyncEvent;
 import com.dappervision.wearscript.ui.ScriptActivity;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
@@ -339,6 +340,12 @@ public class WearScript {
     public void publish(String channel, String data) {
         Log.i(TAG, "publish");
         Utils.eventBusPost(new SendEvent(channel, data));
+    }
+
+    @JavascriptInterface
+    public void gistSync() {
+        Log.i(TAG, "gistSync");
+        Utils.eventBusPost(new GistSyncEvent());
     }
 
     @JavascriptInterface
