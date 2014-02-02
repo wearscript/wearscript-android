@@ -9,8 +9,8 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +22,8 @@ import com.dappervision.wearscript.WearScriptsAdapter;
 import com.dappervision.wearscript.models.InstalledScripts;
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
+
+import java.util.ArrayList;
 
 public class ScriptListFragment extends ListFragment {
     private InstalledScripts mInstalledScripts;
@@ -39,8 +41,23 @@ public class ScriptListFragment extends ListFragment {
             gestureDetector.onMotionEvent(event);
     }
 
+    public WearScriptInfo getWearScriptInfo(int position) {
+        return (WearScriptInfo) getListView().getItemAtPosition(position);
+    }
+
     public interface Callbacks {
         void onScriptSelected(WearScriptInfo scriptInfo);
+        Menu getOptionsMenu();
+    }
+
+    private void populateOptionsMenu() {
+        Menu menu = mCallbacks.getOptionsMenu();
+        ArrayList<WearScriptInfo> scripts = mInstalledScripts.getWearScripts();
+        int ind = 0;
+        for (WearScriptInfo script : scripts) {
+            menu.add(0, ind, Menu.NONE, script.getTitle());
+            ind++;
+        }
     }
 
     @Override
@@ -69,8 +86,10 @@ public class ScriptListFragment extends ListFragment {
         intentFilter.addDataScheme("package");
         getActivity().registerReceiver(mPackageBroadcastReciever, intentFilter);
         setListAdapter(new WearScriptsAdapter(this, mInstalledScripts));
-        if(HardwareDetector.isGlass)
+        if(HardwareDetector.isGlass) {
             gestureDetector = createGestureDetector(getActivity());
+            populateOptionsMenu();
+        }
     }
 
     @Override
