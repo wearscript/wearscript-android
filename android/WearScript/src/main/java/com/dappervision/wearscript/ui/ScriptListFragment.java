@@ -69,8 +69,8 @@ public class ScriptListFragment extends ListFragment {
         intentFilter.addDataScheme("package");
         getActivity().registerReceiver(mPackageBroadcastReciever, intentFilter);
         setListAdapter(new WearScriptsAdapter(this, mInstalledScripts));
-        if(HardwareDetector.isGlass)
-            gestureDetector = createGestureDetector(getActivity());
+        //if(HardwareDetector.isGlass)
+        //    gestureDetector = createGestureDetector(getActivity());
     }
 
     @Override

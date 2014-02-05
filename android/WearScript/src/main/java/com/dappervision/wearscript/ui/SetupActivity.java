@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.events.ShutdownEvent;
 
 public class SetupActivity extends Activity {
     private static final String TAG = "SetupActivity";
@@ -13,6 +14,7 @@ public class SetupActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Utils.getEventBus().post(new ShutdownEvent());
         Intent intent = new Intent("com.google.zxing.client.android.SCAN");
         startActivityForResult(intent, 0);
     }
@@ -20,7 +22,7 @@ public class SetupActivity extends Activity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        Log.i(TAG, "QR: Got activity result: V0");
+        Log.i(TAG, "QR: Got activity result: " + resultCode + " requestCode: " + requestCode);
         if (requestCode == 0) {
             String contents = null;
             if (resultCode == RESULT_OK) {
@@ -30,7 +32,7 @@ public class SetupActivity extends Activity {
                 Utils.SaveData(contents.getBytes(), "", false, "qr.txt");
             } else if (resultCode == RESULT_CANCELED) {
             }
+            finish();
         }
-        finish();
     }
 }
