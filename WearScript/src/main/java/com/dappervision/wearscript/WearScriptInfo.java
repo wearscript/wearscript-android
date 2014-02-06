@@ -118,6 +118,13 @@ public class WearScriptInfo {
         return wsi;
     }
 
+    public static WearScriptInfo gistSync() {
+        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>Gist Sync Hack<br><br>Docs @ wearscript.com</h1></center><script>function s() {WS.say('connected');setTimeout(function (){WS.gistSync();setTimeout(function (){WS.shutdown()},10000)},250)};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
+        String path = Utils.SaveData(data, "scripting/", false, "gist.html");
+        WearScriptInfo wsi = new WearScriptInfo("Gist Sync", path);
+        return wsi;
+    }
+
     public static WearScriptInfo stop() {
         WearScriptInfo wsi = new WearScriptInfo("Stop");
         wsi.setActivity(new ComponentName(WS_PKG, WS_STOP_ACTIVITY), Intent.FLAG_ACTIVITY_CLEAR_TOP);
