@@ -14,6 +14,7 @@ import android.view.WindowManager;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.jsevents.ActivityResultEvent;
 import com.dappervision.wearscript.jsevents.StartActivityEvent;
 import com.dappervision.wearscript.managers.CameraManager;
@@ -69,8 +70,7 @@ public class ScriptActivity extends Activity {
 
                 if (extra != null) {
                     Log.i(TAG, "Extra script: " + extra);
-                    // TODO(brandyn): Get launcher scripts working again
-                    //bs.runScriptUrl(extra);
+                    Utils.eventBusPost(new ScriptEvent(extra));
                 } else {
                     Log.i(TAG, "Default script");
                     bs.startDefaultScript();
