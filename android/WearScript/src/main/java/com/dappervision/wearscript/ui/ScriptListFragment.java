@@ -5,24 +5,31 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.LinearLayout;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import com.dappervision.wearscript.HardwareDetector;
 import com.dappervision.wearscript.WearScriptInfo;
 import com.dappervision.wearscript.WearScriptsAdapter;
+import com.dappervision.wearscript.WearScriptsCardAdapter;
 import com.dappervision.wearscript.models.InstalledScripts;
+import com.google.android.glass.widget.CardScrollAdapter;
+import com.google.android.glass.widget.CardScrollView;
 
-public class ScriptListFragment extends ListFragment {
+
+public class ScriptListFragment extends Fragment {
+    //private static final String TAG = "ScriptListFragment";
     private InstalledScripts mInstalledScripts;
-    private ListView listView;
+    private AdapterView adapterView;
     private Callbacks mCallbacks;
+    private ListAdapter mListAdapter;
 
     public static ScriptListFragment newInstance() {
         ScriptListFragment fragment = new ScriptListFragment();
@@ -47,7 +54,14 @@ public class ScriptListFragment extends ListFragment {
 
     public void updateUI() {
         mInstalledScripts.load();
-        ((WearScriptsAdapter) getListAdapter()).notifyDataSetChanged();
+    }
+
+    public ListAdapter buildListAdapter(){
+        if(HardwareDetector.isGlass){
+            return new WearScriptsCardAdapter(this, mInstalledScripts);
+        }else{
+            return new WearScriptsAdapter(this, mInstalledScripts);
+        }
     }
 
     @Override
@@ -58,28 +72,30 @@ public class ScriptListFragment extends ListFragment {
         intentFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
         intentFilter.addDataScheme("package");
         getActivity().registerReceiver(mPackageBroadcastReciever, intentFilter);
-        setListAdapter(new WearScriptsAdapter(this, mInstalledScripts));
+        mListAdapter = buildListAdapter();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View v = super.onCreateView(inflater, container, savedInstanceState);
-        listView = (ListView) v.findViewById(android.R.id.list);
-        //Style things for Glass
-        if (HardwareDetector.isGlass) {
-            listView.setHorizontalScrollBarEnabled(false);
-            listView.setVerticalScrollBarEnabled(false);
-            listView.setSelector(new ColorDrawable(Color.TRANSPARENT));
-            listView.setDivider(new ColorDrawable(Color.TRANSPARENT));
-            listView.setDividerHeight(10);
+        LinearLayout layout = new LinearLayout(getActivity());
+        if(HardwareDetector.isGlass){
+            CardScrollView view = new CardScrollView(getActivity());
+            view.setAdapter((CardScrollAdapter) mListAdapter);
+            view.activate();
+            adapterView = view;
+        }else{
+            adapterView = new ListView(getActivity());
+            adapterView.setAdapter(mListAdapter);
         }
-        return v;
+        adapterView.setOnItemClickListener(mOnItemClickListener);
+        layout.addView(adapterView);
+        return layout;
     }
 
     @Override
-    public void onListItemClick(ListView l, View v, int position, long id) {
-        WearScriptInfo info = ((WearScriptsAdapter) getListAdapter()).getItem(position);
-        mCallbacks.onScriptSelected(info);
+    public void onResume() {
+        super.onResume();
+        adapterView.requestFocus();
     }
 
     @Override
@@ -92,6 +108,14 @@ public class ScriptListFragment extends ListFragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             updateUI();
+        }
+    };
+
+    AdapterView.OnItemClickListener mOnItemClickListener = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+            WearScriptInfo info = (WearScriptInfo) mListAdapter.getItem(i);
+            mCallbacks.onScriptSelected(info);
         }
     };
 }
