@@ -143,4 +143,8 @@ public class WearScriptInfo {
     public CharSequence getTitle() {
         return title;
     }
+
+    public int getId() {
+        return title.hashCode();
+    }
 }
