@@ -25,6 +25,8 @@ public class InstalledScripts {
         File extStorageDir = new File(WEARSCRIPT_PATH);
         Log.i(TAG, "WSFiles: the directory: " + extStorageDir);
         String[] flArray = extStorageDir.list();
+        if (flArray == null)
+            return new ArrayList<String>();
         return Arrays.asList(flArray);
     }
 
