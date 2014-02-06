@@ -4,19 +4,16 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.view.MotionEvent;
 
 import com.dappervision.wearscript.R;
 import com.dappervision.wearscript.WearScriptInfo;
 
 public class MainActivity extends FragmentActivity implements ScriptListFragment.Callbacks {
-    protected ScriptListFragment createFragment() {
+
+    protected Fragment createFragment() {
         return ScriptListFragment.newInstance();
     }
 
-    protected ScriptListFragment getFragment() {
-        return (ScriptListFragment) getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
-    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,11 +37,5 @@ public class MainActivity extends FragmentActivity implements ScriptListFragment
     @Override
     public void onScriptSelected(WearScriptInfo scriptInfo) {
         startActivity(scriptInfo.getIntent());
-    }
-
-    @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
-        getFragment().onMotionEvent(event);
-        return false;
     }
 }
