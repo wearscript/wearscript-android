@@ -106,6 +106,7 @@ public class ConnectionManager extends Manager {
 
     public void shutdown() {
         synchronized (this) {
+            super.shutdown();
             connection.shutdown();
         }
     }

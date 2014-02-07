@@ -110,6 +110,13 @@ public class ScriptActivity extends Activity {
         super.onResume();
     }
 
+    @Override
+    public void onBackPressed() {
+        Log.d(TAG, "Back pressed");
+        if (bs == null || bs.treeBack())
+            super.onBackPressed();
+    }
+
     public void onDestroy() {
         Log.i(TAG, "Lifecycle: ScriptActivity: onDestroy");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
