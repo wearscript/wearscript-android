@@ -176,8 +176,12 @@ public abstract class WearScriptConnection {
 
     public void connect(URI uri) {
         synchronized (this) {
+            if (shutdown) {
+                Log.w(TAG, "Trying to connect while shutdown");
+                return;
+            }
             Log.i(TAG, uri.toString());
-            if (uri.equals(this.uri) && client.isConnected()) {
+            if (uri.equals(this.uri) && connected) {
                 onConnect();
                 return;
             }
@@ -245,6 +249,7 @@ public abstract class WearScriptConnection {
         synchronized (this) {
             this.shutdown = true;
             disconnect();
+            client.getHandlerThread().getLooper().quit();
         }
     }
 
@@ -262,7 +267,7 @@ public abstract class WearScriptConnection {
                     while (true) {
                         Log.w(TAG, "Lifecycle: Trying to reconnect...");
                         synchronized (WearScriptConnection.this) {
-                            if (client.isConnected() || shutdown) {
+                            if (connected || shutdown) {
                                 reconnecting = false;
                                 break;
                             }
@@ -281,7 +286,7 @@ public abstract class WearScriptConnection {
                         // NOTE(brandyn): This ensures that we at least leave this thread with one of...
                         // 1.) socket connected (disconnect after this would trigger a reconnect)
                         // 2.) another thread that will try again
-                        if (!client.isConnected() && !shutdown)
+                        if (!connected && !shutdown)
                             reconnect();
                     }
                 }
@@ -313,20 +318,24 @@ public abstract class WearScriptConnection {
         @Override
         public void onDisconnect(int i, String s) {
             Log.w(TAG, "Lifecycle: Underlying socket disconnected: i: " + i + " s: " + s);
-            if (shutdown)
-                return;
+            synchronized (this) {
+                connected = false;
+                if (shutdown)
+                    return;
+            }
             WearScriptConnection.this.onDisconnect();
-            connected = false;
             reconnect();
         }
 
         @Override
         public void onError(Exception e) {
             Log.w(TAG, "Lifecycle: Underlying socket errored: " + e.getLocalizedMessage());
-            if (shutdown)
-                return;
+            synchronized (this) {
+                connected = false;
+                if (shutdown)
+                    return;
+            }
             WearScriptConnection.this.onDisconnect();
-            connected = false;
             reconnect();
         }
 

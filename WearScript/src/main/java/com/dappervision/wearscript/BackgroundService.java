@@ -87,6 +87,15 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return (new String(wsUrlArray)).trim();
     }
 
+    public boolean treeBack() {
+        synchronized (lock) {
+            if (cardTree == null || cardTree.isRootCurrent())
+                return true;
+            cardTree.back();
+            return false;
+        }
+    }
+
     public void updateActivityView(final String mode) {
         if (activity == null)
             return;
