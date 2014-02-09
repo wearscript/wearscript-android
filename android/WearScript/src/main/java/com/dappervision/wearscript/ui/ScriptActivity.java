@@ -103,6 +103,7 @@ public class ScriptActivity extends Activity {
     public void onResume() {
         Log.i(TAG, "Lifecycle: ScriptActivity: onResume");
         isForeground = true;
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
             ((CameraManager)bs.getManager(CameraManager.class)).resume();
             ((OpenGLManager)bs.getManager(OpenGLManager.class)).getView().onResume();

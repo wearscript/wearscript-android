@@ -61,6 +61,7 @@
             android:name=".ui.SetupActivity"
             android:clearTaskOnLaunch="true"
             android:label="@string/setup"
+            android:exported="true"
             android:configChanges="keyboardHidden">
         </activity>
         <activity
