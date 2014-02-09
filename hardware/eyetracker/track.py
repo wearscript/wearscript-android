@@ -17,7 +17,8 @@ import glob
 import requests
 
 # Default pupil parameters, use the debug mode to tune these and replace them for your purposes
-PARAMS = {'_delta':10, '_min_area': 2000, '_max_area': 20000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 130, 'pupil_ratio': 2}
+PARAMS = {'_delta':7, '_min_area': 2000, '_max_area': 20000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 140, 'pupil_ratio': 2.2}
+#PARAMS = {'_delta':2, '_min_area': 20000, '_max_area': 55000, '_max_variation': .25, '_min_diversity': .2, '_max_evolution': 200, '_area_threshold': 1.01, '_min_margin': .003, '_edge_blur_size': 5, 'pupil_intensity': 150, 'pupil_ratio': 2}
 CMDS = ['X', 'PERIOD']
 LAST_COMMAND_TIME_FIRST = 0
 LAST_COMMAND_TIME = 0
@@ -194,7 +195,7 @@ def pupil_iter(pupil_intensity, pupil_ratio, debug=False, dump=None, load=None, 
             yield box, frame, hulls[0][2], timestamp
         else:
             yield None, frame, None, timestamp
-        gevent.sleep(.05)
+        gevent.sleep(.2)
 
 def main():
     def callback(ws, **kw):
