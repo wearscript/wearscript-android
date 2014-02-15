@@ -205,7 +205,9 @@ public class ConnectionManager extends Manager {
                     Log.d(TAG, "File:" + filename + " : " + gistid);
                 }
             }
-            makeCall(channel, Base64.encodeToString(dataRaw, Base64.NO_WRAP));
+            // BUG(brandyn): If the channel should go to a subchannel now it won't make it,
+            // we should modify channel name before this call
+            makeCall(channel, "'" + Base64.encodeToString(dataRaw, Base64.NO_WRAP) + "'");
         }
 
         @Override
