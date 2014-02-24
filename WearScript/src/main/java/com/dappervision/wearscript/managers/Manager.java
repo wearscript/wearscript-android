@@ -50,7 +50,7 @@ public abstract class Manager {
     protected void makeCall(String key, String data) {
         Log.d(TAG, jsCallbacks.toString());
         if (!jsCallbacks.containsKey(key)) {
-            Log.d(TAG, "Callback not found");
+            Log.d(TAG, "Callback not found: " + key);
             return;
         }
         String url = buildCallbackString(key, data);

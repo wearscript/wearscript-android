@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -56,6 +57,8 @@ public abstract class WearScriptConnection {
                 out.add(ValueFactory.createFloatValue((Double) i));
             else if (Value.class.isAssignableFrom(c))
                 out.add((Value) i);
+            else if (c.equals(Boolean.class))
+                out.add(ValueFactory.createBooleanValue((Boolean) i));
             else {
                 Log.e(TAG, "Unhandled class: " + c);
                 return null;
@@ -106,11 +109,20 @@ public abstract class WearScriptConnection {
         return listValue(scriptChannels);
     }
 
-    private Value listValue(Iterable<String> channels) {
+    public static Value listValue(Iterable<String> channels) {
         ArrayList<Value> channelsArray = new ArrayList<Value>();
         for (String c : channels)
             channelsArray.add(ValueFactory.createRawValue(c));
         return ValueFactory.createArrayValue(channelsArray.toArray(new Value[channelsArray.size()]));
+    }
+
+    public static Value mapValue(Map<String, ArrayList<String>> data) {
+        ArrayList<Value> mapArray = new ArrayList<Value>();
+        for (String k : data.keySet()) {
+            mapArray.add(ValueFactory.createRawValue(k));
+            mapArray.add(listValue(data.get(k)));
+        }
+        return ValueFactory.createMapValue(mapArray.toArray(new Value[mapArray.size()]));
     }
 
     public void subscribe(String channel) {
@@ -169,12 +181,11 @@ public abstract class WearScriptConnection {
                 for (String channel : deviceChannels)
                     externalChannelsNew.add(channel);
             externalChannels = externalChannelsNew;
-            for (String c : externalChannels)
-                Log.d(TAG, "External: " + c);
         }
     }
 
     public void connect(URI uri) {
+        Log.d(TAG, "Lifecycle: Connect called");
         synchronized (this) {
             if (shutdown) {
                 Log.w(TAG, "Trying to connect while shutdown");
@@ -201,7 +212,7 @@ public abstract class WearScriptConnection {
     }
 
     public TreeSet<String> channelsInternal() {
-        return externalChannels;
+        return scriptChannels;
     }
 
     public TreeMap<String, ArrayList<String>> channelsExternal() {
@@ -362,9 +373,19 @@ public abstract class WearScriptConnection {
                 Value[] channels = input.get(2).asArrayValue().getElementArray();
                 setDeviceChannels(d, channels);
             }
-            if (scriptChannels.contains(channel)) {
-                Log.i(TAG, "ScriptChannel: " + channel);
-                WearScriptConnection.this.onReceive(channel, message, input);
+            String channelPart = null;
+            for (String part : channel.split(":")) {
+                if (channelPart == null) {
+                    channelPart = part;
+                } else {
+                    channelPart += ":" + part;
+                }
+
+                if (scriptChannels.contains(channelPart)) {
+                    Log.i(TAG, "ScriptChannel: " + channel);
+                    WearScriptConnection.this.onReceive(channel, message, input);
+                    break;
+                }
             }
         }
     }

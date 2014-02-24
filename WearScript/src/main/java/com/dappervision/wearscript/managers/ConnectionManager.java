@@ -17,11 +17,13 @@ import com.dappervision.wearscript.jsevents.GistSyncEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 
 import org.msgpack.MessagePack;
+import org.msgpack.type.ArrayValue;
 import org.msgpack.type.Value;
 
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class ConnectionManager extends Manager {
     public static final String SENSORS_SUBCHAN = "sensors";
@@ -32,6 +34,7 @@ public class ConnectionManager extends Manager {
     private String GIST_LIST_SYNC_CHAN, GIST_GET_SYNC_CHAN;
     MessagePack msgpack = new MessagePack();
     private WearScriptConnectionImpl connection;
+    private TreeSet<String> testChannels;  // NOTE(brandyn): Hack until we normalize the Java lib
 
 
     public ConnectionManager(BackgroundService bs) {
@@ -48,13 +51,61 @@ public class ConnectionManager extends Manager {
             for (String channel : connection.channelsInternal()) {
                 unregisterCallback(channel);
             }
-            connection.unsubscribe(connection.channelsInternal());
+            connection.unsubscribe(new TreeSet<String>(connection.channelsInternal()));
+            testChannels = new TreeSet<String>();
+            String testChannel = "test:" + connection.groupDevice();
+            testChannels.add(testChannel);
+            connection.subscribe(testChannel);
             connection.subscribe(connection.group());
             connection.subscribe(connection.groupDevice());
             connection.subscribe(GIST_LIST_SYNC_CHAN);
             connection.subscribe(GIST_GET_SYNC_CHAN);
         }
         super.reset();
+    }
+
+    private Object[] stringValuesToObjects(List<Value> data) {
+        Object arr[] = new Object[data.size()];
+        for (int i = 0; i < data.size(); i++) {
+            // BUG(brandyn): Currently correct but publish may take non string args
+            arr[i] = data.get(i).asRawValue().getString();
+        }
+        return arr;
+    }
+
+    private void testHandler(List<Value> data) {
+        Log.d(TAG, "TestHandler");
+        String command = data.get(1).asRawValue().getString();
+        String chanArg = data.get(2).asRawValue().getString();
+        Log.d(TAG, "TestHandler: " + command + " " + chanArg);
+        if (command.equals("subscribe")) {
+            testChannels.add(chanArg);
+            connection.subscribe(chanArg);
+        } else if (command.equals("unsubscribe")) {
+            testChannels.remove(chanArg);
+            connection.unsubscribe(chanArg);
+        } else if (command.equals("channelsInternal")) {
+            connection.publish(chanArg, connection.listValue(connection.channelsInternal()));
+        } else if (command.equals("channelsExternal")) {
+            connection.publish(chanArg, connection.mapValue(connection.channelsExternal()));
+        } else if (command.equals("group")) {
+            connection.publish(chanArg, connection.group());
+        } else if (command.equals("device")) {
+            connection.publish(chanArg, connection.device());
+        } else if (command.equals("groupDevice")) {
+            connection.publish(chanArg, connection.groupDevice());
+        } else if (command.equals("exists")) {
+            connection.publish(chanArg, connection.exists(data.get(3).asRawValue().getString()));
+        } else if (command.equals("publish")) {
+            connection.publish(stringValuesToObjects(data.subList(2, data.size())));
+        } else if (command.equals("channel")) {
+            String channel = connection.channel(stringValuesToObjects(data.subList(2, data.size())));
+            connection.publish(chanArg, channel);
+        } else if (command.equals("subchannel")) {
+            connection.publish(chanArg, connection.subchannel(data.get(3).asRawValue().getString()));
+        } else if (command.equals("ackchannel")) {
+            connection.publish(chanArg, connection.ackchannel(data.get(3).asRawValue().getString()));
+        }
     }
 
     public void onEvent(SendEvent e) {
@@ -188,6 +239,17 @@ public class ConnectionManager extends Manager {
                     }
                 }
             }
+            Log.d(TAG, "Got Channel: " + channel);
+            // HACK(brandyn): This isn't 100%, just until we normalize lib
+            testHandler(data);
+            /*
+            for (String testChannel : testChannels) {
+                if (channel.startsWith(testChannel)) {
+                    testHandler(data);
+                    break;
+                }
+            }
+            */
             if (channel.equals(GIST_GET_SYNC_CHAN)) {
                 /*
                 1. Make directory for script
