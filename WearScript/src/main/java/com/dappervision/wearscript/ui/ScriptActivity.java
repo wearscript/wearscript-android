@@ -8,6 +8,8 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 
@@ -30,6 +32,23 @@ public class ScriptActivity extends Activity {
     private boolean mHadUrlExtra = false;
 
     public ScriptActivity() {
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection. Menu items typically start another
+        // activity, start a service, or broadcast another intent.
+
+            Log.d(TAG, "dynamic option selected");
+            return true;
+
+       // return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        //#TODO We should be able to make this more efficient and not constantly reinflate.
+        return bs.onPrepareOptionsMenu(menu);
     }
 
     /**

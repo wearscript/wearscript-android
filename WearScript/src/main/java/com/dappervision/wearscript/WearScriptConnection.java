@@ -45,6 +45,7 @@ public abstract class WearScriptConnection {
         groupDevice = channel(group, device);
         scriptChannels = new TreeSet<String>();
         resetExternalChannels();
+        pinger();
     }
 
     public static byte[] encode(Object... data) {
@@ -166,7 +167,7 @@ public abstract class WearScriptConnection {
                 }
             }
             if (removed)
-                publish(LISTEN_CHAN, this.device, channelsValue());
+                publish(LISTEN_CHAN, this.groupDevice, channelsValue());
         }
     }
 
@@ -262,6 +263,23 @@ public abstract class WearScriptConnection {
             disconnect();
             client.getHandlerThread().getLooper().quit();
         }
+    }
+
+    private void pinger() {
+        new Thread(new Runnable() {
+            public void run() {
+                while (true) {
+                    if (shutdown)
+                        return;
+                    Log.w(TAG, "Lifecycle: Pinger...");
+                    publish(LISTEN_CHAN, WearScriptConnection.this.groupDevice, channelsValue());
+                    try {
+                        Thread.sleep(60000);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        }).start();
     }
 
     private void reconnect() {

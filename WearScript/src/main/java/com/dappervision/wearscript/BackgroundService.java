@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -41,6 +42,7 @@ import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.google.android.glass.widget.CardScrollView;
+import com.kelsonprime.cardtree.DynamicMenu;
 import com.kelsonprime.cardtree.Level;
 import com.kelsonprime.cardtree.Node;
 import com.kelsonprime.cardtree.Tree;
@@ -53,6 +55,7 @@ import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.TreeMap;
@@ -77,6 +80,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     private View activityView;
     private Tree cardTree;
     private String activityMode;
+    private String initScript;
 
     static public String getDefaultUrl() {
         byte[] wsUrlArray = Utils.LoadData("", "qr.txt");
@@ -302,7 +306,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void startDefaultScript() {
-        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WS.say('Connected')};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
+        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WSRAW.say('Connected')};window.onload=function () {WSRAW.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
         String path = Utils.SaveData(data, "scripting/", false, "glass.html");
         Utils.eventBusPost(new ScriptEvent(path));
     }
@@ -336,9 +340,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview = createScriptView();
             updateActivityView("webview");
             webview.getSettings().setJavaScriptEnabled(true);
-            webview.addJavascriptInterface(new WearScript(this), "WS");
+            webview.addJavascriptInterface(new WearScript(this), "WSRAW");
             webview.setInitialScale(100);
             Log.i(TAG, "WebView: " + e.getScriptPath());
+            if (initScript != null && !initScript.isEmpty())
+                webview.loadUrl(initScript);
             webview.loadUrl("file://" + e.getScriptPath());
             Log.i(TAG, "WebView Ran");
         }
@@ -356,10 +362,16 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return mBinder;
     }
 
+    static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
+    }
+
     @Override
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
         Utils.getEventBus().register(this);
+        initScript = "javascript:" + convertStreamToString(getResources().openRawResource(R.raw.init));
 
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
@@ -391,10 +403,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         for (Object o : array) {
             JSONObject cardJS = (JSONObject) o;
             JSONArray children = (JSONArray) cardJS.get("children");
-            if (children != null) {
+            if (children != null && children.size() > 0) {
                 level.add(new Node(cardScrollAdapter.cardFactory((JSONObject) cardJS.get("card")), cardArrayToLevel(children, new Level(tree), tree)));
             } else {
-                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject) cardJS.get("card"))));
+                DynamicMenu sampleMenu = new DynamicMenu(R.menu.blank);
+                int dynamicOptionId = sampleMenu.add("dynamic option!"); //You really shouldn't mix non-resource backed items with a resource inflated menu, as IDs could conflict
+
+                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject) cardJS.get("card")), sampleMenu));
             }
         }
         return level;
@@ -403,6 +418,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onEventMainThread(CardTreeEvent e) {
         // TODO(brandyn): This is a temporary solution, fix it
         cardTree = new Tree(this.activity);
+        cardTree.setHorizontalScrollBarEnabled(true);
         refreshActivityView();
         JSONArray cardArray = (JSONArray) JSONValue.parse(e.getTreeJS());
         cardArrayToLevel(cardArray, cardTree.getRoot(), cardTree);
@@ -512,6 +528,19 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public ScriptView createScriptView() {
         ScriptView mCallback = new ScriptView(this);
         return mCallback;
+    }
+
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if(cardTree.getCurrentNode().hasMenu()){
+            Log.d(TAG, "Preparing Node menu");
+            cardTree.getCurrentNode().getMenu().build(activity.getMenuInflater(), menu);
+            return true;
+        }else if(cardTree.getCurrentLevel().hasMenu()){
+            Log.d(TAG, "Preparing level menu");
+            cardTree.getCurrentLevel().getMenu().build(activity.getMenuInflater(), menu);
+            return true;
+        }
+        return false;
     }
 
     class ScreenBroadcastReceiver extends BroadcastReceiver {

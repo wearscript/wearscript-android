@@ -80,6 +80,7 @@ public class ScriptListFragment extends Fragment {
         LinearLayout layout = new LinearLayout(getActivity());
         if(HardwareDetector.isGlass){
             CardScrollView view = new CardScrollView(getActivity());
+            view.setHorizontalScrollBarEnabled(true);
             view.setAdapter((CardScrollAdapter) mListAdapter);
             view.activate();
             adapterView = view;

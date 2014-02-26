@@ -241,15 +241,13 @@ public class ConnectionManager extends Manager {
             }
             Log.d(TAG, "Got Channel: " + channel);
             // HACK(brandyn): This isn't 100%, just until we normalize lib
-            testHandler(data);
-            /*
+
             for (String testChannel : testChannels) {
                 if (channel.startsWith(testChannel)) {
                     testHandler(data);
                     break;
                 }
             }
-            */
             if (channel.equals(GIST_GET_SYNC_CHAN)) {
                 /*
                 1. Make directory for script
