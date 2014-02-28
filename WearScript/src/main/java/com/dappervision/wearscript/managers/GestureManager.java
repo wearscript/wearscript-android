@@ -62,9 +62,12 @@ public class GestureManager extends Manager {
         eyeGestureManager.enableDetectorPersistently(EyeGesture.DOUBLE_BLINK, true);
         eyeGestureManager.enableDetectorPersistently(EyeGesture.DOFF, true);
         eyeGestureManager.enableDetectorPersistently(EyeGesture.DON, true);
-        IntentFilter eyeFilter = new IntentFilter(
+        IntentFilter eyeFilter;
+        eyeFilter = new IntentFilter(
                 "com.google.glass.action.EYE_GESTURE");
-        eyeFilter.setPriority(3000);
+        service.getApplicationContext().registerReceiver(eyeEventReceiver, eyeFilter);
+        eyeFilter = new IntentFilter(
+                "com.google.glass.action.DON_STATE");
         service.getApplicationContext().registerReceiver(eyeEventReceiver, eyeFilter);
     }
 }
