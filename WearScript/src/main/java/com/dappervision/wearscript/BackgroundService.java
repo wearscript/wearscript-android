@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.media.AudioRecord;
 import android.os.Binder;
 import android.os.IBinder;
@@ -370,6 +371,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Log.i(TAG, "Lifecycle: Service onDestroy");
         shutdown();
         super.onDestroy();
+    }
+
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if(hasWebView())
+            webview.onConfigurationChanged(newConfig);
     }
 
     public void onEventMainThread(JsCall e) {
