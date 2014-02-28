@@ -22,7 +22,7 @@ public class SendEvent implements BusEvent {
         this.dataMsgpack = data;
     }
 
-    public SendEvent(String channel, Object...data) {
+    public SendEvent(String channel, Object... data) {
         this.channel = channel;
         this.data = data;
         this.msgpack = new MessagePack();
@@ -35,11 +35,11 @@ public class SendEvent implements BusEvent {
             for (Object i : this.data) {
                 Class c = i.getClass();
                 if (c.equals(String.class))
-                    data.add(ValueFactory.createRawValue((String)i));
+                    data.add(ValueFactory.createRawValue((String) i));
                 else if (c.equals(Double.class))
-                    data.add(ValueFactory.createFloatValue((Double)i));
+                    data.add(ValueFactory.createFloatValue((Double) i));
                 else if (Value.class.isAssignableFrom(c))
-                    data.add((Value)i);
+                    data.add((Value) i);
                 else {
                     Log.e(TAG, "Unhandled class: " + c);
                     return null;

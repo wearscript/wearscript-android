@@ -10,22 +10,25 @@ import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
-import com.dappervision.wearscript.ui.MenuActivity;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
+import com.dappervision.wearscript.ui.MenuActivity;
+import com.google.android.glass.timeline.DirectRenderingCallback;
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
 
-public class ScriptView extends WebView implements SurfaceHolder.Callback {
+public class ScriptView extends WebView implements SurfaceHolder.Callback, DirectRenderingCallback {
     private static final String TAG = "ScriptView";
     private final BackgroundService context;
     private LiveCard liveCard;
     private SurfaceHolder holder;
     private final Handler handler;
     private long drawFrequency;
+    private boolean paused;
 
     ScriptView(final BackgroundService context) {
         super(context);
+        paused = false;
         // Enable localStorage in webview
         getSettings().setDomStorageEnabled(true);
         Utils.getEventBus().register(this);
@@ -94,7 +97,8 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
             public void run() {
                 if (drawFrequency < 0 || liveCard == null)
                     return;
-                draw2();
+                if (!paused)
+                    draw2();
                 update();
             }
         }, drawFrequency);
@@ -137,5 +141,10 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback {
             v.draw(canvas);
             holder.unlockCanvasAndPost(canvas);
         }
+    }
+
+    @Override
+    public void renderingPaused(SurfaceHolder surfaceHolder, boolean b) {
+        this.paused = b;
     }
 }

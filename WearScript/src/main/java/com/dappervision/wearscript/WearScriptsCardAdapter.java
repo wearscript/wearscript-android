@@ -20,16 +20,17 @@ public class WearScriptsCardAdapter extends CardScrollAdapter {
     private final Typeface mRobotoLight;
     private final Activity activity;
 
-    public WearScriptsCardAdapter(Fragment fragment, InstalledScripts scripts){
+    public WearScriptsCardAdapter(Fragment fragment, InstalledScripts scripts) {
         activity = fragment.getActivity();
         array = new ArrayList<View>();
         this.scripts = scripts.getWearScripts();
-        for(int i = 0; i < this.scripts.size(); i++){
+        for (int i = 0; i < this.scripts.size(); i++) {
             array.add(cardFactory(this.scripts.get(i)));
         }
 
         mRobotoLight = Typeface.createFromAsset(activity.getAssets(), "fonts/Roboto-Light.ttf");
     }
+
     @Override
     public int getCount() {
         return array.size();
@@ -51,8 +52,8 @@ public class WearScriptsCardAdapter extends CardScrollAdapter {
 
     @Override
     public int findIdPosition(Object id) {
-        for(int i = 0; i < array.size(); i++){
-            if(array.get(i).getId() == (Integer) id){
+        for (int i = 0; i < array.size(); i++) {
+            if (array.get(i).getId() == (Integer) id) {
                 return i;
             }
         }
@@ -69,7 +70,7 @@ public class WearScriptsCardAdapter extends CardScrollAdapter {
         return AdapterView.INVALID_POSITION;
     }
 
-    public View cardFactory(WearScriptInfo info){
+    public View cardFactory(WearScriptInfo info) {
         Card card = new Card(this.activity);
         card.setText(info.getTitle().toString());
         View v = card.toView();

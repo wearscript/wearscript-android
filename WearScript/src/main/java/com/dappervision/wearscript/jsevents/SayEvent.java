@@ -17,6 +17,7 @@ public class SayEvent implements JSBusEvent {
     public String getMsg() {
         return msg;
     }
+
     public Boolean getInterrupt() {
         return interrupt;
     }

@@ -25,9 +25,9 @@ import com.dappervision.wearscript.managers.OpenGLManager;
 public class ScriptActivity extends Activity {
     protected static final String TAG = "WearScript";
     private static final String EXTRA_NAME = "extra";
-    public boolean isGlass = true, isForeground = true;
+    private boolean isGlass = true, isForeground = true;
     public BackgroundService bs;
-    ServiceConnection mConnection;
+    private ServiceConnection mConnection;
     private String extra;
     private boolean mHadUrlExtra = false;
 
@@ -36,19 +36,15 @@ public class ScriptActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle item selection. Menu items typically start another
-        // activity, start a service, or broadcast another intent.
-
-            Log.d(TAG, "dynamic option selected");
+        if (bs.onOptionsItemSelected(item))
             return true;
-
-       // return super.onOptionsItemSelected(item);
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         //#TODO We should be able to make this more efficient and not constantly reinflate.
-        return bs.onPrepareOptionsMenu(menu);
+        return bs.onPrepareOptionsMenu(menu, this);
     }
 
     /**
@@ -77,12 +73,11 @@ public class ScriptActivity extends Activity {
                 bs.setMainActivity(ScriptActivity.this);
 
                 // If we already have a view and aren't specifying a script to run, reuse the old script
-                if (bs.webview != null && extra == null) {
+                if (bs.hasWebView() && extra == null) {
                     // Remove view's parent so that we can re-add it later to a new activity
                     Log.i(TAG, "Lifecycle: Recycling webview");
-                    bs.removeAllViews();
                     bs.refreshActivityView();
-                    ((CameraManager)bs.getManager(CameraManager.class)).resume();
+                    ((CameraManager) bs.getManager(CameraManager.class)).resume();
                     return;
                 }
                 Log.i(TAG, "Lifecycle: Creating new webview");
@@ -113,7 +108,10 @@ public class ScriptActivity extends Activity {
         isForeground = false;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
-            ((OpenGLManager)bs.getManager(OpenGLManager.class)).getView().onPause();
+            ((CameraManager) bs.getManager(CameraManager.class)).pauseBackground();
+            OpenGLManager openGLManager = ((OpenGLManager) bs.getManager(OpenGLManager.class));
+            if (openGLManager != null)
+                openGLManager.getView().onPause();
         }
         super.onPause();
     }
@@ -124,8 +122,10 @@ public class ScriptActivity extends Activity {
         isForeground = true;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
-            ((CameraManager)bs.getManager(CameraManager.class)).resume();
-            ((OpenGLManager)bs.getManager(OpenGLManager.class)).getView().onResume();
+            ((CameraManager) bs.getManager(CameraManager.class)).resume();
+            OpenGLManager openGLManager = ((OpenGLManager) bs.getManager(OpenGLManager.class));
+            if (openGLManager != null)
+                openGLManager.getView().onResume();
         }
         super.onResume();
     }
@@ -133,7 +133,7 @@ public class ScriptActivity extends Activity {
     @Override
     public void onBackPressed() {
         Log.d(TAG, "Back pressed");
-        if (bs == null || bs.treeBack())
+        if (bs == null || bs.onBackPressed())
             super.onBackPressed();
     }
 
@@ -151,7 +151,7 @@ public class ScriptActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_CAMERA) {
             if (bs != null)
-                ((CameraManager)bs.getManager(CameraManager.class)).pause();
+                ((CameraManager) bs.getManager(CameraManager.class)).pause();
             return false;
         } else {
             return super.onKeyDown(keyCode, event);

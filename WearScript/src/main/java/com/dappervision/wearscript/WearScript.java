@@ -4,11 +4,9 @@ import android.opengl.GLES20;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
-import com.dappervision.wearscript.events.JsCall;
-import com.dappervision.wearscript.jsevents.GistSyncEvent;
-import com.dappervision.wearscript.ui.ScriptActivity;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
+import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.SendSubEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
@@ -19,6 +17,7 @@ import com.dappervision.wearscript.jsevents.CallbackRegistration;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.CardTreeEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
+import com.dappervision.wearscript.jsevents.GistSyncEvent;
 import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.dappervision.wearscript.jsevents.OpenGLEvent;
 import com.dappervision.wearscript.jsevents.OpenGLEventCustom;
@@ -196,7 +195,7 @@ public class WearScript {
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
         if (server.equals("{{WSUrl}}"))
-           server = bs.getDefaultUrl();
+            server = bs.getDefaultUrl();
         if (server == null) {
             Log.e(TAG, "Lifecycle: Invalid url provided");
             return;
@@ -256,6 +255,16 @@ public class WearScript {
     @JavascriptInterface
     public void cameraOn(double imagePeriod) {
         Utils.eventBusPost(new CameraEvents.Start(imagePeriod));
+    }
+
+    @JavascriptInterface
+    public void cameraOn(double imagePeriod, boolean background) {
+        Utils.eventBusPost(new CameraEvents.Start(imagePeriod, background));
+    }
+
+    @JavascriptInterface
+    public void cameraOn(double imagePeriod, boolean background, int maxWidth, int maxHeight) {
+        Utils.eventBusPost(new CameraEvents.Start(imagePeriod, background, maxWidth, maxHeight));
     }
 
     @JavascriptInterface
@@ -386,103 +395,6 @@ public class WearScript {
     @JavascriptInterface
     public void liveCardDestroy() {
         Utils.eventBusPost(new LiveCardEvent(false, 0));
-    }
-
-    @JavascriptInterface
-    public void cardInsert(final int position, final String cardJSON) {
-        ScriptActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
-                public void run() {
-                    Log.i(TAG, "cardInsert: " + position);
-                    bs.getCardScrollAdapter().cardInsert(position, cardJSON);
-                    bs.updateCardScrollView();
-                }
-            });
-        }
-    }
-
-    @JavascriptInterface
-    public void cardModify(final int position, final String cardJSON) {
-        ScriptActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
-                public void run() {
-                    Log.i(TAG, "cardModify: " + position);
-                    bs.getCardScrollAdapter().cardModify(position, cardJSON);
-                    bs.getCardScrollAdapter().cardInsert(position, cardJSON);
-                    bs.updateCardScrollView();
-                }
-            });
-        }
-    }
-
-    @JavascriptInterface
-    public void cardTrim(final int position) {
-        ScriptActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
-                public void run() {
-                    Log.i(TAG, "cardTrim: " + position);
-                    bs.getCardScrollAdapter().cardTrim(position);
-                    bs.updateCardScrollView();
-                }
-            });
-        }
-    }
-
-    @JavascriptInterface
-    public void cardDelete(final int position) {
-        ScriptActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
-                public void run() {
-                    Log.i(TAG, "cardDelete: " + position);
-                    bs.getCardScrollAdapter().cardDelete(position);
-                    bs.updateCardScrollView();
-                }
-            });
-        }
-    }
-
-    @JavascriptInterface
-    public void cardPosition(final int position) {
-        ScriptActivity a = bs.activity;
-        if (a != null) {
-            a.runOnUiThread(new Thread() {
-                public void run() {
-                    Log.i(TAG, "cardPosition: " + position);
-                    bs.cardPosition(position);
-                }
-            });
-        }
-    }
-
-    @JavascriptInterface
-    public String cardFactory(String text, String info) {
-        JSONObject o = new JSONObject();
-        o.put("type", "card");
-        o.put("text", text);
-        o.put("info", info);
-        return o.toJSONString();
-    }
-
-    @JavascriptInterface
-    public String cardFactoryHTML(String html) {
-        JSONObject o = new JSONObject();
-        o.put("type", "html");
-        o.put("html", html);
-        return o.toJSONString();
-    }
-
-    @JavascriptInterface
-    public void cardCallback(String event, String callback) {
-        bs.getCardScrollAdapter().registerCallback(event, callback);
-    }
-
-    @JavascriptInterface
-    public void displayCardScroll() {
-        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.CARD_SCROLL));
     }
 
     @JavascriptInterface

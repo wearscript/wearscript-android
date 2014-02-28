@@ -20,7 +20,8 @@ public class ManagerManager {
         add(new WifiManager(bs));
         add(new AudioManager(bs));
         add(new SpeechManager(bs));
-        add(new OpenGLManager(bs));
+        //add(new OpenGLManager(bs));
+        add(new CardTreeManager(bs));
         add(new ConnectionManager(bs));
     }
 

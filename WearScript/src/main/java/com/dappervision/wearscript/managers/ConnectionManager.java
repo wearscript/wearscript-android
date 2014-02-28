@@ -3,9 +3,9 @@ package com.dappervision.wearscript.managers;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.WearScriptConnection;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.WearScriptConnection;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
 import com.dappervision.wearscript.events.LambdaEvent;
@@ -17,11 +17,9 @@ import com.dappervision.wearscript.jsevents.GistSyncEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 
 import org.msgpack.MessagePack;
-import org.msgpack.type.ArrayValue;
 import org.msgpack.type.Value;
 
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -172,6 +170,10 @@ public class ConnectionManager extends Manager {
 
     class WearScriptConnectionImpl extends WearScriptConnection {
 
+        WearScriptConnectionImpl() {
+            super(((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
+        }
+
         @Override
         public void onConnect() {
             makeCall(ONCONNECT, "");
@@ -189,7 +191,7 @@ public class ConnectionManager extends Manager {
 
         @Override
         public void onReceive(String channel, byte[] dataRaw, List<Value> data) {
-              if (channel.equals(this.groupDevice) || channel.equals(this.group)) {
+            if (channel.equals(this.groupDevice) || channel.equals(this.group)) {
                 String command = data.get(1).asRawValue().getString();
                 Log.d(TAG, String.format("Got %s %s", channel, command));
                 if (command.equals("script")) {
@@ -231,7 +233,7 @@ public class ConnectionManager extends Manager {
                  */
                 Log.d(TAG, "Gist:" + data.get(1).toString());
                 for (Value v : data.get(1).asArrayValue()) {
-                    Value gistid = (Value)toMap(v).get("id");
+                    Value gistid = (Value) toMap(v).get("id");
 
                     if (gistid != null) {
                         Log.d(TAG, "GistID: " + gistid);
@@ -257,7 +259,7 @@ public class ConnectionManager extends Manager {
                 TreeMap<String, Value> gist = toMap(data.get(1));
                 TreeMap<String, Value> files = toMap(gist.get("files"));
                 String gistid = gist.get("id").asRawValue().getString();
-                for (Value v: files.values()) {
+                for (Value v : files.values()) {
                     TreeMap<String, Value> file = toMap(v);
                     byte[] content = file.get("content").asRawValue().getByteArray();
                     String filename = file.get("filename").asRawValue().getString();

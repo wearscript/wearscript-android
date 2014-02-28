@@ -37,11 +37,11 @@ public abstract class WearScriptConnection {
     private TreeSet<String> scriptChannels;
     private boolean reconnecting;
 
-    public WearScriptConnection() {
+    public WearScriptConnection(String device) {
         shutdown = false;
         reconnecting = false;
         group = "glass";
-        device = "TODOID"; // TODO(brandyn): Update
+        this.device = device;
         groupDevice = channel(group, device);
         scriptChannels = new TreeSet<String>();
         resetExternalChannels();
@@ -85,7 +85,7 @@ public abstract class WearScriptConnection {
     }
 
     public void publish(Object... data) {
-        String channel = (String)data[0];
+        String channel = (String) data[0];
         if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
             return;
         byte[] outBytes = encode(data);

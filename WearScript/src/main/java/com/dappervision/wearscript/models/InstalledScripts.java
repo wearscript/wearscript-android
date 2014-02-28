@@ -18,9 +18,10 @@ public class InstalledScripts {
     private static final String WEARSCRIPT_PATH = Utils.dataPath() + GISTS_PATH;
     private static ArrayList<WearScriptInfo> mWearScripts;
 
-    public InstalledScripts(){
+    public InstalledScripts() {
         load();
     }
+
     private List<String> GistList() {
         File extStorageDir = new File(WEARSCRIPT_PATH);
         Log.i(TAG, "WSFiles: the directory: " + extStorageDir);
@@ -44,11 +45,11 @@ public class InstalledScripts {
             byte[] manifestData = Utils.LoadData(GISTS_PATH + gist, "manifest.json");
             if (manifestData == null)
                 continue;
-            JSONObject manifest = (JSONObject)JSONValue.parse(new String(manifestData));
+            JSONObject manifest = (JSONObject) JSONValue.parse(new String(manifestData));
             if (manifest == null || !manifest.containsKey("name"))
                 continue;
             String filePath = WEARSCRIPT_PATH + gist + "/" + "glass.html";
-            WearScriptInfo wsInfo = new WearScriptInfo((String)manifest.get("name"), filePath);
+            WearScriptInfo wsInfo = new WearScriptInfo((String) manifest.get("name"), filePath);
             mWearScripts.add(wsInfo);
         }
     }

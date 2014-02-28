@@ -1,18 +1,50 @@
-function Cards(cards) {
-    this.cards = cards || [];
-    this.add = function (text, info, children) {
-        if (children)
-            children = children.cards;
-        else
-            children = [];
-        var card = {card: {type: "card", text: text, info: info}, children: children};
-        this.cards.push(card);
-        return this;
-    }
-}
 function WearScript() {
+    this._randstr = function (sz) {
+        var text = "";
+        var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        for(var i=0; i < sz; i++)
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        return text;
+    }
+    this._cbPrefix = 'WS' + this._randstr(4);
     this.callbacks = {};
     this.cbCount = 0;
+    this.Cards = function (cards) {
+         this.cards = cards || [];
+         this.add = function (text, info) {
+             var isFunc = function (x) {return typeof x === 'function'};
+             var isObj = function (x) {return typeof x === 'object'};
+             var isUndef = function (x) {return typeof x === 'undefined'};
+             var isStr = function (x) {return typeof x === 'string'};
+             var click, select, children, menu;
+             var card = {card: {type: "card", text: text, info: info}};
+
+             var extras = Array.prototype.slice.call(arguments).slice(2);
+             if (extras.length > 0 && isFunc(extras[0]) || isUndef(extras[0])) { // Selected
+                 if (isFunc(extras[0]))
+                     card.selected = WS._funcwrap(extras[0]);
+                 extras = extras.slice(1);
+             }
+             if (extras.length > 0 && isFunc(extras[0]) || isUndef(extras[0])) { // Click
+                 if (isFunc(extras[0]))
+                     card.click = WS._funcwrap(extras[0]);
+                 extras = extras.slice(1);
+             }
+             if (extras.length > 0 && isObj(extras[0])) { // Children
+                 card.children = extras[0];
+                 extras = extras.slice(1);
+             } else if (extras.length > 0 && extras.length % 2 == 0) { // Menu
+                 card.menu = [];
+                 for (var i = 0; i < extras.length; i += 2) {
+                     if (!isStr(extras[i]) || (!isFunc(extras[i + 1]) && !isUndef(extras[i + 1])))
+                         break;
+                     card.menu.push({'label':  extras[i], 'callback': WS._funcwrap(extras[i + 1])});
+                 }
+             }
+             this.cards.push(card);
+             return this;
+         }
+    }
     this.scriptVersion = function (num) {
         WSRAW.scriptVersion(num);
     }
@@ -29,7 +61,7 @@ function WearScript() {
         var getType = {};
         var isFunction = func && getType.toString.call(func) === '[object Function]';
         if (isFunction) {
-            var funcName = 'WSCB' + this.cbCount;
+            var funcName = this._cbPrefix + this.cbCount;
             this.cbCount += 1;
             window[funcName] = func;
             return funcName;
@@ -113,3 +145,4 @@ function WearScript() {
         WSRAW.liveCardDestroy();
     }
 }
+WS = new WearScript();

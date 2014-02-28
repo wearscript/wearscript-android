@@ -83,7 +83,7 @@ public class Utils {
 
     public static boolean setupTTS(Context context, TextToSpeech tts) {
         Log.i(TAG, "TTS initialized");
-        if(HardwareDetector.isGlass){
+        if (HardwareDetector.isGlass) {
             //The TTS engine works almost instantly on Glass, and is always the right language. No need to try and configure.
             return true;
         }

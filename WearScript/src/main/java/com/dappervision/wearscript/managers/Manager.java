@@ -36,6 +36,9 @@ public abstract class Manager {
             jsCallbacks.put(type, jsFunction);
     }
 
+    protected boolean hasCallback(String type) {
+        return jsCallbacks.containsKey(type);
+    }
 
     public void reset() {
         if (!Utils.getEventBus().isRegistered(this))

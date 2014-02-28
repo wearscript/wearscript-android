@@ -1,9 +1,5 @@
 package com.dappervision.wearscript.events;
 
-import org.msgpack.type.Value;
-
-import java.util.List;
-
 public class ChannelSubscribeEvent implements BusEvent {
     private String channel;
     private String callback;
@@ -16,6 +12,7 @@ public class ChannelSubscribeEvent implements BusEvent {
     public String getChannel() {
         return channel;
     }
+
     public String getCallback() {
         return callback;
     }

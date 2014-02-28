@@ -56,10 +56,10 @@ public class ScriptListFragment extends Fragment {
         mInstalledScripts.load();
     }
 
-    public ListAdapter buildListAdapter(){
-        if(HardwareDetector.isGlass){
+    public ListAdapter buildListAdapter() {
+        if (HardwareDetector.isGlass) {
             return new WearScriptsCardAdapter(this, mInstalledScripts);
-        }else{
+        } else {
             return new WearScriptsAdapter(this, mInstalledScripts);
         }
     }
@@ -78,13 +78,13 @@ public class ScriptListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         LinearLayout layout = new LinearLayout(getActivity());
-        if(HardwareDetector.isGlass){
+        if (HardwareDetector.isGlass) {
             CardScrollView view = new CardScrollView(getActivity());
             view.setHorizontalScrollBarEnabled(true);
             view.setAdapter((CardScrollAdapter) mListAdapter);
             view.activate();
             adapterView = view;
-        }else{
+        } else {
             adapterView = new ListView(getActivity());
             adapterView.setAdapter(mListAdapter);
         }

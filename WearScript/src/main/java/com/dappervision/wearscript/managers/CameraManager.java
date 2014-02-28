@@ -51,11 +51,15 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private SurfaceTexture surfaceTexture;
     private CameraFrame cameraFrame;
     private boolean paused;
+    private boolean running;
     private long imagePeriod;
     private double lastImageSaveTime;
     private boolean openCVLoaded;
     private FileObserver mFileObserver;
     private Handler mHandler;
+    private boolean background;
+    private int maxWidth, maxHeight;
+
 
     public class CameraFrame {
         private MatOfByte jpgFrame;
@@ -111,12 +115,17 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     public void onEventAsync(OpenCVLoadedEvent event) {
         synchronized (this) {
-            setupCamera();
+            if (running && !paused)
+                setupCamera();
         }
     }
 
     public void onEvent(CameraEvents.Start e) {
         imagePeriod = Math.round(e.getPeriod() * 1000000000L);
+        background = e.getBackground();
+        maxWidth = e.getMaxWidth();
+        maxHeight = e.getMaxHeight();
+
         lastImageSaveTime = 0.;
 
         if (imagePeriod > 0) {
@@ -220,9 +229,9 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     public void reset() {
         stop();
         super.reset();
+        background = false;
         lastImageSaveTime = 0.;
         imagePeriod = 0;
-        paused = false;
     }
 
     public void shutdown() {
@@ -233,6 +242,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     public void stop() {
         synchronized (this) {
             if (camera != null) {
+                running = false;
                 camera.stopPreview();
                 camera.setPreviewCallback(null);
                 camera.release();
@@ -246,15 +256,20 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     public void pause() {
         synchronized (this) {
-            if (camera != null)
-                paused = true;
-            stop();
+            paused = true;
+            if (running)
+                stop();
         }
+    }
+
+    public void pauseBackground() {
+        if (!background)
+            pause();
     }
 
     public void resume() {
         synchronized (this) {
-            if (paused) {
+            if (paused && running) {
                 paused = false;
                 register();
             }
@@ -330,10 +345,21 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 List<Camera.Size> sizes = params.getSupportedPreviewSizes();
 
                 if (sizes != null) {
+                    Size frameSize = null;
+                    Camera.Size sizeNearest = null;
+                    for (Camera.Size size : sizes) {
+                        sizeNearest = size;
+                        if (size.width <= this.maxWidth && size.height <= this.maxHeight) {
+                            break;
+                        }
+                    }
+                    if (sizeNearest == null)
+                        return;
+                    Log.d(TAG, "Selected: " + sizeNearest.width + " " + sizeNearest.height + " Max: " + this.maxWidth + " " + this.maxHeight);
+                    frameSize = new Size(sizeNearest.width, sizeNearest.height);
                     // Select the size that fits surface considering maximum size allowed
-                    //Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), width, height);
+                    //Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), maxWidth, maxHeight);
                     //Size frameSize = new Size(1920,1080);
-                    Size frameSize = new Size(640, 360);
                     params.setPreviewFormat(ImageFormat.NV21);
                     Log.d(TAG, "Set preview size to " + Integer.valueOf((int) frameSize.width) + "x" + Integer.valueOf((int) frameSize.height) + ": camflow");
                     params.setPreviewSize((int) frameSize.width, (int) frameSize.height);
@@ -341,12 +367,11 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                     if (FocusModes != null && FocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
                         params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                     }
-                    // NOTE(conner): Sets correct values for camera in XE10
-                    params = camera.getParameters();
                     params.setPreviewFpsRange(30000, 30000);
                     camera.setParameters(params);
                     int frameWidth = params.getPreviewSize().width;
                     int frameHeight = params.getPreviewSize().height;
+                    Log.d(TAG, "Frame Width" + frameWidth + " Frame Height: " + frameHeight + " camflow");
                     cameraFrame = new CameraFrame(frameWidth, frameHeight);
                     int size = frameWidth * frameHeight;
                     size = size * ImageFormat.getBitsPerPixel(params.getPreviewFormat()) / 8;

@@ -59,7 +59,7 @@ public class DataPoint {
 
     public String toJSONString() {
         JSONObject o = new JSONObject();
-        o.put("name", name); // TODO(brandyn): Should we make this a string
+        o.put("name", name);
         o.put("type", type);
         o.put("timestamp", timestamp);
         o.put("timestampRaw", timestampRaw);

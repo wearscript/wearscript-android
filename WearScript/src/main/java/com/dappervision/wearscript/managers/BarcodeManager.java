@@ -4,9 +4,9 @@ import android.content.Intent;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.ui.QRActivity;
 import com.dappervision.wearscript.jsevents.BarcodeEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
+import com.dappervision.wearscript.ui.QRActivity;
 
 public class BarcodeManager extends Manager {
     public static String QR_CODE = "QR_CODE";

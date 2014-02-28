@@ -1,5 +1,6 @@
 package com.dappervision.wearscript;
 
+import android.app.Activity;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,16 +8,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioRecord;
 import android.os.Binder;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.dappervision.wearscript.ui.ScriptActivity;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.events.JsCall;
@@ -26,13 +26,13 @@ import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.CameraEvents;
-import com.dappervision.wearscript.jsevents.CardTreeEvent;
 import com.dappervision.wearscript.jsevents.DataLogEvent;
 import com.dappervision.wearscript.jsevents.PicarusEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 import com.dappervision.wearscript.jsevents.ScreenEvent;
 import com.dappervision.wearscript.jsevents.WifiScanResultsEvent;
 import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.CardTreeManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
@@ -41,45 +41,34 @@ import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WifiManager;
+import com.dappervision.wearscript.ui.ScriptActivity;
 import com.google.android.glass.widget.CardScrollView;
-import com.kelsonprime.cardtree.DynamicMenu;
-import com.kelsonprime.cardtree.Level;
-import com.kelsonprime.cardtree.Node;
-import com.kelsonprime.cardtree.Tree;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.TreeMap;
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
     protected static String TAG = "WearScript";
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
-    public ScriptActivity activity;
-    public boolean dataRemote, dataLocal, dataWifi;
-    public double lastSensorSaveTime, sensorDelay;
-    public ScriptView webview;
-    public TreeMap<String, ArrayList<Value>> sensorBuffer;
-    public TreeMap<String, Integer> sensorTypes;
-    public String wifiScanCallback;
+    private ScriptActivity activity;
+    private boolean dataRemote, dataLocal, dataWifi;
+    private double lastSensorSaveTime, sensorDelay;
+    private ScriptView webview;
+    private TreeMap<String, ArrayList<Value>> sensorBuffer;
+    private TreeMap<String, Integer> sensorTypes;
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
-    protected ScriptCardScrollAdapter cardScrollAdapter;
     protected CardScrollView cardScroller;
-    MessagePack msgpack = new MessagePack();
+    private MessagePack msgpack = new MessagePack();
     private View activityView;
-    private Tree cardTree;
-    private String activityMode;
+    private ActivityEvent.Mode activityMode;
     private String initScript;
 
     static public String getDefaultUrl() {
@@ -91,30 +80,19 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return (new String(wsUrlArray)).trim();
     }
 
-    public boolean treeBack() {
-        synchronized (lock) {
-            if (cardTree == null || cardTree.isRootCurrent())
-                return true;
-            cardTree.back();
-            return false;
-        }
-    }
-
-    public void updateActivityView(final String mode) {
+    public void updateActivityView(final ActivityEvent.Mode mode) {
         if (activity == null)
             return;
         final ScriptActivity a = activity;
         a.runOnUiThread(new Thread() {
             public void run() {
                 activityMode = mode;
-                if (mode.equals("webview") && webview != null) {
+                if (mode == ActivityEvent.Mode.WEBVIEW && webview != null) {
                     activityView = webview;
-                } else if (mode.equals("cardscroll")) {
-                    activityView = cardScroller;
-                } else if (mode.equals("opengl")) {
+                } else if (mode == ActivityEvent.Mode.OPENGL) {
                     activityView = ((OpenGLManager) getManager(OpenGLManager.class)).getView();
-                } else if (mode.equals("cardtree")) {
-                    activityView = cardTree;
+                } else if (mode == ActivityEvent.Mode.CARD_TREE) {
+                    activityView = ((CardTreeManager) getManager(CardTreeManager.class)).getView();
                 }
                 if (activityView != null) {
                     ViewGroup parentViewGroup = (ViewGroup) activityView.getParent();
@@ -134,19 +112,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public View getActivityView() {
         return activityView;
-    }
-
-    public void removeAllViews() {
-        if (webview != null) {
-            ViewGroup parentViewGroup = (ViewGroup) webview.getParent();
-            if (parentViewGroup != null)
-                parentViewGroup.removeAllViews();
-        }
-        if (cardScroller != null) {
-            ViewGroup parentViewGroup = (ViewGroup) cardScroller.getParent();
-            if (parentViewGroup != null)
-                parentViewGroup.removeAllViews();
-        }
     }
 
     public void loadUrl(String url) {
@@ -286,11 +251,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
             sensorBuffer = new TreeMap<String, ArrayList<Value>>();
             sensorTypes = new TreeMap<String, Integer>();
-            wifiScanCallback = null;
             dataWifi = dataRemote = dataLocal = false;
             lastSensorSaveTime = sensorDelay = 0.;
-            if (cardScrollAdapter != null)
-                cardScrollAdapter.reset();
             updateCardScrollView();
 
             ManagerManager.get().resetAll();
@@ -301,12 +263,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     ManagerManager.get().add(new GestureManager(a, this));
                 }
             }
-            updateActivityView("webview");
+            updateActivityView(ActivityEvent.Mode.WEBVIEW);
         }
     }
 
     public void startDefaultScript() {
-        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WSRAW.say('Connected')};window.onload=function () {WSRAW.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
+        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WSRAW.say('Connected')};window.onload=function () {WSRAW.serverConnect('{{WSUrl}}', 's')}</script></body>" .getBytes();
         String path = Utils.SaveData(data, "scripting/", false, "glass.html");
         Utils.eventBusPost(new ScriptEvent(path));
     }
@@ -317,11 +279,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         wakeLock.acquire();
         wakeLock.release();
     }
-
-    public ScriptCardScrollAdapter getCardScrollAdapter() {
-        return cardScrollAdapter;
-    }
-
 
     public void updateCardScrollView() {
         if (activity == null || cardScroller == null)
@@ -338,7 +295,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         reset();
         synchronized (lock) {
             webview = createScriptView();
-            updateActivityView("webview");
+            updateActivityView(ActivityEvent.Mode.WEBVIEW);
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WSRAW");
             webview.setInitialScale(100);
@@ -387,42 +344,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         glassID = ((WifiManager) getManager(WifiManager.class)).getMacAddress();
 
-        if (HardwareDetector.isGlass) {
-            cardScrollAdapter = new ScriptCardScrollAdapter(BackgroundService.this);
-            cardScroller = new CardScrollView(this);
-            cardScroller.setAdapter(cardScrollAdapter);
-            cardScroller.activate();
-            cardScroller.setOnItemSelectedListener(cardScrollAdapter);
-            cardScroller.setOnItemClickListener(cardScrollAdapter);
-        }
-
         reset();
-    }
-
-    public Level cardArrayToLevel(JSONArray array, Level level, Tree tree) {
-        for (Object o : array) {
-            JSONObject cardJS = (JSONObject) o;
-            JSONArray children = (JSONArray) cardJS.get("children");
-            if (children != null && children.size() > 0) {
-                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject) cardJS.get("card")), cardArrayToLevel(children, new Level(tree), tree)));
-            } else {
-                DynamicMenu sampleMenu = new DynamicMenu(R.menu.blank);
-                int dynamicOptionId = sampleMenu.add("dynamic option!"); //You really shouldn't mix non-resource backed items with a resource inflated menu, as IDs could conflict
-
-                level.add(new Node(cardScrollAdapter.cardFactory((JSONObject) cardJS.get("card")), sampleMenu));
-            }
-        }
-        return level;
-    }
-
-    public void onEventMainThread(CardTreeEvent e) {
-        // TODO(brandyn): This is a temporary solution, fix it
-        cardTree = new Tree(this.activity);
-        cardTree.setHorizontalScrollBarEnabled(true);
-        refreshActivityView();
-        JSONArray cardArray = (JSONArray) JSONValue.parse(e.getTreeJS());
-        cardArrayToLevel(cardArray, cardTree.getRoot(), cardTree);
-        cardTree.showRoot();
     }
 
     public void setMainActivity(ScriptActivity a) {
@@ -431,8 +353,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             activity.finish();
         }
         this.activity = a;
-        if (cardTree == null && HardwareDetector.isGlass)
-            cardTree = new Tree(a);
+        ((CardTreeManager) getManager(CardTreeManager.class)).setMainActivity(a);
     }
 
     @Override
@@ -457,7 +378,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEvent(ActivityEvent e) {
-        // TODO(brandyn): Change these strings to use the modes
         if (e.getMode() == ActivityEvent.Mode.CREATE) {
             Intent i = new Intent(this, ScriptActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -465,13 +385,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         } else if (e.getMode() == ActivityEvent.Mode.DESTROY) {
             activity.finish();
         } else if (e.getMode() == ActivityEvent.Mode.WEBVIEW) {
-            updateActivityView("webview");
+            updateActivityView(ActivityEvent.Mode.WEBVIEW);
         } else if (e.getMode() == ActivityEvent.Mode.OPENGL) {
-            updateActivityView("opengl");
+            updateActivityView(ActivityEvent.Mode.OPENGL);
         } else if (e.getMode() == ActivityEvent.Mode.CARD_TREE) {
-            updateActivityView("cardtree");
-        } else if (e.getMode() == ActivityEvent.Mode.CARD_SCROLL) {
-            updateActivityView("cardscroll");
+            updateActivityView(ActivityEvent.Mode.CARD_TREE);
+        } else if (e.getMode() == ActivityEvent.Mode.REFRESH) {
+            refreshActivityView();
         }
     }
 
@@ -530,15 +450,28 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return mCallback;
     }
 
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        if(cardTree.getCurrentNode().hasMenu()){
-            Log.d(TAG, "Preparing Node menu");
-            cardTree.getCurrentNode().getMenu().build(activity.getMenuInflater(), menu);
+    public boolean onPrepareOptionsMenu(Menu menu, Activity activity) {
+        CardTreeManager cm = ((CardTreeManager) getManager(CardTreeManager.class));
+        if (cm != null)
+            return cm.onPrepareOptionsMenu(menu, activity);
+        return false;
+    }
+
+    public boolean onBackPressed() {
+        CardTreeManager cm = ((CardTreeManager) getManager(CardTreeManager.class));
+        if (cm == null || activityMode != ActivityEvent.Mode.CARD_TREE)
             return true;
-        }else if(cardTree.getCurrentLevel().hasMenu()){
-            Log.d(TAG, "Preparing level menu");
-            cardTree.getCurrentLevel().getMenu().build(activity.getMenuInflater(), menu);
-            return true;
+        return cm.onBackPressed();
+    }
+
+    public boolean hasWebView() {
+        return webview != null;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        CardTreeManager cm = ((CardTreeManager) getManager(CardTreeManager.class));
+        if (cm != null) {
+            return cm.onOptionsItemSelected(item);
         }
         return false;
     }
@@ -552,7 +485,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            //TODO: Move recievers into managers when possible
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
                 Log.d(TAG, "Screen off");
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
