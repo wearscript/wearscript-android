@@ -44,6 +44,7 @@ public class ScriptActivity extends Activity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         //#TODO We should be able to make this more efficient and not constantly reinflate.
+        Log.d(TAG, "onPrepareOptionsMenu");
         return bs.onPrepareOptionsMenu(menu, this);
     }
 

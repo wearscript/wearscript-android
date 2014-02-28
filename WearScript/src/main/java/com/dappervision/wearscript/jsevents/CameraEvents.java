@@ -9,19 +9,15 @@ public class CameraEvents {
         private double period;
         private int maxHeight;
 
-        public Start(double period) {
-            this(period, false, 640, 360);
-        }
-
-        public Start(double period, boolean background) {
-            this(period, background, 640, 360);
-        }
-
-        public Start(double imagePeriod, boolean background, int maxWidth, int maxHeight) {
+        public Start(double imagePeriod, int maxHeight, int maxWidth, boolean background) {
             this.period = imagePeriod;
             this.background = background;
             this.maxWidth = maxWidth;
             this.maxHeight = maxHeight;
+        }
+
+        public Start(double imagePeriod) {
+            this(imagePeriod, 0, 0, false);
         }
 
         public double getPeriod() {

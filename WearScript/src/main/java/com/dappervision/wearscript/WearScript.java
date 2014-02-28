@@ -214,6 +214,12 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void displayWarpView() {
+        Log.i(TAG, "displayWarpView");
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.WARP));
+    }
+
+    @JavascriptInterface
     public void cameraOff() {
         Utils.eventBusPost(new CameraEvents.Start(0));
     }
@@ -253,18 +259,8 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void cameraOn(double imagePeriod) {
-        Utils.eventBusPost(new CameraEvents.Start(imagePeriod));
-    }
-
-    @JavascriptInterface
-    public void cameraOn(double imagePeriod, boolean background) {
-        Utils.eventBusPost(new CameraEvents.Start(imagePeriod, background));
-    }
-
-    @JavascriptInterface
-    public void cameraOn(double imagePeriod, boolean background, int maxWidth, int maxHeight) {
-        Utils.eventBusPost(new CameraEvents.Start(imagePeriod, background, maxWidth, maxHeight));
+    public void cameraOn(double imagePeriod, int maxHeight, int maxWidth, boolean background) {
+        Utils.eventBusPost(new CameraEvents.Start(imagePeriod, maxHeight, maxWidth, background));
     }
 
     @JavascriptInterface

@@ -9,7 +9,7 @@ public class ActivityEvent implements JSBusEvent {
         WEBVIEW,
         OPENGL,
         CARD_TREE,
-        REFRESH
+        WARP, REFRESH
     }
 
     public ActivityEvent(Mode mode) {

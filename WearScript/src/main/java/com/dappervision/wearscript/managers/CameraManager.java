@@ -242,7 +242,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     public void stop() {
         synchronized (this) {
             if (camera != null) {
-                running = false;
                 camera.stopPreview();
                 camera.setPreviewCallback(null);
                 camera.release();
@@ -282,6 +281,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 Log.w(TAG, "OpenCV Already Loaded: camflow");
                 return;
             }
+            running = true;
             openCVLoaded = true;
             if (camera != null) {
                 Log.w(TAG, "Camera already registered: camflow");

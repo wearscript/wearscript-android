@@ -162,13 +162,14 @@ public class CardTreeManager extends Manager {
     public void nodeSelected(Node node) {
         Integer id = nodeToId.get(node);
         if (id != null) {
+            Log.d(TAG, "Calling Select: " + "SELECTED:" + id);
             makeCall("SELECTED:" + id, "");
         }
     }
 
     public void setMainActivity(Activity activity) {
+        this.activity = activity;
         if (cardTree == null && HardwareDetector.isGlass) {
-            this.activity = activity;
             cardTree = new Tree(activity);
         } else {
             cardTree.setActivity(activity);
@@ -205,6 +206,11 @@ public class CardTreeManager extends Manager {
 
         @Override
         public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+            if (tree.getIgnoreSelect()) {
+                Log.d(TAG, "Ignoring select");
+                return;
+            }
+            Log.d(TAG, "SelectItem: " + i + " : " + tree.getSelectedItemPosition());
             manager.nodeSelected(tree.getCurrentNode());
         }
 

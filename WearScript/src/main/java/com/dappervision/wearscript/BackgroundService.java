@@ -40,6 +40,7 @@ import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.PicarusManager;
+import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.dappervision.wearscript.ui.ScriptActivity;
 import com.google.android.glass.widget.CardScrollView;
@@ -91,6 +92,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     activityView = webview;
                 } else if (mode == ActivityEvent.Mode.OPENGL) {
                     activityView = ((OpenGLManager) getManager(OpenGLManager.class)).getView();
+                } else if (mode == ActivityEvent.Mode.WARP) {
+                    activityView = ((WarpManager) getManager(WarpManager.class)).getView();
                 } else if (mode == ActivityEvent.Mode.CARD_TREE) {
                     activityView = ((CardTreeManager) getManager(CardTreeManager.class)).getView();
                 }
@@ -384,14 +387,10 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             startActivity(i);
         } else if (e.getMode() == ActivityEvent.Mode.DESTROY) {
             activity.finish();
-        } else if (e.getMode() == ActivityEvent.Mode.WEBVIEW) {
-            updateActivityView(ActivityEvent.Mode.WEBVIEW);
-        } else if (e.getMode() == ActivityEvent.Mode.OPENGL) {
-            updateActivityView(ActivityEvent.Mode.OPENGL);
-        } else if (e.getMode() == ActivityEvent.Mode.CARD_TREE) {
-            updateActivityView(ActivityEvent.Mode.CARD_TREE);
         } else if (e.getMode() == ActivityEvent.Mode.REFRESH) {
             refreshActivityView();
+        } else {
+            updateActivityView(e.getMode());
         }
     }
 

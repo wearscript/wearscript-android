@@ -31,7 +31,7 @@ function WearScript() {
                  extras = extras.slice(1);
              }
              if (extras.length > 0 && isObj(extras[0])) { // Children
-                 card.children = extras[0];
+                 card.children = extras[0].cards;
                  extras = extras.slice(1);
              } else if (extras.length > 0 && extras.length % 2 == 0) { // Menu
                  card.menu = [];
@@ -95,8 +95,12 @@ function WearScript() {
     this.cardTree = function (tree) {
         WSRAW.cardTree(JSON.stringify(tree.cards))
     }
-    this.cameraOn = function (period) {
-        WSRAW.cameraOn(period);
+    this.cameraOn = function (period, maxHeight, maxWidth) {
+        if (!maxHeight)
+            maxHeight = 0;
+        if (!maxWidth)
+            maxwidth = 0;
+        WSRAW.cameraOn(period, maxHeight, maxWidth, false);
     }
     this.cameraPhoto = function () {
         WSRAW.cameraPhoto();

@@ -23,6 +23,7 @@ public class ManagerManager {
         //add(new OpenGLManager(bs));
         add(new CardTreeManager(bs));
         add(new ConnectionManager(bs));
+        add(new WarpManager(bs));
     }
 
     public void add(Manager manager) {
