@@ -48,7 +48,8 @@ public class EyeEventReceiver extends BroadcastReceiver {
             } else {
                 mListener.onEyeGesture(EyeGesture.DOFF);
             }
-        } else {
+            //abortBroadcast(); //This could break automatic screen on/off
+        } else if (intent.getAction().equals("com.google.glass.action.EYE_GESTURE")){
             String eyeEvent = extras.getString("gesture");
             Log.d(TAG, eyeEvent + " is detected");
             if (eyeEvent.equals(WINK)) {
@@ -62,10 +63,8 @@ public class EyeEventReceiver extends BroadcastReceiver {
             } else if (eyeEvent.equals(DOFF)) {
                 mListener.onEyeGesture(EyeGesture.DOFF);
             }
+            abortBroadcast();
         }
-
-
-        //abortBroadcast();
     }
 
 }
