@@ -44,15 +44,12 @@ public class GestureManager extends Manager {
     }
 
     private void teardown(){
-        eyeGestureManager.stopDetector(EyeGesture.DOFF);
-        eyeGestureManager.stopDetector(EyeGesture.DON);
-        eyeGestureManager.stopDetector(EyeGesture.WINK);
         eyeGestureManager.stopDetector(EyeGesture.DOUBLE_WINK);
         eyeGestureManager.stopDetector(EyeGesture.DOUBLE_BLINK);
         try{
-        service.getApplicationContext().unregisterReceiver(eyeEventReceiver);
+            service.getApplicationContext().unregisterReceiver(eyeEventReceiver);
         }catch (IllegalArgumentException e){
-
+            //we were not registered
         }
     }
 
