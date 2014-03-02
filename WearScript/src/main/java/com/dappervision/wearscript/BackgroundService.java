@@ -357,7 +357,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             activity.finish();
         }
         this.activity = a;
-        ((CardTreeManager) getManager(CardTreeManager.class)).setMainActivity(a);
+        if(ManagerManager.hasManager(CardTreeManager.class))
+            ((CardTreeManager) getManager(CardTreeManager.class)).setMainActivity(a);
     }
 
     @Override
