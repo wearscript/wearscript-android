@@ -2,6 +2,7 @@ package com.dappervision.wearscript;
 
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.os.Handler;
 import android.view.SurfaceHolder;
@@ -110,6 +111,10 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
             Log.d(TAG, "Unpublishing LiveCard");
             liveCardUnpublish();
         }
+    }
+
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     @Override

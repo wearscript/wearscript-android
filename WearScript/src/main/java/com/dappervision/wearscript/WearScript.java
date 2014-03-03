@@ -385,11 +385,13 @@ public class WearScript {
 
     @JavascriptInterface
     public void liveCardCreate(boolean nonSilent, double period) {
+        requiresGDK();
         Utils.eventBusPost(new LiveCardEvent(nonSilent, period));
     }
 
     @JavascriptInterface
     public void liveCardDestroy() {
+        requiresGDK();
         Utils.eventBusPost(new LiveCardEvent(false, 0));
     }
 
@@ -411,6 +413,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void cardTree(String treeJS) {
+        requiresGDK();
         Utils.eventBusPost(new CardTreeEvent(treeJS));
     }
 
@@ -614,5 +617,13 @@ public class WearScript {
     @JavascriptInterface
     public String glMethods() {
         return (new JSONObject(openglTypes)).toJSONString();
+    }
+
+    private void requiresGDK() {
+        if(HardwareDetector.hasGDK)
+            return;
+        Utils.eventBusPost(new SendSubEvent("log", "Script requires glass"));
+        Utils.eventBusPost(new SayEvent("This script requires Glass"));
+        throw new RuntimeException("GDK not available");
     }
 }

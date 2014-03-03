@@ -1,6 +1,7 @@
 package com.dappervision.wearscript.managers;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.HardwareDetector;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,9 +22,11 @@ public class ManagerManager {
         add(new AudioManager(bs));
         add(new SpeechManager(bs));
         //add(new OpenGLManager(bs));
-        add(new CardTreeManager(bs));
         add(new ConnectionManager(bs));
         add(new WarpManager(bs));
+        if(HardwareDetector.hasGDK){
+            add(new CardTreeManager(bs));
+        }
     }
 
     public void add(Manager manager) {
@@ -62,5 +65,9 @@ public class ManagerManager {
         }
         singleton = new ManagerManager();
         return singleton;
+    }
+
+    public static boolean hasManager(Class<? extends Manager> c) {
+        return get().get(c) != null;
     }
 }
