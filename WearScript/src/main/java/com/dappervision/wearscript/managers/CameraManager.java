@@ -106,6 +106,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     public void setupCallback(CallbackRegistration r) {
         super.setupCallback(r);
+        Log.d(TAG, "setupCallback");
         if (r.getEvent().equals(PHOTO) || r.getEvent().equals(PHOTO_PATH)) {
             cameraPhoto();
         } else if (r.getEvent().equals(VIDEO) || r.getEvent().equals(VIDEO_PATH)) {
@@ -121,6 +122,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void onEvent(CameraEvents.Start e) {
+        // NOTE(brandyn): Ensures we use the new parameters, we should try not to keep reloading opencv
+        stop();
         imagePeriod = Math.round(e.getPeriod() * 1000000000L);
         background = e.getBackground();
         maxWidth = e.getMaxWidth();
@@ -144,7 +147,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             if (resultCode == Activity.RESULT_OK) {
                 final String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
-                Log.d(TAG, jsCallbacks.toString());
+                Log.d(TAG, "CameraManager: " + jsCallbacks.toString());
                 if (jsCallbacks.containsKey(PHOTO) || jsCallbacks.containsKey(PHOTO_PATH)) {
                     // create empty file if it doesn't exist
                     // else FileObserver won't work (as per documentation)
@@ -343,7 +346,9 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 Camera.Parameters params = camera.getParameters();
                 Log.d(TAG, "getSupportedPresiewSizes(): camflow");
                 List<Camera.Size> sizes = params.getSupportedPreviewSizes();
-
+                for (Camera.Size size : sizes) {
+                    Log.d(TAG, "Supported Preview Size: " + size.height + " " + size.width);
+                }
                 if (sizes != null) {
                     Size frameSize = null;
                     Camera.Size sizeNearest = null;
@@ -433,6 +438,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     private void cameraPhoto() {
         pause();
+        Log.d(TAG, "Taking photo");
         Utils.eventBusPost(new StartActivityEvent(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000));
     }
 

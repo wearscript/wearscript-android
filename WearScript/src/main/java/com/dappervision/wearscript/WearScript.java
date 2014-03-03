@@ -226,11 +226,6 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void cameraPhoto() {
-        cameraPhoto(null);
-    }
-
-    @JavascriptInterface
     public void cameraPhoto(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.PHOTO);
@@ -345,7 +340,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void publish(String channel, String data) {
-        Log.i(TAG, "publish");
+        Log.i(TAG, "publish " + channel);
         Utils.eventBusPost(new SendEvent(channel, Base64.decode(data, Base64.NO_WRAP)));
     }
 
@@ -392,11 +387,13 @@ public class WearScript {
 
     @JavascriptInterface
     public void liveCardCreate(boolean nonSilent, double period) {
+        requiresGDK();
         Utils.eventBusPost(new LiveCardEvent(nonSilent, period));
     }
 
     @JavascriptInterface
     public void liveCardDestroy() {
+        requiresGDK();
         Utils.eventBusPost(new LiveCardEvent(false, 0));
     }
 
@@ -418,6 +415,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void cardTree(String treeJS) {
+        requiresGDK();
         Utils.eventBusPost(new CardTreeEvent(treeJS));
     }
 
@@ -621,5 +619,13 @@ public class WearScript {
     @JavascriptInterface
     public String glMethods() {
         return (new JSONObject(openglTypes)).toJSONString();
+    }
+
+    private void requiresGDK() {
+        if(HardwareDetector.hasGDK)
+            return;
+        Utils.eventBusPost(new SendSubEvent("log", "Script requires glass"));
+        Utils.eventBusPost(new SayEvent("This script requires Glass"));
+        throw new RuntimeException("GDK not available");
     }
 }

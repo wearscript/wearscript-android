@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.KeyEvent;
@@ -23,7 +24,7 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
 
 public class ScriptActivity extends Activity {
-    protected static final String TAG = "WearScript";
+    protected static final String TAG = "ScriptActivity";
     private static final String EXTRA_NAME = "extra";
     private boolean isGlass = true, isForeground = true;
     public BackgroundService bs;
@@ -157,6 +158,11 @@ public class ScriptActivity extends Activity {
         } else {
             return super.onKeyDown(keyCode, event);
         }
+    }
+
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        bs.onConfigurationChanged(newConfig);
     }
 
     public void onEvent(StartActivityEvent event) {

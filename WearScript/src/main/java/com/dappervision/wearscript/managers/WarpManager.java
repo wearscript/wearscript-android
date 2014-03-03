@@ -10,6 +10,7 @@ import android.view.SurfaceView;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.CameraEvents;
 import com.dappervision.wearscript.jsevents.OpenGLEvent;
 import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
@@ -29,20 +30,23 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class WarpManager extends Manager {
     public static final String TAG = "WarpManager";
-    private final boolean warp;
     protected Mat hSmallToGlassMat;
     private Bitmap mCacheBitmap;
     private SurfaceView view;
+    private Mat frameBGR;
+    private Mat frameWarp;
+    private boolean busy;
 
     public WarpManager(BackgroundService bs) {
         super(bs);
         view = new SurfaceView(bs);
-        warp = true;
         reset();
     }
 
     @Override
     public void reset() {
+        frameBGR = null;
+        busy = false;
         super.reset();
     }
 
@@ -91,8 +95,16 @@ public class WarpManager extends Manager {
     }
 
     void setupMatrices() {
-        double hSmallToBig[] = {3., 0., 304., 0., 3., 388., 0., 0., 1.};
-        double hBigToGlass[] = {1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1};
+        double hSmallToBig[] = {3.99706685e+00, -1.67819167e-02, -2.69490153e+01,
+                -1.44162510e-02, 3.97861285e+00, 4.32612839e+02,
+                -1.87025612e-05, -2.87125025e-05, 1.00000000e+00};
+                //{3.95, 0., 0, 0., 3.95, 434, 0., 0., 1.};
+
+
+        double hBigToGlass[] = {1.49968460e+00, -9.18421959e-02, -1.26498024e+03, -1.28142821e-02, 1.44983279e+00, -5.69960334e+02,-3.04188513e-05, -1.34763662e-04, 1.00000000e+00}; // XE-B Sky
+
+
+        //double hBigToGlass[] = {1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1};
         //double hBigToGlass[] = {1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0};
         double hSmallToGlass[] = HMult(hBigToGlass, hSmallToBig);
         hSmallToGlassMat = HMatFromArray(hSmallToGlass);
@@ -105,16 +117,22 @@ public class WarpManager extends Manager {
     }
 
     public void onEventAsync(CameraEvents.Frame frameEvent) {
-        if (!warp)
+        if (service.getActivityMode() != ActivityEvent.Mode.WARP || busy)
             return;
-        if (hSmallToGlassMat == null)
-            setupMatrices();
-        Mat frame = frameEvent.getCameraFrame().getRGB();
-        Mat frameBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
-        Imgproc.cvtColor(frame, frameBGR, Imgproc.COLOR_RGB2BGR);
-        Mat frameWarp = imageLike(frameBGR);
-        Imgproc.warpPerspective(frameBGR, frameWarp, hSmallToGlassMat, new Size(frameWarp.width(), frameWarp.height()));
-        drawFrame(frameWarp);
+        synchronized (this) {
+            busy = true;
+            if (hSmallToGlassMat == null)
+                setupMatrices();
+            Mat frame = frameEvent.getCameraFrame().getRGB();
+            if (frameBGR == null || frameBGR.height() != frame.height() || frameBGR.width() != frame.width())
+                frameBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
+            Imgproc.cvtColor(frame, frameBGR, Imgproc.COLOR_RGB2BGR);
+            if (frameWarp == null)
+                frameWarp = new Mat(360, 640, CvType.CV_8UC3);
+            Imgproc.warpPerspective(frameBGR, frameWarp, hSmallToGlassMat, new Size(frameWarp.width(), frameWarp.height()));
+            drawFrame(frameWarp);
+            busy = false;
+        }
     }
 
     void drawFrame (Mat modified) {
