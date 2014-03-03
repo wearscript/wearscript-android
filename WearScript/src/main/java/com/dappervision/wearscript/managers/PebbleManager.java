@@ -3,7 +3,6 @@ package com.dappervision.wearscript.managers;
 import android.content.Context;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.dataproviders.PebbleEventReciever;
 import com.getpebble.android.kit.PebbleKit;
 
