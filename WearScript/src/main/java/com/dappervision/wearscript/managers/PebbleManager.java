@@ -1,14 +1,10 @@
 package com.dappervision.wearscript.managers;
 
 import android.content.Context;
-import android.os.Handler;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.dataproviders.PebbleEventReciever;
 import com.getpebble.android.kit.PebbleKit;
-import com.getpebble.android.kit.util.PebbleDictionary;
 
 import java.util.UUID;
 
