@@ -6,7 +6,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.dataproviders.PebbleEventReciever;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
