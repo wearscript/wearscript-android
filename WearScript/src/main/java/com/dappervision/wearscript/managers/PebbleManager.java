@@ -6,6 +6,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.dataproviders.PebbleEventReciever;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 public class PebbleManager extends Manager{
     private static final String TAG = "PebbleManager";
+    private static final String CLICK = "onPebbleClick";
 
     private final static UUID PEBBLE_APP_UUID = UUID.fromString("88c99af8-9512-4e23-b79e-ba437c788446");
 
@@ -25,7 +27,9 @@ public class PebbleManager extends Manager{
         PebbleKit.registerReceivedDataHandler(activity, dataReceiver);
     }
 
-    public void onClick(String button) {
-        makeCall("onClick", String.format("'%s'", button));
+    public void onPebbleClick(String button) {
+        registerCallback(CLICK, CLICK);
+        makeCall("onPebbleClick", String.format("'%s'", button));
     }
+
 }

@@ -50,19 +50,19 @@ public class PebbleEventReciever extends PebbleKit.PebbleDataReceiver{
                 switch (cmd) {
                     case CMD_UP:
                         Log.v(TAG, UP);
-                        mPebbleManager.onClick(UP);
+                        mPebbleManager.onPebbleClick(UP);
                         break;
                     case CMD_DOWN:
                         Log.v(TAG, DOWN);
-                        mPebbleManager.onClick(DOWN);
+                        mPebbleManager.onPebbleClick(DOWN);
                         break;
                     case CMD_SELECT:
                         Log.v(TAG, SELECT);
-                        mPebbleManager.onClick(SELECT);
+                        mPebbleManager.onPebbleClick(SELECT);
                         break;
                     case CMD_MULTI_SELECT:
                         Log.v(TAG, MULTI_SELECT);
-                        mPebbleManager.onClick(MULTI_SELECT);
+                        mPebbleManager.onPebbleClick(MULTI_SELECT);
                         break;
                     default:
                         break;
