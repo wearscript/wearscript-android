@@ -35,5 +35,6 @@ dependencies {
     compile files('libs/sentry-0.1.4.jar')
     compile files('libs/CardTree.jar')
     compile project(':opencv-android')
+    compile project(':PebbleKit')
     compile files('libs/android-support-v13.jar')
 }

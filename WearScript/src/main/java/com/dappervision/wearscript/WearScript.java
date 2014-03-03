@@ -34,6 +34,7 @@ import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
+import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.WifiManager;
 
 import org.json.simple.JSONObject;
@@ -376,6 +377,12 @@ public class WearScript {
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
         Utils.eventBusPost(new CallbackRegistration(GestureManager.class, callback).setEvent(event));
+    }
+
+    @JavascriptInterface
+    public void pebbleCallback(String event, String callback) {
+        Log.i(TAG, "pebbleCallback: " + event + " " + callback);
+        Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(event));
     }
 
     @JavascriptInterface
