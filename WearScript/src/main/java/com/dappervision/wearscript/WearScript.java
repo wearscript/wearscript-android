@@ -225,11 +225,6 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void cameraPhoto() {
-        cameraPhoto(null);
-    }
-
-    @JavascriptInterface
     public void cameraPhoto(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.PHOTO);
@@ -344,7 +339,7 @@ public class WearScript {
 
     @JavascriptInterface
     public void publish(String channel, String data) {
-        Log.i(TAG, "publish");
+        Log.i(TAG, "publish " + channel);
         Utils.eventBusPost(new SendEvent(channel, Base64.decode(data, Base64.NO_WRAP)));
     }
 

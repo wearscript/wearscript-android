@@ -177,6 +177,8 @@ public class ConnectionManager extends Manager {
         @Override
         public void onConnect() {
             makeCall(ONCONNECT, "");
+            // NOTE(brandyn): This ensures that we are only calling the function once
+            unregisterCallback(ONCONNECT);
         }
 
 

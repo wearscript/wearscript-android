@@ -118,6 +118,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return activityView;
     }
 
+    public ActivityEvent.Mode getActivityMode() {
+        return activityMode;
+    }
+
+
     public void loadUrl(String url) {
         synchronized (lock) {
             if (webview != null && url != null) {
