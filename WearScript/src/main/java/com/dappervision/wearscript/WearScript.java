@@ -375,9 +375,9 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void pebbleCallback(String event, String callback) {
-        Log.i(TAG, "pebbleCallback: " + event + " " + callback);
-        Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(event));
+    public void onPebbleClick(String click, String callback) {
+        Log.i(TAG, "onPebbleClick: " + click + " " + callback);
+        Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(click));
     }
 
     @JavascriptInterface
