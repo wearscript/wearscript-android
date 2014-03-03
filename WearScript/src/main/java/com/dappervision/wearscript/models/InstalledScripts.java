@@ -10,6 +10,7 @@ import org.json.simple.JSONValue;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class InstalledScripts {
@@ -28,7 +29,9 @@ public class InstalledScripts {
         String[] flArray = extStorageDir.list();
         if (flArray == null)
             return new ArrayList<String>();
-        return Arrays.asList(flArray);
+        List<String> gists = Arrays.asList(flArray);
+        Collections.reverse(gists);
+        return gists;
     }
 
     public void load() {
