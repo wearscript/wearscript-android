@@ -11,8 +11,8 @@ import com.getpebble.android.kit.util.PebbleDictionary;
 import java.util.UUID;
 
 
-public class PebbleEventReciever extends PebbleKit.PebbleDataReceiver{
-    private static final String TAG = "PebbleEventReciever";
+public class PebbleEventReceiver extends PebbleKit.PebbleDataReceiver{
+    private static final String TAG = "PebbleEventReceiver";
 
     private final static int CMD_KEY = 0x00;
     private final static int CMD_SELECT = 0x00;
@@ -30,7 +30,7 @@ public class PebbleEventReciever extends PebbleKit.PebbleDataReceiver{
     private PebbleManager mPebbleManager;
 
 
-    public PebbleEventReciever(UUID PEBBLE_APP_UUID, PebbleManager pebbleManager) {
+    public PebbleEventReceiver(UUID PEBBLE_APP_UUID, PebbleManager pebbleManager) {
         super(PEBBLE_APP_UUID);
         mHandler = new Handler();
         mPebbleManager = pebbleManager;
