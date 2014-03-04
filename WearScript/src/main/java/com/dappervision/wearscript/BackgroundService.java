@@ -215,6 +215,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                     frameJPEG = frame.getJPEG();
                 Utils.eventBusPost(new SendEvent(channel, System.currentTimeMillis() / 1000., ValueFactory.createRawValue(frameJPEG)));
             }
+            // NOTE(brandyn): Done from here because the frame must have "done" called on it
+            ((WarpManager) getManager(WarpManager.class)).processFrame(frameEvent);
         } finally {
             frameEvent.done();
         }

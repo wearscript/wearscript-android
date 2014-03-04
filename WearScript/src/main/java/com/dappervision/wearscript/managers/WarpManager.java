@@ -3,39 +3,48 @@ package com.dappervision.wearscript.managers;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.opengl.GLES20;
-import android.opengl.GLSurfaceView;
-import android.util.Base64;
 import android.view.SurfaceView;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.events.SendEvent;
+import com.dappervision.wearscript.events.WarpDrawEvent;
+import com.dappervision.wearscript.events.WarpHEvent;
+import com.dappervision.wearscript.events.WarpModeEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.CameraEvents;
-import com.dappervision.wearscript.jsevents.OpenGLEvent;
-import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
 
 import org.json.simple.JSONArray;
+import org.msgpack.type.ValueFactory;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-import java.util.concurrent.LinkedBlockingQueue;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-
 public class WarpManager extends Manager {
+    public static final String SAMPLE = "sample";
+    private double[] hGlassToSmall;
+
+    public enum Mode {
+        CAM2GLASS, SAMPLEWARPPLANE, SAMPLEWARPGLASS
+    }
     public static final String TAG = "WarpManager";
     protected Mat hSmallToGlassMat;
+    protected double[] hSmallToGlass;
     private Bitmap mCacheBitmap;
     private SurfaceView view;
     private Mat frameBGR;
     private Mat frameWarp;
     private boolean busy;
+    private boolean captureSample;
+    private boolean useSample;
+    private Mode mode;
+    private Mat sampleBGR;
 
     public WarpManager(BackgroundService bs) {
         super(bs);
@@ -47,6 +56,9 @@ public class WarpManager extends Manager {
     public void reset() {
         frameBGR = null;
         busy = false;
+        captureSample = false;
+        useSample = false;
+        mode = Mode.CAM2GLASS;
         super.reset();
     }
 
@@ -94,6 +106,18 @@ public class WarpManager extends Manager {
         return c;
     }
 
+    protected double[] HMultPoint(double a[], double b[]) {
+        if (a == null || b == null)
+            return null;
+        double c[] = new double[3];
+        c[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2];
+        c[0] = (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / c[2];
+        c[1] = (a[3] * b[0] + a[4] * b[1] + a[5] * b[2]) / c[2];
+        c[2] = 1.;
+
+        return c;
+    }
+
     void setupMatrices() {
         double hSmallToBig[] = {3.99706685e+00, -1.67819167e-02, -2.69490153e+01,
                 -1.44162510e-02, 3.97861285e+00, 4.32612839e+02,
@@ -106,8 +130,15 @@ public class WarpManager extends Manager {
 
         //double hBigToGlass[] = {1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1};
         //double hBigToGlass[] = {1.4538965634675285, -0.10298433991228334, -1224.726117650959, 0.010066418722892632, 1.3287672714218164, -526.977020143425, -4.172194829863231e-05, -0.00012170226282961026, 1.0};
-        double hSmallToGlass[] = HMult(hBigToGlass, hSmallToBig);
+        hSmallToGlass = HMult(hBigToGlass, hSmallToBig);
         hSmallToGlassMat = HMatFromArray(hSmallToGlass);
+        hGlassToSmall = new double[9];
+        Mat hGlassToSmallMat = hSmallToGlassMat.inv();
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) {
+                hGlassToSmall[i * 3 + j] = hGlassToSmallMat.get(i, j)[0];
+                Log.d(TAG, "hGlassToSmall:" + (i * 3 + j) + " " + hGlassToSmall[i * 3 + j]);
+            }
     }
 
     Mat imageLike(Mat image) {
@@ -116,21 +147,89 @@ public class WarpManager extends Manager {
         return new Mat(image.rows(), image.cols(), CvType.CV_8UC3);
     }
 
-    public void onEventAsync(CameraEvents.Frame frameEvent) {
-        if (service.getActivityMode() != ActivityEvent.Mode.WARP || busy)
+    public void onEvent(WarpModeEvent event) {
+        synchronized (this) {
+            mode = event.getMode();
+            Log.d(TAG, "Warp: Setting Mode: " + event.getMode().name());
+            if (mode == Mode.SAMPLEWARPPLANE || mode == Mode.SAMPLEWARPGLASS) {
+                useSample = false;
+                captureSample = true;
+            }
+        }
+    }
+
+    public void onEvent(WarpDrawEvent event) {
+        synchronized (this) {
+            if ((mode == Mode.SAMPLEWARPPLANE || mode == Mode.SAMPLEWARPGLASS) && useSample) {
+                double circleCenter[] = {event.getX(), event.getY(), 1};
+                double circleCenterSmall[] = HMultPoint(hGlassToSmall, circleCenter);
+                Core.circle(sampleBGR, new Point(circleCenterSmall[0], circleCenterSmall[1]), event.getRadius(), new Scalar(event.getB(), event.getG(), event.getR()));
+            }
+        }
+    }
+
+    public void onEventAsync(WarpHEvent event) {
+        double[] h = event.getH();
+        synchronized (this) {
+            if ((mode == Mode.SAMPLEWARPPLANE || mode == Mode.SAMPLEWARPGLASS) && useSample) {
+                if (hSmallToGlassMat == null)
+                    setupMatrices();
+                if (frameWarp == null)
+                    frameWarp = new Mat(360, 640, CvType.CV_8UC3);
+                Log.d(TAG, "Warp: WarpHEvent");
+                if (mode == Mode.SAMPLEWARPGLASS) {
+                    h = HMult(hSmallToGlass, h);
+                }
+                Mat hMat = HMatFromArray(h);
+
+                Imgproc.warpPerspective(sampleBGR, frameWarp, hMat, new Size(frameWarp.width(), frameWarp.height()));
+                drawFrame(frameWarp);
+            }
+        }
+    }
+
+    public void processFrame(CameraEvents.Frame frameEvent) {
+        if (service.getActivityMode() != ActivityEvent.Mode.WARP)
+            return;
+        if (mode == Mode.SAMPLEWARPPLANE || mode == Mode.SAMPLEWARPGLASS) {
+            synchronized (this) {
+                if (hSmallToGlassMat == null)
+                    setupMatrices();
+                if (captureSample) {
+                    captureSample = false;
+                    Log.d(TAG, "Warp: Capturing Sample");
+                    Mat frame = frameEvent.getCameraFrame().getRGB();
+                    byte[] frameJPEG = frameEvent.getCameraFrame().getJPEG();
+                    if (sampleBGR == null || sampleBGR.height() != frame.height() || sampleBGR.width() != frame.width())
+                        sampleBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
+                    Imgproc.cvtColor(frame, sampleBGR, Imgproc.COLOR_RGB2BGR);
+                    useSample = true;
+                    // TODO: Specialize it for this group/device
+                    com.dappervision.wearscript.Utils.eventBusPost(new SendEvent("warpsample", "", ValueFactory.createRawValue(frameJPEG)));
+                }
+            }
+        }
+
+        if (busy)
             return;
         synchronized (this) {
             busy = true;
             if (hSmallToGlassMat == null)
                 setupMatrices();
-            Mat frame = frameEvent.getCameraFrame().getRGB();
-            if (frameBGR == null || frameBGR.height() != frame.height() || frameBGR.width() != frame.width())
-                frameBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
-            Imgproc.cvtColor(frame, frameBGR, Imgproc.COLOR_RGB2BGR);
             if (frameWarp == null)
                 frameWarp = new Mat(360, 640, CvType.CV_8UC3);
-            Imgproc.warpPerspective(frameBGR, frameWarp, hSmallToGlassMat, new Size(frameWarp.width(), frameWarp.height()));
-            drawFrame(frameWarp);
+            if (mode == Mode.CAM2GLASS) {
+                Mat inputBGR;
+                Mat frame = frameEvent.getCameraFrame().getRGB();
+                if (frameBGR == null || frameBGR.height() != frame.height() || frameBGR.width() != frame.width())
+                    frameBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
+                Imgproc.cvtColor(frame, frameBGR, Imgproc.COLOR_RGB2BGR);
+                inputBGR = frameBGR;
+
+                // TODO: Change matrix we are warping based on size
+                Imgproc.warpPerspective(inputBGR, frameWarp, hSmallToGlassMat, new Size(frameWarp.width(), frameWarp.height()));
+                drawFrame(frameWarp);
+            }
             busy = false;
         }
     }

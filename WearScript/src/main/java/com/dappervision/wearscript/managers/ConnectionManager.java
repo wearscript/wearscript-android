@@ -13,6 +13,7 @@ import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.SendSubEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
+import com.dappervision.wearscript.events.WarpHEvent;
 import com.dappervision.wearscript.jsevents.GistSyncEvent;
 import com.dappervision.wearscript.jsevents.SayEvent;
 
@@ -58,6 +59,7 @@ public class ConnectionManager extends Manager {
             connection.subscribe(connection.groupDevice());
             connection.subscribe(GIST_LIST_SYNC_CHAN);
             connection.subscribe(GIST_GET_SYNC_CHAN);
+            connection.subscribe("warph"); // TODO: Specialize it for this group/device
         }
         super.reset();
     }
@@ -268,6 +270,15 @@ public class ConnectionManager extends Manager {
                     String pathCur = Utils.SaveData(content, "gists/" + gistid, false, filename);
                     Log.d(TAG, "File:" + filename + " : " + gistid);
                 }
+            }
+            // TODO: Specialize it for this group/device
+            if (channel.startsWith("warph:")) {
+                double h[] = new double[9];
+                int cnt = 0;
+                for (Value v : data.get(1).asArrayValue()) {
+                    h[cnt++] = v.asFloatValue().getDouble();
+                }
+                Utils.eventBusPost(new WarpHEvent(h));
             }
             // BUG(brandyn): If the channel should go to a subchannel now it won't make it,
             // we should modify channel name before this call

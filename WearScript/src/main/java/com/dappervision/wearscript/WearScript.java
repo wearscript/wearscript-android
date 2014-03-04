@@ -11,6 +11,8 @@ import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.SendSubEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
+import com.dappervision.wearscript.events.WarpDrawEvent;
+import com.dappervision.wearscript.events.WarpModeEvent;
 import com.dappervision.wearscript.jsevents.ActivityEvent;
 import com.dappervision.wearscript.jsevents.AudioEvent;
 import com.dappervision.wearscript.jsevents.CallbackRegistration;
@@ -34,6 +36,7 @@ import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.OpenGLManager;
+import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 
 import org.json.simple.JSONObject;
@@ -217,6 +220,26 @@ public class WearScript {
     public void displayWarpView() {
         Log.i(TAG, "displayWarpView");
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.WARP));
+    }
+
+    @JavascriptInterface
+    public void warpPreviewSamplePlane(String callback) {
+        Log.i(TAG, "warpPreviewsample");
+        Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.SAMPLE));
+        Utils.eventBusPost(new WarpModeEvent(WarpManager.Mode.SAMPLEWARPPLANE));
+    }
+
+    @JavascriptInterface
+    public void warpPreviewSampleGlass(String callback) {
+        Log.i(TAG, "warpPreviewsample");
+        Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.SAMPLE));
+        Utils.eventBusPost(new WarpModeEvent(WarpManager.Mode.SAMPLEWARPGLASS));
+    }
+
+    @JavascriptInterface
+    public void warpDraw(double x, double y, int radius, int r, int g, int b) {
+        Log.i(TAG, "warpdraw");
+        Utils.eventBusPost(new WarpDrawEvent(x, y, radius, r, g, b));
     }
 
     @JavascriptInterface
