@@ -1,5 +1,0 @@
-Install
-
-sudo apt-get install libevent-dev python-pip python-dev
-sudo pip install gevent gevent-websocket msgpack-python websocket-client irc
-In wearscript/tools/extend do: sudo python setup.py install
