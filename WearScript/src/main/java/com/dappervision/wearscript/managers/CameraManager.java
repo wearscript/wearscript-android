@@ -86,6 +86,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             if (frameRGBSet)
                 return frameRGB;
             Imgproc.cvtColor(frame, frameRGB, Imgproc.COLOR_YUV2RGB_NV12);
+            frameRGBSet = true;
             return frameRGB;
         }
 

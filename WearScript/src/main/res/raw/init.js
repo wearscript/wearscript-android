@@ -743,7 +743,14 @@ function WearScript() {
         WSRAW.subscribe(channel, this._funcwrap(function (data) {return callback.apply(null, msgpack.unpack(atob(data)))}));
     }
     this.sensorOn = function(type, period, callback) {
-        WSRAW.sensorOn(type, period, this._funcwrap(callback));
+        if (typeof type === "string") {
+            type = this.sensor(type);
+        }
+        if (callback) {
+            WSRAW.sensorOn(type, period, this._funcwrap(callback));
+        } else {
+            WSRAW.sensorOn(type, period);
+        }
     }
     this.sensorOff = function(type) {
         WSRAW.sensorOff(type);
