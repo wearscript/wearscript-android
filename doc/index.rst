@@ -1,18 +1,18 @@
 WearScript: JS with Batteries Included for Glass
 ================================================
-WearScript combines the power of Android development on Glass with the learning curve of a website.  Go from concept to demo in a fraction of the time. For an overview check out the intro video and sample script below.  Visit https://github.com/OpenShades/wearscript for the goods.
-
-.. raw:: html
-
-  <div style="position: relative;margin-bottom: 30px;padding-bottom: 56.25%;padding-top: 30px; height: 0; overflow: hidden;">
-    <iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;" src="http://www.youtube.com/embed/tOUgybfQp4A" frameborder="0"></iframe>
-  </div>
+WearScript combines the power of Android development on Glass with the learning curve of a website.  Go from concept to demo in a fraction of the time. For an overview check out the intro video and sample script below.  Visit https://github.com/wearscript for the goods.
 
 One-Line Installer(Linux/OSX): Execute the following in a shell to install WearScript on your Glass and authenticate with our default server.
 
 .. code-block:: bash
 
   curl -L http://goo.gl/nRjW6y > install.py && python install.py
+
+.. raw:: html
+
+  <div style="position: relative;margin-bottom: 30px;padding-bottom: 56.25%;padding-top: 30px; height: 0; overflow: hidden;">
+    <iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;" src="http://www.youtube.com/embed/tOUgybfQp4A" frameborder="0"></iframe>
+  </div>
 
 .. code-block:: html
 
@@ -54,26 +54,21 @@ One-Line Installer(Linux/OSX): Execute the following in a shell to install WearS
     start
     setup-client
     setup-server
-    setup-vm
-    tutorial    
     tips
     hacking
     reference
     wire
-    admin
     contributing    
     eyetracking
-    extending
-    troubleshooting
 
 About
 -----
 
 * `OpenShades <http://openshades.com>`_ (the new OpenGlass) is our community
-* IRC freenode #openshades (if you want to collaborate or chat that's the place to be)
+* IRC freenode #wearscript and #openshades (if you want to collaborate or chat that's the place to be)
 * Project Lead: Brandyn White (bwhite dappervision com)
 * `G+ Community <https://plus.google.com/communities/101102785351379725742>`_ (we post work in progress here)
-* `Youtube <https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ>`_ (all OpenShades videos)
+* `Youtube <https://www.youtube.com/channel/UCGy1Zo81X2cRRQ5GQYz8eEQ>`_ (all demo videos)
 * `Dapper Vision, Inc. <http://www.dappervision.com>`_ (by Brandyn and Andrew) is the sponsor of this project
 * Code is licensed under `Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_ unless otherwise specified
 

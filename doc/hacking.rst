@@ -4,13 +4,10 @@ Hacking WearScript
 Code Organization
 -----------------
 
-* Server: /server
-* Webapp: /server/static/playground.html
-* Server admin tools (authorize users, permissions, etc.): /admin
-* Glass Client (Android app): /glass
-* Glass Client Prereqs (launchy/opencv/zxing): /glass/thirdparty
-* 3D models for printing and related scripts (AR mount, eye tracker, mirror holder): /hardware
-* Useful tools (log data scripts, android adb helper, data visualization server): /tools/
+* Android (Phone + Glass): https://github.com/wearscript/wearscript-android.git
+* Server: https://github.com/wearscript/wearscript-server.git
+* Playground Webapp: https://github.com/wearscript/wearscript-playground.git
+* Playground Webapp: https://github.com/wearscript/wearscript-playground.git
 
 Travis-CI
 ---------

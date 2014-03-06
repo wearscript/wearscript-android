@@ -7,35 +7,22 @@ Server Setup
 
 0a. Using Our Server
 ----------------
-* Visit https://api.picar.us/wearscript/, click "authenticate", then sign-in using your Google acccount
+* Visit https://api.picar.us/wearscript/, then sign-in using your Google acccount
 * Alternatively, we provide a server that tracks the 'dev' branch https://api.picar.us/wearscriptdev/
 
 .. _your-server:
 
 0b. Install Server
 --------------
+* Server code is located at https://github.com/wearscript/wearscript-server.git
+* Playground webapp is located at https://github.com/wearscript/wearscript-playground.git (you need both)
 * Linux is highly recommended, we have not tested this on OSX or Windows (feel free to try)
-* The video below gives a step by step guide
 * A few "alternate" options are listed below that may be useful if you run into problems
 * Tested on Ubuntu 13.04, if you want support it helps if you stick with this or a new Ubuntu if possible.
 * Ubuntu packages: apt-get install golang git mercurial redis-server
 * Setup the config.go file (look at config.go.example)
 * Run /server/install.sh (this does basic dependencies and such)
 * Start with ./server and continue with "Connecting the Client to the Server"
-
-Server Installation Video
--------------------------
-
-.. raw:: html
-
-        <object width="480" height="385"><param name="movie"
-        value="http://www.youtube.com/v/vdbE87oJja4&hl=en_US&fs=1&rel=0"></param><param
-        name="allowFullScreen" value="true"></param><param
-        name="allowscriptaccess" value="always"></param><embed
-        src="http://www.youtube.com/v/vdbE87oJja4&hl=en_US&fs=1&rel=0"
-        type="application/x-shockwave-flash" allowscriptaccess="always"
-        allowfullscreen="true" width="480"
-        height="385"></embed></object>
 
 Alternate: Installing Go (manually)
 ------------------------

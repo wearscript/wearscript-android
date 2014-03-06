@@ -773,6 +773,14 @@ function WearScript() {
     this.displayWarpView = function () {
         WSRAW.displayWarpView();
     }
+    this.warpDraw = function (x, y, radius, r, g, b) {
+        WSRAW.warpDraw(x, y, radius, r, g, b);
+    }
+    this.warpPreviewSampleGlass = function (callback) {
+        if (!callback)
+            callback = '';
+        WSRAW.warpPreviewSampleGlass(callback);
+    }
     this.displayCardTree = function () {
         WSRAW.displayCardTree();
     }
