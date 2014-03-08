@@ -7,7 +7,6 @@ Code Organization
 * Android (Phone + Glass): https://github.com/wearscript/wearscript-android.git
 * Server: https://github.com/wearscript/wearscript-server.git
 * Playground Webapp: https://github.com/wearscript/wearscript-playground.git
-* Playground Webapp: https://github.com/wearscript/wearscript-playground.git
 
 Travis-CI
 ---------
