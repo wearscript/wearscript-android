@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SendEvent implements BusEvent {
+public class SendEvent {
     private static final String TAG = "SendEvent";
     private String channel;
     private Object[] data;

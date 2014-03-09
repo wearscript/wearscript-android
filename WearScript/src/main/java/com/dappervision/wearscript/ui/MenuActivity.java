@@ -27,7 +27,7 @@ import android.view.MenuItem;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
-import com.dappervision.wearscript.WearScriptInfo;
+import com.dappervision.wearscript.launcher.WearScriptInfo;
 
 /**
  * Activity showing the options menu.

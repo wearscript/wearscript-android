@@ -4,8 +4,8 @@ import com.dappervision.wearscript.managers.DataManager;
 
 public abstract class DataProvider {
     protected DataManager parent;
-    private long lastTimestamp;
     protected long samplePeriod;
+    private long lastTimestamp;
     private int type;
     private String name;
 

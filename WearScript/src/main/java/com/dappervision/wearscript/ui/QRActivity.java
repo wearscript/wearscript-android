@@ -5,7 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.jsevents.BarcodeEvent;
+import com.dappervision.wearscript.events.BarcodeEvent;
 
 public class QRActivity extends Activity {
     private static final String TAG = "QRActivity";

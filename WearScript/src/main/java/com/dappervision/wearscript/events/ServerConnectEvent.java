@@ -2,7 +2,7 @@ package com.dappervision.wearscript.events;
 
 import java.net.URI;
 
-public class ServerConnectEvent implements BusEvent {
+public class ServerConnectEvent {
     private URI server;
     private String callback;
 

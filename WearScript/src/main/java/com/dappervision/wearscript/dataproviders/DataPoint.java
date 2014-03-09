@@ -8,13 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataPoint {
-    private DataProvider parent;
     public String name;
     public int type;
     public List<Double> values;
     public List<Value> valuesV;
     public long timestampRaw;
     public double timestamp;
+    private DataProvider parent;
 
     DataPoint(DataProvider parent, double timestamp, long timestampRaw) {
         this.parent = parent;

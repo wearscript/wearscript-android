@@ -1,97 +1,49 @@
 package com.dappervision.wearscript;
 
-import android.opengl.GLES20;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
+import com.dappervision.wearscript.events.ActivityEvent;
+import com.dappervision.wearscript.events.CallbackRegistration;
+import com.dappervision.wearscript.events.CameraEvents;
+import com.dappervision.wearscript.events.CardTreeEvent;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
+import com.dappervision.wearscript.events.DataLogEvent;
+import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
+import com.dappervision.wearscript.events.LiveCardEvent;
+import com.dappervision.wearscript.events.SayEvent;
+import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.SendSubEvent;
+import com.dappervision.wearscript.events.SensorJSEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
+import com.dappervision.wearscript.events.SoundEvent;
+import com.dappervision.wearscript.events.SpeechRecognizeEvent;
 import com.dappervision.wearscript.events.WarpDrawEvent;
 import com.dappervision.wearscript.events.WarpModeEvent;
-import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.AudioEvent;
-import com.dappervision.wearscript.jsevents.CallbackRegistration;
-import com.dappervision.wearscript.jsevents.CameraEvents;
-import com.dappervision.wearscript.jsevents.CardTreeEvent;
-import com.dappervision.wearscript.jsevents.DataLogEvent;
-import com.dappervision.wearscript.jsevents.GistSyncEvent;
-import com.dappervision.wearscript.jsevents.LiveCardEvent;
-import com.dappervision.wearscript.jsevents.OpenGLEvent;
-import com.dappervision.wearscript.jsevents.OpenGLEventCustom;
-import com.dappervision.wearscript.jsevents.OpenGLRenderEvent;
-import com.dappervision.wearscript.jsevents.PicarusEvent;
-import com.dappervision.wearscript.jsevents.SayEvent;
-import com.dappervision.wearscript.jsevents.ScreenEvent;
-import com.dappervision.wearscript.jsevents.SensorJSEvent;
-import com.dappervision.wearscript.jsevents.SoundEvent;
-import com.dappervision.wearscript.jsevents.SpeechRecognizeEvent;
-import com.dappervision.wearscript.jsevents.WifiEvent;
-import com.dappervision.wearscript.jsevents.WifiScanEvent;
+import com.dappervision.wearscript.events.WifiEvent;
+import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.GestureManager;
-import com.dappervision.wearscript.managers.OpenGLManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 
 import org.json.simple.JSONObject;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class WearScript {
     BackgroundService bs;
     String TAG = "WearScript";
     TreeMap<String, Integer> sensors;
-    TreeMap<String, Method> openglMethods;
-    TreeMap<String, String> openglTypes;
     String sensorsJS;
-
-    public static enum SENSOR {
-        BATTERY("battery", -3),
-        PUPIL("pupil", -2),
-        GPS("gps", -1),
-        ACCELEROMETER("accelerometer", 1),
-        MAGNETIC_FIELD("magneticField", 2),
-        ORIENTATION("orientation", 3),
-        GYROSCOPE("gyroscope", 4),
-        LIGHT("light", 5),
-        GRAVITY("gravity", 9),
-        LINEAR_ACCELERATION("linearAcceleration", 10),
-        ROTATION_VECTOR("rotationVector", 11);
-
-        private final int id;
-        private final String name;
-
-        private SENSOR(String name, final int id) {
-            this.id = id;
-            this.name = name;
-        }
-
-        public int id() {
-            return id;
-        }
-
-        public String toString() {
-            return name;
-        }
-    }
-
-    ;
-
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
@@ -101,22 +53,9 @@ public class WearScript {
             this.sensors.put(s.toString(), s.id());
         }
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
-        this.openglMethods = new TreeMap<String, Method>();
-        this.openglTypes = new TreeMap<String, String>();
-
-        for (Method m : GLES20.class.getMethods()) {
-            // Skips the overloaded variants we don't use
-            if (m.getName().equals("glVertexAttribPointer") && m.getParameterTypes()[5].equals(Buffer.class))
-                continue;
-            String typeString = "";
-            Class<?>[] types = m.getParameterTypes();
-            for (int i = 0; i < types.length; i++)
-                typeString += classToChar(types[i]);
-            typeString += classToChar(m.getReturnType());
-            openglTypes.put(m.getName(), typeString);
-            openglMethods.put(m.getName(), m);
-        }
     }
+
+    ;
 
     private String classToChar(Class c) {
         if (c.equals(float.class) || c.equals(int.class))
@@ -158,16 +97,6 @@ public class WearScript {
     public void serverTimeline(String ti) {
         Log.i(TAG, "timeline");
         Utils.eventBusPost(new SendSubEvent("mirror", ti));
-    }
-
-    @JavascriptInterface
-    public void audioOn() {
-        Utils.eventBusPost(new AudioEvent(true));
-    }
-
-    @JavascriptInterface
-    public void audioOff() {
-        Utils.eventBusPost(new AudioEvent(false));
     }
 
     @JavascriptInterface
@@ -419,11 +348,6 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void picarus(String config, String input, String callback) {
-        Utils.eventBusPost(new PicarusEvent());
-    }
-
-    @JavascriptInterface
     public void sound(String type) {
         Log.i(TAG, "sound");
         Utils.eventBusPost(new SoundEvent(type));
@@ -435,213 +359,41 @@ public class WearScript {
         Utils.eventBusPost(new CardTreeEvent(treeJS));
     }
 
-    private Object glConvert(Object v) {
-        Log.i(TAG, "GL: " + v);
-        return new Float((Double) v);
-        //return float.class;
-    }
-
-    private Class glClass(Float v) {
-        return float.class;
-    }
-
-    private Class glClass(Integer v) {
-        return int.class;
-    }
-
-    @JavascriptInterface
-    public void glCallback(String callback) {
-        Utils.eventBusPost(new CallbackRegistration(OpenGLManager.class, callback).setEvent(OpenGLManager.OPENGL_DRAW_CALLBACK));
-    }
-
-    @JavascriptInterface
-    public void displayGL() {
-        Log.i(TAG, "displayGL");
-        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.OPENGL));
-    }
-
-    @JavascriptInterface
-    public void glDone() {
-        Log.d(TAG, "glDone");
-        Utils.getEventBus().post(new OpenGLEvent());
-    }
-
-    @JavascriptInterface
-    public void glRender() {
-        Log.d(TAG, "glRender");
-        Utils.getEventBus().post(new OpenGLRenderEvent());
-    }
-
-    @JavascriptInterface
-    public void glDDDDV(String methodName, double p0, double p1, double p2, double p3) {
-        glHelper(methodName, false, p0, p1, p2, p3);
-    }
-
-    @JavascriptInterface
-    public void glV(String methodName) {
-        glHelper(methodName, false);
-    }
-
-    @JavascriptInterface
-    public void glDV(String methodName, double p0) {
-        glHelper(methodName, false, p0);
-    }
-
-    @JavascriptInterface
-    public String glDS(String methodName, double p0) {
-        return (String) glHelper(methodName, true, p0);
-    }
-
-    @JavascriptInterface
-    public void glDDV(String methodName, double p0, double p1) {
-        Log.d(TAG, "OpenGL: Double Double: " + methodName);
-        glHelper(methodName, false, p0, p1);
-    }
-
-    @JavascriptInterface
-    public void glDDDV(String methodName, double p0, double p1, double p2) {
-        glHelper(methodName, false, p0, p1, p2);
-    }
-
-    @JavascriptInterface
-    public void glDDSDV(String methodName, double p0, double p1, String p2, double p3) {
-        glHelper(methodName, false, p0, p1, p2, p3);
-    }
-
-    @JavascriptInterface
-    public void glDDDBDDV(String methodName, double p0, double p1, double p2, boolean p3, double p4, double p5) {
-        glHelper(methodName, false, p0, p1, p2, p3, p4, p5);
-    }
-
-    @JavascriptInterface
-    public void glDDBSV(String methodName, double p0, double p1, boolean p2, String p3) {
-        glHelper(methodName, false, p0, p1, p2, p3);
-    }
-
-    @JavascriptInterface
-    public void glDSV(String methodName, double p0, String p1) {
-        Log.d(TAG, "OpenGL: Double string: " + methodName);
-        glHelper(methodName, false, p0, p1);
-    }
-
-    @JavascriptInterface
-    public int glDSD(String methodName, double p0, String p1) {
-        Log.d(TAG, "OpenGL: Double string ret int: " + methodName);
-        return (Integer) glHelper(methodName, true, p0, p1);
-    }
-
-    private ByteBuffer stringToBuffer(String data) {
-        Log.d(TAG, "stringToBuffer: " + data + " : " + data.length());
-        ByteBuffer b = ByteBuffer.allocateDirect(data.length());
-        b.put(Base64.decode(data, Base64.NO_WRAP));
-        b.position(0);
-        return b;
-    }
-
-    private FloatBuffer stringToFloatBuffer(String data) {
-        return stringToBuffer(data).order(ByteOrder.nativeOrder()).asFloatBuffer();
-    }
-
-    @JavascriptInterface
-    public void glBufferData(double target, double size, String data, double usage) {
-        glHelper("glBufferData", false, target, size, data, usage);
-    }
-
-    @JavascriptInterface
-    public int glCreateBuffer() {
-        Log.d(TAG, "glCreateBuffer");
-        return (Integer) postOpenGLEvent(new OpenGLEventCustom("glCreateBuffer", true));
-    }
-
-    @JavascriptInterface
-    public int glD(String methodName) {
-        return (Integer) glHelper(methodName, true);
-    }
-
-    @JavascriptInterface
-    public int glDD(String methodName, double p0) {
-        return (Integer) glHelper(methodName, true, p0);
-    }
-
-    @JavascriptInterface
-    public boolean glDB(String methodName, double p0) {
-        return (Boolean) glHelper(methodName, true, p0);
-    }
-
-    private Object postOpenGLEvent(OpenGLEvent event) {
-        Utils.getEventBus().post(event);
-        if (event.hasReturn()) {
-            Log.i(TAG, "Waiting for return");
-            Object out = event.getReturn();
-            Log.i(TAG, "Got return: " + out);
-            return out;
-        } else {
-            Log.i(TAG, "Not waiting for return");
-        }
-        return null;
-    }
-
-    private Object glHelper(String methodName, boolean ret, Object... p) {
-        Log.i(TAG, "OpenGL Method[d...]: " + methodName);
-        Method m = openglMethods.get(methodName);
-        if (m == null) {
-            Log.e(TAG, "Method missing: " + methodName);
-            return null;
-        }
-        Class<?>[] types = m.getParameterTypes();
-        ArrayList<Object> args = new ArrayList<Object>();
-        for (int i = 0; i < p.length; i++) {
-            Class c = types[i];
-            try {
-                if (c.equals(float.class))
-                    args.add(((Double) p[i]).floatValue());
-                else if (c.equals(int.class))
-                    args.add(((Double) p[i]).intValue());
-                else if (c.equals(String.class))
-                    args.add(((String) p[i]));
-                else if (c.equals(Buffer.class))
-                    args.add(stringToBuffer((String) p[i]));
-                else if (c.equals(boolean.class))
-                    args.add((Boolean) p[i]);
-                else if (c.equals(FloatBuffer.class))
-                    args.add(stringToFloatBuffer((String) p[i]));
-                else {
-                    Log.e(TAG, "Cannot cast!: " + c);
-                    return null;
-                }
-            } catch (ClassCastException e) {
-                Log.e(TAG, String.format("ClassCastException: %s %s %s", methodName, c.getName(), p[i].getClass().getName()));
-                return null;
-            }
-        }
-        Log.d(TAG, String.format("OpenGLMethod: %s Params: %d Args: %d", methodName, p.length, args.size()));
-        return postOpenGLEvent(new OpenGLEvent(m, ret, args.toArray()));
-    }
-
-    @JavascriptInterface
-    public String glConstants() {
-        JSONObject o = new JSONObject();
-        for (Field f : GLES20.class.getFields()) {
-            try {
-                o.put(f.getName(), f.getInt(o));
-            } catch (IllegalAccessException e) {
-                Log.w(TAG, "Illegal access in glConstants: " + f.getName());
-                continue;
-            }
-        }
-        return o.toJSONString();
-    }
-
-    @JavascriptInterface
-    public String glMethods() {
-        return (new JSONObject(openglTypes)).toJSONString();
-    }
-
     private void requiresGDK() {
-        if(HardwareDetector.hasGDK)
+        if (HardwareDetector.hasGDK)
             return;
         Utils.eventBusPost(new SendSubEvent("log", "Script requires glass"));
         Utils.eventBusPost(new SayEvent("This script requires Glass"));
         throw new RuntimeException("GDK not available");
+    }
+
+    public static enum SENSOR {
+        BATTERY("battery", -3),
+        PUPIL("pupil", -2),
+        GPS("gps", -1),
+        ACCELEROMETER("accelerometer", 1),
+        MAGNETIC_FIELD("magneticField", 2),
+        ORIENTATION("orientation", 3),
+        GYROSCOPE("gyroscope", 4),
+        LIGHT("light", 5),
+        GRAVITY("gravity", 9),
+        LINEAR_ACCELERATION("linearAcceleration", 10),
+        ROTATION_VECTOR("rotationVector", 11);
+
+        private final int id;
+        private final String name;
+
+        private SENSOR(String name, final int id) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public int id() {
+            return id;
+        }
+
+        public String toString() {
+            return name;
+        }
     }
 }

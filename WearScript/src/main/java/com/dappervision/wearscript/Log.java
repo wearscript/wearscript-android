@@ -42,10 +42,10 @@ public class Log {
         activity.runOnUiThread(new Thread() {
             public void run() {
                 Sentry.captureEvent(new Sentry.SentryEventBuilder()
-                        .setMessage(message)
-                        .setLevel(level)
-                        .setCulprit(tag)
-                        .setTimestamp(System.currentTimeMillis())
+                                .setMessage(message)
+                                .setLevel(level)
+                                .setCulprit(tag)
+                                .setTimestamp(System.currentTimeMillis())
                 );
             }
         });
@@ -58,11 +58,11 @@ public class Log {
         activity.runOnUiThread(new Thread() {
             public void run() {
                 Sentry.captureEvent(new Sentry.SentryEventBuilder()
-                        .setMessage(message)
-                        .setLevel(level)
-                        .setCulprit(tag)
-                        .setException(tr)
-                        .setTimestamp(System.currentTimeMillis())
+                                .setMessage(message)
+                                .setLevel(level)
+                                .setCulprit(tag)
+                                .setException(tr)
+                                .setTimestamp(System.currentTimeMillis())
                 );
             }
         });

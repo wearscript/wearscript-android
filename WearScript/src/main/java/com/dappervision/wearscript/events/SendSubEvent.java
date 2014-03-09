@@ -1,6 +1,6 @@
 package com.dappervision.wearscript.events;
 
-public class SendSubEvent implements BusEvent {
+public class SendSubEvent {
     private String subchannel;
     private Object[] data;
 

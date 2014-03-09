@@ -1,6 +1,6 @@
 package com.dappervision.wearscript.events;
 
-public class JsCall implements BusEvent {
+public class JsCall {
     private String call;
 
     public JsCall(String call) {

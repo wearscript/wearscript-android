@@ -5,7 +5,6 @@ import android.content.IntentFilter;
 import android.view.MotionEvent;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.dataproviders.EyeEventReceiver;
 import com.google.android.glass.eye.EyeGesture;
 import com.google.android.glass.eye.EyeGestureManager;
@@ -43,17 +42,17 @@ public class GestureManager extends Manager {
         setup();
     }
 
-    private void teardown(){
+    private void teardown() {
         eyeGestureManager.stopDetector(EyeGesture.DOUBLE_WINK);
         eyeGestureManager.stopDetector(EyeGesture.DOUBLE_BLINK);
-        try{
+        try {
             service.getApplicationContext().unregisterReceiver(eyeEventReceiver);
-        }catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             //we were not registered
         }
     }
 
-    private void setup(){
+    private void setup() {
         eyeGestureManager.enableDetectorPersistently(EyeGesture.WINK, true);
         eyeGestureManager.enableDetectorPersistently(EyeGesture.DOUBLE_WINK, true);
         eyeGestureManager.enableDetectorPersistently(EyeGesture.DOUBLE_BLINK, true);

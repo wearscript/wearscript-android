@@ -1,6 +1,6 @@
 package com.dappervision.wearscript.events;
 
-public class LambdaEvent implements BusEvent {
+public class LambdaEvent {
     private String command;
 
     public LambdaEvent(String command) {

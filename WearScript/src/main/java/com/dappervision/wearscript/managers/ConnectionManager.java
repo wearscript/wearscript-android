@@ -8,14 +8,15 @@ import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.WearScriptConnection;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
+import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.LambdaEvent;
+import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.SendSubEvent;
 import com.dappervision.wearscript.events.ServerConnectEvent;
+import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.events.WarpHEvent;
-import com.dappervision.wearscript.jsevents.GistSyncEvent;
-import com.dappervision.wearscript.jsevents.SayEvent;
 
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
@@ -30,10 +31,11 @@ public class ConnectionManager extends Manager {
     private static final String TAG = "ConnectionManager";
     private static final String ONCONNECT = "ONCONNECT";
     private static final String LISTEN_CHAN = "subscriptions";
-    private String GIST_LIST_SYNC_CHAN, GIST_GET_SYNC_CHAN;
     MessagePack msgpack = new MessagePack();
+    private String GIST_LIST_SYNC_CHAN, GIST_GET_SYNC_CHAN;
     private WearScriptConnectionImpl connection;
     private TreeSet<String> testChannels;  // NOTE(brandyn): Hack until we normalize the Java lib
+    private int gistSyncPending;
 
 
     public ConnectionManager(BackgroundService bs) {
@@ -236,6 +238,7 @@ public class ConnectionManager extends Manager {
                 2. Publish request to get each gist
                  */
                 Log.d(TAG, "Gist:" + data.get(1).toString());
+                gistSyncPending = data.get(1).asArrayValue().size();
                 for (Value v : data.get(1).asArrayValue()) {
                     Value gistid = (Value) toMap(v).get("id");
 
@@ -270,6 +273,9 @@ public class ConnectionManager extends Manager {
                     String pathCur = Utils.SaveData(content, "gists/" + gistid, false, filename);
                     Log.d(TAG, "File:" + filename + " : " + gistid);
                 }
+                // Shutdown after sync
+                if (--gistSyncPending == 0)
+                    Utils.eventBusPost(new ShutdownEvent());
             }
             // TODO: Specialize it for this group/device
             if (channel.startsWith("warph:")) {

@@ -1,8 +1,6 @@
 package com.dappervision.wearscript.events;
 
-import com.dappervision.wearscript.managers.WarpManager;
-
-public class WarpDrawEvent implements BusEvent {
+public class WarpDrawEvent {
     private final int radius;
     private final double x;
     private final double y;

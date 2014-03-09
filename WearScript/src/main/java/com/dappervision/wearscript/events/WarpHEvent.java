@@ -1,7 +1,7 @@
 package com.dappervision.wearscript.events;
 
-public class WarpHEvent implements BusEvent {
-    double [] h;
+public class WarpHEvent {
+    double[] h;
 
     public WarpHEvent(double[] h) {
         this.h = h;

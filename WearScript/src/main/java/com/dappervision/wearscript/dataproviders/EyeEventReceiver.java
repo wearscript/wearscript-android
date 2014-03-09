@@ -16,14 +16,6 @@ public class EyeEventReceiver extends BroadcastReceiver {
     private static final String DOFF = "DOFF";
     private static final String DOUBLE_BLINK = "DOUBLE_BLINK";
     private static final String DOUBLE_WINK = "DOUBLE_WINK";
-
-    /**
-     * An interface for a listener to capture wink and double blinks
-     */
-    public static interface BaseListener {
-        public void onEyeGesture(EyeGesture gesture);
-    }
-
     private BaseListener mListener;
 
     public EyeEventReceiver(BaseListener listener) {
@@ -49,7 +41,7 @@ public class EyeEventReceiver extends BroadcastReceiver {
                 mListener.onEyeGesture(EyeGesture.DOFF);
             }
             //abortBroadcast(); //This could break automatic screen on/off
-        } else if (intent.getAction().equals("com.google.glass.action.EYE_GESTURE")){
+        } else if (intent.getAction().equals("com.google.glass.action.EYE_GESTURE")) {
             String eyeEvent = extras.getString("gesture");
             Log.d(TAG, eyeEvent + " is detected");
             if (eyeEvent.equals(WINK)) {
@@ -65,6 +57,13 @@ public class EyeEventReceiver extends BroadcastReceiver {
             }
             abortBroadcast();
         }
+    }
+
+    /**
+     * An interface for a listener to capture wink and double blinks
+     */
+    public static interface BaseListener {
+        public void onEyeGesture(EyeGesture gesture);
     }
 
 }

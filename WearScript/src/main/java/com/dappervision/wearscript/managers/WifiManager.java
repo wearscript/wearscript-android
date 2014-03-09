@@ -5,17 +5,17 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.jsevents.WifiEvent;
-import com.dappervision.wearscript.jsevents.WifiScanEvent;
-import com.dappervision.wearscript.jsevents.WifiScanResultsEvent;
+import com.dappervision.wearscript.events.WifiEvent;
+import com.dappervision.wearscript.events.WifiScanEvent;
+import com.dappervision.wearscript.events.WifiScanResultsEvent;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 public class WifiManager extends Manager {
     public static final String SCAN_RESULTS_AVAILABLE_ACTION = android.net.wifi.WifiManager.SCAN_RESULTS_AVAILABLE_ACTION;
-    android.net.wifi.WifiManager manager;
     public static String WIFI = "WIFI";
+    android.net.wifi.WifiManager manager;
     private boolean enabled;
 
     public WifiManager(BackgroundService bs) {

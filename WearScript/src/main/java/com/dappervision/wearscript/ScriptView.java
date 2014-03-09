@@ -11,8 +11,8 @@ import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
+import com.dappervision.wearscript.events.LiveCardEvent;
 import com.dappervision.wearscript.events.SendEvent;
-import com.dappervision.wearscript.jsevents.LiveCardEvent;
 import com.dappervision.wearscript.ui.MenuActivity;
 import com.google.android.glass.timeline.DirectRenderingCallback;
 import com.google.android.glass.timeline.LiveCard;
@@ -21,9 +21,9 @@ import com.google.android.glass.timeline.TimelineManager;
 public class ScriptView extends WebView implements SurfaceHolder.Callback, DirectRenderingCallback {
     private static final String TAG = "ScriptView";
     private final BackgroundService context;
+    private final Handler handler;
     private LiveCard liveCard;
     private SurfaceHolder holder;
-    private final Handler handler;
     private long drawFrequency;
     private boolean paused;
 

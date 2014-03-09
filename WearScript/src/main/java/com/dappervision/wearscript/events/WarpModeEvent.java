@@ -2,7 +2,7 @@ package com.dappervision.wearscript.events;
 
 import com.dappervision.wearscript.managers.WarpManager;
 
-public class WarpModeEvent implements BusEvent {
+public class WarpModeEvent {
     WarpManager.Mode mode;
 
     public WarpModeEvent(WarpManager.Mode mode) {

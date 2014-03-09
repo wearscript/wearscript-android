@@ -7,12 +7,12 @@ import android.view.SurfaceView;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.events.ActivityEvent;
+import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.WarpDrawEvent;
 import com.dappervision.wearscript.events.WarpHEvent;
 import com.dappervision.wearscript.events.WarpModeEvent;
-import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.CameraEvents;
 
 import org.json.simple.JSONArray;
 import org.msgpack.type.ValueFactory;
@@ -28,14 +28,10 @@ import org.opencv.imgproc.Imgproc;
 
 public class WarpManager extends Manager {
     public static final String SAMPLE = "sample";
-    private double[] hGlassToSmall;
-
-    public enum Mode {
-        CAM2GLASS, SAMPLEWARPPLANE, SAMPLEWARPGLASS
-    }
     public static final String TAG = "WarpManager";
     protected Mat hSmallToGlassMat;
     protected double[] hSmallToGlass;
+    private double[] hGlassToSmall;
     private Bitmap mCacheBitmap;
     private SurfaceView view;
     private Mat frameBGR;
@@ -68,9 +64,9 @@ public class WarpManager extends Manager {
         double out[] = new double[a.size()];
         for (int i = 0; i < a.size(); ++i) {
             try {
-                out[i] = (Double)a.get(i);
+                out[i] = (Double) a.get(i);
             } catch (ClassCastException e) {
-                out[i] = ((Long)a.get(i)).doubleValue();
+                out[i] = ((Long) a.get(i)).doubleValue();
             }
         }
         return out;
@@ -78,7 +74,7 @@ public class WarpManager extends Manager {
 
     protected Mat ImageBGRFromString(byte[] data) {
         Mat frame = new Mat(1, data.length, CvType.CV_8UC1);
-        frame.put(0,  0, data);
+        frame.put(0, 0, data);
         return Highgui.imdecode(frame, 1);
     }
 
@@ -128,10 +124,10 @@ public class WarpManager extends Manager {
                 -7.20812551e-03, 1.98930643e+00, 4.32612839e+02,
                 -9.35128058e-06, -1.43562513e-05, 1.00000000e+00};*/
 
-                //{3.95, 0., 0, 0., 3.95, 434, 0., 0., 1.};
+        //{3.95, 0., 0, 0., 3.95, 434, 0., 0., 1.};
 
 
-        double hBigToGlass[] = {1.49968460e+00, -9.18421959e-02, -1.26498024e+03, -1.28142821e-02, 1.44983279e+00, -5.69960334e+02,-3.04188513e-05, -1.34763662e-04, 1.00000000e+00}; // XE-B Sky
+        double hBigToGlass[] = {1.49968460e+00, -9.18421959e-02, -1.26498024e+03, -1.28142821e-02, 1.44983279e+00, -5.69960334e+02, -3.04188513e-05, -1.34763662e-04, 1.00000000e+00}; // XE-B Sky
 
 
         //double hBigToGlass[] = {1.3960742363652061, -0.07945137930533697, -1104.2947209648783, 0.006275578662065556, 1.3523872016751255, -504.1266472917187, -1.9269902737e-05, -9.708578143e-05, 1};
@@ -240,7 +236,7 @@ public class WarpManager extends Manager {
         }
     }
 
-    void drawFrame (Mat modified) {
+    void drawFrame(Mat modified) {
         // Partly from OpenCV CameraBridgeViewBase.java
         if (mCacheBitmap == null) {
             mCacheBitmap = Bitmap.createBitmap(modified.width(), modified.height(), Bitmap.Config.ARGB_8888);
@@ -249,7 +245,7 @@ public class WarpManager extends Manager {
         if (modified != null) {
             try {
                 Utils.matToBitmap(modified, mCacheBitmap);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Log.e(TAG, "Mat type: " + modified);
                 Log.e(TAG, "Bitmap type: " + mCacheBitmap.getWidth() + "*" + mCacheBitmap.getHeight());
                 Log.e(TAG, "Utils.matToBitmap() throws an exception: " + e.getMessage());
@@ -260,11 +256,12 @@ public class WarpManager extends Manager {
             Canvas canvas = view.getHolder().lockCanvas();
             if (canvas != null) {
                 canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
-                canvas.drawBitmap(mCacheBitmap, new Rect(0,0,mCacheBitmap.getWidth(), mCacheBitmap.getHeight()),
-                          new Rect((canvas.getWidth() - mCacheBitmap.getWidth()) / 2,
-                                    (canvas.getHeight() - mCacheBitmap.getHeight()) / 2,
-                                    (canvas.getWidth() - mCacheBitmap.getWidth()) / 2 + mCacheBitmap.getWidth(),
-                                    (canvas.getHeight() - mCacheBitmap.getHeight()) / 2 + mCacheBitmap.getHeight()), null);
+                canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()),
+                        new Rect((canvas.getWidth() - mCacheBitmap.getWidth()) / 2,
+                                (canvas.getHeight() - mCacheBitmap.getHeight()) / 2,
+                                (canvas.getWidth() - mCacheBitmap.getWidth()) / 2 + mCacheBitmap.getWidth(),
+                                (canvas.getHeight() - mCacheBitmap.getHeight()) / 2 + mCacheBitmap.getHeight()), null
+                );
 
                 view.getHolder().unlockCanvasAndPost(canvas);
             }
@@ -273,5 +270,9 @@ public class WarpManager extends Manager {
 
     public SurfaceView getView() {
         return view;
+    }
+
+    public enum Mode {
+        CAM2GLASS, SAMPLEWARPPLANE, SAMPLEWARPGLASS
     }
 }

@@ -25,11 +25,11 @@ public abstract class WearScriptConnection {
     private static final String TAG = "WearScriptConnection";
     private static final String LISTEN_CHAN = "subscriptions";
     static MessagePack msgpack = new MessagePack();
+    protected String device, group, groupDevice;
     private WebSocketClient client;
     private LocalListener listener;
     private boolean shutdown;
     private URI uri;
-    protected String device, group, groupDevice;
     private boolean connected;
     // deviceToChannels is always updated, then externalChannels is rebuilt
     private TreeMap<String, ArrayList<String>> deviceToChannels;
@@ -73,6 +73,22 @@ public abstract class WearScriptConnection {
         return null;
     }
 
+    public static Value listValue(Iterable<String> channels) {
+        ArrayList<Value> channelsArray = new ArrayList<Value>();
+        for (String c : channels)
+            channelsArray.add(ValueFactory.createRawValue(c));
+        return ValueFactory.createArrayValue(channelsArray.toArray(new Value[channelsArray.size()]));
+    }
+
+    public static Value mapValue(Map<String, ArrayList<String>> data) {
+        ArrayList<Value> mapArray = new ArrayList<Value>();
+        for (String k : data.keySet()) {
+            mapArray.add(ValueFactory.createRawValue(k));
+            mapArray.add(listValue(data.get(k)));
+        }
+        return ValueFactory.createMapValue(mapArray.toArray(new Value[mapArray.size()]));
+    }
+
     public abstract void onConnect();
 
     public abstract void onReceive(String channel, byte[] dataRaw, List<Value> data);
@@ -108,22 +124,6 @@ public abstract class WearScriptConnection {
 
     private Value channelsValue() {
         return listValue(scriptChannels);
-    }
-
-    public static Value listValue(Iterable<String> channels) {
-        ArrayList<Value> channelsArray = new ArrayList<Value>();
-        for (String c : channels)
-            channelsArray.add(ValueFactory.createRawValue(c));
-        return ValueFactory.createArrayValue(channelsArray.toArray(new Value[channelsArray.size()]));
-    }
-
-    public static Value mapValue(Map<String, ArrayList<String>> data) {
-        ArrayList<Value> mapArray = new ArrayList<Value>();
-        for (String k : data.keySet()) {
-            mapArray.add(ValueFactory.createRawValue(k));
-            mapArray.add(listValue(data.get(k)));
-        }
-        return ValueFactory.createMapValue(mapArray.toArray(new Value[mapArray.size()]));
     }
 
     public void subscribe(String channel) {
@@ -200,7 +200,6 @@ public abstract class WearScriptConnection {
             this.uri = uri;
             List<BasicNameValuePair> extraHeaders = Arrays.asList();
             Log.i(TAG, "Lifecycle: Socket connecting");
-            // TODO(brandyn): Add MAC address as ID
             if (client != null)
                 client.disconnect();
             client = new WebSocketClient(uri, new LocalListener(), extraHeaders);

@@ -20,18 +20,17 @@ import android.view.ViewGroup;
 
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
+import com.dappervision.wearscript.events.ActivityEvent;
+import com.dappervision.wearscript.events.CameraEvents;
+import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LambdaEvent;
+import com.dappervision.wearscript.events.SayEvent;
+import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
-import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.CameraEvents;
-import com.dappervision.wearscript.jsevents.DataLogEvent;
-import com.dappervision.wearscript.jsevents.PicarusEvent;
-import com.dappervision.wearscript.jsevents.SayEvent;
-import com.dappervision.wearscript.jsevents.ScreenEvent;
-import com.dappervision.wearscript.jsevents.WifiScanResultsEvent;
+import com.dappervision.wearscript.events.WifiScanResultsEvent;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.CardTreeManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
@@ -39,8 +38,6 @@ import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
-import com.dappervision.wearscript.managers.OpenGLManager;
-import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.dappervision.wearscript.ui.ScriptActivity;
@@ -58,16 +55,16 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected static String TAG = "WearScript";
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
+    protected TextToSpeech tts;
+    protected ScreenBroadcastReceiver broadcastReceiver;
+    protected String glassID;
+    protected CardScrollView cardScroller;
     private ScriptActivity activity;
     private boolean dataRemote, dataLocal, dataWifi;
     private double lastSensorSaveTime, sensorDelay;
     private ScriptView webview;
     private TreeMap<String, ArrayList<Value>> sensorBuffer;
     private TreeMap<String, Integer> sensorTypes;
-    protected TextToSpeech tts;
-    protected ScreenBroadcastReceiver broadcastReceiver;
-    protected String glassID;
-    protected CardScrollView cardScroller;
     private MessagePack msgpack = new MessagePack();
     private View activityView;
     private ActivityEvent.Mode activityMode;
@@ -82,6 +79,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return (new String(wsUrlArray)).trim();
     }
 
+    static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
+    }
+
     public void updateActivityView(final ActivityEvent.Mode mode) {
         if (activity == null)
             return;
@@ -91,8 +93,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 activityMode = mode;
                 if (mode == ActivityEvent.Mode.WEBVIEW && webview != null) {
                     activityView = webview;
-                } else if (mode == ActivityEvent.Mode.OPENGL) {
-                    activityView = ((OpenGLManager) getManager(OpenGLManager.class)).getView();
                 } else if (mode == ActivityEvent.Mode.WARP) {
                     activityView = ((WarpManager) getManager(WarpManager.class)).getView();
                 } else if (mode == ActivityEvent.Mode.CARD_TREE) {
@@ -121,7 +121,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public ActivityEvent.Mode getActivityMode() {
         return activityMode;
     }
-
 
     public void loadUrl(String url) {
         synchronized (lock) {
@@ -279,7 +278,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void startDefaultScript() {
-        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WSRAW.say('Connected')};window.onload=function () {WSRAW.serverConnect('{{WSUrl}}', 's')}</script></body>" .getBytes();
+        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>When connected use playground to control<br><br>Docs @ wearscript.com</h1></center><script>function s() {WSRAW.say('Connected')};window.onload=function () {WSRAW.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
         String path = Utils.SaveData(data, "scripting/", false, "glass.html");
         Utils.eventBusPost(new ScriptEvent(path));
     }
@@ -330,11 +329,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return mBinder;
     }
 
-    static String convertStreamToString(java.io.InputStream is) {
-        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-        return s.hasNext() ? s.next() : "";
-    }
-
     @Override
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
@@ -364,7 +358,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             activity.finish();
         }
         this.activity = a;
-        if(ManagerManager.hasManager(CardTreeManager.class))
+        if (ManagerManager.hasManager(CardTreeManager.class))
             ((CardTreeManager) getManager(CardTreeManager.class)).setMainActivity(a);
     }
 
@@ -383,7 +377,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if(hasWebView())
+        if (hasWebView())
             webview.onConfigurationChanged(newConfig);
     }
 
@@ -413,11 +407,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         dataRemote = e.isServer();
         dataLocal = e.isLocal();
         sensorDelay = e.getSensorDelay() * 1000000000L;
-    }
-
-    public void onEvent(PicarusEvent e) {
-        // TODO(brandyn): Needs to be fixed
-        ManagerManager.get().add(new PicarusManager(this));
     }
 
     public void onEvent(ScreenEvent e) {

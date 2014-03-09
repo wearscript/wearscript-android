@@ -3,7 +3,7 @@ package com.dappervision.wearscript.events;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChannelUnsubscribeEvent implements BusEvent {
+public class ChannelUnsubscribeEvent {
     private List<String> channels;
 
     public ChannelUnsubscribeEvent(List<String> channels) {

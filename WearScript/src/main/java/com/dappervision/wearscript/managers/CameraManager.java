@@ -14,12 +14,12 @@ import android.view.WindowManager;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.jsevents.ActivityResultEvent;
-import com.dappervision.wearscript.jsevents.CallbackRegistration;
-import com.dappervision.wearscript.jsevents.CameraEvents;
-import com.dappervision.wearscript.jsevents.OpenCVLoadedEvent;
-import com.dappervision.wearscript.jsevents.SayEvent;
-import com.dappervision.wearscript.jsevents.StartActivityEvent;
+import com.dappervision.wearscript.events.ActivityResultEvent;
+import com.dappervision.wearscript.events.CallbackRegistration;
+import com.dappervision.wearscript.events.CameraEvents;
+import com.dappervision.wearscript.events.OpenCVLoadedEvent;
+import com.dappervision.wearscript.events.SayEvent;
+import com.dappervision.wearscript.events.StartActivityEvent;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -36,16 +36,15 @@ import java.io.IOException;
 import java.util.List;
 
 public class CameraManager extends Manager implements Camera.PreviewCallback {
-    private static final boolean DBG = false;
-    private static final String TAG = "CameraManager";
-    private static final int MAGIC_TEXTURE_ID = 10;
     public static final String LOCAL = "0";
     public static final String REMOTE = "1";
     public static final String PHOTO = "PHOTO";
     public static final String PHOTO_PATH = "PHOTO_PATH";
     public static final String VIDEO = "VIDEO";
     public static final String VIDEO_PATH = "VIDEO_PATH";
-
+    private static final boolean DBG = false;
+    private static final String TAG = "CameraManager";
+    private static final int MAGIC_TEXTURE_ID = 10;
     private Camera camera;
     private byte[] buffer;
     private SurfaceTexture surfaceTexture;
@@ -60,45 +59,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private boolean background;
     private int maxWidth, maxHeight;
 
-
-    public class CameraFrame {
-        private MatOfByte jpgFrame;
-        private String jpgB64;
-        private boolean frameRGBSet;
-        private Mat frameRGB;
-        private Mat frame;
-
-        CameraFrame(int width, int height) {
-            jpgFrame = null;
-            jpgB64 = null;
-            frameRGBSet = false;
-            frameRGB = new Mat(width, height, CvType.CV_8UC3);
-            frame = new Mat(height + (height / 2), width, CvType.CV_8UC1);
-        }
-
-        void setFrame(byte[] data) {
-            frame.put(0, 0, data);
-            jpgFrame = null;
-            frameRGBSet = false;
-        }
-
-        Mat getRGB() {
-            if (frameRGBSet)
-                return frameRGB;
-            Imgproc.cvtColor(frame, frameRGB, Imgproc.COLOR_YUV2RGB_NV12);
-            frameRGBSet = true;
-            return frameRGB;
-        }
-
-        public byte[] getJPEG() {
-            if (jpgFrame != null)
-                return jpgFrame.toArray();
-            Mat frameRGB = getRGB();
-            jpgFrame = new MatOfByte();
-            Highgui.imencode(".jpg", frameRGB, jpgFrame);
-            return jpgFrame.toArray();
-        }
-    }
 
     public CameraManager(BackgroundService bs) {
         super(bs);
@@ -446,6 +406,45 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private void cameraVideo() {
         pause();
         Utils.eventBusPost(new StartActivityEvent(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001));
+    }
+
+    public class CameraFrame {
+        private MatOfByte jpgFrame;
+        private String jpgB64;
+        private boolean frameRGBSet;
+        private Mat frameRGB;
+        private Mat frame;
+
+        CameraFrame(int width, int height) {
+            jpgFrame = null;
+            jpgB64 = null;
+            frameRGBSet = false;
+            frameRGB = new Mat(width, height, CvType.CV_8UC3);
+            frame = new Mat(height + (height / 2), width, CvType.CV_8UC1);
+        }
+
+        void setFrame(byte[] data) {
+            frame.put(0, 0, data);
+            jpgFrame = null;
+            frameRGBSet = false;
+        }
+
+        Mat getRGB() {
+            if (frameRGBSet)
+                return frameRGB;
+            Imgproc.cvtColor(frame, frameRGB, Imgproc.COLOR_YUV2RGB_NV12);
+            frameRGBSet = true;
+            return frameRGB;
+        }
+
+        public byte[] getJPEG() {
+            if (jpgFrame != null)
+                return jpgFrame.toArray();
+            Mat frameRGB = getRGB();
+            jpgFrame = new MatOfByte();
+            Highgui.imencode(".jpg", frameRGB, jpgFrame);
+            return jpgFrame.toArray();
+        }
     }
 
 }

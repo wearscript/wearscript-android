@@ -14,6 +14,7 @@
     <style name="AppTheme" parent="@android:style/Theme.DeviceDefault">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
+
     <style name="MenuTheme" parent="@android:style/Theme.DeviceDefault">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackgroundCacheHint">@null</item>

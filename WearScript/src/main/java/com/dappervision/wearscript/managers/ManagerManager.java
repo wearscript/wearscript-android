@@ -7,11 +7,23 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ManagerManager {
-    Map<String, Manager> managers;
     private static ManagerManager singleton;
+    Map<String, Manager> managers;
 
     private ManagerManager() {
         managers = new ConcurrentHashMap<String, Manager>();
+    }
+
+    public static ManagerManager get() {
+        if (singleton != null) {
+            return singleton;
+        }
+        singleton = new ManagerManager();
+        return singleton;
+    }
+
+    public static boolean hasManager(Class<? extends Manager> c) {
+        return get().get(c) != null;
     }
 
     public void newManagers(BackgroundService bs) {
@@ -21,10 +33,9 @@ public class ManagerManager {
         add(new WifiManager(bs));
         add(new AudioManager(bs));
         add(new SpeechManager(bs));
-        //add(new OpenGLManager(bs));
         add(new ConnectionManager(bs));
         add(new WarpManager(bs));
-        if(HardwareDetector.hasGDK){
+        if (HardwareDetector.hasGDK) {
             add(new CardTreeManager(bs));
         }
     }
@@ -57,17 +68,5 @@ public class ManagerManager {
             Manager m = managers.remove(name);
             m.shutdown();
         }
-    }
-
-    public static ManagerManager get() {
-        if (singleton != null) {
-            return singleton;
-        }
-        singleton = new ManagerManager();
-        return singleton;
-    }
-
-    public static boolean hasManager(Class<? extends Manager> c) {
-        return get().get(c) != null;
     }
 }

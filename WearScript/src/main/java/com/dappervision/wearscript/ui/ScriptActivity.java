@@ -17,17 +17,16 @@ import android.view.WindowManager;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.events.ActivityResultEvent;
 import com.dappervision.wearscript.events.ScriptEvent;
-import com.dappervision.wearscript.jsevents.ActivityResultEvent;
-import com.dappervision.wearscript.jsevents.StartActivityEvent;
+import com.dappervision.wearscript.events.StartActivityEvent;
 import com.dappervision.wearscript.managers.CameraManager;
-import com.dappervision.wearscript.managers.OpenGLManager;
 
 public class ScriptActivity extends Activity {
     protected static final String TAG = "ScriptActivity";
     private static final String EXTRA_NAME = "extra";
-    private boolean isGlass = true, isForeground = true;
     public BackgroundService bs;
+    private boolean isGlass = true, isForeground = true;
     private ServiceConnection mConnection;
     private String extra;
     private boolean mHadUrlExtra = false;
@@ -111,9 +110,6 @@ public class ScriptActivity extends Activity {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
             ((CameraManager) bs.getManager(CameraManager.class)).pauseBackground();
-            OpenGLManager openGLManager = ((OpenGLManager) bs.getManager(OpenGLManager.class));
-            if (openGLManager != null)
-                openGLManager.getView().onPause();
         }
         super.onPause();
     }
@@ -125,9 +121,6 @@ public class ScriptActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
             ((CameraManager) bs.getManager(CameraManager.class)).resume();
-            OpenGLManager openGLManager = ((OpenGLManager) bs.getManager(OpenGLManager.class));
-            if (openGLManager != null)
-                openGLManager.getView().onResume();
         }
         super.onResume();
     }

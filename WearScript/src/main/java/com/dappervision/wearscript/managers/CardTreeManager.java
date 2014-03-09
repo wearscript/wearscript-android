@@ -2,7 +2,6 @@ package com.dappervision.wearscript.managers;
 
 import android.app.Activity;
 import android.content.Context;
-import android.media.*;
 import android.media.AudioManager;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,8 +14,8 @@ import com.dappervision.wearscript.HardwareDetector;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
 import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.jsevents.ActivityEvent;
-import com.dappervision.wearscript.jsevents.CardTreeEvent;
+import com.dappervision.wearscript.events.ActivityEvent;
+import com.dappervision.wearscript.events.CardTreeEvent;
 import com.google.android.glass.app.Card;
 import com.google.android.glass.media.Sounds;
 import com.kelsonprime.cardtree.DynamicMenu;
@@ -30,7 +29,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import java.util.HashMap;
-import java.util.TreeMap;
 
 public class CardTreeManager extends Manager {
     private final AudioManager systemAudio;
@@ -74,8 +72,8 @@ public class CardTreeManager extends Manager {
             JSONObject cardJS = (JSONObject) o;
             JSONArray children = (JSONArray) cardJS.get("children");
             JSONArray menu = (JSONArray) cardJS.get("menu");
-            String selected = (String)cardJS.get("selected");
-            String click = (String)cardJS.get("click");
+            String selected = (String) cardJS.get("selected");
+            String click = (String) cardJS.get("click");
 
             if (selected != null) {
                 registerCallback("SELECTED:" + cardId, selected);
@@ -93,9 +91,9 @@ public class CardTreeManager extends Manager {
                 Log.d(TAG, "Has Menu");
                 DynamicMenu sampleMenu = new DynamicMenu(R.menu.blank);
                 for (Object menuItemObj : menu) {
-                    JSONObject menuItem = (JSONObject)menuItemObj;
-                    String label = (String)menuItem.get("label");
-                    String callback = (String)menuItem.get("callback");
+                    JSONObject menuItem = (JSONObject) menuItemObj;
+                    String label = (String) menuItem.get("label");
+                    String callback = (String) menuItem.get("callback");
                     if (label != null && callback != null) {
                         int dynamicOptionId = sampleMenu.add(label);
                         registerCallback("MENU:" + dynamicOptionId, callback);
@@ -129,8 +127,11 @@ public class CardTreeManager extends Manager {
             c.setFootnote((String) card.get("info"));
             return c.toView();
         } else if (type.equals("html")) {
+            // TODO(brandyn): Untested
             WebView wv = new WebView(service);
-            // TODO(brandyn): Use html along with stock template + css
+            wv.setInitialScale(100);
+            String body = "<html style='width:100%; height:100%; overflow:hidden'><head><link href='http://fonts.googleapis.com/css?family=Roboto:400,100,300' rel='stylesheet' type='text/css'><link rel='stylesheet' href='https://mirror-api-playground.appspot.com/assets/css/base_style.css'></head><body style='width:100%; height:100%; overflow:hidden; margin:0;' bgcolor='#000000'>" + card.get("html") + "</body></html>";
+            wv.loadData(body, "text/html", "UTF-8");
             return wv;
         }
         return null;

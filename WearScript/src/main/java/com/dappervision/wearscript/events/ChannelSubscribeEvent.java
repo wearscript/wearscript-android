@@ -1,6 +1,6 @@
 package com.dappervision.wearscript.events;
 
-public class ChannelSubscribeEvent implements BusEvent {
+public class ChannelSubscribeEvent {
     private String channel;
     private String callback;
 
