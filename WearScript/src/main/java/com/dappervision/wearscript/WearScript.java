@@ -28,6 +28,7 @@ import com.dappervision.wearscript.events.WifiEvent;
 import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
@@ -37,6 +38,8 @@ import org.json.simple.JSONObject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.Buffer;
+import java.util.Arrays;
+import java.util.List;
 import java.util.TreeMap;
 
 public class WearScript {
@@ -322,7 +325,13 @@ public class WearScript {
     @JavascriptInterface
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
-        Utils.eventBusPost(new CallbackRegistration(GestureManager.class, callback).setEvent(event));
+        String[] gestures = {"onGesture", "onFingerCountChanged", "onScroll", "onTwoFingerScroll"};
+        List<String> gesturesList = Arrays.asList(gestures);
+        Class route = GestureManager.class;
+        if(!gesturesList.contains(event)) {
+            route = EyeManager.class;
+        }
+        Utils.eventBusPost(new CallbackRegistration(route, callback).setEvent(event));
     }
 
     @JavascriptInterface
