@@ -798,6 +798,11 @@ function WearScript() {
         // TODO: Handle no callback case
         WSRAW.cameraPhoto(this._funcwrap(callback));
     }
+
+    this.cameraPhotoPath = function (callback) {
+        WSRAW.cameraPhotoPath(this._funcwrap(callback));
+    }
+
     this.cameraVideo = function () {
         WSRAW.cameraVideo();
     }
