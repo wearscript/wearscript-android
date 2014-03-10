@@ -35,12 +35,17 @@ In the JavaScript environment there is a WS object that has the following method
 * WS.displayWebView(): Display the WebView activity (this is the default, reserved for future use when we may have alternate views).
 * WS.shutdown(): Shuts down wearscript
 * WS.cameraOn(double period, int max_height, int max_width): Camera frames are output based on the WS.cameraCallback and WS.dataLog options.  The largest preview format that fits the max_height/width is used.
-* WS.cameraPhoto(): Take a picture and save to the SD card.
-* WS.cameraVideo(): Record a video and save to the SD card.
-* WS.cameraCallback(int type, Function callback): Type 0=local camera, 1=remote camera (subject to change).
+* WS.cameraPhoto(Function callback): Take a picture and call a callback.
 
   * Callback has parameters of the form function callback(imageb64)
   * imageb64(string): The image represented as a jpeg base64 encoded
+
+* WS.cameraPhotoCallback(Function callback): Take a picture and call a callback
+
+  * Callback has parameters of the form function callback(path)
+  * path(string): The local file path where the image is saved. Can be used as src attribute for an image.
+
+* WS.cameraVideo(): Record a video and save to the SD card.
 
 * WS.cameraOff()
 * WS.activityCreate(): Creates a new activity in the foreground and replaces any existing activity (useful for bringing window to the foreground)
