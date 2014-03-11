@@ -38,9 +38,11 @@ import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
+import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.dappervision.wearscript.ui.ScriptActivity;
+import com.getpebble.android.kit.PebbleKit;
 import com.google.android.glass.widget.CardScrollView;
 
 import org.msgpack.MessagePack;
@@ -273,6 +275,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 if (activity != null) {
                     ScriptActivity a = activity;
                     ManagerManager.get().add(new GestureManager(a, this));
+                }
+            }
+            if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {
+                if(activity != null) {
+                    ScriptActivity a = activity;
+                    ManagerManager.get().add(new PebbleManager(a, this));
                 }
             }
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
