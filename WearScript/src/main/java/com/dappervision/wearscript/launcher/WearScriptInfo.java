@@ -66,7 +66,8 @@ public class WearScriptInfo {
     }
 
     public static WearScriptInfo gistSync() {
-        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>Gist Sync<br><br>Docs @ wearscript.com</h1></center><script>function s() {WS.say('syncing');WSRAW.gistSync();window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
+        // TODO(brandyn): Instead of waiting .5 sec, we should retry until we get a response
+        byte[] data = "<body style='width:640px; height:480px; overflow:hidden; margin:0' bgcolor='black'><center><h1 style='font-size:70px;color:#FAFAFA;font-family:monospace'>WearScript</h1><h1 style='font-size:40px;color:#FAFAFA;font-family:monospace'>Gist Sync<br><br>Docs @ wearscript.com</h1></center><script>function s() {setTimeout(function () {WS.say('syncing');WSRAW.gistSync()}, 500)};window.onload=function () {WS.serverConnect('{{WSUrl}}', 's')}</script></body>".getBytes();
         String path = Utils.SaveData(data, "scripting/", false, "gist.html");
         WearScriptInfo wsi = new WearScriptInfo("Gist Sync", path);
         return wsi;

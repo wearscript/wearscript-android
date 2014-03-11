@@ -109,7 +109,9 @@ public class ScriptActivity extends Activity {
         isForeground = false;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
-            ((CameraManager) bs.getManager(CameraManager.class)).pauseBackground();
+            CameraManager cm = ((CameraManager) bs.getManager(CameraManager.class));
+            if (cm != null)
+                cm.pauseBackground();
         }
         super.onPause();
     }
