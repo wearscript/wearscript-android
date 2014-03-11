@@ -1,3 +1,4 @@
+// Minify with: http://closure-compiler.appspot.com/home
 /*!{id:msgpack.js,ver:1.05,license:"MIT",author:"uupaa.js@gmail.com"}*/
 
 // === msgpack ===

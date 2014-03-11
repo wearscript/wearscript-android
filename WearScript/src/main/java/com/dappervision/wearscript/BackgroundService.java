@@ -337,7 +337,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         Utils.getEventBus().register(this);
         //getResources().openRawResource(R.raw.init)
         try {
-            initScript = "javascript:" + convertStreamToString(getAssets().open("init.js"));
+            initScript = "javascript:" + convertStreamToString(getAssets().open("init.js.min"));
         } catch (IOException e) {
             e.printStackTrace();
             // TODO(brandyn): Handle
