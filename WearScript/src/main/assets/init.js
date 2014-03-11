@@ -678,15 +678,22 @@ function WearScript() {
     this.cbCount = 0;
     this.Cards = function (cards) {
          this.cards = cards || [];
-         this.add = function (text, info) {
+         this.add = function () {
              var isFunc = function (x) {return typeof x === 'function'};
              var isObj = function (x) {return typeof x === 'object'};
              var isUndef = function (x) {return typeof x === 'undefined'};
              var isStr = function (x) {return typeof x === 'string'};
              var click, select, children, menu;
-             var card = {card: {type: "card", text: text, info: info}};
-
-             var extras = Array.prototype.slice.call(arguments).slice(2);
+             var initial = Array.prototype.slice.call(arguments).slice(0, 2);
+             var card;
+             var extras;
+             if (initial.length == 2 && isStr(initial[0]) && isStr(initial[1])) {
+                 card = {card: {type: "card", text: text, info: info}};
+                 extras = Array.prototype.slice.call(arguments).slice(2);
+             } else {
+                 card = {card: {type: "html", html: document.getElementById(initial[0]).innerHTML}};
+                 extras = Array.prototype.slice.call(arguments).slice(1);
+             }
              if (extras.length > 0 && isFunc(extras[0]) || isUndef(extras[0])) { // Selected
                  if (isFunc(extras[0]))
                      card.selected = WS._funcwrap(extras[0]);

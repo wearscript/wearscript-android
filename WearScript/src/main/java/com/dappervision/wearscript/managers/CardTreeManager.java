@@ -127,11 +127,11 @@ public class CardTreeManager extends Manager {
             c.setFootnote((String) card.get("info"));
             return c.toView();
         } else if (type.equals("html")) {
-            // TODO(brandyn): Untested
             WebView wv = new WebView(service);
             wv.setInitialScale(100);
-            String body = "<html style='width:100%; height:100%; overflow:hidden'><head><link href='http://fonts.googleapis.com/css?family=Roboto:400,100,300' rel='stylesheet' type='text/css'><link rel='stylesheet' href='https://mirror-api-playground.appspot.com/assets/css/base_style.css'></head><body style='width:100%; height:100%; overflow:hidden; margin:0;' bgcolor='#000000'>" + card.get("html") + "</body></html>";
-            wv.loadData(body, "text/html", "UTF-8");
+            String body = "<html style='width:100%; height:100%; overflow:hidden'><head><link href='roboto.css' rel='stylesheet' type='text/css'><link rel='stylesheet' href='base_style.css'></head><body style='width:100%; height:100%; overflow:hidden; margin:0;' bgcolor='#000000'>" + card.get("html") + "</body></html>";
+            Log.d(TAG, body);
+            wv.loadDataWithBaseURL("file:///android_asset/", body, "text/html", "utf-8", null);
             return wv;
         }
         return null;
@@ -163,6 +163,7 @@ public class CardTreeManager extends Manager {
     public void nodeSelected(Node node) {
         Integer id = nodeToId.get(node);
         if (id != null) {
+            cardTree.updateViews(false); // NOTE(brandyn): Hack for webviews, their scale gets messed up
             Log.d(TAG, "Calling Select: " + "SELECTED:" + id);
             makeCall("SELECTED:" + id, "");
         }

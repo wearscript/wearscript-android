@@ -47,6 +47,8 @@ import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -333,8 +335,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
         Utils.getEventBus().register(this);
-        initScript = "javascript:" + convertStreamToString(getResources().openRawResource(R.raw.init));
-
+        //getResources().openRawResource(R.raw.init)
+        try {
+            initScript = "javascript:" + convertStreamToString(getAssets().open("init.js"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            // TODO(brandyn): Handle
+        }
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
