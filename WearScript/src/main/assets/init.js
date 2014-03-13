@@ -1,4 +1,4 @@
-// Minify with: http://closure-compiler.appspot.com/home
+// Minify with: http://closure-compiler.appspot.com/home simple mode
 /*!{id:msgpack.js,ver:1.05,license:"MIT",author:"uupaa.js@gmail.com"}*/
 
 // === msgpack ===
@@ -679,45 +679,45 @@ function WearScript() {
     this.cbCount = 0;
     this.Cards = function (cards) {
          this.cards = cards || [];
+         this.isFunc = function (x) {return typeof x === 'function'};
+         this.isObj = function (x) {return typeof x === 'object'};
+         this.isUndef = function (x) {return typeof x === 'undefined'};
+         this.isStr = function (x) {return typeof x === 'string'};
+         this.addHTML = function () {
+            var card = {card: {type: "html", html: document.getElementById(arguments[0]).innerHTML}};
+            var extras = Array.prototype.slice.call(arguments).slice(1);
+            return this._add(card, extras);
+         }
          this.add = function () {
-             var isFunc = function (x) {return typeof x === 'function'};
-             var isObj = function (x) {return typeof x === 'object'};
-             var isUndef = function (x) {return typeof x === 'undefined'};
-             var isStr = function (x) {return typeof x === 'string'};
-             var click, select, children, menu;
-             var initial = Array.prototype.slice.call(arguments).slice(0, 2);
-             var card;
-             var extras;
-             if (initial.length == 2 && isStr(initial[0]) && isStr(initial[1])) {
-                 card = {card: {type: "card", text: text, info: info}};
-                 extras = Array.prototype.slice.call(arguments).slice(2);
-             } else {
-                 card = {card: {type: "html", html: document.getElementById(initial[0]).innerHTML}};
-                 extras = Array.prototype.slice.call(arguments).slice(1);
-             }
-             if (extras.length > 0 && isFunc(extras[0]) || isUndef(extras[0])) { // Selected
-                 if (isFunc(extras[0]))
-                     card.selected = WS._funcwrap(extras[0]);
-                 extras = extras.slice(1);
-             }
-             if (extras.length > 0 && isFunc(extras[0]) || isUndef(extras[0])) { // Click
-                 if (isFunc(extras[0]))
-                     card.click = WS._funcwrap(extras[0]);
-                 extras = extras.slice(1);
-             }
-             if (extras.length > 0 && isObj(extras[0])) { // Children
-                 card.children = extras[0].cards;
-                 extras = extras.slice(1);
-             } else if (extras.length > 0 && extras.length % 2 == 0) { // Menu
-                 card.menu = [];
-                 for (var i = 0; i < extras.length; i += 2) {
-                     if (!isStr(extras[i]) || (!isFunc(extras[i + 1]) && !isUndef(extras[i + 1])))
-                         break;
-                     card.menu.push({'label':  extras[i], 'callback': WS._funcwrap(extras[i + 1])});
-                 }
-             }
-             this.cards.push(card);
-             return this;
+             var card = {card: {type: "card", text: arguments[0], info: arguments[1]}};
+             var extras = Array.prototype.slice.call(arguments).slice(2);
+             return this._add(card, extras);
+         }
+         this._add = function (card, extras) {
+              var click, select, children, menu;
+              if (extras.length > 0 && this.isFunc(extras[0]) || this.isUndef(extras[0])) { // Selected
+                  if (this.isFunc(extras[0]))
+                      card.selected = WS._funcwrap(extras[0]);
+                  extras = extras.slice(1);
+              }
+              if (extras.length > 0 && this.isFunc(extras[0]) || this.isUndef(extras[0])) { // Click
+                  if (this.isFunc(extras[0]))
+                      card.click = WS._funcwrap(extras[0]);
+                  extras = extras.slice(1);
+              }
+              if (extras.length > 0 && this.isObj(extras[0])) { // Children
+                  card.children = extras[0].cards;
+                  extras = extras.slice(1);
+              } else if (extras.length > 0 && extras.length % 2 == 0) { // Menu
+                  card.menu = [];
+                  for (var i = 0; i < extras.length; i += 2) {
+                      if (!this.isStr(extras[i]) || (!this.isFunc(extras[i + 1]) && !this.isUndef(extras[i + 1])))
+                          break;
+                      card.menu.push({'label':  extras[i], 'callback': WS._funcwrap(extras[i + 1])});
+                  }
+              }
+              this.cards.push(card);
+              return this;
          }
     }
     this.scriptVersion = function (num) {
