@@ -47,6 +47,7 @@ public class WearScript {
     String TAG = "WearScript";
     TreeMap<String, Integer> sensors;
     String sensorsJS;
+    List<String> touchGesturesList;
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
@@ -56,6 +57,8 @@ public class WearScript {
             this.sensors.put(s.toString(), s.id());
         }
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
+        String[] touchGestures = {"onGesture", "onFingerCountChanged", "onScroll", "onTwoFingerScroll"};
+        touchGesturesList = Arrays.asList(touchGestures);
     }
 
     ;
@@ -325,10 +328,8 @@ public class WearScript {
     @JavascriptInterface
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
-        String[] gestures = {"onGesture", "onFingerCountChanged", "onScroll", "onTwoFingerScroll"};
-        List<String> gesturesList = Arrays.asList(gestures);
         Class route = GestureManager.class;
-        if(!gesturesList.contains(event)) {
+        if (!touchGesturesList.contains(event)) {
             route = EyeManager.class;
         }
         Utils.eventBusPost(new CallbackRegistration(route, callback).setEvent(event));
