@@ -35,6 +35,7 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.CardTreeManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.DataManager;
+import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
@@ -271,6 +272,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 if (activity != null) {
                     ScriptActivity a = activity;
                     ManagerManager.get().add(new GestureManager(a, this));
+                    ManagerManager.get().add(new EyeManager(a, this));
                 }
             }
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
