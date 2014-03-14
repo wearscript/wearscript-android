@@ -1,13 +1,9 @@
 package com.dappervision.wearscript.managers;
 
 import android.content.Context;
-import android.content.IntentFilter;
 import android.view.MotionEvent;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.dataproviders.EyeEventReceiver;
-import com.google.android.glass.eye.EyeGesture;
-import com.google.android.glass.eye.EyeGestureManager;
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 
@@ -42,6 +38,7 @@ class MyGestureDetector extends GestureDetector implements GestureDetector.BaseL
     @Override
     public boolean onGesture(Gesture gesture) {
         parent.makeCall("onGesture", String.format("'%s'", gesture.name()));
+        parent.makeCall("onGesture" + gesture.name(), "");
         return false;
     }
 

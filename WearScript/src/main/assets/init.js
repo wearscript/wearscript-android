@@ -743,11 +743,19 @@ function WearScript() {
         }
         return func;
     }
+    this._funcfix = function (func) {
+        if (typeof func === 'string') {
+            this.log('Warning: deprecated use of string as a function: ' + func);
+            return window[func];
+        }
+        return func;
+    }
     this.publish = function() {
         var data = msgpack.pack(Array.prototype.slice.call(arguments));
         WSRAW.publish(arguments[0], btoa(data.map(function (x) {return String.fromCharCode(x)}).join('')));
     }
     this.subscribe = function(channel, callback) {
+        callback = this._funcfix(callback);
         WSRAW.subscribe(channel, this._funcwrap(function (data) {return callback.apply(null, msgpack.unpack(atob(data)))}));
     }
     this.sensorOn = function(type, period, callback) {
@@ -770,7 +778,8 @@ function WearScript() {
         WSRAW.say(msg);
     }
     this.qr = function (callback) {
-        WSRAW.qr(this._funcwrap(callback));
+        callback = this._funcfix(callback);
+        WSRAW.qr(this._funcwrap(function (x, y) {callback(atob(x), y)}));
     }
     this.log = function (msg) {
         WSRAW.log(msg);
@@ -787,6 +796,8 @@ function WearScript() {
     this.warpPreviewSampleGlass = function (callback) {
         if (!callback)
             callback = '';
+        else
+            callback = this._funcfix(callback);
         WSRAW.warpPreviewSampleGlass(callback);
     }
     this.displayCardTree = function () {
@@ -795,19 +806,41 @@ function WearScript() {
     this.cardTree = function (tree) {
         WSRAW.cardTree(JSON.stringify(tree.cards))
     }
-    this.cameraOn = function (period, maxHeight, maxWidth) {
+    this.cameraOn = function (period, maxHeight, maxWidth, callback) {
         if (!maxHeight)
             maxHeight = 0;
         if (!maxWidth)
             maxwidth = 0;
-        WSRAW.cameraOn(period, maxHeight, maxWidth, false);
+        if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraOn(period, maxHeight, maxWidth, false, this._funcwrap(callback));
+        } else {
+            WSRAW.cameraOn(period, maxHeight, maxWidth, false);
+        }
     }
     this.cameraPhoto = function (callback) {
-        // TODO: Handle no callback case
-        WSRAW.cameraPhoto(this._funcwrap(callback));
+        if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraPhoto(this._funcwrap(callback));
+        } else {
+            WSRAW.cameraPhoto();
+        }
     }
-    this.cameraVideo = function () {
-        WSRAW.cameraVideo();
+    this.cameraPhotoData = function (callback) {
+        if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraPhotoData(this._funcwrap(callback));
+        } else {
+            WSRAW.cameraPhoto();
+        }
+    }
+    this.cameraVideo = function (callback) {
+       if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraVideo(this._funcwrap(callback));
+        } else {
+            WSRAW.cameraVideo();
+        }
     }
     this.cameraOff = function () {
         WSRAW.cameraOff();
@@ -819,6 +852,7 @@ function WearScript() {
         WSRAW.activityDestroy();
     }
     this.wifiOn = function (callback) {
+        callback = this._funcfix(callback);
         // TODO: Handle no callback case
         WSRAW.wifiOn(this._funcwrap(callback));
     }
@@ -829,6 +863,7 @@ function WearScript() {
         WSRAW.wifiScan();
     }
     this.serverConnect = function (server, callback) {
+        callback = this._funcfix(callback);
         WSRAW.serverConnect(server, this._funcwrap(callback));
     }
     this.wake = function () {
@@ -838,10 +873,12 @@ function WearScript() {
         WSRAW.sound(sound);
     }
     this.gestureCallback = function (event, callback) {
+        callback = this._funcfix(callback);
         WSRAW.gestureCallback(event, this._funcwrap(callback));
     }
     this.speechRecognize = function (prompt, callback) {
-        WSRAW.speechRecognize(prompt, this._funcwrap(callback));
+        callback = this._funcfix(callback);
+        WSRAW.speechRecognize(prompt, this._funcwrap(function (x) {callback(atob(x))}));
     }
     this.liveCardCreate = function (nonSilent, period) {
         WSRAW.liveCardCreate(nonSilent, period);

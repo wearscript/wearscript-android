@@ -161,7 +161,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             if (resultCode == Activity.RESULT_OK) {
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
-                // TODO: Wait until video has been written
                 if (jsCallbacks.containsKey(VIDEO_PATH)) {
                     makeCall(VIDEO_PATH, "'" + videoFilePath + "'");
                     jsCallbacks.remove(VIDEO_PATH);

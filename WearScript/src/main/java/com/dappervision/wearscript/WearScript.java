@@ -183,16 +183,23 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void cameraPhoto(String callback) {
+    public void cameraPhotoData(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.PHOTO);
         Utils.eventBusPost(cr);
     }
 
     @JavascriptInterface
-    public void cameraPhotoPath(String callback) {
-        // TODO(brandyn): we may only want this one
+    public void cameraPhoto(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
+        cr.setEvent(CameraManager.PHOTO_PATH);
+        Utils.eventBusPost(cr);
+    }
+
+    @JavascriptInterface
+    public void cameraPhoto() {
+        // TODO(brandyn): This is a hack, we should have a separate event to take a photo and just register the callback prior to that
+        CallbackRegistration cr = new CallbackRegistration(CameraManager.class, null);
         cr.setEvent(CameraManager.PHOTO_PATH);
         Utils.eventBusPost(cr);
     }
@@ -200,7 +207,7 @@ public class WearScript {
     @JavascriptInterface
     public void cameraVideo() {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, null);
-        cr.setEvent(CameraManager.VIDEO);
+        cr.setEvent(CameraManager.VIDEO_PATH);
         Utils.eventBusPost(cr);
     }
 
@@ -217,9 +224,11 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void cameraCallback(int type, String callback) {
+    public void cameraOn(double imagePeriod, int maxHeight, int maxWidth, boolean background, String callback) {
+        Log.d(TAG, "cameraOn: Callback: " + callback);
+        cameraOn(imagePeriod, maxHeight, maxWidth, background);
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
-        cr.setEvent(type);
+        cr.setEvent(0);
         Utils.eventBusPost(cr);
     }
 
@@ -328,10 +337,12 @@ public class WearScript {
     @JavascriptInterface
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
-        Class route = GestureManager.class;
-        if (!touchGesturesList.contains(event)) {
-            route = EyeManager.class;
-        }
+        Class route = EyeManager.class;
+        for (String gesture : touchGesturesList)
+            if (event.startsWith(gesture)) {
+                route = GestureManager.class;
+                break;
+            }
         Utils.eventBusPost(new CallbackRegistration(route, callback).setEvent(event));
     }
 

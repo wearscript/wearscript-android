@@ -49,10 +49,9 @@ public class EyeManager extends Manager {
             eyeGestureManager.stopDetector(EyeGesture.WINK);
         if (!detectorState.contains(EyeGesture.DOUBLE_WINK.getId()))
             eyeGestureManager.stopDetector(EyeGesture.DOUBLE_WINK);
-        if (!detectorState.contains(EyeGesture.DOUBLE_BLINK.getId())) {
-            Log.d(TAG, "Stopping double_blink");
-            eyeGestureManager.stopDetector(EyeGesture.DOUBLE_BLINK);
-        }
+        // TODO(brandyn): Double blink sometimes gets stuck on and causes the display to turn on, fix it for real (just putting an if here doesn't do it)
+        Log.d(TAG, "Stopping double_blink");
+        eyeGestureManager.stopDetector(EyeGesture.DOUBLE_BLINK);
         if (!detectorState.contains(EyeGesture.DOFF.getId()))
             eyeGestureManager.stopDetector(EyeGesture.DOFF);
         if (!detectorState.contains(EyeGesture.DON.getId()))
@@ -130,5 +129,6 @@ class EyeGestureDetector implements EyeEventReceiver.BaseListener {
     @Override
     public void onEyeGesture(EyeGesture gesture) {
         parent.makeCall("onEyeGesture", String.format("'%s'", gesture.name()));
+        parent.makeCall("onEyeGesture" + gesture.name(), "");
     }
 }
