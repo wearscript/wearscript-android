@@ -4,6 +4,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.os.Handler;
 import android.view.SurfaceHolder;
 import android.view.View;
@@ -43,6 +44,10 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
                 return true;
             }
         });
+        //Do new Chromium WebView stuff here
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            setWebContentsDebuggingEnabled(true);
+        }
         handler = new Handler();
     }
 
