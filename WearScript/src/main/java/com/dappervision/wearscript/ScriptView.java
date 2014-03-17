@@ -44,6 +44,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
                 return true;
             }
         });
+        setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
         //Do new Chromium WebView stuff here
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             setWebContentsDebuggingEnabled(true);
