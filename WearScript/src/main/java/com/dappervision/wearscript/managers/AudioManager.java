@@ -1,6 +1,8 @@
 package com.dappervision.wearscript.managers;
 
 
+import android.content.Context;
+
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.events.SoundEvent;
 import com.google.android.glass.media.Sounds;
@@ -10,6 +12,7 @@ public class AudioManager extends Manager {
 
     public AudioManager(BackgroundService service) {
         super(service);
+        systemAudio = (android.media.AudioManager) service.getSystemService(Context.AUDIO_SERVICE);
         reset();
     }
 

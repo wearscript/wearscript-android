@@ -61,8 +61,6 @@ public class WearScript {
         touchGesturesList = Arrays.asList(touchGestures);
     }
 
-    ;
-
     private String classToChar(Class c) {
         if (c.equals(float.class) || c.equals(int.class))
             return "D";

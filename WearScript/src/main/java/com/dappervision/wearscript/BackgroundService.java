@@ -257,6 +257,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             // NOTE(brandyn): Put in a better spot
             if (webview != null) {
                 webview.stopLoading();
+                // Stops all javascript
+                webview.loadUrl("about:blank");
                 webview.onDestroy();
                 webview = null;
             }
