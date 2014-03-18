@@ -21,6 +21,8 @@ public class PebbleManager extends Manager{
 
     private final static UUID PEBBLE_APP_UUID = UUID.fromString("88c99af8-9512-4e23-b79e-ba437c788446");
     private PebbleEventReceiver dataReceiver;
+    private PebbleKit.PebbleAckReceiver ackReceiver;
+    private PebbleKit.PebbleNackReceiver nackReceiver;
     private final PebbleMessageManager pebbleMessageManager;
 
     public static class Cmd {
@@ -41,11 +43,14 @@ public class PebbleManager extends Manager{
 
     public PebbleManager(Context context, BackgroundService bs) {
         super(bs);
-        dataReceiver = new PebbleEventReceiver(PEBBLE_APP_UUID, this);
-        PebbleKit.registerReceivedDataHandler(context, dataReceiver);
         pebbleMessageManager = new PebbleMessageManager(context);
+        reset();
     }
 
+
+    /*
+     * Methods to communicate with pebble
+     */
     public void onPebbleClick(String button) {
         registerCallback("SINGLECLICK: " + button, CLICK);
         makeCall("onPebbleClick", String.format("'%s'", button));
@@ -111,6 +116,66 @@ public class PebbleManager extends Manager{
         data.addInt32(4, select ? 1 : 0);
     }
 
+    @Override
+    public void reset() {
+        super.reset();
+        teardown();
+        setup();
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        teardown();
+    }
+
+    private void teardown() {
+        if(dataReceiver != null) {
+            service.getApplicationContext().unregisterReceiver(dataReceiver);
+            dataReceiver = null;
+        }
+        if (ackReceiver != null) {
+            service.getApplicationContext().unregisterReceiver(ackReceiver);
+            ackReceiver = null;
+        }
+        if (nackReceiver != null) {
+            service.getApplicationContext().unregisterReceiver(nackReceiver);
+            nackReceiver = null;
+        }
+    }
+
+    private void setup() {
+        // Start thread for sending messages
+        new Thread(pebbleMessageManager).start();
+
+        // Set up broadcast receivers
+        dataReceiver = new PebbleEventReceiver(PEBBLE_APP_UUID, this);
+        PebbleKit.registerReceivedDataHandler(service.getApplicationContext(), dataReceiver);
+
+        ackReceiver = new PebbleKit.PebbleAckReceiver(PEBBLE_APP_UUID) {
+            @Override
+            public void receiveAck(Context context, int transactionId) {
+                pebbleMessageManager.notifyAckReceivedAsync();
+                Log.i("receiveAck", " " + transactionId);
+            }
+        };
+
+        PebbleKit.registerReceivedAckHandler(service.getApplicationContext(), ackReceiver);
+
+        nackReceiver = new PebbleKit.PebbleNackReceiver(PEBBLE_APP_UUID) {
+            @Override
+            public void receiveNack(Context context, int transactionId) {
+                pebbleMessageManager.notifyNackReceivedAsync();
+                Log.i("receiveNack", " " + transactionId);
+            }
+        };
+
+        PebbleKit.registerReceivedNackHandler(service.getApplicationContext(), nackReceiver);
+    }
+
+    /*
+        Class to handle pebble messaging
+     */
     public class PebbleMessageManager implements Runnable {
         public Handler messageHandler;
         private final BlockingQueue<PebbleDictionary> messageQueue = new LinkedBlockingQueue<PebbleDictionary>();
