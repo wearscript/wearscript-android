@@ -14,6 +14,8 @@ import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LiveCardEvent;
+import com.dappervision.wearscript.events.MediaEvent;
+import com.dappervision.wearscript.events.MediaPlayEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -129,6 +131,15 @@ public class WearScript {
     public void sensorOff(int type) {
         Log.i(TAG, "sensorOff: " + Integer.toString(type));
         Utils.eventBusPost(new SensorJSEvent(type, false));
+    }
+
+    @JavascriptInterface
+    public void playMedia(String uri){
+        try {
+            Utils.eventBusPost(new MediaEvent(new URI(uri), false));
+        } catch (URISyntaxException e) {
+            // TODO(kurtisnelson): Handle
+        }
     }
 
     @JavascriptInterface

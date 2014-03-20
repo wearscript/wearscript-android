@@ -1,0 +1,105 @@
+package com.dappervision.wearscript.ui;
+
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
+
+import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.R;
+import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.events.MediaPlayEvent;
+
+import java.io.IOException;
+
+public class MediaPlayerFragment extends Fragment implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener {
+    public static final String ARG_URL = "ARG_URL";
+    public static final String ARG_LOOP = "ARG_LOOP";
+    private static final String TAG = "MediaPlayerFragment";
+    private MediaPlayer mp;
+    private Uri mediaUri;
+    private SurfaceHolder holder;
+
+    public static MediaPlayerFragment newInstance(Uri uri, boolean looping) {
+        Bundle args = new Bundle();
+        args.putParcelable(ARG_URL, uri);
+        args.putBoolean(ARG_LOOP, looping);
+        MediaPlayerFragment f = new MediaPlayerFragment();
+        f.setArguments(args);
+        return f;
+    }
+
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Utils.getEventBus().register(this);
+        setRetainInstance(true);
+
+        mediaUri = getArguments().getParcelable(ARG_URL);
+
+        mp = MediaPlayer.create(getActivity(), mediaUri);
+        mp.setOnErrorListener(this);
+        mp.setOnPreparedListener(this);
+
+        if(getArguments().getBoolean(ARG_LOOP))
+            mp.setLooping(true);
+    }
+
+    public void onEvent(MediaPlayEvent e){
+        if (e.isPlaying()){
+            mp.start();
+        }else{
+            mp.stop();
+        }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.fragment_media_player, container, false);
+        SurfaceView sv = (SurfaceView) v.findViewById(R.id.media_surface);
+        holder = sv.getHolder();
+        holder.addCallback(new SurfaceHolder.Callback() {
+
+            public void surfaceCreated(SurfaceHolder holder) {
+                    if (mp != null) {
+                        mp.setDisplay(holder);
+                    }
+            }
+
+            public void surfaceDestroyed(SurfaceHolder holder) {
+                if (mp != null) {
+                    mp.setDisplay(null);
+                }
+            }
+
+            public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+            }
+        });
+
+        return v;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(mp.isPlaying())
+            mp.stop();
+        mp.release();
+        mp = null;
+        Utils.getEventBus().unregister(this);
+    }
+
+    @Override
+    public boolean onError(MediaPlayer mediaPlayer, int i, int i2){
+        return false;
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mediaPlayer) {
+        mediaPlayer.start();
+    }
+}

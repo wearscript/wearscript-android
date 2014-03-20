@@ -25,6 +25,7 @@ import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LambdaEvent;
+import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.ScriptEvent;
@@ -41,7 +42,9 @@ import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
+import com.dappervision.wearscript.ui.MediaPlayerFragment;
 import com.dappervision.wearscript.ui.ScriptActivity;
+import com.dappervision.wearscript.ui.WSActivity;
 import com.google.android.glass.widget.CardScrollView;
 
 import org.msgpack.MessagePack;
