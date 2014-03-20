@@ -3,21 +3,18 @@ package com.dappervision.wearscript.ui;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.MediaPlayEvent;
+import com.google.android.glass.touchpad.Gesture;
 
-import java.io.IOException;
-
-public class MediaPlayerFragment extends Fragment implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener {
+public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener {
     public static final String ARG_URL = "ARG_URL";
     public static final String ARG_LOOP = "ARG_LOOP";
     private static final String TAG = "MediaPlayerFragment";
@@ -45,17 +42,18 @@ public class MediaPlayerFragment extends Fragment implements MediaPlayer.OnError
         mp.setOnErrorListener(this);
         mp.setOnPreparedListener(this);
 
-        if(getArguments().getBoolean(ARG_LOOP))
+        if (getArguments().getBoolean(ARG_LOOP))
             mp.setLooping(true);
     }
 
-    public void onEvent(MediaPlayEvent e){
-        if (e.isPlaying()){
+    public void onEvent(MediaPlayEvent e) {
+        if (e.isPlaying()) {
             mp.start();
-        }else{
+        } else {
             mp.stop();
         }
     }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -65,9 +63,9 @@ public class MediaPlayerFragment extends Fragment implements MediaPlayer.OnError
         holder.addCallback(new SurfaceHolder.Callback() {
 
             public void surfaceCreated(SurfaceHolder holder) {
-                    if (mp != null) {
-                        mp.setDisplay(holder);
-                    }
+                if (mp != null) {
+                    mp.setDisplay(holder);
+                }
             }
 
             public void surfaceDestroyed(SurfaceHolder holder) {
@@ -86,7 +84,7 @@ public class MediaPlayerFragment extends Fragment implements MediaPlayer.OnError
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(mp.isPlaying())
+        if (mp.isPlaying())
             mp.stop();
         mp.release();
         mp = null;
@@ -94,12 +92,31 @@ public class MediaPlayerFragment extends Fragment implements MediaPlayer.OnError
     }
 
     @Override
-    public boolean onError(MediaPlayer mediaPlayer, int i, int i2){
+    public boolean onError(MediaPlayer mediaPlayer, int i, int i2) {
         return false;
     }
 
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         mediaPlayer.start();
+    }
+
+    @Override
+    public boolean onGesture(Gesture gesture) {
+        if (gesture == Gesture.TAP) {
+            if (mp.isPlaying()) {
+                mp.pause();
+            } else {
+                mp.start();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(float v, float v2, float v3) {
+        mp.seekTo(mp.getCurrentPosition() + (int) v);
+        return true;
     }
 }
