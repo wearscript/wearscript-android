@@ -491,6 +491,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         return false;
     }
 
+    public String getGlassID() { return glassID; }
+
     class ScreenBroadcastReceiver extends BroadcastReceiver {
         BackgroundService bs;
 
