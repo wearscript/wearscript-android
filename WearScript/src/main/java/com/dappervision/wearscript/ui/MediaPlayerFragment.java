@@ -9,10 +9,13 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.MediaPlayEvent;
 import com.google.android.glass.touchpad.Gesture;
+
+import java.io.IOException;
 
 public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener {
     public static final String ARG_URL = "ARG_URL";
@@ -35,15 +38,23 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
         super.onCreate(savedInstanceState);
         Utils.getEventBus().register(this);
         setRetainInstance(true);
-
         mediaUri = getArguments().getParcelable(ARG_URL);
+        createMediaPlayer();
+    }
 
-        mp = MediaPlayer.create(getActivity(), mediaUri);
+    private void createMediaPlayer(){
+        mp = new MediaPlayer();
+        try {
+            mp.setDataSource(getActivity(), mediaUri);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         mp.setOnErrorListener(this);
         mp.setOnPreparedListener(this);
 
         if (getArguments().getBoolean(ARG_LOOP))
             mp.setLooping(true);
+        mp.prepareAsync();
     }
 
     public void onEvent(MediaPlayEvent e) {
@@ -93,6 +104,17 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i2) {
+       Log.e(TAG, "MediaPlayer Error: ");
+        if(i == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+            Log.w(TAG, "Server Died");
+            mediaPlayer.release();
+            mp = null;
+            createMediaPlayer();
+        }else if (i == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
+            Log.w(TAG, "Unknown Error, resetting");
+            mediaPlayer.reset();
+            mediaPlayer.prepareAsync();
+        }
         return false;
     }
 
@@ -116,7 +138,14 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 
     @Override
     public boolean onScroll(float v, float v2, float v3) {
-        mp.seekTo(mp.getCurrentPosition() + (int) v);
+        if(mp.isPlaying())
+            return false;
+        int newPosition = mp.getCurrentPosition() + (int)(v * 10);
+        if(newPosition < 0)
+            newPosition = 0;
+        if(newPosition > mp.getDuration())
+            newPosition = mp.getDuration() - 5;
+        mp.seekTo(newPosition);
         return true;
     }
 }
