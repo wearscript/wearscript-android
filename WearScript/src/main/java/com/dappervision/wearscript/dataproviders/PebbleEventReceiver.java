@@ -36,12 +36,14 @@ public class PebbleEventReceiver extends PebbleKit.PebbleDataReceiver{
                 PebbleKit.sendAckToPebble(context, transactionId);
                 switch (key) {
                     case Cmd.Cmd_singleClick:
-                        int single = data.getUnsignedInteger(1).intValue();
-                        Log.v(TAG + " Single Click", " " + single);
+                        int click = data.getUnsignedInteger(1).intValue();
+                        Log.v(TAG + " Single Click", " " + click);
+                        mPebbleManager.onPebbleSingleClick(PebbleManager.parseButton(click));
                         break;
                     case Cmd.Cmd_longClick:
                         int lClick = data.getUnsignedInteger(1).intValue();
                         Log.v(TAG + " Long Click", " " + lClick);
+                        mPebbleManager.onPebbleLongClick(PebbleManager.parseButton(lClick));
                         break;
                     case PebbleManager.Cmd.Cmd_accelTap:
                         int axis = data.getUnsignedInteger(1).intValue();
