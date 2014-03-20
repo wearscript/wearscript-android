@@ -4,6 +4,7 @@ import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
 import com.dappervision.wearscript.events.ActivityEvent;
+import com.dappervision.wearscript.events.BluetoothWriteEvent;
 import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.CardTreeEvent;
@@ -27,6 +28,7 @@ import com.dappervision.wearscript.events.WarpModeEvent;
 import com.dappervision.wearscript.events.WifiEvent;
 import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.BluetoothManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
@@ -376,6 +378,21 @@ public class WearScript {
     public void cardTree(String treeJS) {
         requiresGDK();
         Utils.eventBusPost(new CardTreeEvent(treeJS));
+    }
+
+    @JavascriptInterface
+    public void bluetoothList(String callback) {
+        Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
+    }
+
+    @JavascriptInterface
+    public void bluetoothRead(String device, String callback) {
+        Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.READ + device));
+    }
+
+    @JavascriptInterface
+    public void bluetoothWrite(String address, String data) {
+        Utils.eventBusPost(new BluetoothWriteEvent(address, data));
     }
 
     private void requiresGDK() {

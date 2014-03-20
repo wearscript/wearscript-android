@@ -127,6 +127,7 @@ public class WarpManager extends Manager {
         double hSmallToBig1280x720[] = {1.99853342e+00, -8.39095836e-03, -2.69490153e+01, -7.20812551e-03, 1.98930643e+00, 4.32612839e+02, -9.35128058e-06, -1.43562513e-05, 1.00000000e+00};
         double hSmallToBig640x360[] = {3.99706685e+00, -1.67819167e-02, -2.69490153e+01, -1.44162510e-02, 3.97861285e+00, 4.32612839e+02, -1.87025612e-05, -2.87125025e-05, 1.00000000e+00};
         double hBigToGlass[] = {1.49968460e+00, -9.18421959e-02, -1.26498024e+03, -1.28142821e-02, 1.44983279e+00, -5.69960334e+02, -3.04188513e-05, -1.34763662e-04, 1.00000000e+00}; // XE-B Sky
+        double hSmallToGlass1280x720NEW[] = {4.068402956851528, 0.02581555954274611, -1839.9618670575708, 0.07867908839387755, 3.7789295020616938, 0.6031318288709527, 0.00022875171829161314, 0.0002162888504563211, 0.9999999999999999};
 
         hGlassToSmall1280x720 = new double[9];
         hGlassToSmall640x360 = new double[9];
@@ -134,6 +135,7 @@ public class WarpManager extends Manager {
         hSmallToGlass640x360 = new double[9];
 
         hSmallToGlassMat1280x720 = setupMatrix(hSmallToBig1280x720, hBigToGlass, hSmallToGlass1280x720, hGlassToSmall1280x720);
+        hSmallToGlassMat1280x720 = HMatFromArray(hSmallToGlass1280x720NEW);
         hSmallToGlassMat640x360 = setupMatrix(hSmallToBig640x360, hBigToGlass, hSmallToGlass640x360, hGlassToSmall640x360);
         frameWarp = new Mat(360, 640, CvType.CV_8UC3);
         isSetup = true;

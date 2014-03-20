@@ -886,5 +886,16 @@ function WearScript() {
     this.liveCardDestroy = function () {
         WSRAW.liveCardDestroy();
     }
+    this.bluetoothList = function (callback) {
+        callback = this._funcfix(callback);
+        WSRAW.bluetoothList(his._funcwrap(function (x) {callback(JSON.parse(x))}));
+    }
+    this.bluetoothRead = function (address, callback) {
+        callback = this._funcfix(callback);
+        WSRAW.bluetoothRead(address, this._funcwrap(callback));
+    }
+    this.bluetoothWrite = function (address, data) {
+        WSRAW.bluetoothWrite(address, data);
+    }
 }
 WS = new WearScript();
