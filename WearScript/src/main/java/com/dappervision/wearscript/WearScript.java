@@ -327,9 +327,21 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void onPebbleClick(String click, String callback) {
+    public void onPebbleSingleClick(String click, String callback) {
         Log.i(TAG, "onPebbleClick: " + click + " " + callback);
         Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(click));
+    }
+
+
+    @JavascriptInterface
+    public void onPebbleLongClick(String click, String callback) {
+        Log.i(TAG, "onPebbleClick: " + click + " " + callback);
+        Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(click));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetTitle(String title) {
+        Log.i(TAG, "pebbleSetTitle: " + title);
     }
 
     @JavascriptInterface
@@ -385,7 +397,8 @@ public class WearScript {
         LIGHT("light", 5),
         GRAVITY("gravity", 9),
         LINEAR_ACCELERATION("linearAcceleration", 10),
-        ROTATION_VECTOR("rotationVector", 11);
+        ROTATION_VECTOR("rotationVector", 11),
+        PEBBLE_ACCELEROMETER("pebbleAccelerometer", 12);
 
         private final int id;
         private final String name;
