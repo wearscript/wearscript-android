@@ -40,6 +40,28 @@ public class PebbleManager extends Manager{
         public static final int Cmd_configButtons = 11;
     }
 
+    public static class Button {
+        public static final int BACK = 0;
+        public static final int UP = 1;
+        public static final int SELECT = 2;
+        public static final int DOWN = 3;
+    }
+
+    public static String parseButton(int button) {
+        switch (button) {
+            case Button.UP:
+                return "up";
+            case Button.SELECT:
+                return "select";
+            case Button.DOWN:
+                return "down";
+            case Button.BACK:
+                return "back";
+            default:
+                return null;
+        }
+    }
+
 
     public PebbleManager(Context context, BackgroundService bs) {
         super(bs);
@@ -51,16 +73,18 @@ public class PebbleManager extends Manager{
     /*
      * Methods to communicate with pebble
      */
-    public void onPebbleClick(String button) {
-        registerCallback("SINGLECLICK: " + button, CLICK);
-        makeCall("onPebbleClick", String.format("'%s'", button));
+    public void onPebbleSingleClick(String button) {
+        registerCallback("onPebbleSingleClick", "onPebbleSingleClick");
+        makeCall("onPebbleSingleClick", String.format("'%s'", button));
     }
 
     public void onPebbleLongClick(String button) {
-        registerCallback("LONGCLICK: " + button, "onPebbleLongClick");
+        registerCallback("onPebbleLongClick", "onPebbleLongClick");
         makeCall("onPebbleLongClick", String.format("'%s'", button));
     }
 
+    public void onPebbleAccelTap(String axis, String direction) {
+    }
 
     public void pebbleSetTitle(String title, boolean clear) {
         PebbleDictionary data = new PebbleDictionary();
@@ -111,9 +135,9 @@ public class PebbleManager extends Manager{
         // set up all buttons
         // need to figure out this enum
         data.addInt32(1, up ? 1 : 0);
-        data.addInt32(2, down ? 1 : 0);
-        data.addInt32(3, back ? 1 : 0);
-        data.addInt32(4, select ? 1 : 0);
+        data.addInt32(2, select ? 1 : 0);
+        data.addInt32(3, down ? 1 : 0);
+        data.addInt32(4, back ? 1 : 0);
     }
 
     @Override
