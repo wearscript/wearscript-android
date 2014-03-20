@@ -6,5 +6,13 @@
 <SurfaceView
     android:id="@+id/media_surface"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent" />
+    android:layout_height="fill_parent"
+    android:visibility="gone" />
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/video_progressBar"
+        android:layout_gravity="center_horizontal" />
 </LinearLayout>

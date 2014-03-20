@@ -8,6 +8,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
@@ -24,6 +25,8 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     private MediaPlayer mp;
     private Uri mediaUri;
     private SurfaceHolder holder;
+    private ProgressBar progressBar;
+    private SurfaceView surfaceView;
 
     public static MediaPlayerFragment newInstance(Uri uri, boolean looping) {
         Bundle args = new Bundle();
@@ -43,6 +46,8 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     }
 
     private void createMediaPlayer(){
+        if(progressBar != null)
+            progressBar.setVisibility(View.VISIBLE);
         mp = new MediaPlayer();
         try {
             mp.setDataSource(getActivity(), mediaUri);
@@ -69,8 +74,9 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_media_player, container, false);
-        SurfaceView sv = (SurfaceView) v.findViewById(R.id.media_surface);
-        holder = sv.getHolder();
+        surfaceView = (SurfaceView) v.findViewById(R.id.media_surface);
+        progressBar = (ProgressBar) v.findViewById(R.id.video_progressBar);
+        holder = surfaceView.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
 
             public void surfaceCreated(SurfaceHolder holder) {
@@ -120,6 +126,10 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
+        if(progressBar != null){
+            progressBar.setVisibility(View.GONE);
+        }
+        surfaceView.setVisibility(View.VISIBLE);
         mediaPlayer.start();
     }
 
