@@ -8,13 +8,18 @@ import android.view.SurfaceView;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.events.ActivityEvent;
+import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.WarpDrawEvent;
 import com.dappervision.wearscript.events.WarpHEvent;
 import com.dappervision.wearscript.events.WarpModeEvent;
+import com.dappervision.wearscript.events.WarpSetAnnotationEvent;
+import com.dappervision.wearscript.events.WarpSetupHomographyEvent;
 
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.msgpack.type.ValueFactory;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -29,6 +34,7 @@ import org.opencv.imgproc.Imgproc;
 public class WarpManager extends Manager {
     public static final String SAMPLE = "sample";
     public static final String TAG = "WarpManager";
+    public static final String GLASS2PREVIEWH = "GLASS2PREVIEWH";
     private Bitmap mCacheBitmap;
     private SurfaceView view;
     private Mat frameBGR;
@@ -40,10 +46,16 @@ public class WarpManager extends Manager {
     private Mat sampleBGR;
     private double[] hSmallToGlass1280x720;
     private double[] hSmallToGlass640x360;
+    private double[] hSmallToGlass256x144;
+
     private Mat hSmallToGlassMat1280x720;
     private Mat hSmallToGlassMat640x360;
+    private Mat hSmallToGlassMat256x144;
+
     private double[] hGlassToSmall1280x720;
     private double[] hGlassToSmall640x360;
+    private double[] hGlassToSmall256x144;
+
     private boolean isSetup;
 
     public WarpManager(BackgroundService bs) {
@@ -74,6 +86,16 @@ public class WarpManager extends Manager {
             }
         }
         return out;
+    }
+
+    protected JSONArray StringifyJSONDoubleArray(double[] a) {
+        if (a == null)
+            return null;
+        JSONArray array = new JSONArray();
+        for (int i = 0; i < a.length; ++i) {
+            array.add(a[i]);
+        }
+        return array;
     }
 
     protected Mat ImageBGRFromString(byte[] data) {
@@ -122,32 +144,63 @@ public class WarpManager extends Manager {
     }
 
     void setupMatrices() {
-        // TODO(brandyn): Verify conversion, perspective components are scaled
+        double hSmallToGlass1280x720[] = {4.068402956851528, 0.02581555954274611, -1839.9618670575708, 0.07867908839387755, 3.7789295020616938, 0.6031318288709527, 0.00022875171829161314, 0.0002162888504563211, 0.9999999999999999};
+        setupMatrices(hSmallToGlass1280x720);
+    }
+
+    void setupMatrices(double hSmallToGlass1280x720[]) {
+
         // NOTE(brandyn): Tried 256x144, seems to be wrong crop, 320x180 doesn't exist as a preview image
-        double hSmallToBig1280x720[] = {1.99853342e+00, -8.39095836e-03, -2.69490153e+01, -7.20812551e-03, 1.98930643e+00, 4.32612839e+02, -9.35128058e-06, -1.43562513e-05, 1.00000000e+00};
-        double hSmallToBig640x360[] = {3.99706685e+00, -1.67819167e-02, -2.69490153e+01, -1.44162510e-02, 3.97861285e+00, 4.32612839e+02, -1.87025612e-05, -2.87125025e-05, 1.00000000e+00};
-        double hBigToGlass[] = {1.49968460e+00, -9.18421959e-02, -1.26498024e+03, -1.28142821e-02, 1.44983279e+00, -5.69960334e+02, -3.04188513e-05, -1.34763662e-04, 1.00000000e+00}; // XE-B Sky
-        double hSmallToGlass1280x720NEW[] = {4.068402956851528, 0.02581555954274611, -1839.9618670575708, 0.07867908839387755, 3.7789295020616938, 0.6031318288709527, 0.00022875171829161314, 0.0002162888504563211, 0.9999999999999999};
+        //double hSmallToBig1280x720[] = {1.99853342e+00, -8.39095836e-03, -2.69490153e+01, -7.20812551e-03, 1.98930643e+00, 4.32612839e+02, -9.35128058e-06, -1.43562513e-05, 1.00000000e+00};
+        //double hSmallToBig640x360[] = {3.99706685e+00, -1.67819167e-02, -2.69490153e+01, -1.44162510e-02, 3.97861285e+00, 4.32612839e+02, -1.87025612e-05, -2.87125025e-05, 1.00000000e+00};
+        //double hBigToGlass[] = {1.49968460e+00, -9.18421959e-02, -1.26498024e+03, -1.28142821e-02, 1.44983279e+00, -5.69960334e+02, -3.04188513e-05, -1.34763662e-04, 1.00000000e+00}; // XE-B Sky
+                                            //﻿[3.213396134909824, 0.23575402234991535, -1448.727351309495, 0.020696946973589182, 3.3321732396583297, 12.008678935898468, -0.0001695980726513356, 0.0009244035979599825, 1.0
 
         hGlassToSmall1280x720 = new double[9];
         hGlassToSmall640x360 = new double[9];
-        hSmallToGlass1280x720 = new double[9];
-        hSmallToGlass640x360 = new double[9];
+        hGlassToSmall256x144 = new double[9];
 
-        hSmallToGlassMat1280x720 = setupMatrix(hSmallToBig1280x720, hBigToGlass, hSmallToGlass1280x720, hGlassToSmall1280x720);
-        hSmallToGlassMat1280x720 = HMatFromArray(hSmallToGlass1280x720NEW);
-        hSmallToGlassMat640x360 = setupMatrix(hSmallToBig640x360, hBigToGlass, hSmallToGlass640x360, hGlassToSmall640x360);
+        this.hSmallToGlass1280x720 = hSmallToGlass1280x720;
+        hSmallToGlass640x360 = new double[9];
+        hSmallToGlass256x144 = new double[9];
+
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) {
+                if (j < 2)
+                    hSmallToGlass640x360[i * 3 + j] = hSmallToGlass1280x720[i * 3 + j] * 2;
+                else
+                    hSmallToGlass640x360[i * 3 + j] = hSmallToGlass1280x720[i * 3 + j];
+            }
+        hSmallToGlassMat1280x720 = setupMatrix(hSmallToGlass1280x720, hGlassToSmall1280x720);
+        hSmallToGlassMat640x360 = setupMatrix(hSmallToGlass640x360, hGlassToSmall640x360);
+
+        //hSmallToGlassMat1280x720 = HMatFromArray(hSmallToGlass1280x720NEW);
+        //hSmallToGlassMat640x360 = setupMatrix(hSmallToBig640x360, hBigToGlass, hSmallToGlass640x360, hGlassToSmall640x360);
         frameWarp = new Mat(360, 640, CvType.CV_8UC3);
         isSetup = true;
     }
 
-    Mat setupMatrix(double hSmallToBig[], double hBigToGlass[], double hSmallToGlass[], double hGlassToSmall[]) {
-        HMult(hBigToGlass, hSmallToBig, hSmallToGlass);
+    protected void setupCallback(CallbackRegistration e) {
+        super.setupCallback(e);
+        if (e.getEvent().equals(GLASS2PREVIEWH)) {
+            synchronized (this) {
+                if (!isSetup)
+                    setupMatrices();
+                JSONObject hs = new JSONObject();
+                hs.put("h", StringifyJSONDoubleArray(hGlassToSmall1280x720));
+                hs.put("hinv", StringifyJSONDoubleArray(hSmallToGlass1280x720));
+                makeCall(GLASS2PREVIEWH, "'" + hs.toJSONString() + "'");
+            }
+        }
+    }
+
+    Mat setupMatrix(double hSmallToGlass[], double hGlassToSmall[]) {
         Mat hSmallToGlassMat = HMatFromArray(hSmallToGlass);
         Mat hGlassToSmallMat = hSmallToGlassMat.inv();
+        double denominator = hGlassToSmallMat.get(2, 2)[0];
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
-                hGlassToSmall[i * 3 + j] = hGlassToSmallMat.get(i, j)[0];
+                hGlassToSmall[i * 3 + j] = hGlassToSmallMat.get(i, j)[0] / denominator;
         return hSmallToGlassMat;
     }
 
@@ -165,6 +218,19 @@ public class WarpManager extends Manager {
                 useSample = false;
                 captureSample = true;
             }
+        }
+    }
+
+    public void onEvent(WarpSetAnnotationEvent event) {
+        synchronized (this) {
+            sampleBGR = ImageBGRFromString(event.getImage());
+            useSample = true;
+        }
+    }
+
+    public void onEvent(WarpSetupHomographyEvent event) {
+        synchronized (this) {
+            setupMatrices(ParseJSONDoubleArray((JSONArray)(JSONValue.parse(event.getHomography()))));
         }
     }
 
@@ -190,6 +256,8 @@ public class WarpManager extends Manager {
             return hSmallToGlass1280x720;
         else if (width == 640 && height == 360)
             return hSmallToGlass640x360;
+        //else if (width == 256 && height == 144)
+        //    return hSmallToGlass256x144;
         return null;
     }
 
@@ -198,6 +266,8 @@ public class WarpManager extends Manager {
             return hGlassToSmall1280x720;
         else if (width == 640 && height == 360)
             return hGlassToSmall640x360;
+        //else if (width == 256 && height == 144)
+        //    return hGlassToSmall256x144;
         return null;
     }
 
@@ -206,6 +276,8 @@ public class WarpManager extends Manager {
             return hSmallToGlassMat1280x720;
         else if (width == 640 && height == 360)
             return hSmallToGlassMat640x360;
+        //else if (width == 256 && height == 144)
+        //    return hSmallToGlassMat256x144;
         return null;
     }
 

@@ -787,17 +787,28 @@ function WearScript() {
     this.displayWebView = function () {
         WSRAW.displayWebView();
     }
-    this.displayWarpView = function () {
-        WSRAW.displayWarpView();
+    this.displayWarpView = function (homography) {
+        if (homography)
+            WSRAW.displayWarpView(JSON.stringify(homography));
+        else
+            WSRAW.displayWarpView();
     }
     this.warpDraw = function (x, y, radius, r, g, b) {
         WSRAW.warpDraw(x, y, radius, r, g, b);
     }
+    this.warpGlassToPreviewH = function (callback) {
+        callback = this._funcfix(callback);
+        WSRAW.warpGlassToPreviewH(this._funcwrap(function (x) {callback(JSON.parse(x))}));
+    }
+    this.warpSetOverlay = function (data) {
+        WSRAW.warpSetOverlay(data);
+    }
+
     this.warpPreviewSampleGlass = function (callback) {
         if (!callback)
             callback = '';
         else
-            callback = this._funcfix(callback);
+            callback = this._funcwrap(this._funcfix(callback));
         WSRAW.warpPreviewSampleGlass(callback);
     }
     this.displayCardTree = function () {

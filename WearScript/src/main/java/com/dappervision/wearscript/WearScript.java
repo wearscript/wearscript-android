@@ -25,6 +25,8 @@ import com.dappervision.wearscript.events.SoundEvent;
 import com.dappervision.wearscript.events.SpeechRecognizeEvent;
 import com.dappervision.wearscript.events.WarpDrawEvent;
 import com.dappervision.wearscript.events.WarpModeEvent;
+import com.dappervision.wearscript.events.WarpSetAnnotationEvent;
+import com.dappervision.wearscript.events.WarpSetupHomographyEvent;
 import com.dappervision.wearscript.events.WifiEvent;
 import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
@@ -158,6 +160,14 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void displayWarpView(String homography) {
+        Log.i(TAG, "displayWarpView");
+        Utils.eventBusPost(new WarpSetupHomographyEvent(homography));
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.WARP));
+    }
+
+
+    @JavascriptInterface
     public void warpPreviewSamplePlane(String callback) {
         Log.i(TAG, "warpPreviewsample");
         Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.SAMPLE));
@@ -169,6 +179,17 @@ public class WearScript {
         Log.i(TAG, "warpPreviewsample");
         Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.SAMPLE));
         Utils.eventBusPost(new WarpModeEvent(WarpManager.Mode.SAMPLEWARPGLASS));
+    }
+
+    @JavascriptInterface
+    public void warpGlassToPreviewH(String callback) {
+        Log.i(TAG, "warpPreviewsample");
+        Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.GLASS2PREVIEWH));
+    }
+
+    @JavascriptInterface
+    public void warpSetOverlay(String image) {
+        Utils.eventBusPost(new WarpSetAnnotationEvent(Base64.decode(image, Base64.NO_WRAP)));
     }
 
     @JavascriptInterface
