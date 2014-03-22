@@ -720,6 +720,9 @@ function WearScript() {
               return this;
          }
     }
+    this.createMedia = function (url, looping) {
+        WSRAW.mediaLoad(url, looping);
+    }
     this.scriptVersion = function (num) {
         WSRAW.scriptVersion(num);
     }

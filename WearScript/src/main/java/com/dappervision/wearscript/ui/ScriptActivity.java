@@ -18,6 +18,7 @@ import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.ActivityResultEvent;
+import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.events.StartActivityEvent;
 import com.dappervision.wearscript.managers.CameraManager;
@@ -162,6 +163,14 @@ public class ScriptActivity extends Activity {
 
     public void onEvent(StartActivityEvent event) {
         startActivityForResult(event.getIntent(), event.getRequestCode());
+    }
+
+    public void onEventMainThread(MediaEvent e){
+        Intent intent = new Intent(this, WSActivity.class);
+        intent.putExtra(WSActivity.MODE_KEY, WSActivity.MODE_MEDIA);
+        intent.putExtra(MediaPlayerFragment.ARG_URL, e.getUri());
+        intent.putExtra(MediaPlayerFragment.ARG_LOOP, e.isLooping());
+        startActivity(intent);
     }
 
     @Override

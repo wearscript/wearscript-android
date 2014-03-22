@@ -48,6 +48,8 @@
         android:allowBackup="true"
         android:icon="@drawable/launcher"
         android:label="@string/app_name">
+        <activity android:name=".ui.WSActivity"
+            ></activity>
         <activity
             android:name=".ui.ScriptActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
