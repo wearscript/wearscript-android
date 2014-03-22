@@ -13,6 +13,7 @@ import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LiveCardEvent;
+import com.dappervision.wearscript.events.PebbleMessageEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -340,8 +341,27 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void pebbleSetTitle(String title) {
+    public void pebbleSetTitle(String title, boolean clear) {
         Log.i(TAG, "pebbleSetTitle: " + title);
+        Utils.eventBusPost(new PebbleMessageEvent("setTitle", title, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetSubTitle(String subTitle, boolean clear) {
+        Log.i(TAG, "pebbleSetSubTitle: " + subTitle);
+        Utils.eventBusPost(new PebbleMessageEvent("setSubtitle", subTitle, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetBody(String body, boolean clear) {
+        Log.i(TAG, "pebbleSetSubTitle: " + body);
+        Utils.eventBusPost(new PebbleMessageEvent("setBody", body, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleVibe(int type) {
+        Log.i(TAG, "pebbleVibe: " + type);
+        Utils.eventBusPost(new PebbleMessageEvent("vibe", type));
     }
 
     @JavascriptInterface
