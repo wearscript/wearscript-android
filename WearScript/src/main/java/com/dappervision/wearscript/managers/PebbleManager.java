@@ -7,7 +7,10 @@ import android.os.Message;
 import android.util.Log;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.WearScript;
 import com.dappervision.wearscript.dataproviders.PebbleEventReceiver;
+import com.dappervision.wearscript.events.PebbleMessageEvent;
+import com.dappervision.wearscript.events.SensorJSEvent;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
 
@@ -17,9 +20,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class PebbleManager extends Manager{
     private static final String TAG = "PebbleManager";
-    private static final String CLICK = "onPebbleClick";
-
     private final static UUID PEBBLE_APP_UUID = UUID.fromString("88c99af8-9512-4e23-b79e-ba437c788446");
+
     private PebbleEventReceiver dataReceiver;
     private PebbleKit.PebbleAckReceiver ackReceiver;
     private PebbleKit.PebbleNackReceiver nackReceiver;
@@ -62,13 +64,11 @@ public class PebbleManager extends Manager{
         }
     }
 
-
     public PebbleManager(Context context, BackgroundService bs) {
         super(bs);
         pebbleMessageManager = new PebbleMessageManager(context);
         reset();
     }
-
 
     /*
      * Methods to communicate with pebble
@@ -151,6 +151,26 @@ public class PebbleManager extends Manager{
     public void shutdown() {
         super.shutdown();
         teardown();
+    }
+
+    public void onEvent(PebbleMessageEvent event) {
+        String type = event.getType();
+        Log.i("manager on event", type);
+        if(type.equals("setTitle"))
+            pebbleSetTitle(event.getText(), event.getClear());
+        if(type.equals("setSubtitle"))
+            pebbleSetSubTitle(event.getText(), event.getClear());
+        if(type.equals("setBody"))
+            pebbleSetBody(event.getText(), event.getClear());
+        if(type.equals("vibe")) {
+            pebbleVibe(event.getVibeType());
+        }
+    }
+
+    public void onEvent(SensorJSEvent event) {
+        int type = event.getType();
+        if(type == WearScript.SENSOR.PEBBLE_ACCELEROMETER.id())
+            pebbleAccelSensorOn((int)event.getSampleTime());
     }
 
     private void teardown() {
