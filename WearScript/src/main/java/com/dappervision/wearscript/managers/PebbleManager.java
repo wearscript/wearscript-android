@@ -70,6 +70,19 @@ public class PebbleManager extends Manager{
         reset();
     }
 
+    @Override
+    public void reset() {
+        super.reset();
+        teardown();
+        setup();
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        teardown();
+    }
+
     /*
      * Methods to communicate with pebble
      */
@@ -84,6 +97,7 @@ public class PebbleManager extends Manager{
     }
 
     public void onPebbleAccelTap(String axis, String direction) {
+
     }
 
     public void pebbleSetTitle(String title, boolean clear) {
@@ -133,24 +147,10 @@ public class PebbleManager extends Manager{
     public void pebbleconfigGesture(boolean up, boolean down, boolean back, boolean select) {
         PebbleDictionary data = new PebbleDictionary();
         // set up all buttons
-        // need to figure out this enum
         data.addInt32(1, up ? 1 : 0);
         data.addInt32(2, select ? 1 : 0);
         data.addInt32(3, down ? 1 : 0);
         data.addInt32(4, back ? 1 : 0);
-    }
-
-    @Override
-    public void reset() {
-        super.reset();
-        teardown();
-        setup();
-    }
-
-    @Override
-    public void shutdown() {
-        super.shutdown();
-        teardown();
     }
 
     public void onEvent(PebbleMessageEvent event) {
