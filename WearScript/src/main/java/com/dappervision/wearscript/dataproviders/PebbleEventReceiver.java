@@ -1,9 +1,12 @@
 package com.dappervision.wearscript.dataproviders;
 
 import android.content.Context;
+import android.hardware.SensorEvent;
 import android.os.Handler;
 import android.util.Log;
 
+import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.events.PebbleAccelerometerDataEvent;
 import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.PebbleManager.Cmd;
 import com.getpebble.android.kit.PebbleKit;
@@ -51,10 +54,10 @@ public class PebbleEventReceiver extends PebbleKit.PebbleDataReceiver{
                         Log.v(TAG + " Accel Tap", " " + axis + " " + direction);
                         break;
                     case Cmd.Cmd_accelData:
-                        //int transactionId = data.getInteger(1).intValue();
                         int num_samples = data.getUnsignedInteger(2).intValue();
                         byte[] accelData = data.getBytes(3);
                         Log.i(TAG + " Accel Data", " " + num_samples + " x: " + accelData[0] + " y: " + accelData[1] + " z: " + accelData[2]);
+                        Utils.eventBusPost(new PebbleAccelerometerDataEvent(accelData));
                     default:
                         break;
                 }
