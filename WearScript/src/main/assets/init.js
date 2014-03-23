@@ -906,10 +906,10 @@ function WearScript() {
     }
     this.bluetoothRead = function (address, callback) {
         callback = this._funcfix(callback);
-        WSRAW.bluetoothRead(address, this._funcwrap(callback));
+        WSRAW.bluetoothRead(address, this._funcwrap(function (x) {callback(atob(x))}));
     }
     this.bluetoothWrite = function (address, data) {
-        WSRAW.bluetoothWrite(address, data);
+        WSRAW.bluetoothWrite(address, btoa(data));
     }
 }
 WS = new WearScript();

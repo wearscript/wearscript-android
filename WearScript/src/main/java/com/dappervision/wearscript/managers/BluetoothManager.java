@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.AsyncTask;
 import android.os.ParcelUuid;
+import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
@@ -41,9 +42,18 @@ public class BluetoothManager extends Manager {
         protected Void doInBackground(String... addresses) {
             String address = addresses[0];
             String read = READ + address;
+            byte data[] = new byte[1];
             while (true) {
+                if (!mSockets.containsKey(address)) {
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                        // TODO(brandyn): Handle
+                    }
+                }
                 try {
-                    makeCall(read, "'" + (char) mSockets.get(address).getInputStream().read() + "'");
+                    data[0] = (byte)mSockets.get(address).getInputStream().read();
+                    makeCall(read, "'" + Base64.encodeToString(data, Base64.NO_WRAP) + "'");
                 } catch (IOException e) {
                     Log.w(TAG, "Could not read");
                     closeDevice(address);
@@ -155,7 +165,7 @@ public class BluetoothManager extends Manager {
         }
         Log.d(TAG, "Size:" + mSockets.size());
         try {
-            mSockets.get(e.getAddress()).getOutputStream().write(e.getBuffer());
+            mSockets.get(e.getAddress()).getOutputStream().write(Base64.decode(e.getBuffer(), Base64.NO_WRAP));
         } catch (IOException e1) {
             closeDevice(e.getAddress());
             Log.e(TAG, "Cannot write");
