@@ -1,8 +1,5 @@
 package com.dappervision.wearscript.events;
 
-/**
- * Created by conner on 3/22/14.
- */
 public class PebbleAccelerometerDataEvent {
     private long timestamp;
     private byte[] accel;
