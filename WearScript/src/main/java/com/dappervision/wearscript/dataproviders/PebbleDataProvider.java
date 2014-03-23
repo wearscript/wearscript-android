@@ -7,8 +7,8 @@ import com.dappervision.wearscript.managers.DataManager;
 public class PebbleDataProvider extends DataProvider {
     private static final String TAG = "PebbleDataProvider";
 
-    public PebbleDataProvider(DataManager dataManager, long samplePeriod){
-        super(dataManager, samplePeriod, WearScript.SENSOR.PEBBLE_ACCELEROMETER.id(), "Pebble");
+    public PebbleDataProvider(DataManager dataManager, long samplePeriod, int type){
+        super(dataManager, samplePeriod, type, "Pebble");
     }
 
     @Override
@@ -18,6 +18,9 @@ public class PebbleDataProvider extends DataProvider {
 
     public void onEvent(PebbleAccelerometerDataEvent e) {
         if(getType() == WearScript.SENSOR.PEBBLE_ACCELEROMETER.id()) {
+            long timestamp = System.nanoTime();
+            if(!useSample(timestamp))
+                return;
             DataPoint dataPoint = new DataPoint(this, System.currentTimeMillis() / 1000., e.getTimestamp());
             byte[] accel = e.getAccel();
             dataPoint.addValue(Double.valueOf(accel[0]));
