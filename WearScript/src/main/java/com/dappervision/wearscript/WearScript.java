@@ -500,6 +500,7 @@ public class WearScript {
     }
 
     public static enum SENSOR {
+        PEBBLE_ACCELEROMETER("pebbleAccelerometer", -7),
         BATTERY("battery", -3),
         PUPIL("pupil", -2),
         GPS("gps", -1),
@@ -510,8 +511,7 @@ public class WearScript {
         LIGHT("light", 5),
         GRAVITY("gravity", 9),
         LINEAR_ACCELERATION("linearAcceleration", 10),
-        ROTATION_VECTOR("rotationVector", 11),
-        PEBBLE_ACCELEROMETER("pebbleAccelerometer", 12);
+        ROTATION_VECTOR("rotationVector", 11);
 
         private final int id;
         private final String name;
