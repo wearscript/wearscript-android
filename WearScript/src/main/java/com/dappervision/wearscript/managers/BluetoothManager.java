@@ -92,7 +92,9 @@ public class BluetoothManager extends Manager {
                     devices.add(deviceJS);
                 }
             }
-            makeCall(LIST, devices.toJSONString());
+            String devicesJS = devices.toJSONString();
+            Log.d(TAG, devicesJS);
+            makeCall(LIST, "'" + devicesJS + "'");
             unregisterCallback(LIST);
         } else if (e.getEvent().startsWith(READ)) {
             String address = e.getEvent().substring(READ.length());

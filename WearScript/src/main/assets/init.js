@@ -902,7 +902,7 @@ function WearScript() {
     }
     this.bluetoothList = function (callback) {
         callback = this._funcfix(callback);
-        WSRAW.bluetoothList(his._funcwrap(function (x) {callback(JSON.parse(x))}));
+        WSRAW.bluetoothList(this._funcwrap(function (x) {callback(JSON.parse(x))}));
     }
     this.bluetoothRead = function (address, callback) {
         callback = this._funcfix(callback);
