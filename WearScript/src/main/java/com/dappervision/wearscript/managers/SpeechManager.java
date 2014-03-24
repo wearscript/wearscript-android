@@ -3,6 +3,7 @@ package com.dappervision.wearscript.managers;
 import android.app.Activity;
 import android.content.Intent;
 import android.speech.RecognizerIntent;
+import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
@@ -31,7 +32,7 @@ public class SpeechManager extends Manager {
                         RecognizerIntent.EXTRA_RESULTS);
                 String spokenText = results.get(0);
                 Log.d(TAG, "Spoken Text: " + spokenText);
-                // TODO(brandyn): Check speech result for JS injection that can escape out of the quotes
+                spokenText = Base64.encodeToString(spokenText.getBytes(), Base64.NO_WRAP);
                 makeCall(SPEECH, String.format("\"%s\"", spokenText));
             } else if (resultCode == Activity.RESULT_CANCELED) {
 

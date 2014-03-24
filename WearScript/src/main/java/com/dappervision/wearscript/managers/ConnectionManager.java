@@ -228,8 +228,6 @@ public class ConnectionManager extends Manager {
                     if (version != versionExpected) {
                         Utils.eventBusPost(new SayEvent("Version mismatch!  Got " + version + " and expected " + versionExpected + ".  Visit wear script .com for information.", true));
                     }
-                } else if (channel.equals("raven")) {
-                    Log.setDsn(data.get(1).asRawValue().getString());
                 }
             }
             if (channel.equals(GIST_LIST_SYNC_CHAN)) {

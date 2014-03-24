@@ -27,6 +27,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <uses-feature
         android:glEsVersion="0x00020000"
@@ -47,6 +48,8 @@
         android:allowBackup="true"
         android:icon="@drawable/launcher"
         android:label="@string/app_name">
+        <activity android:name=".ui.WSActivity"
+            ></activity>
         <activity
             android:name=".ui.ScriptActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"

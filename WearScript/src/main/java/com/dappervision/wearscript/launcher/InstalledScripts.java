@@ -29,6 +29,7 @@ public class InstalledScripts {
         if (flArray == null)
             return new ArrayList<String>();
         List<String> gists = Arrays.asList(flArray);
+        Collections.sort(gists);
         Collections.reverse(gists);
         return gists;
     }

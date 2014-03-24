@@ -32,6 +32,7 @@ public class ManagerManager {
         add(new BarcodeManager(bs));
         add(new WifiManager(bs));
         add(new AudioManager(bs));
+        add(new BluetoothManager(bs));
         add(new SpeechManager(bs));
         add(new ConnectionManager(bs));
         add(new WarpManager(bs));

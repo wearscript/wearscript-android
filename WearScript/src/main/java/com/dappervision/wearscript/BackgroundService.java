@@ -25,6 +25,7 @@ import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LambdaEvent;
+import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.ScriptEvent;
@@ -35,14 +36,17 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.CardTreeManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.DataManager;
+import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
+import com.dappervision.wearscript.ui.MediaPlayerFragment;
 import com.dappervision.wearscript.ui.ScriptActivity;
 import com.getpebble.android.kit.PebbleKit;
+import com.dappervision.wearscript.ui.WSActivity;
 import com.google.android.glass.widget.CardScrollView;
 
 import org.msgpack.MessagePack;
@@ -258,6 +262,8 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             // NOTE(brandyn): Put in a better spot
             if (webview != null) {
                 webview.stopLoading();
+                // Stops all javascript
+                webview.loadUrl("about:blank");
                 webview.onDestroy();
                 webview = null;
             }
@@ -273,6 +279,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 if (activity != null) {
                     ScriptActivity a = activity;
                     ManagerManager.get().add(new GestureManager(a, this));
+                    ManagerManager.get().add(new EyeManager(a, this));
                 }
             }
             if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {
@@ -341,8 +348,13 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     public void onCreate() {
         Log.i(TAG, "Lifecycle: Service onCreate");
         Utils.getEventBus().register(this);
-        initScript = "javascript:" + convertStreamToString(getResources().openRawResource(R.raw.init));
-
+        //getResources().openRawResource(R.raw.init)
+        try {
+            initScript = "javascript:" + convertStreamToString(getAssets().open("init.js.min"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            // TODO(brandyn): Handle
+        }
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
