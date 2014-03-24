@@ -27,6 +27,8 @@ public class PebbleManager extends Manager{
     private PebbleKit.PebbleNackReceiver nackReceiver;
     private final PebbleMessageManager pebbleMessageManager;
 
+    public static final String ONPEBBLE = "onPebble";
+
     public static class Cmd {
         public static final int Cmd_setText = 0;
         public static final int Cmd_singleClick = 1;
@@ -86,18 +88,17 @@ public class PebbleManager extends Manager{
     /*
      * Methods to communicate with pebble
      */
+
     public void onPebbleSingleClick(String button) {
-        registerCallback("onPebbleSingleClick", "onPebbleSingleClick");
         makeCall("onPebbleSingleClick", String.format("'%s'", button));
     }
 
     public void onPebbleLongClick(String button) {
-        registerCallback("onPebbleLongClick", "onPebbleLongClick");
         makeCall("onPebbleLongClick", String.format("'%s'", button));
     }
 
-    public void onPebbleAccelTap(String axis, String direction) {
-
+    public void onPebbleAccelTap(int axis, int direction) {
+        makeCall("onPebbleAccelTap", String.format("'%d, %d'", axis, direction));
     }
 
     public void pebbleSetTitle(String title, boolean clear) {

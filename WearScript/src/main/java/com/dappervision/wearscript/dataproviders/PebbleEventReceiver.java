@@ -52,6 +52,7 @@ public class PebbleEventReceiver extends PebbleKit.PebbleDataReceiver{
                         int axis = data.getUnsignedInteger(1).intValue();
                         int direction = data.getInteger(2).intValue();
                         Log.v(TAG + " Accel Tap", " " + axis + " " + direction);
+                        mPebbleManager.onPebbleAccelTap(axis, direction);
                         break;
                     case Cmd.Cmd_accelData:
                         int num_samples = data.getUnsignedInteger(2).intValue();

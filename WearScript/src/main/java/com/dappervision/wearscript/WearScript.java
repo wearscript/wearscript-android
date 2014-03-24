@@ -57,6 +57,7 @@ public class WearScript {
     TreeMap<String, Integer> sensors;
     String sensorsJS;
     List<String> touchGesturesList;
+    List<String> pebbleGesturesList;
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
@@ -68,6 +69,8 @@ public class WearScript {
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
         String[] touchGestures = {"onGesture", "onFingerCountChanged", "onScroll", "onTwoFingerScroll"};
         touchGesturesList = Arrays.asList(touchGestures);
+        String[] pebbleGestures = {"onPebbleSingleClick", "onPebbleLongClick", "onPebbleAccelTap"};
+        pebbleGesturesList = Arrays.asList(pebbleGestures);
     }
 
     private String classToChar(Class c) {
@@ -378,20 +381,13 @@ public class WearScript {
                 route = GestureManager.class;
                 break;
             }
+        for (String pebbleGesture : pebbleGesturesList) {
+            if (event.startsWith(pebbleGesture)) {
+                route = PebbleManager.class;
+                break;
+            }
+        }
         Utils.eventBusPost(new CallbackRegistration(route, callback).setEvent(event));
-    }
-
-    @JavascriptInterface
-    public void onPebbleSingleClick(String click, String callback) {
-        Log.i(TAG, "onPebbleClick: " + click + " " + callback);
-        Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(click));
-    }
-
-
-    @JavascriptInterface
-    public void onPebbleLongClick(String click, String callback) {
-        Log.i(TAG, "onPebbleClick: " + click + " " + callback);
-        Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(click));
     }
 
     @JavascriptInterface
