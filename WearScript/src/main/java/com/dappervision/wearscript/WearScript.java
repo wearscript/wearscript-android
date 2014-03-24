@@ -396,8 +396,8 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void pebbleSetSubTitle(String subTitle, boolean clear) {
-        Log.i(TAG, "pebbleSetSubTitle: " + subTitle);
+    public void pebbleSetSubtitle(String subTitle, boolean clear) {
+        Log.i(TAG, "pebbleSetSubtitle: " + subTitle);
         Utils.eventBusPost(new PebbleMessageEvent("setSubtitle", subTitle, clear));
     }
 
