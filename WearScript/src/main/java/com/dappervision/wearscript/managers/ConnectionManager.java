@@ -194,7 +194,8 @@ public class ConnectionManager extends Manager {
     class WearScriptConnectionImpl extends WearScriptConnection {
 
         WearScriptConnectionImpl() {
-            super(HardwareDetector.isGlass ? "glass" : "phone", ((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
+            //HardwareDetector.isGlass ? "glass" : "phone"
+            super("glass", ((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
         }
 
         @Override

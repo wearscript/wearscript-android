@@ -52,6 +52,8 @@ public class BluetoothManager extends Manager {
                     }
                 }
                 try {
+
+                    // TODO(brandyn): Bug here if you access with an unpaired address
                     data[0] = (byte)mSockets.get(address).getInputStream().read();
                     makeCall(read, "'" + Base64.encodeToString(data, Base64.NO_WRAP) + "'");
                 } catch (IOException e) {
