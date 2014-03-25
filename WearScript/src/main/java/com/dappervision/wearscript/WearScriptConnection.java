@@ -37,10 +37,10 @@ public abstract class WearScriptConnection {
     private TreeSet<String> scriptChannels;
     private boolean reconnecting;
 
-    public WearScriptConnection(String device) {
+    public WearScriptConnection(String group, String device) {
         shutdown = false;
         reconnecting = false;
-        group = "glass";
+        this.group = group;
         this.device = device;
         groupDevice = channel(group, device);
         scriptChannels = new TreeSet<String>();

@@ -34,6 +34,7 @@ import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
 import com.dappervision.wearscript.managers.BluetoothManager;
 import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.WarpManager;
@@ -425,6 +426,30 @@ public class WearScript {
     @JavascriptInterface
     public void bluetoothWrite(String address, String data) {
         Utils.eventBusPost(new BluetoothWriteEvent(address, data));
+    }
+
+    @JavascriptInterface
+    public String groupDevice() {
+        ConnectionManager cm = (ConnectionManager) bs.getManager(ConnectionManager.class);
+        if (cm == null)
+            return null;
+        return cm.groupDevice();
+    }
+
+    @JavascriptInterface
+    public String group() {
+        ConnectionManager cm = (ConnectionManager) bs.getManager(ConnectionManager.class);
+        if (cm == null)
+            return null;
+        return cm.group();
+    }
+
+    @JavascriptInterface
+    public String device() {
+        ConnectionManager cm = (ConnectionManager) bs.getManager(ConnectionManager.class);
+        if (cm == null)
+            return null;
+        return cm.device();
     }
 
     private void requiresGDK() {

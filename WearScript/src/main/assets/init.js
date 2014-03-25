@@ -900,6 +900,15 @@ function WearScript() {
     this.liveCardDestroy = function () {
         WSRAW.liveCardDestroy();
     }
+    this.device = function () {
+        return WSRAW.device();
+    }
+    this.groupDevice = function () {
+        return WSRAW.groupDevice();
+    }
+    this.group = function () {
+        return WSRAW.group();
+    }
     this.bluetoothList = function (callback) {
         callback = this._funcfix(callback);
         WSRAW.bluetoothList(this._funcwrap(function (x) {callback(JSON.parse(x))}));

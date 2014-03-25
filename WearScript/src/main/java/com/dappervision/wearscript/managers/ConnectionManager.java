@@ -3,6 +3,7 @@ package com.dappervision.wearscript.managers;
 import android.util.Base64;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.HardwareDetector;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.WearScriptConnection;
@@ -44,6 +45,24 @@ public class ConnectionManager extends Manager {
         GIST_LIST_SYNC_CHAN = connection.channel(connection.groupDevice(), "gistListSync");
         GIST_GET_SYNC_CHAN = connection.channel(connection.groupDevice(), "gistGetSync");
         reset();
+    }
+
+    public String groupDevice() {
+        if (connection == null)
+            return null;
+        return connection.groupDevice();
+    }
+
+    public String group() {
+        if (connection == null)
+            return null;
+        return connection.group();
+    }
+
+    public String device() {
+        if (connection == null)
+            return null;
+        return connection.device();
     }
 
     public void reset() {
@@ -175,7 +194,7 @@ public class ConnectionManager extends Manager {
     class WearScriptConnectionImpl extends WearScriptConnection {
 
         WearScriptConnectionImpl() {
-            super(((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
+            super(HardwareDetector.isGlass ? "glass" : "phone", ((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
         }
 
         @Override
@@ -207,8 +226,10 @@ public class ConnectionManager extends Manager {
                     for (int i = 0; i < files.length / 2; i++) {
                         String name = files[i * 2].asRawValue().getString();
                         String pathCur = Utils.SaveData(files[i * 2 + 1].asRawValue().getByteArray(), "scripting/", false, name);
-                        if (name.equals("glass.html"))
+                        if (name.equals("glass.html") && (path == null || HardwareDetector.isGlass))
                             path = pathCur;
+                        else if (name.equals("phone.html") && !HardwareDetector.isGlass)
+                            name = pathCur;
                     }
                     if (path != null) {
                         Utils.eventBusPost(new ScriptEvent(path));
