@@ -1,5 +1,7 @@
 package com.dappervision.wearscript.handlers;
 
+import com.dappervision.wearscript.HardwareDetector;
+
 import java.util.ArrayList;
 
 public class HandlerHandler {
@@ -33,8 +35,9 @@ public class HandlerHandler {
     }
 
     public void newHandlers() {
-        
-        // handlers.add(new ControlHandler());
+        if(!HardwareDetector.hasGDK){
+            handlers.add(new ControlHandler());
+        }
         handlers.add(new AdbHandler());
     }
 }

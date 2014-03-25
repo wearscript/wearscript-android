@@ -24,6 +24,7 @@ public class ControlHandler extends Handler {
     @Override
     public void shutdown() {
         super.shutdown();
-        GlassDevice.getInstance().close();
+        if(GlassDevice.hasInstance())
+            GlassDevice.getInstance().close();
     }
 }

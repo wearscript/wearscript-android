@@ -114,6 +114,10 @@ public final class GlassDevice {
         return null;
     }
 
+    public static boolean hasInstance() {
+        return mInstance != null;
+    }
+
     public interface GlassConnectionListener {
 
         public abstract void onReceivedEnvelope(Proto.Envelope envelope);
