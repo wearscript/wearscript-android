@@ -33,6 +33,8 @@ public class HandlerHandler {
     }
 
     public void newHandlers() {
-        handlers.add(new ControlHandler());
+        
+        // handlers.add(new ControlHandler());
+        handlers.add(new AdbHandler());
     }
 }

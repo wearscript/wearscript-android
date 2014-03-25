@@ -8,7 +8,7 @@ public class AdbHandler extends Handler {
     private boolean isStarted = false;
 
     public AdbHandler() {
-        AdbTcpInputHandler adbTcpInputHandler = new AdbTcpInputHandler();
+        adbTcpInputHandler = new AdbTcpInputHandler();
     }
 
     public void onEvent(ControlEvent event) {
@@ -16,13 +16,13 @@ public class AdbHandler extends Handler {
             if(!isStarted)
                 adbTcpInputHandler.start();
             String command = event.getCommand();
-            if (command.equals("LEFT"))
+            if (command.equals(ControlEvent.SWIPE_LEFT))
                 adbTcpInputHandler.left();
-            if (command.equals("RIGHT"))
+            if (command.equals(ControlEvent.SWIPE_RIGHT))
                 adbTcpInputHandler.right();
-            if (command.equals("BACK"))
+            if (command.equals(ControlEvent.SWIPE_DOWN))
                 adbTcpInputHandler.back();
-            if (command.equals("SELECT"))
+            if (command.equals(ControlEvent.TAP))
                 adbTcpInputHandler.select();
         }
     }
