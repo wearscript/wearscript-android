@@ -4,7 +4,7 @@ import com.dappervision.wearscript.glassbt.GlassDevice;
 import com.dappervision.wearscript.events.ControlEvent;
 
 public class ControlHandler extends Handler {
-    public void onEvent(ControlEvent e) {
+    public void onEventBackgroundThread(ControlEvent e) {
         if(e.isAdb())
             return;
 
