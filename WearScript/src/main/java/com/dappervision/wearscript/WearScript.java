@@ -4,6 +4,7 @@ import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
 import com.dappervision.wearscript.events.ActivityEvent;
+import com.dappervision.wearscript.events.BluetoothWriteEvent;
 import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.CardTreeEvent;
@@ -13,6 +14,9 @@ import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LiveCardEvent;
+import com.dappervision.wearscript.events.PebbleMessageEvent;
+import com.dappervision.wearscript.events.MediaEvent;
+import com.dappervision.wearscript.events.MediaPlayEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -24,10 +28,14 @@ import com.dappervision.wearscript.events.SoundEvent;
 import com.dappervision.wearscript.events.SpeechRecognizeEvent;
 import com.dappervision.wearscript.events.WarpDrawEvent;
 import com.dappervision.wearscript.events.WarpModeEvent;
+import com.dappervision.wearscript.events.WarpSetAnnotationEvent;
+import com.dappervision.wearscript.events.WarpSetupHomographyEvent;
 import com.dappervision.wearscript.events.WifiEvent;
 import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.BluetoothManager;
 import com.dappervision.wearscript.managers.CameraManager;
+import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.PebbleManager;
@@ -38,6 +46,8 @@ import org.json.simple.JSONObject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.Buffer;
+import java.util.Arrays;
+import java.util.List;
 import java.util.TreeMap;
 
 public class WearScript {
@@ -45,6 +55,8 @@ public class WearScript {
     String TAG = "WearScript";
     TreeMap<String, Integer> sensors;
     String sensorsJS;
+    List<String> touchGesturesList;
+    List<String> pebbleGesturesList;
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
@@ -54,9 +66,11 @@ public class WearScript {
             this.sensors.put(s.toString(), s.id());
         }
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
+        String[] touchGestures = {"onGesture", "onFingerCountChanged", "onScroll", "onTwoFingerScroll"};
+        touchGesturesList = Arrays.asList(touchGestures);
+        String[] pebbleGestures = {"onPebbleSingleClick", "onPebbleLongClick", "onPebbleAccelTap"};
+        pebbleGesturesList = Arrays.asList(pebbleGestures);
     }
-
-    ;
 
     private String classToChar(Class c) {
         if (c.equals(float.class) || c.equals(int.class))
@@ -125,6 +139,15 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void mediaLoad(String uri, boolean looping){
+        try {
+            Utils.eventBusPost(new MediaEvent(new URI(uri), looping));
+        } catch (URISyntaxException e) {
+            // TODO(kurtisnelson): Handle
+        }
+    }
+
+    @JavascriptInterface
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
         if (server.equals("{{WSUrl}}"))
@@ -153,6 +176,14 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void displayWarpView(String homography) {
+        Log.i(TAG, "displayWarpView");
+        Utils.eventBusPost(new WarpSetupHomographyEvent(homography));
+        Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.WARP));
+    }
+
+
+    @JavascriptInterface
     public void warpPreviewSamplePlane(String callback) {
         Log.i(TAG, "warpPreviewsample");
         Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.SAMPLE));
@@ -167,6 +198,17 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void warpGlassToPreviewH(String callback) {
+        Log.i(TAG, "warpPreviewsample");
+        Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.GLASS2PREVIEWH));
+    }
+
+    @JavascriptInterface
+    public void warpSetOverlay(String image) {
+        Utils.eventBusPost(new WarpSetAnnotationEvent(Base64.decode(image, Base64.NO_WRAP)));
+    }
+
+    @JavascriptInterface
     public void warpDraw(double x, double y, int radius, int r, int g, int b) {
         Log.i(TAG, "warpdraw");
         Utils.eventBusPost(new WarpDrawEvent(x, y, radius, r, g, b));
@@ -178,16 +220,23 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void cameraPhoto(String callback) {
+    public void cameraPhotoData(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(CameraManager.PHOTO);
         Utils.eventBusPost(cr);
     }
 
     @JavascriptInterface
-    public void cameraPhotoPath(String callback) {
-        // TODO(brandyn): we may only want this one
+    public void cameraPhoto(String callback) {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
+        cr.setEvent(CameraManager.PHOTO_PATH);
+        Utils.eventBusPost(cr);
+    }
+
+    @JavascriptInterface
+    public void cameraPhoto() {
+        // TODO(brandyn): This is a hack, we should have a separate event to take a photo and just register the callback prior to that
+        CallbackRegistration cr = new CallbackRegistration(CameraManager.class, null);
         cr.setEvent(CameraManager.PHOTO_PATH);
         Utils.eventBusPost(cr);
     }
@@ -195,7 +244,7 @@ public class WearScript {
     @JavascriptInterface
     public void cameraVideo() {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, null);
-        cr.setEvent(CameraManager.VIDEO);
+        cr.setEvent(CameraManager.VIDEO_PATH);
         Utils.eventBusPost(cr);
     }
 
@@ -212,9 +261,11 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void cameraCallback(int type, String callback) {
+    public void cameraOn(double imagePeriod, int maxHeight, int maxWidth, boolean background, String callback) {
+        Log.d(TAG, "cameraOn: Callback: " + callback);
+        cameraOn(imagePeriod, maxHeight, maxWidth, background);
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
-        cr.setEvent(type);
+        cr.setEvent(0);
         Utils.eventBusPost(cr);
     }
 
@@ -323,13 +374,43 @@ public class WearScript {
     @JavascriptInterface
     public void gestureCallback(String event, String callback) {
         Log.i(TAG, "gestureCallback: " + event + " " + callback);
-        Utils.eventBusPost(new CallbackRegistration(GestureManager.class, callback).setEvent(event));
+        Class route = EyeManager.class;
+        for (String gesture : touchGesturesList)
+            if (event.startsWith(gesture)) {
+                route = GestureManager.class;
+                break;
+            }
+        for (String pebbleGesture : pebbleGesturesList) {
+            if (event.startsWith(pebbleGesture)) {
+                route = PebbleManager.class;
+                break;
+            }
+        }
+        Utils.eventBusPost(new CallbackRegistration(route, callback).setEvent(event));
     }
 
     @JavascriptInterface
-    public void onPebbleClick(String click, String callback) {
-        Log.i(TAG, "onPebbleClick: " + click + " " + callback);
-        Utils.eventBusPost(new CallbackRegistration(PebbleManager.class, callback).setEvent(click));
+    public void pebbleSetTitle(String title, boolean clear) {
+        Log.i(TAG, "pebbleSetTitle: " + title);
+        Utils.eventBusPost(new PebbleMessageEvent("setTitle", title, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetSubtitle(String subTitle, boolean clear) {
+        Log.i(TAG, "pebbleSetSubtitle: " + subTitle);
+        Utils.eventBusPost(new PebbleMessageEvent("setSubtitle", subTitle, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetBody(String body, boolean clear) {
+        Log.i(TAG, "pebbleSetSubTitle: " + body);
+        Utils.eventBusPost(new PebbleMessageEvent("setBody", body, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleVibe(int type) {
+        Log.i(TAG, "pebbleVibe: " + type);
+        Utils.eventBusPost(new PebbleMessageEvent("vibe", type));
     }
 
     @JavascriptInterface
@@ -366,6 +447,21 @@ public class WearScript {
         Utils.eventBusPost(new CardTreeEvent(treeJS));
     }
 
+    @JavascriptInterface
+    public void bluetoothList(String callback) {
+        Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
+    }
+
+    @JavascriptInterface
+    public void bluetoothRead(String device, String callback) {
+        Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.READ + device));
+    }
+
+    @JavascriptInterface
+    public void bluetoothWrite(String address, String data) {
+        Utils.eventBusPost(new BluetoothWriteEvent(address, data));
+    }
+
     private void requiresGDK() {
         if (HardwareDetector.hasGDK)
             return;
@@ -375,6 +471,7 @@ public class WearScript {
     }
 
     public static enum SENSOR {
+        PEBBLE_ACCELEROMETER("pebbleAccelerometer", -7),
         BATTERY("battery", -3),
         PUPIL("pupil", -2),
         GPS("gps", -1),

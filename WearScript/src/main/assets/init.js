@@ -1,3 +1,4 @@
+// Minify with: http://closure-compiler.appspot.com/home simple mode
 /*!{id:msgpack.js,ver:1.05,license:"MIT",author:"uupaa.js@gmail.com"}*/
 
 // === msgpack ===
@@ -678,39 +679,49 @@ function WearScript() {
     this.cbCount = 0;
     this.Cards = function (cards) {
          this.cards = cards || [];
-         this.add = function (text, info) {
-             var isFunc = function (x) {return typeof x === 'function'};
-             var isObj = function (x) {return typeof x === 'object'};
-             var isUndef = function (x) {return typeof x === 'undefined'};
-             var isStr = function (x) {return typeof x === 'string'};
-             var click, select, children, menu;
-             var card = {card: {type: "card", text: text, info: info}};
-
-             var extras = Array.prototype.slice.call(arguments).slice(2);
-             if (extras.length > 0 && isFunc(extras[0]) || isUndef(extras[0])) { // Selected
-                 if (isFunc(extras[0]))
-                     card.selected = WS._funcwrap(extras[0]);
-                 extras = extras.slice(1);
-             }
-             if (extras.length > 0 && isFunc(extras[0]) || isUndef(extras[0])) { // Click
-                 if (isFunc(extras[0]))
-                     card.click = WS._funcwrap(extras[0]);
-                 extras = extras.slice(1);
-             }
-             if (extras.length > 0 && isObj(extras[0])) { // Children
-                 card.children = extras[0].cards;
-                 extras = extras.slice(1);
-             } else if (extras.length > 0 && extras.length % 2 == 0) { // Menu
-                 card.menu = [];
-                 for (var i = 0; i < extras.length; i += 2) {
-                     if (!isStr(extras[i]) || (!isFunc(extras[i + 1]) && !isUndef(extras[i + 1])))
-                         break;
-                     card.menu.push({'label':  extras[i], 'callback': WS._funcwrap(extras[i + 1])});
-                 }
-             }
-             this.cards.push(card);
-             return this;
+         this.isFunc = function (x) {return typeof x === 'function'};
+         this.isObj = function (x) {return typeof x === 'object'};
+         this.isUndef = function (x) {return typeof x === 'undefined'};
+         this.isStr = function (x) {return typeof x === 'string'};
+         this.addHTML = function () {
+            var card = {card: {type: "html", html: document.getElementById(arguments[0]).innerHTML}};
+            var extras = Array.prototype.slice.call(arguments).slice(1);
+            return this._add(card, extras);
          }
+         this.add = function () {
+             var card = {card: {type: "card", text: arguments[0], info: arguments[1]}};
+             var extras = Array.prototype.slice.call(arguments).slice(2);
+             return this._add(card, extras);
+         }
+         this._add = function (card, extras) {
+              var click, select, children, menu;
+              if (extras.length > 0 && this.isFunc(extras[0]) || this.isUndef(extras[0])) { // Selected
+                  if (this.isFunc(extras[0]))
+                      card.selected = WS._funcwrap(extras[0]);
+                  extras = extras.slice(1);
+              }
+              if (extras.length > 0 && this.isFunc(extras[0]) || this.isUndef(extras[0])) { // Click
+                  if (this.isFunc(extras[0]))
+                      card.click = WS._funcwrap(extras[0]);
+                  extras = extras.slice(1);
+              }
+              if (extras.length > 0 && this.isObj(extras[0])) { // Children
+                  card.children = extras[0].cards;
+                  extras = extras.slice(1);
+              } else if (extras.length > 0 && extras.length % 2 == 0) { // Menu
+                  card.menu = [];
+                  for (var i = 0; i < extras.length; i += 2) {
+                      if (!this.isStr(extras[i]) || (!this.isFunc(extras[i + 1]) && !this.isUndef(extras[i + 1])))
+                          break;
+                      card.menu.push({'label':  extras[i], 'callback': WS._funcwrap(extras[i + 1])});
+                  }
+              }
+              this.cards.push(card);
+              return this;
+         }
+    }
+    this.createMedia = function (url, looping) {
+        WSRAW.mediaLoad(url, looping);
     }
     this.scriptVersion = function (num) {
         WSRAW.scriptVersion(num);
@@ -735,11 +746,19 @@ function WearScript() {
         }
         return func;
     }
+    this._funcfix = function (func) {
+        if (typeof func === 'string') {
+            this.log('Warning: deprecated use of string as a function: ' + func);
+            return window[func];
+        }
+        return func;
+    }
     this.publish = function() {
         var data = msgpack.pack(Array.prototype.slice.call(arguments));
         WSRAW.publish(arguments[0], btoa(data.map(function (x) {return String.fromCharCode(x)}).join('')));
     }
     this.subscribe = function(channel, callback) {
+        callback = this._funcfix(callback);
         WSRAW.subscribe(channel, this._funcwrap(function (data) {return callback.apply(null, msgpack.unpack(atob(data)))}));
     }
     this.sensorOn = function(type, period, callback) {
@@ -762,7 +781,8 @@ function WearScript() {
         WSRAW.say(msg);
     }
     this.qr = function (callback) {
-        WSRAW.qr(this._funcwrap(callback));
+        callback = this._funcfix(callback);
+        WSRAW.qr(this._funcwrap(function (x, y) {callback(atob(x), y)}));
     }
     this.log = function (msg) {
         WSRAW.log(msg);
@@ -770,15 +790,28 @@ function WearScript() {
     this.displayWebView = function () {
         WSRAW.displayWebView();
     }
-    this.displayWarpView = function () {
-        WSRAW.displayWarpView();
+    this.displayWarpView = function (homography) {
+        if (homography)
+            WSRAW.displayWarpView(JSON.stringify(homography));
+        else
+            WSRAW.displayWarpView();
     }
     this.warpDraw = function (x, y, radius, r, g, b) {
         WSRAW.warpDraw(x, y, radius, r, g, b);
     }
+    this.warpGlassToPreviewH = function (callback) {
+        callback = this._funcfix(callback);
+        WSRAW.warpGlassToPreviewH(this._funcwrap(function (x) {callback(JSON.parse(x))}));
+    }
+    this.warpSetOverlay = function (data) {
+        WSRAW.warpSetOverlay(data);
+    }
+
     this.warpPreviewSampleGlass = function (callback) {
         if (!callback)
             callback = '';
+        else
+            callback = this._funcwrap(this._funcfix(callback));
         WSRAW.warpPreviewSampleGlass(callback);
     }
     this.displayCardTree = function () {
@@ -787,19 +820,41 @@ function WearScript() {
     this.cardTree = function (tree) {
         WSRAW.cardTree(JSON.stringify(tree.cards))
     }
-    this.cameraOn = function (period, maxHeight, maxWidth) {
+    this.cameraOn = function (period, maxHeight, maxWidth, callback) {
         if (!maxHeight)
             maxHeight = 0;
         if (!maxWidth)
             maxwidth = 0;
-        WSRAW.cameraOn(period, maxHeight, maxWidth, false);
+        if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraOn(period, maxHeight, maxWidth, false, this._funcwrap(callback));
+        } else {
+            WSRAW.cameraOn(period, maxHeight, maxWidth, false);
+        }
     }
     this.cameraPhoto = function (callback) {
-        // TODO: Handle no callback case
-        WSRAW.cameraPhoto(this._funcwrap(callback));
+        if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraPhoto(this._funcwrap(callback));
+        } else {
+            WSRAW.cameraPhoto();
+        }
     }
-    this.cameraVideo = function () {
-        WSRAW.cameraVideo();
+    this.cameraPhotoData = function (callback) {
+        if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraPhotoData(this._funcwrap(callback));
+        } else {
+            WSRAW.cameraPhoto();
+        }
+    }
+    this.cameraVideo = function (callback) {
+       if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraVideo(this._funcwrap(callback));
+        } else {
+            WSRAW.cameraVideo();
+        }
     }
     this.cameraOff = function () {
         WSRAW.cameraOff();
@@ -811,6 +866,7 @@ function WearScript() {
         WSRAW.activityDestroy();
     }
     this.wifiOn = function (callback) {
+        callback = this._funcfix(callback);
         // TODO: Handle no callback case
         WSRAW.wifiOn(this._funcwrap(callback));
     }
@@ -821,6 +877,7 @@ function WearScript() {
         WSRAW.wifiScan();
     }
     this.serverConnect = function (server, callback) {
+        callback = this._funcfix(callback);
         WSRAW.serverConnect(server, this._funcwrap(callback));
     }
     this.wake = function () {
@@ -830,16 +887,41 @@ function WearScript() {
         WSRAW.sound(sound);
     }
     this.gestureCallback = function (event, callback) {
+        callback = this._funcfix(callback);
         WSRAW.gestureCallback(event, this._funcwrap(callback));
     }
     this.speechRecognize = function (prompt, callback) {
-        WSRAW.speechRecognize(prompt, this._funcwrap(callback));
+        callback = this._funcfix(callback);
+        WSRAW.speechRecognize(prompt, this._funcwrap(function (x) {callback(atob(x))}));
     }
     this.liveCardCreate = function (nonSilent, period) {
         WSRAW.liveCardCreate(nonSilent, period);
     }
     this.liveCardDestroy = function () {
         WSRAW.liveCardDestroy();
+    }
+    this.bluetoothList = function (callback) {
+        callback = this._funcfix(callback);
+        WSRAW.bluetoothList(this._funcwrap(function (x) {callback(JSON.parse(x))}));
+    }
+    this.bluetoothRead = function (address, callback) {
+        callback = this._funcfix(callback);
+        WSRAW.bluetoothRead(address, this._funcwrap(function (x) {callback(atob(x))}));
+    }
+    this.bluetoothWrite = function (address, data) {
+        WSRAW.bluetoothWrite(address, btoa(data));
+    }
+    this.pebbleSetTitle = function(text, clear) {
+        WSRAW.pebbleSetTitle(text, clear);
+    }
+    this.pebbleSetSubtitle = function(text, clear) {
+        WSRAW.pebbleSetSubtitle(text, clear);
+    }
+    this.pebbleSetBody = function(text, clear) {
+        WSRAW.pebbleSetBody(text, clear);
+    }
+    this.pebbleVibe = function(type) {
+        WSRAW.pebbleVibe(type);
     }
 }
 WS = new WearScript();

@@ -58,6 +58,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private Handler mHandler;
     private boolean background;
     private int maxWidth, maxHeight;
+    private int numSkip;
 
 
     public CameraManager(BackgroundService bs) {
@@ -95,7 +96,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         if (imagePeriod > 0) {
             register();
         } else {
-            shutdown();
+            reset();
         }
     }
 
@@ -161,7 +162,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             if (resultCode == Activity.RESULT_OK) {
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
-                // TODO: Wait until video has been written
                 if (jsCallbacks.containsKey(VIDEO_PATH)) {
                     makeCall(VIDEO_PATH, "'" + videoFilePath + "'");
                     jsCallbacks.remove(VIDEO_PATH);
@@ -323,9 +323,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                         return;
                     Log.d(TAG, "Selected: " + sizeNearest.width + " " + sizeNearest.height + " Max: " + this.maxWidth + " " + this.maxHeight);
                     frameSize = new Size(sizeNearest.width, sizeNearest.height);
-                    // Select the size that fits surface considering maximum size allowed
-                    //Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), maxWidth, maxHeight);
-                    //Size frameSize = new Size(1920,1080);
                     params.setPreviewFormat(ImageFormat.NV21);
                     Log.d(TAG, "Set preview size to " + Integer.valueOf((int) frameSize.width) + "x" + Integer.valueOf((int) frameSize.height) + ": camflow");
                     params.setPreviewSize((int) frameSize.width, (int) frameSize.height);
@@ -347,6 +344,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                     camera.setPreviewCallbackWithBuffer(this);
                     surfaceTexture = new SurfaceTexture(MAGIC_TEXTURE_ID);
                     camera.setPreviewTexture(surfaceTexture);
+                    // NOTE(brandyn): Hack to not output the broken first couple of images
+                    numSkip = 2;
                     Log.d(TAG, "startPreview: camflow");
                     camera.startPreview();
                 } else {
@@ -369,6 +368,11 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 return;
             }
             Log.d(TAG, "Preview Frame received. Frame size: " + data.length + ": camflow");
+            if (numSkip > 0) {
+                numSkip -= 1;
+                addCallbackBuffer();
+                return;
+            }
             if (System.nanoTime() - lastImageSaveTime < imagePeriod) {
                 Log.d(TAG, "Frame skipping: " + (System.nanoTime() - lastImageSaveTime) + " < " + imagePeriod);
                 addCallbackBuffer();

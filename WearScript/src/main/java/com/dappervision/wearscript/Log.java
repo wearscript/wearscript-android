@@ -15,7 +15,8 @@ public class Log {
     public static void register(Activity act) {
         setup();
         activity = act;
-        Sentry.init(activity, dsn);
+        if (dsn != null)
+           Sentry.init(activity, dsn);
     }
 
     static public void setDsn(String dsn) {

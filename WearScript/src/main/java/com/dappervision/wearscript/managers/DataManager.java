@@ -10,7 +10,9 @@ import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.dataproviders.DataProvider;
 import com.dappervision.wearscript.dataproviders.GPSDataProvider;
 import com.dappervision.wearscript.dataproviders.NativeDataProvider;
+import com.dappervision.wearscript.dataproviders.PebbleDataProvider;
 import com.dappervision.wearscript.dataproviders.RemoteDataProvider;
+import com.dappervision.wearscript.events.PebbleAccelerometerDataEvent;
 import com.dappervision.wearscript.events.SensorJSEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,6 +50,8 @@ public class DataManager extends Manager {
             dp = new RemoteDataProvider(this, samplePeriod, type, "Pupil Eyetracker");
         else if (type == WearScript.SENSOR.BATTERY.id())
             dp = new BatteryDataProvider(this, samplePeriod);
+        else if (type == WearScript.SENSOR.PEBBLE_ACCELEROMETER.id())
+            dp = new PebbleDataProvider(this, samplePeriod, type);
         else
             throw new RuntimeException("Invalid type: " + type);
         registerProvider(type, dp);
@@ -111,5 +115,12 @@ public class DataManager extends Manager {
         if (provider == null)
             return;
         provider.remoteSample(dp);
+    }
+
+    public void onEvent(PebbleAccelerometerDataEvent e) {
+        PebbleDataProvider provider = (PebbleDataProvider)providers.get(WearScript.SENSOR.PEBBLE_ACCELEROMETER.id());
+        if (provider == null)
+            return;
+        provider.onEvent(e);
     }
 }

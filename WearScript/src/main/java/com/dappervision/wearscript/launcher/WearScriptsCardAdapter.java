@@ -12,7 +12,6 @@ import com.google.android.glass.widget.CardScrollAdapter;
 
 import java.util.ArrayList;
 
-//THE GDK IS STUPID STUPID STUPID.
 public class WearScriptsCardAdapter extends CardScrollAdapter {
     private final ArrayList<WearScriptInfo> scripts;
     private final Typeface mRobotoLight;
