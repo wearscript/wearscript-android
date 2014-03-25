@@ -18,10 +18,9 @@ public class HandlerHandler {
         singleton = new HandlerHandler();
         return singleton;
     }
+
     public void resetAll() {
-        for (Handler h : handlers) {
-            h.shutdown();
-        }
+        shutdownAll();
         newHandlers();
     }
 
@@ -29,7 +28,8 @@ public class HandlerHandler {
         for (Handler h : handlers) {
             h.shutdown();
         }
-        handlers = null;
+        while (!handlers.isEmpty())
+            handlers.remove(0);
     }
 
     public void newHandlers() {

@@ -16,6 +16,14 @@ public class ControlHandler extends Handler {
             GlassDevice.getInstance().swipeRight();
         } else if(e.getCommand().equals(ControlEvent.SWIPE_DOWN)){
             GlassDevice.getInstance().swipeDown();
+        } else if(e.getCommand().equals((ControlEvent.INIT))){
+            GlassDevice.getInstance();
         }
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        GlassDevice.getInstance().close();
     }
 }

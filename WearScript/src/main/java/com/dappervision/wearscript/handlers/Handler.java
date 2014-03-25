@@ -9,6 +9,7 @@ public abstract class Handler {
     }
 
     public void shutdown() {
-        Utils.getEventBus().unregister(this);
+        if(Utils.getEventBus().isRegistered(this))
+            Utils.getEventBus().unregister(this);
     }
 }
