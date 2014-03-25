@@ -1,4 +1,4 @@
-package com.dappervision.wearscript;
+package com.dappervision.wearscript.glassbt;
 
 import com.google.glass.companion.CompanionMessagingUtil;
 import com.google.glass.companion.Proto.Envelope;

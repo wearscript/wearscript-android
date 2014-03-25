@@ -1,11 +1,10 @@
 package com.dappervision.wearscript.events;
 
-import android.content.Context;
-
-/**
- * Created by conner on 3/25/14.
- */
 public class ControlEvent {
+    public static final String TAP = "TAP";
+    public static final String SWIPE_LEFT = "SWIPE_LEFT";
+    public static final String SWIPE_RIGHT = "SWIPE_RIGHT";
+    public static final String SWIPE_DOWN = "SWIPE_DOWN";
     String command;
     boolean adb;
 
