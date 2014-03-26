@@ -16,6 +16,7 @@ import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LiveCardEvent;
 import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.MediaPlayEvent;
+import com.dappervision.wearscript.events.PebbleMessageEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -38,6 +39,7 @@ import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.WarpManager;
+import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.WifiManager;
 
 import org.json.simple.JSONObject;
@@ -55,6 +57,7 @@ public class WearScript {
     TreeMap<String, Integer> sensors;
     String sensorsJS;
     List<String> touchGesturesList;
+    List<String> pebbleGesturesList;
 
     WearScript(BackgroundService bs) {
         this.bs = bs;
@@ -66,6 +69,8 @@ public class WearScript {
         this.sensorsJS = (new JSONObject(this.sensors)).toJSONString();
         String[] touchGestures = {"onGesture", "onFingerCountChanged", "onScroll", "onTwoFingerScroll"};
         touchGesturesList = Arrays.asList(touchGestures);
+        String[] pebbleGestures = {"onPebbleSingleClick", "onPebbleLongClick", "onPebbleAccelTap"};
+        pebbleGesturesList = Arrays.asList(pebbleGestures);
     }
 
     private String classToChar(Class c) {
@@ -376,7 +381,37 @@ public class WearScript {
                 route = GestureManager.class;
                 break;
             }
+        for (String pebbleGesture : pebbleGesturesList) {
+            if (event.startsWith(pebbleGesture)) {
+                route = PebbleManager.class;
+                break;
+            }
+        }
         Utils.eventBusPost(new CallbackRegistration(route, callback).setEvent(event));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetTitle(String title, boolean clear) {
+        Log.i(TAG, "pebbleSetTitle: " + title);
+        Utils.eventBusPost(new PebbleMessageEvent("setTitle", title, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetSubtitle(String subTitle, boolean clear) {
+        Log.i(TAG, "pebbleSetSubtitle: " + subTitle);
+        Utils.eventBusPost(new PebbleMessageEvent("setSubtitle", subTitle, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleSetBody(String body, boolean clear) {
+        Log.i(TAG, "pebbleSetSubTitle: " + body);
+        Utils.eventBusPost(new PebbleMessageEvent("setBody", body, clear));
+    }
+
+    @JavascriptInterface
+    public void pebbleVibe(int type) {
+        Log.i(TAG, "pebbleVibe: " + type);
+        Utils.eventBusPost(new PebbleMessageEvent("vibe", type));
     }
 
     @JavascriptInterface
@@ -461,6 +496,7 @@ public class WearScript {
     }
 
     public static enum SENSOR {
+        PEBBLE_ACCELEROMETER("pebbleAccelerometer", -7),
         BATTERY("battery", -3),
         PUPIL("pupil", -2),
         GPS("gps", -1),

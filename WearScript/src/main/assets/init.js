@@ -920,5 +920,17 @@ function WearScript() {
     this.bluetoothWrite = function (address, data) {
         WSRAW.bluetoothWrite(address, btoa(data));
     }
+    this.pebbleSetTitle = function(text, clear) {
+        WSRAW.pebbleSetTitle(text, clear);
+    }
+    this.pebbleSetSubtitle = function(text, clear) {
+        WSRAW.pebbleSetSubtitle(text, clear);
+    }
+    this.pebbleSetBody = function(text, clear) {
+        WSRAW.pebbleSetBody(text, clear);
+    }
+    this.pebbleVibe = function(type) {
+        WSRAW.pebbleVibe(type);
+    }
 }
 WS = new WearScript();
