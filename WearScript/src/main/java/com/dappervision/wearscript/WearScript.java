@@ -10,6 +10,7 @@ import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.CardTreeEvent;
 import com.dappervision.wearscript.events.ChannelSubscribeEvent;
 import com.dappervision.wearscript.events.ChannelUnsubscribeEvent;
+import com.dappervision.wearscript.events.ControlEvent;
 import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
@@ -485,6 +486,11 @@ public class WearScript {
         if (cm == null)
             return null;
         return cm.device();
+    }
+
+    @JavascriptInterface
+    public void control(String event, boolean adb){
+        Utils.eventBusPost(new ControlEvent(event, adb));
     }
 
     private void requiresGDK() {

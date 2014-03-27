@@ -32,6 +32,7 @@ import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.events.WifiScanResultsEvent;
+import com.dappervision.wearscript.handlers.HandlerHandler;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.CardTreeManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
@@ -240,6 +241,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
             Utils.getEventBus().unregister(this);
             ManagerManager.get().shutdownAll();
+            HandlerHandler.get().shutdownAll();
 
             if (activity == null)
                 return;
@@ -274,6 +276,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             updateCardScrollView();
 
             ManagerManager.get().resetAll();
+            HandlerHandler.get().resetAll();
             // TODO(brandyn): Verify that if we create a new activity that the gestures still work
             if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
                 if (activity != null) {
