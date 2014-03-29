@@ -95,20 +95,20 @@ public class PebbleManager extends Manager{
         makeCall("onPebbleSingleClick", String.format("'%s'", button));
         makeCall("onPebbleSingleClick" + button, "");
         String device = "TODO";
-        Utils.eventBusPost(new SendEvent("gesture:pebble:singleClick:" + device, button));
+        Utils.eventBusPost(new SendEvent(String.format("gesture:pebble:singleClick:%s:%s", button, device), "singleClick", button));
     }
 
     public void onPebbleLongClick(String button) {
         makeCall("onPebbleLongClick", String.format("'%s'", button));
         makeCall("onPebbleLongClick" + button, "");
         String device = "TODO";
-        Utils.eventBusPost(new SendEvent("gesture:pebble:longClick:" + device, button));
+        Utils.eventBusPost(new SendEvent(String.format("gesture:pebble:longClick:%s:%s", button, device), "longClick", button));
     }
 
     public void onPebbleAccelTap(int axis, int direction) {
         makeCall("onPebbleAccelTap", String.format("'%d, %d'", axis, direction));
         String device = "TODO";
-        Utils.eventBusPost(new SendEvent("gesture:pebble:accelTap:" + device, axis, direction));
+        Utils.eventBusPost(new SendEvent("gesture:pebble:accelTap:" + device, "accelTap", axis, direction));
     }
 
     public void pebbleSetTitle(String title, boolean clear) {

@@ -100,27 +100,18 @@ public abstract class WearScriptConnection {
     public abstract void onDisconnect();
 
     private void onReceiveDispatch(String channel, byte[] dataRaw, List<Value> data) {
-        String channelPart = null;
-        for (String part : channel.split(":")) {
-            if (channelPart == null) {
-                channelPart = part;
-            } else {
-                channelPart += ":" + part;
-            }
-
-            if (scriptChannels.contains(channelPart)) {
-                Log.i(TAG, "ScriptChannel: " + channel);
-                if (dataRaw != null && data == null) {
-                    try {
-                        data = msgpack.read(dataRaw, tList(TValue));
-                    } catch (IOException e) {
-                        Log.e(TAG, "Could not decode msgpack");
-                        return;
-                    }
+        String channelPart = existsInternal(channel);
+        if (channelPart != null) {
+            Log.i(TAG, "ScriptChannel: " + channelPart);
+            if (dataRaw != null && data == null) {
+                try {
+                    data = msgpack.read(dataRaw, tList(TValue));
+                } catch (IOException e) {
+                    Log.e(TAG, "Could not decode msgpack");
+                    return;
                 }
-                onReceive(channelPart, dataRaw, data);
-                break;
             }
+            onReceive(channelPart, dataRaw, data);
         }
     }
 
@@ -144,7 +135,6 @@ public abstract class WearScriptConnection {
         if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
             return;
         if (outBytes != null) {
-
             onReceiveDispatch(channel, outBytes, null);
             if (existsExternal(channel))
                 client.send(outBytes);
@@ -300,8 +290,22 @@ public abstract class WearScriptConnection {
         return false;
     }
 
+    private String existsInternal(String channel) {
+        String channelPartial = "";
+        String[] parts = channel.split(":");
+        for (String part : parts) {
+            if (channelPartial.isEmpty())
+                channelPartial += part;
+            else
+                channelPartial += ":" + part;
+            if (scriptChannels.contains(channelPartial))
+                return channelPartial;
+        }
+        return null;
+    }
+
     public boolean exists(String channel) {
-        return existsExternal(channel) || scriptChannels.contains(channel);
+        return existsExternal(channel) || existsInternal(channel) != null;
     }
 
     public void disconnect() {
