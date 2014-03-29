@@ -7,9 +7,11 @@ import android.os.Message;
 import android.util.Log;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.WearScript;
 import com.dappervision.wearscript.dataproviders.PebbleEventReceiver;
 import com.dappervision.wearscript.events.PebbleMessageEvent;
+import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.SensorJSEvent;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
@@ -54,13 +56,13 @@ public class PebbleManager extends Manager{
     public static String parseButton(int button) {
         switch (button) {
             case Button.UP:
-                return "up";
+                return "UP";
             case Button.SELECT:
-                return "select";
+                return "SELECT";
             case Button.DOWN:
-                return "down";
+                return "DOWN";
             case Button.BACK:
-                return "back";
+                return "BACK";
             default:
                 return null;
         }
@@ -91,14 +93,22 @@ public class PebbleManager extends Manager{
 
     public void onPebbleSingleClick(String button) {
         makeCall("onPebbleSingleClick", String.format("'%s'", button));
+        makeCall("onPebbleSingleClick" + button, "");
+        String device = "TODO";
+        Utils.eventBusPost(new SendEvent("gesture:pebble:singleClick:" + device, button));
     }
 
     public void onPebbleLongClick(String button) {
         makeCall("onPebbleLongClick", String.format("'%s'", button));
+        makeCall("onPebbleLongClick" + button, "");
+        String device = "TODO";
+        Utils.eventBusPost(new SendEvent("gesture:pebble:longClick:" + device, button));
     }
 
     public void onPebbleAccelTap(int axis, int direction) {
         makeCall("onPebbleAccelTap", String.format("'%d, %d'", axis, direction));
+        String device = "TODO";
+        Utils.eventBusPost(new SendEvent("gesture:pebble:accelTap:" + device, axis, direction));
     }
 
     public void pebbleSetTitle(String title, boolean clear) {

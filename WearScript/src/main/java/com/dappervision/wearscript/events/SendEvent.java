@@ -38,6 +38,8 @@ public class SendEvent {
                     data.add(ValueFactory.createRawValue((String) i));
                 else if (c.equals(Double.class))
                     data.add(ValueFactory.createFloatValue((Double) i));
+                else if (c.equals(Integer.class))
+                    data.add(ValueFactory.createIntegerValue((Integer) i));
                 else if (Value.class.isAssignableFrom(c))
                     data.add((Value) i);
                 else {

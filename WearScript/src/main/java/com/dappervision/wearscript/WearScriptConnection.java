@@ -95,6 +95,31 @@ public abstract class WearScriptConnection {
 
     public abstract void onDisconnect();
 
+    private void onReceiveDispatch(String channel, byte[] dataRaw, List<Value> data) {
+        String channelPart = null;
+        for (String part : channel.split(":")) {
+            if (channelPart == null) {
+                channelPart = part;
+            } else {
+                channelPart += ":" + part;
+            }
+
+            if (scriptChannels.contains(channelPart)) {
+                Log.i(TAG, "ScriptChannel: " + channel);
+                if (dataRaw != null && data == null) {
+                    try {
+                        data = msgpack.read(dataRaw, tList(TValue));
+                    } catch (IOException e) {
+                        Log.e(TAG, "Could not decode msgpack");
+                        return;
+                    }
+                }
+                onReceive(channelPart, dataRaw, data);
+                break;
+            }
+        }
+    }
+
     private void resetExternalChannels() {
         deviceToChannels = new TreeMap<String, ArrayList<String>>();
         externalChannels = new TreeSet<String>();
@@ -104,16 +129,18 @@ public abstract class WearScriptConnection {
         String channel = (String) data[0];
         if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
             return;
-        byte[] outBytes = encode(data);
-        if (outBytes != null)
-            client.send(outBytes);
+        Log.d(TAG, "Publishing...");
+        publish(channel, encode(data));
     }
 
     public void publish(String channel, byte[] outBytes) {
         if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
             return;
-        if (outBytes != null)
-            client.send(outBytes);
+        if (outBytes != null) {
+            onReceiveDispatch(channel, outBytes, null);
+            if (existsExternal(channel))
+                client.send(outBytes);
+        }
     }
 
     private Value oneStringArray(String channel) {
@@ -235,7 +262,7 @@ public abstract class WearScriptConnection {
         return channel(c, "ACK");
     }
 
-    public boolean exists(String channel) {
+    private boolean existsExternal(String channel) {
         String channelPartial = "";
         String[] parts = channel.split(":");
         if (externalChannels.contains(channelPartial))
@@ -251,6 +278,10 @@ public abstract class WearScriptConnection {
         return false;
     }
 
+    public boolean exists(String channel) {
+        return existsExternal(channel) || scriptChannels.contains(channel);
+    }
+
     public void disconnect() {
         if (client != null)
             client.disconnect();
@@ -260,7 +291,8 @@ public abstract class WearScriptConnection {
         synchronized (this) {
             this.shutdown = true;
             disconnect();
-            client.getHandlerThread().getLooper().quit();
+            if (client != null)
+                client.getHandlerThread().getLooper().quit();
         }
     }
 
@@ -390,20 +422,7 @@ public abstract class WearScriptConnection {
                 Value[] channels = input.get(2).asArrayValue().getElementArray();
                 setDeviceChannels(d, channels);
             }
-            String channelPart = null;
-            for (String part : channel.split(":")) {
-                if (channelPart == null) {
-                    channelPart = part;
-                } else {
-                    channelPart += ":" + part;
-                }
-
-                if (scriptChannels.contains(channelPart)) {
-                    Log.i(TAG, "ScriptChannel: " + channel);
-                    WearScriptConnection.this.onReceive(channel, message, input);
-                    break;
-                }
-            }
+            WearScriptConnection.this.onReceiveDispatch(channel, message, input);
         }
     }
 

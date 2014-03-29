@@ -35,14 +35,25 @@ public class BluetoothManager extends Manager {
         reset();
     }
 
+    public void reset() {
+        super.reset();
+        for (BluetoothSocket sock : mSockets.values()) {
+            try {
+                sock.close();
+            } catch (IOException e) {
+                // TODO(brandyn): Add
+            }
+        }
+        mSockets = new TreeMap<String, BluetoothSocket>();
+    }
+
     private class BluetoothReadTask extends AsyncTask<String, Void, Void> {
-
-
         @Override
         protected Void doInBackground(String... addresses) {
             String address = addresses[0];
             String read = READ + address;
             byte data[] = new byte[1];
+            // TODO(brandyn): Ensure that these tasks are getting shutdown on reset
             while (true) {
                 if (!mSockets.containsKey(address)) {
                     try {
@@ -78,10 +89,10 @@ public class BluetoothManager extends Manager {
         if (isSetup)
             return;
         isSetup = true;
-        TreeSet<String> mArrayAdapter = new TreeSet<String>();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
             // Device does not support Bluetooth
+            return;
         }
         if (!mBluetoothAdapter.isEnabled()) {
             Log.w(TAG, "BT not enabled");
