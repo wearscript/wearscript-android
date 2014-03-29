@@ -67,20 +67,23 @@ public class ConnectionManager extends Manager {
 
     public void reset() {
         synchronized (this) {
-            // TODO(brandyn): For each script channel unsubscribe
             for (String channel : connection.channelsInternal()) {
                 unregisterCallback(channel);
             }
-            connection.unsubscribe(new TreeSet<String>(connection.channelsInternal()));
-            testChannels = new TreeSet<String>();
             String testChannel = "test:" + connection.groupDevice();
+            testChannels = new TreeSet<String>();
             testChannels.add(testChannel);
-            connection.subscribe(testChannel);
-            connection.subscribe(connection.group());
-            connection.subscribe(connection.groupDevice());
-            connection.subscribe(GIST_LIST_SYNC_CHAN);
-            connection.subscribe(GIST_GET_SYNC_CHAN);
-            connection.subscribe("warph"); // TODO: Specialize it for this group/device
+            TreeSet<String> subscribeChannels = new TreeSet<String>();
+            subscribeChannels.add(testChannel);
+            subscribeChannels.add(connection.group());
+            subscribeChannels.add(connection.groupDevice());
+            subscribeChannels.add(GIST_LIST_SYNC_CHAN);
+            subscribeChannels.add(GIST_GET_SYNC_CHAN);
+            subscribeChannels.add("warph");  // TODO: Specialize it for this group/device
+            TreeSet<String> unsubscribeChannels = new TreeSet<String>(connection.channelsInternal());
+            unsubscribeChannels.removeAll(subscribeChannels);
+            connection.unsubscribe(unsubscribeChannels);
+            connection.subscribe(subscribeChannels);
         }
         super.reset();
     }
@@ -178,6 +181,8 @@ public class ConnectionManager extends Manager {
 
     public void shutdown() {
         synchronized (this) {
+            TreeSet<String> unsubscribeChannels = new TreeSet<String>(connection.channelsInternal());
+            connection.unsubscribe(unsubscribeChannels);
             super.shutdown();
             connection.shutdown();
         }

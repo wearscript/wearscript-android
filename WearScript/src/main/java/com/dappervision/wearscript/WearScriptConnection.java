@@ -1,5 +1,6 @@
 package com.dappervision.wearscript;
 
+import android.util.Base64;
 import android.util.Log;
 
 import com.codebutler.android_websockets.WebSocketClient;
@@ -24,6 +25,7 @@ import static org.msgpack.template.Templates.tList;
 public abstract class WearScriptConnection {
     private static final String TAG = "WearScriptConnection";
     private static final String LISTEN_CHAN = "subscriptions";
+    private final int sleepTimeMax = 6000;
     static MessagePack msgpack = new MessagePack();
     protected String device, group, groupDevice;
     private WebSocketClient client;
@@ -31,6 +33,7 @@ public abstract class WearScriptConnection {
     private boolean shutdown;
     private URI uri;
     private boolean connected;
+    private boolean callOnConnect;
     // deviceToChannels is always updated, then externalChannels is rebuilt
     private TreeMap<String, ArrayList<String>> deviceToChannels;
     private TreeSet<String> externalChannels;
@@ -39,6 +42,7 @@ public abstract class WearScriptConnection {
 
     public WearScriptConnection(String group, String device) {
         shutdown = false;
+        callOnConnect = false;
         reconnecting = false;
         this.group = group;
         this.device = device;
@@ -129,7 +133,10 @@ public abstract class WearScriptConnection {
         String channel = (String) data[0];
         if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
             return;
-        Log.d(TAG, "Publishing...");
+        Log.d(TAG, "Publishing...: " + channel);
+        if (channel.equals(LISTEN_CHAN)) {
+            Log.d(TAG, "Channels: " + Base64.encodeToString(encode(data), Base64.NO_WRAP));
+        }
         publish(channel, encode(data));
     }
 
@@ -137,6 +144,7 @@ public abstract class WearScriptConnection {
         if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
             return;
         if (outBytes != null) {
+
             onReceiveDispatch(channel, outBytes, null);
             if (existsExternal(channel))
                 client.send(outBytes);
@@ -159,6 +167,20 @@ public abstract class WearScriptConnection {
                 scriptChannels.add(channel);
                 publish(LISTEN_CHAN, this.groupDevice, channelsValue());
             }
+        }
+    }
+
+    public void subscribe(Iterable<String> channels) {
+        synchronized (this) {
+            boolean added = false;
+            for (String channel : channels) {
+                if (!scriptChannels.contains(channel)) {
+                    added = true;
+                    scriptChannels.add(channel);
+                }
+            }
+            if (added)
+                publish(LISTEN_CHAN, this.groupDevice, channelsValue());
         }
     }
 
@@ -313,6 +335,19 @@ public abstract class WearScriptConnection {
         }).start();
     }
 
+    private void publishChannels(int delay) {
+        new Thread(new Runnable() {
+            public void run() {
+                Log.w(TAG, "Lifecycle: Pinger...");
+                publish(LISTEN_CHAN, WearScriptConnection.this.groupDevice, channelsValue());
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                }
+            }
+        }).start();
+    }
+
     private void reconnect() {
         synchronized (this) {
             if (shutdown)
@@ -324,6 +359,7 @@ public abstract class WearScriptConnection {
         new Thread(new Runnable() {
             public void run() {
                 try {
+                    int sleepTime = 1000;
                     while (true) {
                         Log.w(TAG, "Lifecycle: Trying to reconnect...");
                         synchronized (WearScriptConnection.this) {
@@ -331,13 +367,18 @@ public abstract class WearScriptConnection {
                                 reconnecting = false;
                                 break;
                             }
+                            Log.w(TAG, "Lifecycle: Reconnecting...");
                             // NOTE(brandyn): Reset channelToDevices, server will refresh on connect
                             resetExternalChannels();
                             client.connect();
                         }
                         try {
-                            Thread.sleep(500);
+                            Thread.sleep(sleepTime);
                         } catch (InterruptedException e) {
+                        }
+                        sleepTime *= 2;
+                        if (sleepTime > sleepTimeMax) {
+                            sleepTime = sleepTimeMax;
                         }
                     }
                 } finally {
@@ -365,9 +406,7 @@ public abstract class WearScriptConnection {
             if (shutdown)
                 return;
             connected = true;
-            Log.i(TAG, "Lifecycle: Calling server callback");
-            publish(LISTEN_CHAN, groupDevice, channelsValue());
-            WearScriptConnection.this.onConnect();
+            callOnConnect = true;
         }
 
         @Override
@@ -380,6 +419,7 @@ public abstract class WearScriptConnection {
             Log.w(TAG, "Lifecycle: Underlying socket disconnected: i: " + i + " s: " + s);
             synchronized (this) {
                 connected = false;
+                callOnConnect = false;
                 if (shutdown)
                     return;
             }
@@ -392,6 +432,7 @@ public abstract class WearScriptConnection {
             Log.w(TAG, "Lifecycle: Underlying socket errored: " + e.getLocalizedMessage());
             synchronized (this) {
                 connected = false;
+                callOnConnect = false;
                 if (shutdown)
                     return;
             }
@@ -421,6 +462,13 @@ public abstract class WearScriptConnection {
                 String d = input.get(1).asRawValue().getString();
                 Value[] channels = input.get(2).asArrayValue().getElementArray();
                 setDeviceChannels(d, channels);
+                if (callOnConnect) {
+                    callOnConnect = false;
+                    Log.i(TAG, "Lifecycle: Calling server callback");
+                    //publish(LISTEN_CHAN, groupDevice, channelsValue());
+                    WearScriptConnection.this.onConnect();
+                    publishChannels(500);
+                }
             }
             WearScriptConnection.this.onReceiveDispatch(channel, message, input);
         }

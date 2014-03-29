@@ -932,7 +932,6 @@ function WearScript() {
     this.pebbleVibe = function(type) {
         WSRAW.pebbleVibe(type);
     }
-
     this.control = function(cmd, adb) {
         if(!adb)
             adb = false;
