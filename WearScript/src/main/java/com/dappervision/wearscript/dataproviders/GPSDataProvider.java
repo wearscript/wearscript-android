@@ -25,6 +25,7 @@ public class GPSDataProvider extends DataProvider {
                 DataPoint dataPoint = new DataPoint(GPSDataProvider.this, System.currentTimeMillis() / 1000., timestamp);
                 dataPoint.addValue(Double.valueOf(l.getLatitude()));
                 dataPoint.addValue(Double.valueOf(l.getLongitude()));
+                dataPoint.addValue(Double.valueOf(l.getSpeed()));
                 parent.queue(dataPoint);
             }
 
