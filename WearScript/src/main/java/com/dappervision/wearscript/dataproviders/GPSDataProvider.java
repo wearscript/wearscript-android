@@ -43,7 +43,7 @@ public class GPSDataProvider extends DataProvider {
         };
         for (String provider : locationManager.getAllProviders())
             if (locationManager.isProviderEnabled(provider))
-                locationManager.requestLocationUpdates(provider, samplePeriod * 1000000, 0, locationListener);
+                locationManager.requestLocationUpdates(provider, samplePeriod * 1000, 0, locationListener);
     }
 
     @Override
