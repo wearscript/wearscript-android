@@ -20,11 +20,11 @@ public class GPSDataProvider extends DataProvider {
             @Override
             public void onLocationChanged(Location l) {
                 long timestamp = System.nanoTime();
-                if (!useSample(timestamp))
-                    return;
                 DataPoint dataPoint = new DataPoint(GPSDataProvider.this, System.currentTimeMillis() / 1000., timestamp);
                 dataPoint.addValue(Double.valueOf(l.getLatitude()));
                 dataPoint.addValue(Double.valueOf(l.getLongitude()));
+                dataPoint.addValue(Double.valueOf(l.getSpeed()));
+                dataPoint.addValue(Double.valueOf(l.getBearing()));
                 parent.queue(dataPoint);
             }
 
@@ -40,9 +40,9 @@ public class GPSDataProvider extends DataProvider {
             public void onStatusChanged(String provider, int status, Bundle extras) {
             }
         };
-        for (String provider : locationManager.getAllProviders())
-            if (locationManager.isProviderEnabled(provider))
-                locationManager.requestLocationUpdates(provider, samplePeriod * 1000000, 0, locationListener);
+
+        for (String provider : locationManager.getProviders(true))
+            locationManager.requestLocationUpdates(provider, samplePeriod * 1000, 0, locationListener);
     }
 
     @Override
