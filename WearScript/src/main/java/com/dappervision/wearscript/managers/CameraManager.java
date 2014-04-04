@@ -9,7 +9,6 @@ import android.os.FileObserver;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Base64;
-import android.view.WindowManager;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
@@ -17,13 +16,10 @@ import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.ActivityResultEvent;
 import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.events.CameraEvents;
+import com.dappervision.wearscript.events.OpenCVLoadEvent;
 import com.dappervision.wearscript.events.OpenCVLoadedEvent;
-import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.StartActivityEvent;
 
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -36,8 +32,13 @@ import java.io.IOException;
 import java.util.List;
 
 public class CameraManager extends Manager implements Camera.PreviewCallback {
+    /* To Test this code, check the following conditions and all combinations
+    * 1. Stream on/off
+    * 2. Background on/off
+    * 3. Camera photo button pressed
+    * 4. Media called inside wearscript (cameraPhoto or cameraVideo)
+    * */
     public static final String LOCAL = "0";
-    public static final String REMOTE = "1";
     public static final String PHOTO = "PHOTO";
     public static final String PHOTO_PATH = "PHOTO_PATH";
     public static final String VIDEO = "VIDEO";
@@ -49,17 +50,17 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private byte[] buffer;
     private SurfaceTexture surfaceTexture;
     private CameraFrame cameraFrame;
-    private boolean paused;
-    private boolean running;
     private long imagePeriod;
     private double lastImageSaveTime;
-    private boolean openCVLoaded;
     private FileObserver mFileObserver;
     private Handler mHandler;
     private boolean background;
     private int maxWidth, maxHeight;
     private int numSkip;
-
+    private boolean streamOn = false;
+    private boolean screenIsOn = true;
+    private boolean activityVisible = true;
+    private int mediaPauseCount = 0;
 
     public CameraManager(BackgroundService bs) {
         super(bs);
@@ -67,6 +68,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void setupCallback(CallbackRegistration r) {
+        // Entry point for capturing photos/videos
         super.setupCallback(r);
         Log.d(TAG, "setupCallback");
         if (r.getEvent().equals(PHOTO) || r.getEvent().equals(PHOTO_PATH)) {
@@ -77,26 +79,39 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void onEventAsync(OpenCVLoadedEvent event) {
+        // State: Called after OpenCV is loaded, note this may happen when another module requests it
         synchronized (this) {
-            if (running && !paused)
+            // BUG(brandyn): We should check the conditions again here
+            if (streamOn && camera == null)
                 setupCamera();
         }
     }
 
     public void onEvent(CameraEvents.Start e) {
-        // NOTE(brandyn): Ensures we use the new parameters, we should try not to keep reloading opencv
-        stop();
-        imagePeriod = Math.round(e.getPeriod() * 1000000000L);
-        background = e.getBackground();
-        maxWidth = e.getMaxWidth();
-        maxHeight = e.getMaxHeight();
+        // State: Called after WS.cameraOn
+        Log.d(TAG, "camflow: Start");
+        synchronized (this) {
+            cameraStreamStop();
+            imagePeriod = Math.round(e.getPeriod() * 1000000000L);
+            background = e.getBackground();
+            maxWidth = e.getMaxWidth();
+            maxHeight = e.getMaxHeight();
 
-        lastImageSaveTime = 0.;
+            lastImageSaveTime = 0.;
 
-        if (imagePeriod > 0) {
-            register();
-        } else {
-            reset();
+            if (imagePeriod > 0) {
+                if (screenIsOn && activityVisible) {
+                    Log.d(TAG, "camflow: Registering");
+                    streamOn = true;
+                } else {
+                    Log.d(TAG, "camflow: Starting as paused");
+                    streamOn = false;
+                }
+                stateChange();
+            } else {
+                Log.d(TAG, "camflow: Resetting");
+                reset();
+            }
         }
     }
 
@@ -105,7 +120,10 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         Intent intent = event.getIntent();
         Log.d(TAG, "Got request code: " + requestCode);
         if (requestCode == 1000) {
-            resume();
+            synchronized (this) {
+                mediaPauseCount -= 1;
+                stateChange();
+            }
             if (resultCode == Activity.RESULT_OK) {
                 final String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
@@ -154,11 +172,12 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                     Log.d(TAG, "Starting FileObserver.");
                     mFileObserver.startWatching();
                 }
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-
             }
         } else if (requestCode == 1001) {
-            resume();
+            synchronized (this) {
+                mediaPauseCount -= 1;
+                stateChange();
+            }
             if (resultCode == Activity.RESULT_OK) {
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
@@ -166,8 +185,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                     makeCall(VIDEO_PATH, "'" + videoFilePath + "'");
                     jsCallbacks.remove(VIDEO_PATH);
                 }
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-
             }
         }
     }
@@ -176,7 +193,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     private void photoCallback(String pictureFilePath) {
         byte imageData[] = Utils.LoadFile(new File(pictureFilePath));
         if (imageData == null) {
-            Log.w(TAG, "Boo, no image after FileObserver saw write?");
+            Log.w(TAG, "No image after FileObserver saw write?");
             return;
         }
         if (jsCallbacks.containsKey(PHOTO)) {
@@ -191,11 +208,14 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     }
 
     public void reset() {
-        stop();
-        super.reset();
-        background = false;
-        lastImageSaveTime = 0.;
-        imagePeriod = 0;
+        synchronized (this) {
+            super.reset();
+            background = false;
+            lastImageSaveTime = 0.;
+            imagePeriod = 0;
+            streamOn = false;
+            stateChange();
+        }
     }
 
     public void shutdown() {
@@ -203,7 +223,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         super.shutdown();
     }
 
-    public void stop() {
+    public void cameraStreamStop() {
         synchronized (this) {
             if (camera != null) {
                 camera.stopPreview();
@@ -212,75 +232,73 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 Log.d(TAG, "Lifecycle: Camera released: camflow");
             }
             camera = null;
-            // NOTE(brandyn): This is to ensure it is loaded first, there may be a better way
-            openCVLoaded = false;
         }
     }
 
-    public void pause() {
+    public void onCameraButtonPressed() {
+        cameraStreamStop();
+    }
+
+    public void activityOnPause() {
         synchronized (this) {
-            paused = true;
-            if (running)
-                stop();
+            activityVisible = false;
+            stateChange();
         }
     }
 
-    public void pauseBackground() {
-        if (!background)
-            pause();
-    }
-
-    public void resume() {
+    public void activityOnResume() {
         synchronized (this) {
-            if (paused && running) {
-                paused = false;
-                register();
-            }
+            activityVisible = true;
+            stateChange();
         }
     }
 
-    public void register() {
+    public void screenOn() {
         synchronized (this) {
-            if (openCVLoaded) {
-                Log.w(TAG, "OpenCV Already Loaded: camflow");
-                return;
-            }
-            running = true;
-            openCVLoaded = true;
-            if (camera != null) {
-                Log.w(TAG, "Camera already registered: camflow");
-            }
-            BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(service) {
-                @Override
-                public void onManagerConnected(int status) {
-                    switch (status) {
-                        case LoaderCallbackInterface.SUCCESS: {
-                            Log.i(TAG, "Lifecycle: OpenCV loaded successfully: camflow");
-                            Utils.eventBusPost(new OpenCVLoadedEvent());
-                        }
-                        break;
-                        default: {
-                            super.onManagerConnected(status);
-                        }
-                        break;
-                    }
+            screenIsOn = true;
+            stateChange();
+        }
+    }
+
+    public void stateChange() {
+        synchronized (this) {
+            Log.d(TAG, String.format("stateChange: mediaPauseCount: %d screenIsOn: %s activityVisible: %s streamOn: %s background: %s", mediaPauseCount , screenIsOn, activityVisible, streamOn, background));
+            boolean cameraStream = streamOn && mediaPauseCount == 0;
+            if (screenIsOn) {
+                if (activityVisible) {
+                    if (cameraStream)
+                        cameraStreamStart();
+                    else
+                        cameraStreamStop();
+                } else {
+                    cameraStreamStop();
                 }
-            };
-            try {
-                OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, service, mLoaderCallback);
-            } catch (WindowManager.BadTokenException e) {
-                Log.w(TAG, "OpenCV apk not installed");
-                Utils.eventBusPost(new SayEvent("Please install open CV.  See wearscript.com for details"));
+            } else {
+                if (background) {
+                    if (cameraStream)
+                        cameraStreamStart();
+                    else
+                        cameraStreamStop();
+                } else {
+                    cameraStreamStop();
+                }
             }
         }
+    }
+
+    public void screenOff() {
+        synchronized (this) {
+            screenIsOn = false;
+            stateChange();
+        }
+    }
+
+    public void cameraStreamStart() {
+        Utils.eventBusPost(new OpenCVLoadEvent());
     }
 
     private void setupCamera() {
         synchronized (this) {
-            if (camera != null) {
-                Log.w(TAG, "Camera already setup: camflow");
-                return;
-            }
             while (camera == null) {
                 for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); ++camIdx) {
                     Log.d(TAG, "Trying to open camera with new open(" + Integer.valueOf(camIdx) + "): camflow");
@@ -296,9 +314,9 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 if (camera != null) {
                     break;
                 }
-                Log.w(TAG, "No camera available, sleeping 5 sec...: camflow");
+                Log.w(TAG, "No camera available, sleeping 1 sec...: camflow");
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                 }
             }
@@ -378,13 +396,14 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 addCallbackBuffer();
                 return;
             }
+            Log.d(TAG, "CamPath: Got frame");
             lastImageSaveTime = System.nanoTime();
             cameraFrame.setFrame(data);
-            Log.d(TAG, "Frame on bus");
             if (jsCallbacks.containsKey(CameraManager.LOCAL)) {
                 Log.d(TAG, "Image JS Callback");
                 makeCall(CameraManager.LOCAL, cameraFrame.getJPEG());
             }
+            Log.d(TAG, "CameraFrame Sent: " + System.nanoTime());
             Utils.eventBusPost(new CameraEvents.Frame(cameraFrame, this));
         }
     }
@@ -397,31 +416,32 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public void remoteImage(byte[] frameJPEG) {
-        makeCall(CameraManager.REMOTE, frameJPEG);
-    }
-
     private void cameraPhoto() {
-        pause();
+        synchronized (this) {
+            mediaPauseCount += 1;
+            stateChange();
+        }
         Log.d(TAG, "Taking photo");
         Utils.eventBusPost(new StartActivityEvent(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1000));
     }
 
     private void cameraVideo() {
-        pause();
+        synchronized (this) {
+            mediaPauseCount += 1;
+            stateChange();
+        }
         Utils.eventBusPost(new StartActivityEvent(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), 1001));
     }
 
     public class CameraFrame {
         private MatOfByte jpgFrame;
-        private String jpgB64;
+        private byte[] ppm;
         private boolean frameRGBSet;
         private Mat frameRGB;
         private Mat frame;
 
         CameraFrame(int width, int height) {
             jpgFrame = null;
-            jpgB64 = null;
             frameRGBSet = false;
             frameRGB = new Mat(width, height, CvType.CV_8UC3);
             frame = new Mat(height + (height / 2), width, CvType.CV_8UC1);
@@ -448,6 +468,13 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
             jpgFrame = new MatOfByte();
             Highgui.imencode(".jpg", frameRGB, jpgFrame);
             return jpgFrame.toArray();
+        }
+
+        public byte[] getPPM() {
+            Mat frameRGB = getRGB();
+            MatOfByte ppmFrame = new MatOfByte();
+            Highgui.imencode(".ppm", frameRGB, ppmFrame);
+            return ppmFrame.toArray();
         }
     }
 

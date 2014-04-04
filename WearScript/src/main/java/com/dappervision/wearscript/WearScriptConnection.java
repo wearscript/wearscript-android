@@ -148,7 +148,9 @@ public abstract class WearScriptConnection {
     }
 
     private Value channelsValue() {
-        return listValue(scriptChannels);
+        synchronized (this) {
+            return listValue(scriptChannels);
+        }
     }
 
     public void subscribe(String channel) {

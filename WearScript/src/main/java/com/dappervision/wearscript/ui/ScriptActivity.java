@@ -79,7 +79,10 @@ public class ScriptActivity extends Activity {
                     // Remove view's parent so that we can re-add it later to a new activity
                     Log.i(TAG, "Lifecycle: Recycling webview");
                     bs.refreshActivityView();
-                    ((CameraManager) bs.getManager(CameraManager.class)).resume();
+                    if (isForeground)
+                        ((CameraManager) bs.getManager(CameraManager.class)).activityOnResume();
+                    else
+                        ((CameraManager) bs.getManager(CameraManager.class)).activityOnPause();
                     return;
                 }
                 Log.i(TAG, "Lifecycle: Creating new webview");
@@ -111,8 +114,9 @@ public class ScriptActivity extends Activity {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (bs != null) {
             CameraManager cm = ((CameraManager) bs.getManager(CameraManager.class));
-            if (cm != null)
-                cm.pauseBackground();
+            if (cm != null) {
+                cm.activityOnPause();
+            }
         }
         super.onPause();
     }
@@ -125,7 +129,7 @@ public class ScriptActivity extends Activity {
         if (bs != null) {
             CameraManager cm = (CameraManager) bs.getManager(CameraManager.class);
             if (cm != null)
-                cm.resume();
+                cm.activityOnResume();
         }
         super.onResume();
     }
@@ -151,7 +155,7 @@ public class ScriptActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_CAMERA) {
             if (bs != null)
-                ((CameraManager) bs.getManager(CameraManager.class)).pause();
+                ((CameraManager) bs.getManager(CameraManager.class)).onCameraButtonPressed();
             return false;
         } else {
             return super.onKeyDown(keyCode, event);

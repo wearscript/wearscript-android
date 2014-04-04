@@ -3,6 +3,7 @@ package com.dappervision.wearscript.managers;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.util.Base64;
 import android.view.SurfaceView;
 
 import com.dappervision.wearscript.BackgroundService;
@@ -10,6 +11,8 @@ import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.events.ActivityEvent;
 import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.events.CameraEvents;
+import com.dappervision.wearscript.events.PicarusEvent;
+import com.dappervision.wearscript.events.PicarusRegistrationSampleEvent;
 import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.events.WarpDrawEvent;
 import com.dappervision.wearscript.events.WarpHEvent;
@@ -287,6 +290,7 @@ public class WarpManager extends Manager {
             if ((mode == Mode.SAMPLEWARPPLANE || mode == Mode.SAMPLEWARPGLASS) && useSample) {
                 if (!isSetup)
                     setupMatrices();
+                Log.d(TAG, "CamPath: Pre Warp");
                 double hSmallToGlass[] = getHSmallToGlass(sampleBGR.height(), sampleBGR.width());
                 if (hSmallToGlass == null) {
                     Log.w(TAG, "Warp: Bad size");
@@ -299,6 +303,7 @@ public class WarpManager extends Manager {
                 Mat hMat = HMatFromArray(h);
                 Imgproc.warpPerspective(sampleBGR, frameWarp, hMat, new Size(frameWarp.width(), frameWarp.height()));
                 drawFrame(frameWarp);
+                Log.d(TAG, "CamPath: Post Warp");
             }
         }
     }
@@ -314,13 +319,14 @@ public class WarpManager extends Manager {
                     captureSample = false;
                     Log.d(TAG, "Warp: Capturing Sample");
                     Mat frame = frameEvent.getCameraFrame().getRGB();
-                    byte[] frameJPEG = frameEvent.getCameraFrame().getJPEG();
+                    byte[] frameJPEG = frameEvent.getCameraFrame().getPPM();
                     if (sampleBGR == null || sampleBGR.height() != frame.height() || sampleBGR.width() != frame.width())
                         sampleBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
                     Imgproc.cvtColor(frame, sampleBGR, Imgproc.COLOR_RGB2BGR);
                     useSample = true;
                     // TODO: Specialize it for this group/device
-                    com.dappervision.wearscript.Utils.eventBusPost(new SendEvent("warpsample", "", ValueFactory.createRawValue(frameJPEG)));
+                    com.dappervision.wearscript.Utils.eventBusPost(new PicarusRegistrationSampleEvent(frameJPEG));
+                    //com.dappervision.wearscript.Utils.eventBusPost(new SendEvent("warpsample", "", ValueFactory.createRawValue(frameJPEG)));
                 }
             }
         }

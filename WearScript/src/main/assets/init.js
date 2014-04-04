@@ -832,6 +832,18 @@ function WearScript() {
             WSRAW.cameraOn(period, maxHeight, maxWidth, false);
         }
     }
+    this.cameraOnBackgroundUnsafe = function (period, maxHeight, maxWidth, callback) {
+        if (!maxHeight)
+            maxHeight = 0;
+        if (!maxWidth)
+            maxwidth = 0;
+        if (callback) {
+            callback = this._funcfix(callback);
+            WSRAW.cameraOn(period, maxHeight, maxWidth, true, this._funcwrap(callback));
+        } else {
+            WSRAW.cameraOn(period, maxHeight, maxWidth, true);
+        }
+    }
     this.cameraPhoto = function (callback) {
         if (callback) {
             callback = this._funcfix(callback);
@@ -936,6 +948,14 @@ function WearScript() {
         if(!adb)
             adb = false;
         WSRAW.control(cmd, adb);
+    }
+    this.picarus = function(model, input, callback) {
+        callback = this._funcfix(callback);
+        WSRAW.picarus(model, input, this._funcwrap(function (x) {callback(atob(x))}));
+    }
+    this.picarusStream = function(model, callback) {
+        callback = this._funcfix(callback);
+        WSRAW.picarusStream(model, this._funcwrap(function (x) {callback(atob(x))}));
     }
 }
 WS = new WearScript();

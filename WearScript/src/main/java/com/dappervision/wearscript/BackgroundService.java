@@ -42,6 +42,7 @@ import com.dappervision.wearscript.managers.GestureManager;
 import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.PebbleManager;
+import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 import com.dappervision.wearscript.ui.MediaPlayerFragment;
@@ -204,6 +205,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void onEventAsync(CameraEvents.Frame frameEvent) {
+        Log.d(TAG, "CameraFrame Got: " + System.nanoTime());
         try {
             final CameraManager.CameraFrame frame = frameEvent.getCameraFrame();
             // TODO(brandyn): Move this timing logic into the camera manager
@@ -223,6 +225,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             }
             // NOTE(brandyn): Done from here because the frame must have "done" called on it
             ((WarpManager) getManager(WarpManager.class)).processFrame(frameEvent);
+            ((PicarusManager) getManager(PicarusManager.class)).processFrame(frameEvent);
         } finally {
             frameEvent.done();
         }
@@ -513,8 +516,17 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
                 Log.d(TAG, "Screen off");
+                CameraManager cm = ((CameraManager) bs.getManager(CameraManager.class));
+                if (cm != null) {
+                    cm.screenOff();
+                }
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
                 Log.d(TAG, "Screen on");
+                CameraManager cm = ((CameraManager) bs.getManager(CameraManager.class));
+                if (cm != null) {
+                    cm.screenOn();
+                }
+
             } else if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
                 BatteryDataProvider dp = (BatteryDataProvider) ((DataManager) bs.getManager(DataManager.class)).getProvider(WearScript.SENSOR.BATTERY.id());
                 if (dp != null)

@@ -18,6 +18,9 @@ import com.dappervision.wearscript.events.LiveCardEvent;
 import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.MediaPlayEvent;
 import com.dappervision.wearscript.events.PebbleMessageEvent;
+import com.dappervision.wearscript.events.PicarusBenchmarkEvent;
+import com.dappervision.wearscript.events.PicarusEvent;
+import com.dappervision.wearscript.events.PicarusStreamEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -39,6 +42,7 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.WifiManager;
@@ -491,6 +495,26 @@ public class WearScript {
     @JavascriptInterface
     public void control(String event, boolean adb){
         Utils.eventBusPost(new ControlEvent(event, adb));
+    }
+
+    @JavascriptInterface
+    public void picarus(String model, String input, String callback) {
+        Utils.eventBusPost((new CallbackRegistration(PicarusManager.class, callback)).setEvent(callback));
+        Utils.eventBusPost(new PicarusEvent(Base64.decode(model.getBytes(), Base64.NO_WRAP),
+            Base64.decode(input.getBytes(), Base64.NO_WRAP),
+            callback));
+    }
+
+    @JavascriptInterface
+    public void picarusStream(String model, String callback) {
+        Utils.eventBusPost((new CallbackRegistration(PicarusManager.class, callback)).setEvent(callback));
+        Utils.eventBusPost(new PicarusStreamEvent(Base64.decode(model.getBytes(), Base64.NO_WRAP),
+                callback));
+    }
+
+    @JavascriptInterface
+    public void picarusBenchmark() {
+        Utils.eventBusPost(new PicarusBenchmarkEvent());
     }
 
     private void requiresGDK() {
