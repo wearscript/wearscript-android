@@ -11,6 +11,7 @@ import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.events.ActivityEvent;
 import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.events.CameraEvents;
+import com.dappervision.wearscript.events.OpenCVLoadedEvent;
 import com.dappervision.wearscript.events.PicarusEvent;
 import com.dappervision.wearscript.events.PicarusRegistrationSampleEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -38,6 +39,7 @@ public class WarpManager extends Manager {
     public static final String SAMPLE = "sample";
     public static final String TAG = "WarpManager";
     public static final String GLASS2PREVIEWH = "GLASS2PREVIEWH";
+    public static final String ARTAGS = "ARTAGS";
     private Bitmap mCacheBitmap;
     private SurfaceView view;
     private Mat frameBGR;
@@ -49,15 +51,12 @@ public class WarpManager extends Manager {
     private Mat sampleBGR;
     private double[] hSmallToGlass1280x720;
     private double[] hSmallToGlass640x360;
-    private double[] hSmallToGlass256x144;
 
     private Mat hSmallToGlassMat1280x720;
     private Mat hSmallToGlassMat640x360;
-    private Mat hSmallToGlassMat256x144;
 
     private double[] hGlassToSmall1280x720;
     private double[] hGlassToSmall640x360;
-    private double[] hGlassToSmall256x144;
 
     private boolean isSetup;
 
@@ -161,11 +160,9 @@ public class WarpManager extends Manager {
 
         hGlassToSmall1280x720 = new double[9];
         hGlassToSmall640x360 = new double[9];
-        hGlassToSmall256x144 = new double[9];
 
         this.hSmallToGlass1280x720 = hSmallToGlass1280x720;
         hSmallToGlass640x360 = new double[9];
-        hSmallToGlass256x144 = new double[9];
 
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++) {
@@ -177,8 +174,6 @@ public class WarpManager extends Manager {
         hSmallToGlassMat1280x720 = setupMatrix(hSmallToGlass1280x720, hGlassToSmall1280x720);
         hSmallToGlassMat640x360 = setupMatrix(hSmallToGlass640x360, hGlassToSmall640x360);
 
-        //hSmallToGlassMat1280x720 = HMatFromArray(hSmallToGlass1280x720NEW);
-        //hSmallToGlassMat640x360 = setupMatrix(hSmallToBig640x360, hBigToGlass, hSmallToGlass640x360, hGlassToSmall640x360);
         frameWarp = new Mat(360, 640, CvType.CV_8UC3);
         isSetup = true;
     }
@@ -259,8 +254,6 @@ public class WarpManager extends Manager {
             return hSmallToGlass1280x720;
         else if (width == 640 && height == 360)
             return hSmallToGlass640x360;
-        //else if (width == 256 && height == 144)
-        //    return hSmallToGlass256x144;
         return null;
     }
 
@@ -269,8 +262,6 @@ public class WarpManager extends Manager {
             return hGlassToSmall1280x720;
         else if (width == 640 && height == 360)
             return hGlassToSmall640x360;
-        //else if (width == 256 && height == 144)
-        //    return hGlassToSmall256x144;
         return null;
     }
 
@@ -279,8 +270,6 @@ public class WarpManager extends Manager {
             return hSmallToGlassMat1280x720;
         else if (width == 640 && height == 360)
             return hSmallToGlassMat640x360;
-        //else if (width == 256 && height == 144)
-        //    return hSmallToGlassMat256x144;
         return null;
     }
 
@@ -324,9 +313,7 @@ public class WarpManager extends Manager {
                         sampleBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
                     Imgproc.cvtColor(frame, sampleBGR, Imgproc.COLOR_RGB2BGR);
                     useSample = true;
-                    // TODO: Specialize it for this group/device
                     com.dappervision.wearscript.Utils.eventBusPost(new PicarusRegistrationSampleEvent(frameJPEG));
-                    //com.dappervision.wearscript.Utils.eventBusPost(new SendEvent("warpsample", "", ValueFactory.createRawValue(frameJPEG)));
                 }
             }
         }

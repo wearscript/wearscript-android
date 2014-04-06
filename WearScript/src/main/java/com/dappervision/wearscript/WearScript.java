@@ -42,6 +42,7 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.OpenCVManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.PebbleManager;
@@ -188,11 +189,16 @@ public class WearScript {
         Utils.eventBusPost(new ActivityEvent(ActivityEvent.Mode.WARP));
     }
 
+    @JavascriptInterface
+    public void cvInit(String callback) {
+        Utils.eventBusPost(new CallbackRegistration(OpenCVManager.class, callback).setEvent(OpenCVManager.LOAD));
+    }
 
     @JavascriptInterface
     public void warpPreviewSamplePlane(String callback) {
         Log.i(TAG, "warpPreviewsample");
         Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.SAMPLE));
+
         Utils.eventBusPost(new WarpModeEvent(WarpManager.Mode.SAMPLEWARPPLANE));
     }
 
@@ -201,6 +207,12 @@ public class WearScript {
         Log.i(TAG, "warpPreviewsample");
         Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.SAMPLE));
         Utils.eventBusPost(new WarpModeEvent(WarpManager.Mode.SAMPLEWARPGLASS));
+    }
+
+    @JavascriptInterface
+    public void warpARTags(String callback) {
+        Log.i(TAG, "warpARTags");
+        Utils.eventBusPost(new CallbackRegistration(WarpManager.class, callback).setEvent(WarpManager.ARTAGS));
     }
 
     @JavascriptInterface

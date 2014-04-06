@@ -14,6 +14,7 @@ import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.ActivityEvent;
 import com.dappervision.wearscript.events.CameraEvents;
+import com.dappervision.wearscript.events.PicarusARTagEvent;
 import com.dappervision.wearscript.events.PicarusBenchmarkEvent;
 import com.dappervision.wearscript.events.PicarusEvent;
 import com.dappervision.wearscript.events.PicarusRegistrationSampleEvent;
@@ -44,9 +45,10 @@ import static org.msgpack.template.Templates.tList;
 
 public class PicarusManager extends Manager {
     public static final String TAG = "PicarusManager";
+    private byte[] arModel;
     private byte[] registrationMatchModel;
     private byte[] registrationPointModel;
-    private long registrationMatchModelCached, registrationPointModelCached;
+    private long registrationMatchModelCached, registrationPointModelCached, arModelCached;
     private ServiceConnection picarusConnection;
     private IBinder picarusService;
     private TreeMap<String, byte[]> streamModels;
@@ -60,6 +62,8 @@ public class PicarusManager extends Manager {
         registrationPointModel = Base64.decode(model.getBytes(), Base64.NO_WRAP);
         model = "kYKia3eDqG1heF9kaXN0eKttaW5faW5saWVycwqtcmVwcm9qX3RocmVzaMtAFAAAAAAAAKRuYW1l2gAkcGljYXJ1cy5JbWFnZUhvbW9ncmFwaHlSYW5zYWNIYW1taW5n";
         registrationMatchModel = Base64.decode(model.getBytes(), Base64.NO_WRAP);
+        model = "kYKia3eApG5hbWW4cGljYXJ1cy5BUk1hcmtlckRldGVjdG9y";
+        arModel = Base64.decode(model.getBytes(), Base64.NO_WRAP);
 
         // Bind Service
         picarusConnection = new ServiceConnection() {
@@ -78,7 +82,7 @@ public class PicarusManager extends Manager {
 
     public void makeCachedModels() {
         IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
-        if (registrationPointModelCached != 0 && registrationMatchModelCached != 0)
+        if (registrationPointModelCached != 0 && registrationMatchModelCached != 0 && arModelCached != 0)
             return;
         try {
             registrationPointModelCached = picarus.createModel(registrationPointModel);
@@ -88,6 +92,12 @@ public class PicarusManager extends Manager {
         }
         try {
             registrationMatchModelCached = picarus.createModel(registrationMatchModel);
+        } catch (RemoteException e1) {
+            Log.e(TAG, "Execution error");
+            return;
+        }
+        try {
+            arModelCached = picarus.createModel(arModel);
         } catch (RemoteException e1) {
             Log.e(TAG, "Execution error");
             return;
@@ -140,6 +150,7 @@ public class PicarusManager extends Manager {
     }
 
     public void onEventBackgroundThread(PicarusRegistrationSampleEvent e) {
+        // TODO(brandyn): Look into whether this should be async
         synchronized (this) {
             IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
             makeCachedModels();
@@ -149,9 +160,23 @@ public class PicarusManager extends Manager {
             } catch (RemoteException exeption) {
                 Log.w(TAG, "PicarusService closed");
             }
+        }
+    }
+/*
+    public void onEventBackgroundThread(PicarusARTagEvent e) {
+        synchronized (this) {
+            IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
+            makeCachedModels();
+            Log.d(TAG, "Trying to call");
+            try {
+                byte[] = picarus.processBinary(arModelCached, e.getJPEG());
+            } catch (RemoteException exeption) {
+                Log.w(TAG, "PicarusService closed");
+            }
             Log.d(TAG, "Point sample: " + Base64.encodeToString(pointSample, Base64.NO_WRAP));
         }
     }
+*/
 
     public byte[] msgpackPoints(byte[] points0, byte[] points1) {
         List<Value> data = new ArrayList<Value>();

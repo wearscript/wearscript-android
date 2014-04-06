@@ -806,7 +806,10 @@ function WearScript() {
     this.warpSetOverlay = function (data) {
         WSRAW.warpSetOverlay(data);
     }
-
+    this.cvInit = function (callback) {
+        callback = this._funcfix(callback);
+        WSRAW.cvInit(this._funcwrap(callback));
+    }
     this.warpPreviewSampleGlass = function (callback) {
         if (!callback)
             callback = '';

@@ -38,6 +38,7 @@ import java.util.List;
 
 public class OpenCVManager extends Manager {
     private static final String TAG = "OpenCVManager";
+    public static final String LOAD = "LOAD";
     public enum State {
         UNLOADED, LOADING, LOADED
     }
@@ -59,6 +60,15 @@ public class OpenCVManager extends Manager {
         }
     }
 
+    public void setupCallback(CallbackRegistration r) {
+        // Entry point for capturing photos/videos
+        super.setupCallback(r);
+        Log.d(TAG, "setupCallback");
+        if (r.getEvent().equals(LOAD)) {
+            loadOpenCV();
+        }
+    }
+
     public void loadOpenCV() {
         synchronized (this) {
             if (state != State.UNLOADED) {
@@ -73,6 +83,8 @@ public class OpenCVManager extends Manager {
                             Log.i(TAG, "Lifecycle: OpenCV loaded successfully: camflow");
                             synchronized (this) {
                                 state = State.LOADED;
+                                makeCall(LOAD, "");
+                                unregisterCallback(LOAD);
                                 Utils.eventBusPost(new OpenCVLoadedEvent());
                             }
                         }
