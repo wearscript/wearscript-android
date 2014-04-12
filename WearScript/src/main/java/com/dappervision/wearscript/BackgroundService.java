@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.media.AudioRecord;
 import android.os.Binder;
@@ -39,6 +40,7 @@ import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.IBeaconManager;
 import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.PebbleManager;
@@ -286,6 +288,12 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 if(activity != null) {
                     ScriptActivity a = activity;
                     ManagerManager.get().add(new PebbleManager(a, this));
+                }
+            }
+            if (!HardwareDetector.isGlass && getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) && ManagerManager.get().get(IBeaconManager.class) == null) {
+                if(activity != null) {
+                    ScriptActivity a = activity;
+                    ManagerManager.get().add(new IBeaconManager(a, this));
                 }
             }
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
