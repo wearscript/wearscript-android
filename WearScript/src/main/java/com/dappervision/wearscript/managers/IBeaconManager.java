@@ -7,9 +7,14 @@ import android.os.RemoteException;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.events.SendEvent;
+import com.radiusnetworks.ibeacon.IBeacon;
 import com.radiusnetworks.ibeacon.IBeaconConsumer;
-import com.radiusnetworks.ibeacon.MonitorNotifier;
+import com.radiusnetworks.ibeacon.RangeNotifier;
 import com.radiusnetworks.ibeacon.Region;
+
+import java.util.Collection;
 
 public class IBeaconManager extends Manager implements IBeaconConsumer{
 
@@ -38,28 +43,22 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
 
     @Override
     public void onIBeaconServiceConnect() {
-        iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
+        iBeaconManager.setRangeNotifier(new RangeNotifier() {
             @Override
-            public void didEnterRegion(Region region) {
-                Log.i(TAG, "I just saw an iBeacon for the firt time!");
-            }
-
-            @Override
-            public void didExitRegion(Region region) {
-                Log.i(TAG, "I no longer see an iBeacon");
-            }
-
-            @Override
-            public void didDetermineStateForRegion(int state, Region region) {
-                Log.i(TAG, "I have just switched from seeing/not seeing iBeacons: "+state);
+            public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
+                if (iBeacons.size() > 0) {
+                    Log.i(TAG, "A beacon is " + iBeacons.iterator().next().getAccuracy() + " meters away.");
+                    Utils.eventBusPost(new SendEvent("ibeacon", iBeacons.iterator().next().getAccuracy()));
+                }
             }
         });
 
         try {
-            iBeaconManager.startMonitoringBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
+            iBeaconManager.startRangingBeaconsInRegion(new Region("myRangingUniqueId", null, null, null));
         } catch (RemoteException e) {   }
     }
 
+    // Methods usually implemented by the activity
     @Override
     public boolean bindService(Intent intent, ServiceConnection connection, int mode) {
         return context.bindService(intent, connection, mode);
