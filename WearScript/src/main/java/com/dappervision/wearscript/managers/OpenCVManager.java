@@ -51,11 +51,6 @@ public class OpenCVManager extends Manager {
 
     public void onEvent(OpenCVLoadEvent event) {
         synchronized (this) {
-            if (state == State.LOADED) {
-                Utils.eventBusPost(new OpenCVLoadedEvent());
-                Log.w(TAG, "Already Loaded: camflow");
-                return;
-            }
             loadOpenCV();
         }
     }
@@ -69,8 +64,21 @@ public class OpenCVManager extends Manager {
         }
     }
 
+    public void callLoaded() {
+        synchronized (this) {
+            makeCall(LOAD, "");
+            unregisterCallback(LOAD);
+            Utils.eventBusPost(new OpenCVLoadedEvent());
+        }
+    }
+
     public void loadOpenCV() {
         synchronized (this) {
+            if (state == State.LOADED) {
+                Log.w(TAG, "Already Loaded: camflow");
+                callLoaded();
+                return;
+            }
             if (state != State.UNLOADED) {
                 return;
             }
@@ -83,9 +91,7 @@ public class OpenCVManager extends Manager {
                             Log.i(TAG, "Lifecycle: OpenCV loaded successfully: camflow");
                             synchronized (this) {
                                 state = State.LOADED;
-                                makeCall(LOAD, "");
-                                unregisterCallback(LOAD);
-                                Utils.eventBusPost(new OpenCVLoadedEvent());
+                                callLoaded();
                             }
                         }
                         break;

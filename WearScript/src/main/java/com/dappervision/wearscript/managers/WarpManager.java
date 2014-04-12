@@ -221,7 +221,10 @@ public class WarpManager extends Manager {
 
     public void onEvent(WarpSetAnnotationEvent event) {
         synchronized (this) {
-            sampleBGR = ImageBGRFromString(event.getImage());
+            Mat frame = ImageBGRFromString(event.getImage());
+            if (sampleBGR == null || sampleBGR.height() != frame.height() || sampleBGR.width() != frame.width())
+                sampleBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
+            Imgproc.cvtColor(frame, sampleBGR, Imgproc.COLOR_RGB2BGR);
             useSample = true;
         }
     }
@@ -229,23 +232,6 @@ public class WarpManager extends Manager {
     public void onEvent(WarpSetupHomographyEvent event) {
         synchronized (this) {
             setupMatrices(ParseJSONDoubleArray((JSONArray)(JSONValue.parse(event.getHomography()))));
-        }
-    }
-
-    public void onEvent(WarpDrawEvent event) {
-        synchronized (this) {
-            if ((mode == Mode.SAMPLEWARPPLANE || mode == Mode.SAMPLEWARPGLASS) && useSample) {
-                if (!isSetup)
-                    setupMatrices();
-                double hGlassToSmall[] = getHGlassToSmall(sampleBGR.height(), sampleBGR.width());
-                if (hGlassToSmall == null) {
-                    Log.w(TAG, "Warp: Bad size");
-                    return;
-                }
-                double circleCenter[] = {event.getX(), event.getY(), 1};
-                double circleCenterSmall[] = HMultPoint(hGlassToSmall, circleCenter);
-                Core.circle(sampleBGR, new Point(circleCenterSmall[0], circleCenterSmall[1]), event.getRadius(), new Scalar(event.getR(), event.getG(), event.getB()));
-            }
         }
     }
 
@@ -275,6 +261,8 @@ public class WarpManager extends Manager {
 
     public void onEventAsync(WarpHEvent event) {
         double[] h = event.getH();
+        if (h == null)
+            return;
         synchronized (this) {
             if ((mode == Mode.SAMPLEWARPPLANE || mode == Mode.SAMPLEWARPGLASS) && useSample) {
                 if (!isSetup)
@@ -308,12 +296,17 @@ public class WarpManager extends Manager {
                     captureSample = false;
                     Log.d(TAG, "Warp: Capturing Sample");
                     Mat frame = frameEvent.getCameraFrame().getRGB();
-                    byte[] frameJPEG = frameEvent.getCameraFrame().getPPM();
+                    byte[] framePPM = frameEvent.getCameraFrame().getPPM();
                     if (sampleBGR == null || sampleBGR.height() != frame.height() || sampleBGR.width() != frame.width())
                         sampleBGR = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC3);
                     Imgproc.cvtColor(frame, sampleBGR, Imgproc.COLOR_RGB2BGR);
                     useSample = true;
-                    com.dappervision.wearscript.Utils.eventBusPost(new PicarusRegistrationSampleEvent(frameJPEG));
+                    if (this.hasCallback(SAMPLE)) {
+                        byte[] frameJPEG = frameEvent.getCameraFrame().getJPEG();
+                        makeCall(SAMPLE, "'" + Base64.encodeToString(frameJPEG, Base64.NO_WRAP) + "'");
+                        unregisterCallback(SAMPLE);
+                    }
+                    com.dappervision.wearscript.Utils.eventBusPost(new PicarusRegistrationSampleEvent(framePPM));
                 }
             }
         }
@@ -321,10 +314,10 @@ public class WarpManager extends Manager {
         if (busy)
             return;
         synchronized (this) {
-            busy = true;
             if (!isSetup)
                 setupMatrices();
             if (mode == Mode.CAM2GLASS) {
+                busy = true;
                 Mat inputBGR;
                 Mat frame = frameEvent.getCameraFrame().getRGB();
                 if (frameBGR == null || frameBGR.height() != frame.height() || frameBGR.width() != frame.width())

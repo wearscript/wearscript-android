@@ -222,7 +222,9 @@ public class ConnectionManager extends Manager {
 
         @Override
         public void onReceive(String channel, byte[] dataRaw, List<Value> data) {
-            if (channel.equals(this.groupDevice) || channel.equals(this.group)) {
+            // TODO(brandyn): Clean up gist sync behavior
+            Log.d(TAG, "onReceive: " + channel);
+            if ((channel.equals(this.groupDevice) || channel.equals(this.group)) && !channel.equals(GIST_LIST_SYNC_CHAN)) {
                 String command = data.get(1).asRawValue().getString();
                 Log.d(TAG, String.format("Got %s %s", channel, command));
                 if (command.equals("script")) {
@@ -262,7 +264,7 @@ public class ConnectionManager extends Manager {
                 1. TODO: Remove old scripts
                 2. Publish request to get each gist
                  */
-                Log.d(TAG, "Gist:" + data.get(1).toString());
+                Log.d(TAG, "Gist list sync");
                 gistSyncPending = data.get(1).asArrayValue().size();
                 for (Value v : data.get(1).asArrayValue()) {
                     Value gistid = (Value) toMap(v).get("id");
@@ -287,6 +289,7 @@ public class ConnectionManager extends Manager {
                 1. Make directory for script
                 2. Save script content
                  */
+                Log.d(TAG, "Gist get sync");
                 Log.d(TAG, "GistGet:" + data.get(1).toString());
                 TreeMap<String, Value> gist = toMap(data.get(1));
                 TreeMap<String, Value> files = toMap(gist.get("files"));

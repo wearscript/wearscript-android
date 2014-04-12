@@ -16,11 +16,13 @@ import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LiveCardEvent;
 import com.dappervision.wearscript.events.MediaEvent;
-import com.dappervision.wearscript.events.MediaPlayEvent;
 import com.dappervision.wearscript.events.PebbleMessageEvent;
 import com.dappervision.wearscript.events.PicarusBenchmarkEvent;
 import com.dappervision.wearscript.events.PicarusEvent;
-import com.dappervision.wearscript.events.PicarusStreamEvent;
+import com.dappervision.wearscript.events.PicarusModelCreateEvent;
+import com.dappervision.wearscript.events.PicarusModelProcessEvent;
+import com.dappervision.wearscript.events.PicarusModelProcessStreamEvent;
+import com.dappervision.wearscript.events.PicarusModelProcessWarpEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.SendEvent;
@@ -224,12 +226,6 @@ public class WearScript {
     @JavascriptInterface
     public void warpSetOverlay(String image) {
         Utils.eventBusPost(new WarpSetAnnotationEvent(Base64.decode(image, Base64.NO_WRAP)));
-    }
-
-    @JavascriptInterface
-    public void warpDraw(double x, double y, int radius, int r, int g, int b) {
-        Log.i(TAG, "warpdraw");
-        Utils.eventBusPost(new WarpDrawEvent(x, y, radius, r, g, b));
     }
 
     @JavascriptInterface
@@ -518,15 +514,30 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void picarusStream(String model, String callback) {
-        Utils.eventBusPost((new CallbackRegistration(PicarusManager.class, callback)).setEvent(callback));
-        Utils.eventBusPost(new PicarusStreamEvent(Base64.decode(model.getBytes(), Base64.NO_WRAP),
-                callback));
+    public void picarusBenchmark() {
+        Utils.eventBusPost(new PicarusBenchmarkEvent());
     }
 
     @JavascriptInterface
-    public void picarusBenchmark() {
-        Utils.eventBusPost(new PicarusBenchmarkEvent());
+    public void picarusModelCreate(String model, int id, String callback) {
+        Utils.eventBusPost(new PicarusModelCreateEvent(Base64.decode(model.getBytes(), Base64.NO_WRAP), id, callback));
+    }
+
+    @JavascriptInterface
+    public void picarusModelProcess(int id, String input, String callback) {
+        Utils.eventBusPost(new PicarusModelProcessEvent(id, Base64.decode(input.getBytes(), Base64.NO_WRAP), callback));
+    }
+
+    @JavascriptInterface
+    public void picarusModelProcessStream(int id, String callback) {
+        Utils.eventBusPost((new CallbackRegistration(PicarusManager.class, callback)).setEvent(PicarusManager.MODEL_STREAM + id));
+        Utils.eventBusPost(new PicarusModelProcessStreamEvent(id));
+    }
+
+    @JavascriptInterface
+    public void picarusModelProcessWarp(int id, String callback) {
+        Utils.eventBusPost((new CallbackRegistration(PicarusManager.class, callback)).setEvent(PicarusManager.MODEL_WARP + id));
+        Utils.eventBusPost(new PicarusModelProcessWarpEvent(id));
     }
 
     private void requiresGDK() {

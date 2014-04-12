@@ -677,6 +677,30 @@ function WearScript() {
     this._cbPrefix = 'WS' + this._randstr(4);
     this.callbacks = {};
     this.cbCount = 0;
+    this.picarusModelCount = 0;
+    this.PicarusModel = function (model, callback) {
+        this.id = WS.picarusModelCount;
+        WS.picarusModelCount += 1;
+        callback = WS._funcfix(callback);
+        this.loaded = false;
+        WSRAW.picarusModelCreate(model, this.id, WS._funcwrap((function () {
+            this.loaded = true;
+            callback();
+        }).bind(this)));
+
+        this.process = function (input, callback) {
+            callback = WS._funcfix(callback);
+            WSRAW.picarusModelProcess(this.id, input, WS._funcwrap(function (x) {callback(atob(x))}));
+        };
+        this.processStream = function (callback) {
+            callback = WS._funcfix(callback);
+            WSRAW.picarusModelProcessStream(this.id, WS._funcwrap(function (x) {callback(atob(x))}));
+        };
+        this.processWarpTargets = function (callback) {
+            callback = WS._funcfix(callback);
+            WSRAW.picarusModelProcessWarp(this.id, WS._funcwrap(function (x) {callback(atob(x))}));
+        };
+    };
     this.Cards = function (cards) {
          this.cards = cards || [];
          this.isFunc = function (x) {return typeof x === 'function'};
