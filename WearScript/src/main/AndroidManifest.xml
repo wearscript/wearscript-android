@@ -95,5 +95,20 @@
             android:theme="@style/MenuTheme"></activity>
 
         <service android:name="com.dappervision.wearscript.BackgroundService" />
+        <service android:enabled="true"
+            android:exported="true"
+            android:isolatedProcess="false"
+            android:label="iBeacon"
+            android:name="com.radiusnetworks.ibeacon.service.IBeaconService">
+        </service>
+        <service android:enabled="true"
+            android:name="com.radiusnetworks.ibeacon.IBeaconIntentProcessor">
+            <meta-data android:name="background" android:value="true" />
+            <intent-filter
+                android:priority="1" >
+                <action android:name="com.dappervision.wearscript.DID_RANGING" />
+                <action android:name="com.dappervision.wearscript.DID_MONITORING" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>
