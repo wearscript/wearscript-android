@@ -66,7 +66,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     protected TextToSpeech tts;
     protected ScreenBroadcastReceiver broadcastReceiver;
     protected String glassID;
-    protected CardScrollView cardScroller;
     private ScriptActivity activity;
     private boolean dataRemote, dataLocal, dataWifi;
     private double lastSensorSaveTime, sensorDelay;
@@ -158,10 +157,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
             }
         }
-    }
-
-    public void cardPosition(int position) {
-        cardScroller.setSelection(position);
     }
 
     public void saveSensors() {
@@ -276,7 +271,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             sensorTypes = new TreeMap<String, Integer>();
             dataWifi = dataRemote = dataLocal = false;
             lastSensorSaveTime = sensorDelay = 0.;
-            updateCardScrollView();
 
             ManagerManager.get().resetAll();
             HandlerHandler.get().resetAll();
@@ -309,17 +303,6 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         final PowerManager.WakeLock wakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "BackgroundService");
         wakeLock.acquire();
         wakeLock.release();
-    }
-
-    public void updateCardScrollView() {
-        if (activity == null || cardScroller == null)
-            return;
-        final ScriptActivity a = activity;
-        a.runOnUiThread(new Thread() {
-            public void run() {
-                cardScroller.updateViews(true);
-            }
-        });
     }
 
     public void onEventMainThread(ScriptEvent e) {

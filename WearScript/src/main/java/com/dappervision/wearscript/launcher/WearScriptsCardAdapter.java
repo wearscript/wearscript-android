@@ -42,26 +42,16 @@ public class WearScriptsCardAdapter extends CardScrollAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
-            return setItemOnCard(this, array.get(position));
+            return array.get(position);
         } else {
-            return setItemOnCard(this, convertView);
+            return convertView;
         }
     }
 
     @Override
-    public int findIdPosition(Object id) {
+    public int getPosition(Object o) {
         for (int i = 0; i < array.size(); i++) {
-            if (array.get(i).getId() == (Integer) id) {
-                return i;
-            }
-        }
-        return AdapterView.INVALID_POSITION;
-    }
-
-    @Override
-    public int findItemPosition(Object item) {
-        for (int i = 0; i < array.size(); i++) {
-            if (array.get(i).equals(item)) {
+            if (array.get(i) == o) {
                 return i;
             }
         }
@@ -71,7 +61,7 @@ public class WearScriptsCardAdapter extends CardScrollAdapter {
     public View cardFactory(WearScriptInfo info) {
         Card card = new Card(this.activity);
         card.setText(info.getTitle().toString());
-        View v = card.toView();
+        View v = card.getView();
         v.setId(info.getId());
         return v;
     }

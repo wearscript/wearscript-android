@@ -17,7 +17,6 @@ import com.dappervision.wearscript.events.SendEvent;
 import com.dappervision.wearscript.ui.MenuActivity;
 import com.google.android.glass.timeline.DirectRenderingCallback;
 import com.google.android.glass.timeline.LiveCard;
-import com.google.android.glass.timeline.TimelineManager;
 
 public class ScriptView extends WebView implements SurfaceHolder.Callback, DirectRenderingCallback {
     private static final String TAG = "ScriptView";
@@ -64,7 +63,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
         if (liveCard != null)
             return;
         this.drawFrequency = drawFrequency;
-        liveCard = TimelineManager.from(context).createLiveCard("myid");
+        liveCard = new LiveCard(context, "myid");
         Log.d(TAG, "Publishing LiveCard");
         liveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(this);
 

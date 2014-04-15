@@ -125,7 +125,7 @@ public class CardTreeManager extends Manager {
             Card c = new Card(service);
             c.setText((String) card.get("text"));
             c.setFootnote((String) card.get("info"));
-            return c.toView();
+            return c.getView();
         } else if (type.equals("html")) {
             WebView wv = new WebView(service);
             wv.setInitialScale(100);
@@ -163,7 +163,7 @@ public class CardTreeManager extends Manager {
     public void nodeSelected(Node node) {
         Integer id = nodeToId.get(node);
         if (id != null) {
-            cardTree.updateViews(false); // NOTE(brandyn): Hack for webviews, their scale gets messed up
+            //cardTree.updateViews(); // NOTE(brandyn): Hack for webviews, their scale gets messed up
             Log.d(TAG, "Calling Select: " + "SELECTED:" + id);
             makeCall("SELECTED:" + id, "");
         }
