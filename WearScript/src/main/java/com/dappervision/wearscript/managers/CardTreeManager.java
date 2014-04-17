@@ -129,7 +129,7 @@ public class CardTreeManager extends Manager {
         } else if (type.equals("html")) {
             WebView wv = new WebView(service);
             wv.setInitialScale(100);
-            String body = "<html style='width:100%; height:100%; overflow:hidden'><head><link href='roboto.css' rel='stylesheet' type='text/css'><link rel='stylesheet' href='base_style.css'></head><body style='width:100%; height:100%; overflow:hidden; margin:0;' bgcolor='#000000'>" + card.get("html") + "</body></html>";
+            String body = "<html style='width:100%; height:100%; overflow:hidden; background-color:#000000'><head><link href='roboto.css' rel='stylesheet' type='text/css'><link rel='stylesheet' href='base_style.css'></head><body style='width:100%; height:100%; overflow:hidden; margin:0'>" + card.get("html") + "</body></html>";
             Log.d(TAG, body);
             wv.loadDataWithBaseURL("file:///android_asset/", body, "text/html", "utf-8", null);
             return wv;
