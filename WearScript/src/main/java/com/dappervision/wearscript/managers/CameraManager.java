@@ -153,7 +153,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                         @Override
                         public void onEvent(int event, String path) {
                             if (DBG) Log.d(TAG, "FileObserver got event " + event);
-                            if (event == FileObserver.CLOSE_WRITE) {
+                            if (event == FileObserver.CLOSE_WRITE || event == FileObserver.ATTRIB) {
                                 Log.d(TAG, "Detected photo file write. "
                                         + "Now I'll hit the callbacks and quit.");
                                 byte imageData[] = Utils.LoadFile(new File(pictureFilePath));
