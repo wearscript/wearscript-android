@@ -84,6 +84,7 @@ public class PebbleManager extends Manager{
     @Override
     public void shutdown() {
         super.shutdown();
+        pebbleAccelSensorOff();
         teardown();
     }
 
@@ -150,8 +151,16 @@ public class PebbleManager extends Manager{
 
         data.addInt8(0, (byte) Cmd.Cmd_configAcceldata);
         data.addInt32(1, rate); // Set rate 10 25 50 100
-        data.addInt32(2, 1); // Hard code 1 for data samples
-        data.addInt32(3, 1); // subscribe
+        data.addInt32(2, 1);    // Hard code 1 for data samples
+        data.addInt32(3, 1);    // subscribe
+        pebbleMessageManager.offer(data);
+    }
+
+    public void pebbleAccelSensorOff() {
+        PebbleDictionary data = new PebbleDictionary();
+
+        data.addInt8(0, (byte) Cmd.Cmd_configAcceldata);
+        data.addInt32(3, 0);
         pebbleMessageManager.offer(data);
     }
 
@@ -178,11 +187,18 @@ public class PebbleManager extends Manager{
         }
     }
 
+
     public void onEvent(SensorJSEvent event) {
         int type = event.getType();
-        if(type == WearScript.SENSOR.PEBBLE_ACCELEROMETER.id())
-            pebbleAccelSensorOn((int)event.getSampleTime());
+        if(event.getStatus()) {
+            if (type == WearScript.SENSOR.PEBBLE_ACCELEROMETER.id())
+                pebbleAccelSensorOn((int) event.getSampleTime());
+        }
+        else {
+            pebbleAccelSensorOff();
+        }
     }
+
 
     private void teardown() {
         if(dataReceiver != null) {
