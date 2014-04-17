@@ -459,6 +459,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
     public ScriptView createScriptView() {
         ScriptView mCallback = new ScriptView(this);
+        mCallback.setBackgroundColor(0);
         return mCallback;
     }
 
