@@ -28,6 +28,8 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
@@ -43,7 +45,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     public static final String PHOTO_PATH = "PHOTO_PATH";
     public static final String VIDEO = "VIDEO";
     public static final String VIDEO_PATH = "VIDEO_PATH";
-    private static final boolean DBG = false;
+    private static final boolean DBG = true;
     private static final String TAG = "CameraManager";
     private static final int MAGIC_TEXTURE_ID = 10;
     private Camera camera;
@@ -65,6 +67,14 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
     public CameraManager(BackgroundService bs) {
         super(bs);
         reset();
+    }
+
+    public boolean getScreenIsOn() {
+        return screenIsOn;
+    }
+
+    public boolean getActivityVisible() {
+        return activityVisible;
     }
 
     public void setupCallback(CallbackRegistration r) {
@@ -120,10 +130,6 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         Intent intent = event.getIntent();
         Log.d(TAG, "Got request code: " + requestCode);
         if (requestCode == 1000) {
-            synchronized (this) {
-                mediaPauseCount -= 1;
-                stateChange();
-            }
             if (resultCode == Activity.RESULT_OK) {
                 final String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
                 String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
@@ -140,6 +146,23 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                             Log.e(TAG, "Couldn't create pictureFile.", e);
                         }
                     }
+                    FileInputStream fis = null;
+                    long size = 0;
+                    try {
+                        fis = new FileInputStream(new File(pictureFilePath));
+                        size = fis.getChannel().size();
+                    } catch (FileNotFoundException e) {
+                        Log.e(TAG, "Cannot open picture file path");
+                        return;
+                    } catch (IOException e) {
+                        Log.e(TAG, "Cannot get picture file size");
+                        return;
+                    }
+                    Log.d(TAG, "Picture file size: " + size);
+                    if (size > 0) {
+                        photoCallback(pictureFilePath);
+                        return;
+                    }
                     // use a Handler to keep WebView method from being called
                     // on FileObserver thread (bad form, elicits warning)
                     mHandler = new Handler();
@@ -154,9 +177,12 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                         public void onEvent(int event, String path) {
                             if (DBG) Log.d(TAG, "FileObserver got event " + event);
                             if (event == FileObserver.CLOSE_WRITE || event == FileObserver.ATTRIB) {
+                                synchronized (CameraManager.this) {
+                                    mediaPauseCount -= 1;
+                                    stateChange();
+                                }
                                 Log.d(TAG, "Detected photo file write. "
                                         + "Now I'll hit the callbacks and quit.");
-                                byte imageData[] = Utils.LoadFile(new File(pictureFilePath));
                                 mHandler.post(
                                         new Runnable() {
                                             @Override
@@ -191,12 +217,12 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
 
     // Called when FileObserver sees that the picture has been written
     private void photoCallback(String pictureFilePath) {
-        byte imageData[] = Utils.LoadFile(new File(pictureFilePath));
-        if (imageData == null) {
-            Log.w(TAG, "No image after FileObserver saw write?");
-            return;
-        }
         if (jsCallbacks.containsKey(PHOTO)) {
+            byte imageData[] = Utils.LoadFile(new File(pictureFilePath));
+            if (imageData == null) {
+                Log.w(TAG, "No image after FileObserver saw write?");
+                return;
+            }
             makeCall(PHOTO, imageData);
             jsCallbacks.remove(PHOTO);
         }

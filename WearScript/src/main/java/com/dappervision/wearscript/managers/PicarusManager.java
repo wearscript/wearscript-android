@@ -265,7 +265,12 @@ public class PicarusManager extends Manager {
                 return;
         }
         // TODO(brandyn): Benchmark this vs jpeg
-        byte[] frameJPEG = frameEvent.getCameraFrame().getPPM();
+        byte[] frameJPEG = frameEvent.getCameraFrame().getJPEG();
+        if (frameJPEG == null) {
+            Log.w(TAG, "Picarus stream unable to get frameJPEG");
+            return;
+        }
+        Log.d(TAG, "frameJPEG Length: " + frameJPEG.length);
         IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
         Log.d(TAG, "CamPath: Pre Picarus");
         TreeSet<Integer> modelStreamCopy;
@@ -274,8 +279,18 @@ public class PicarusManager extends Manager {
         }
         for (Integer id : modelStreamCopy) {
             try {
+                Log.w(TAG, "Picarus stream model:" + id);
                 Long modelPointer = modelCache.get(id);
+                if (modelPointer == null) {
+                    Log.w(TAG, "Picarus stream model doesn't exist in cache");
+                    continue;
+                }
                 byte [] output = picarus.processBinary(modelPointer, frameJPEG);
+                if (output == null || output.length == 0) {
+                    Log.w(TAG, "Picarus stream model returned null");
+                    continue;
+                }
+                Log.w(TAG, "Model Output Size: " + output.length);
                 makeCall(MODEL_STREAM + id, "'" + Base64.encodeToString(output, Base64.NO_WRAP) + "'");
             } catch (RemoteException exeption) {
                 Log.w(TAG, "PicarusService closed");
