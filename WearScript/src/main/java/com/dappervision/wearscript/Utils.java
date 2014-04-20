@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Locale;
 
+
 import de.greenrobot.event.EventBus;
 
 public class Utils {
@@ -65,6 +66,20 @@ public class Utils {
             Log.e(TAG, "Bad file read");
             return null;
         }
+    }
+
+    public static String getPackageGist(Context context) {
+        String gistId;
+        String packageName = context.getPackageName();
+        String[] nameComponents = packageName.split("\\.");
+        try {
+            gistId = nameComponents[1].split("_")[1];
+        } catch (NullPointerException e) {
+            return null;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
+        }
+        return gistId;
     }
 
     static public byte[] LoadData(String path, String suffix) {
