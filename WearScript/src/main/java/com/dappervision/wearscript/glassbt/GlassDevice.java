@@ -35,7 +35,7 @@ public final class GlassDevice {
 
     private GlassDevice() {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
+        Log.d(TAG, "Creating GlassDevice");
         if (mBluetoothAdapter == null) {
             Log.e(TAG, "No bluetooth");
             return;

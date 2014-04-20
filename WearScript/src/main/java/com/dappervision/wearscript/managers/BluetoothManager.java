@@ -14,6 +14,7 @@ import android.util.Base64;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.events.BluetoothBondEvent;
+import com.dappervision.wearscript.events.BluetoothModeEvent;
 import com.dappervision.wearscript.events.BluetoothWriteEvent;
 import com.dappervision.wearscript.events.CallbackRegistration;
 
@@ -158,17 +159,26 @@ public class BluetoothManager extends Manager {
     }
 
     public void setup() {
-        if (isSetup)
+        if (isSetup) {
+            log();
             return;
+        }
         isSetup = true;
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        log();
         if (mBluetoothAdapter == null) {
             // Device does not support Bluetooth
+            Log.e(TAG, "Bluetooth not available");
             return;
         }
         if (!mBluetoothAdapter.isEnabled()) {
             Log.w(TAG, "BT not enabled");
         }
+    }
+
+    public void log() {
+        if (mBluetoothAdapter != null)
+            Log.d(TAG, String.format("Bluetooth: Mode: %d State: %d Discovering: %s Enabled: %s", mBluetoothAdapter.getScanMode(), mBluetoothAdapter.getState(), mBluetoothAdapter.isDiscovering(), mBluetoothAdapter.isEnabled()));
     }
 
     protected void setupCallback(CallbackRegistration e) {
@@ -203,6 +213,17 @@ public class BluetoothManager extends Manager {
         }
     }
 
+    public void onEventAsync(BluetoothModeEvent e) {
+        setup();
+        if (mBluetoothAdapter == null)
+            return;
+        if (e.isEnable()) {
+            mBluetoothAdapter.enable();
+        } else {
+            mBluetoothAdapter.disable();
+        }
+    }
+
     public BluetoothDevice findBondedDevice(String address) {
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         // If there are paired devices
@@ -218,6 +239,7 @@ public class BluetoothManager extends Manager {
     }
 
     public void pairWithDevice(String address) {
+        mBluetoothAdapter.cancelDiscovery();
         BluetoothDevice device = findBondedDevice(address);
         if (device == null) {
             Log.e(TAG, "Could find bonded device: " + address);
@@ -251,7 +273,7 @@ public class BluetoothManager extends Manager {
         Log.d(TAG, "Connected");
     }
 
-    public void onEventBackgroundThread(BluetoothBondEvent e) {
+    public void onEventAsync(BluetoothBondEvent e) {
         setup();
         BluetoothDevice device = (BluetoothDevice)mDevices.get(e.getAddress());
 
@@ -269,7 +291,7 @@ public class BluetoothManager extends Manager {
         }
     }
 
-    public void onEventBackgroundThread(BluetoothWriteEvent e) {
+    public void onEventAsync(BluetoothWriteEvent e) {
         setup();
         Log.d(TAG, "Addr: " + e.getAddress() + " Buffer: " + new String(e.getBuffer()));
         if (!mSockets.containsKey(e.getAddress()))

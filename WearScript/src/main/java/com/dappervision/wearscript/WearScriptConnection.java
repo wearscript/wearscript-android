@@ -132,8 +132,10 @@ public abstract class WearScriptConnection {
     }
 
     public void publish(String channel, byte[] outBytes) {
-        if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
+        if (client == null || !exists(channel)) {
+            Log.d(TAG, String.format("Not publishing[%s] Client: %s outBytes: %s", channel, client != null, outBytes != null));
             return;
+        }
         if (outBytes != null) {
             onReceiveDispatch(channel, outBytes, null);
             if (existsExternal(channel))
@@ -277,6 +279,8 @@ public abstract class WearScriptConnection {
     }
 
     private boolean existsExternal(String channel) {
+        if (channel.equals(LISTEN_CHAN))
+            return true;
         String channelPartial = "";
         String[] parts = channel.split(":");
         if (externalChannels.contains(channelPartial))
@@ -346,6 +350,7 @@ public abstract class WearScriptConnection {
         new Thread(new Runnable() {
             public void run() {
                 Log.w(TAG, "Lifecycle: Pinger...");
+                Log.d(TAG, "Channels: " + channelsValue());
                 publish(LISTEN_CHAN, WearScriptConnection.this.groupDevice, channelsValue());
                 try {
                     Thread.sleep(500);
