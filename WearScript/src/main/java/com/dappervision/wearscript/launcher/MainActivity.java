@@ -15,7 +15,7 @@ import org.json.simple.JSONValue;
 
 public class MainActivity extends FragmentActivity implements ScriptListFragment.Callbacks {
     private static final String TAG = "MainActivity";
-    private static final boolean DBG = true;
+    private static final boolean DBG = false;
     private static final String GISTS_PATH = "gists/";
     private static final String WEARSCRIPT_PATH = Utils.dataPath() + GISTS_PATH;
     private boolean launchScriptList = true;
@@ -37,11 +37,9 @@ public class MainActivity extends FragmentActivity implements ScriptListFragment
                 JSONObject manifest = (JSONObject) JSONValue.parse(new String(manifestData));
                 if (manifest != null && manifest.containsKey("name")) {
                     String filePath = WEARSCRIPT_PATH + gist + "/" + "glass.html";
-                    Log.d(TAG, "filePath is " + filePath);
                     WearScriptInfo wsInfo = new WearScriptInfo((String) manifest.get("name"), filePath);
                     Intent intent = wsInfo.getIntent();
-                    int flags = intent.getFlags();
-                    flags |=  Intent.FLAG_ACTIVITY_SINGLE_TOP;
+                    int flags = intent.getFlags() | Intent.FLAG_ACTIVITY_SINGLE_TOP;
                     intent.setFlags(flags);
                     startActivity(intent);
                     launchScriptList = false;
@@ -59,7 +57,7 @@ public class MainActivity extends FragmentActivity implements ScriptListFragment
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "LifeCycle: onResume");
+        if (DBG) Log.d(TAG, "LifeCycle: onResume");
         if (launchScriptList) {
             FragmentManager manager = getSupportFragmentManager();
             Fragment fragment = createFragment();

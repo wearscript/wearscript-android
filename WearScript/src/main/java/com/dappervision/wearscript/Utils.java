@@ -10,7 +10,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Locale;
 
-
 import de.greenrobot.event.EventBus;
 
 public class Utils {
