@@ -51,7 +51,8 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
     }
 
     public void ibeaconSensorOff() {
-        iBeaconManager.unBind(this);
+        if(iBeaconManager != null)
+            iBeaconManager.unBind(this);
     }
 
     public void onEvent(SensorJSEvent event) {
@@ -70,10 +71,8 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
         iBeaconManager.setRangeNotifier(new RangeNotifier() {
             @Override
             public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
-                if (iBeacons.size() > 0) {
-                    Log.i(TAG, "A beacon is " + iBeacons.iterator().next().getAccuracy() + " meters away.");
-                    // Need to make ibeacons object json then pass it.
-                    Utils.eventBusPost(new SendEvent("ibeacon", iBeacons.iterator().next().getAccuracy()));
+                for(IBeacon myBeacon : iBeacons){
+                    Utils.eventBusPost(new SendEvent("ibeacon", myBeacon.getProximityUuid(), myBeacon.getAccuracy(), myBeacon.getMajor(), myBeacon.getMinor()));
                 }
             }
         });
