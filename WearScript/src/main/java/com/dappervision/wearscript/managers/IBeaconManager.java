@@ -72,7 +72,7 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
             @Override
             public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
                 for(IBeacon myBeacon : iBeacons){
-                    Utils.eventBusPost(new SendEvent("ibeacon", myBeacon.getProximityUuid(), myBeacon.getAccuracy(), myBeacon.getMajor(), myBeacon.getMinor()));
+                    Utils.eventBusPost(new SendEvent("ibeacon:"+myBeacon.getProximityUuid(), myBeacon.getProximityUuid(), myBeacon.getAccuracy(), myBeacon.getMajor(), myBeacon.getMinor()));
                 }
             }
         });
