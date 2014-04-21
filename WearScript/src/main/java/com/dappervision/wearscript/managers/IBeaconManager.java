@@ -16,6 +16,10 @@ import com.radiusnetworks.ibeacon.Region;
 
 import java.util.Collection;
 
+import com.radiusnetworks.ibeacon.IBeaconConsumer;
+import com.radiusnetworks.ibeacon.MonitorNotifier;
+import com.radiusnetworks.ibeacon.Region;
+
 public class IBeaconManager extends Manager implements IBeaconConsumer{
 
     com.radiusnetworks.ibeacon.IBeaconManager iBeaconManager;
