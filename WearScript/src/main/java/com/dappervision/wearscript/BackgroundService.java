@@ -276,24 +276,20 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
             ManagerManager.get().resetAll();
             HandlerHandler.get().resetAll();
-            // TODO(brandyn): Verify that if we create a new activity that the gestures still work
-            if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
-                if (activity != null) {
-                    ScriptActivity a = activity;
-                    ManagerManager.get().add(new GestureManager(a, this));
-                    ManagerManager.get().add(new EyeManager(a, this));
+            if(activity != null) {
+                ScriptActivity a = activity;
+                // TODO(brandyn): Verify that if we create a new activity that the gestures still work
+                if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
+                        ManagerManager.get().add(new GestureManager(a, this));
+                        ManagerManager.get().add(new EyeManager(a, this));
                 }
-            }
-            if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {
-                if(activity != null) {
-                    ScriptActivity a = activity;
-                    ManagerManager.get().add(new PebbleManager(a, this));
+
+                if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {
+                        ManagerManager.get().add(new PebbleManager(a, this));
                 }
-            }
-            if (!HardwareDetector.isGlass && getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) && ManagerManager.get().get(IBeaconManager.class) == null) {
-                if(activity != null) {
-                    ScriptActivity a = activity;
-                    ManagerManager.get().add(new IBeaconManager(a, this));
+
+                if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) && ManagerManager.get().get(IBeaconManager.class) == null) {
+                        ManagerManager.get().add(new IBeaconManager(a, this));
                 }
             }
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
