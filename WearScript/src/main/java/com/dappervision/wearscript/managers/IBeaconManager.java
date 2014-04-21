@@ -8,7 +8,9 @@ import android.os.RemoteException;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
+import com.dappervision.wearscript.WearScript;
 import com.dappervision.wearscript.events.SendEvent;
+import com.dappervision.wearscript.events.SensorJSEvent;
 import com.radiusnetworks.ibeacon.IBeacon;
 import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.RangeNotifier;
@@ -28,21 +30,39 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
     public IBeaconManager(Context context, BackgroundService bs) {
         super(bs);
         this.context = context;
-        iBeaconManager = com.radiusnetworks.ibeacon.IBeaconManager.getInstanceForApplication(context);
-        iBeaconManager.bind(this);
     }
 
     @Override
     public void reset() {
         super.reset();
-        iBeaconManager.unBind(this);
-        iBeaconManager.bind(this);
+        ibeaconSensorOff();
+        ibeaconSensorOn();
     }
 
     @Override
     public void shutdown() {
         super.shutdown();
+        ibeaconSensorOff();
+    }
+
+    public void ibeaconSensorOn() {
+        iBeaconManager = com.radiusnetworks.ibeacon.IBeaconManager.getInstanceForApplication(context);
+        iBeaconManager.bind(this);
+    }
+
+    public void ibeaconSensorOff() {
         iBeaconManager.unBind(this);
+    }
+
+    public void onEvent(SensorJSEvent event) {
+        int type = event.getType();
+        if(event.getStatus()) {
+            if (type == WearScript.SENSOR.IBEACON.id())
+                ibeaconSensorOn();
+        }
+        else {
+            ibeaconSensorOff();
+        }
     }
 
     @Override
@@ -52,6 +72,7 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
             public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
                 if (iBeacons.size() > 0) {
                     Log.i(TAG, "A beacon is " + iBeacons.iterator().next().getAccuracy() + " meters away.");
+                    // Need to make ibeacons object json then pass it.
                     Utils.eventBusPost(new SendEvent("ibeacon", iBeacons.iterator().next().getAccuracy()));
                 }
             }
@@ -59,6 +80,29 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
 
         try {
             iBeaconManager.startRangingBeaconsInRegion(new Region("myRangingUniqueId", null, null, null));
+        } catch (RemoteException e) {   }
+
+        iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
+            @Override
+            public void didEnterRegion(Region region) {
+                Log.i(TAG, "I just saw an iBeacon for the firt time!");
+                Utils.eventBusPost(new SendEvent("ibeacon:enteredRegion", region.getUniqueId()));
+            }
+
+            @Override
+            public void didExitRegion(Region region) {
+                Log.i(TAG, "I no longer see an iBeacon");
+                Utils.eventBusPost(new SendEvent("ibeacon:exitRegion", region.getUniqueId()));
+            }
+
+            @Override
+            public void didDetermineStateForRegion(int state, Region region) {
+                Log.i(TAG, "I have just switched from seeing/not seeing iBeacons: "+state);
+            }
+        });
+
+        try {
+            iBeaconManager.startMonitoringBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
         } catch (RemoteException e) {   }
     }
 
