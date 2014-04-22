@@ -9,6 +9,7 @@ import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.dataproviders.DataProvider;
 import com.dappervision.wearscript.dataproviders.GPSDataProvider;
+import com.dappervision.wearscript.dataproviders.IBeaconDataProvider;
 import com.dappervision.wearscript.dataproviders.NativeDataProvider;
 import com.dappervision.wearscript.dataproviders.PebbleDataProvider;
 import com.dappervision.wearscript.dataproviders.RemoteDataProvider;
@@ -52,6 +53,8 @@ public class DataManager extends Manager {
             dp = new BatteryDataProvider(this, samplePeriod);
         else if (type == WearScript.SENSOR.PEBBLE_ACCELEROMETER.id())
             dp = new PebbleDataProvider(this, samplePeriod, type);
+        else if (type == WearScript.SENSOR.IBEACON.id())
+            dp = new IBeaconDataProvider(this, samplePeriod);
         else
             throw new RuntimeException("Invalid type: " + type);
         registerProvider(type, dp);

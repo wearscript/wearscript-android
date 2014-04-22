@@ -25,11 +25,12 @@ import com.radiusnetworks.ibeacon.Region;
 public class IBeaconManager extends Manager implements IBeaconConsumer{
 
     com.radiusnetworks.ibeacon.IBeaconManager iBeaconManager;
-    Context context;
 
-    public IBeaconManager(Context context, BackgroundService bs) {
+    Region MONITOR_REGION = new Region("myMonitoringUniqueId", null, null, null);
+    Region RANGING_REGION = new Region("myRangingUniqueId", null, null, null);
+
+    public IBeaconManager(BackgroundService bs) {
         super(bs);
-        this.context = context;
     }
 
     @Override
@@ -46,13 +47,21 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
     }
 
     public void ibeaconSensorOn() {
-        iBeaconManager = com.radiusnetworks.ibeacon.IBeaconManager.getInstanceForApplication(context);
+        iBeaconManager = com.radiusnetworks.ibeacon.IBeaconManager.getInstanceForApplication(service);
         iBeaconManager.bind(this);
     }
 
     public void ibeaconSensorOff() {
-        if(iBeaconManager != null)
-            iBeaconManager.unBind(this);
+        if(iBeaconManager == null)
+            return;
+        try {
+            iBeaconManager.stopMonitoringBeaconsInRegion(MONITOR_REGION);
+            iBeaconManager.stopRangingBeaconsInRegion(RANGING_REGION);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        iBeaconManager.unBind(this);
+        iBeaconManager = null;
     }
 
     public void onEvent(SensorJSEvent event) {
@@ -72,26 +81,27 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
             @Override
             public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
                 for(IBeacon myBeacon : iBeacons){
-                    Utils.eventBusPost(new SendEvent("ibeacon:"+myBeacon.getProximityUuid(), myBeacon.getProximityUuid(), myBeacon.getAccuracy(), myBeacon.getMajor(), myBeacon.getMinor()));
+                    if(myBeacon.getAccuracy() >= 0)
+                        Utils.eventBusPost(new SendEvent("ibeacon:"+myBeacon.getProximityUuid(), myBeacon.getProximityUuid(), myBeacon.getAccuracy(), myBeacon.getMajor(), myBeacon.getMinor()));
                 }
             }
         });
 
         try {
-            iBeaconManager.startRangingBeaconsInRegion(new Region("myRangingUniqueId", null, null, null));
+            iBeaconManager.startRangingBeaconsInRegion(RANGING_REGION);
         } catch (RemoteException e) {   }
 
         iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
                 Log.i(TAG, "I just saw an iBeacon for the firt time!");
-                Utils.eventBusPost(new SendEvent("ibeacon:enteredRegion", region.getUniqueId()));
+                Utils.eventBusPost(new SendEvent("ibeacon:enter", region.getProximityUuid(), region.getMajor(), region.getMinor()));
             }
 
             @Override
             public void didExitRegion(Region region) {
                 Log.i(TAG, "I no longer see an iBeacon");
-                Utils.eventBusPost(new SendEvent("ibeacon:exitRegion", region.getUniqueId()));
+                Utils.eventBusPost(new SendEvent("ibeacon:exit", region.getProximityUuid(), region.getMajor(), region.getMinor()));
             }
 
             @Override
@@ -101,23 +111,23 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
         });
 
         try {
-            iBeaconManager.startMonitoringBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
+            iBeaconManager.startMonitoringBeaconsInRegion(MONITOR_REGION);
         } catch (RemoteException e) {   }
     }
 
     // Methods usually implemented by the activity
     @Override
     public boolean bindService(Intent intent, ServiceConnection connection, int mode) {
-        return context.bindService(intent, connection, mode);
+        return service.bindService(intent, connection, mode);
     }
 
     @Override
     public void unbindService(ServiceConnection connection) {
-        context.unbindService(connection);
+        service.unbindService(connection);
     }
 
     @Override
     public Context getApplicationContext() {
-        return context;
+        return service;
     }
 }

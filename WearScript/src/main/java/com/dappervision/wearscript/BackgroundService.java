@@ -289,7 +289,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 }
 
                 if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) && ManagerManager.get().get(IBeaconManager.class) == null) {
-                        ManagerManager.get().add(new IBeaconManager(a, this));
+                        ManagerManager.get().add(new IBeaconManager(this));
                 }
             }
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
