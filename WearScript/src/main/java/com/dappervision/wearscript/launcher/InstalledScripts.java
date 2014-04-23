@@ -49,7 +49,7 @@ public class InstalledScripts {
             if (manifestData == null)
                 continue;
             JSONObject manifest = (JSONObject) JSONValue.parse(new String(manifestData));
-            if (manifest == null || !manifest.containsKey("name"))
+            if (manifest == null || !manifest.containsKey("name") || manifest.get("name").equals(""))
                 continue;
             String filePath = WEARSCRIPT_PATH + gist + "/" + "glass.html";
             WearScriptInfo wsInfo = new WearScriptInfo((String) manifest.get("name"), filePath);

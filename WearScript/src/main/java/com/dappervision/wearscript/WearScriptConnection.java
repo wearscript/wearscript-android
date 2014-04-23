@@ -122,7 +122,7 @@ public abstract class WearScriptConnection {
 
     public void publish(Object... data) {
         String channel = (String) data[0];
-        if (client == null || !exists(channel) && !channel.equals(LISTEN_CHAN))
+        if (!exists(channel) && !channel.equals(LISTEN_CHAN))
             return;
         Log.d(TAG, "Publishing...: " + channel);
         if (channel.equals(LISTEN_CHAN)) {
@@ -132,13 +132,13 @@ public abstract class WearScriptConnection {
     }
 
     public void publish(String channel, byte[] outBytes) {
-        if (client == null || !exists(channel)) {
+        if (!exists(channel)) {
             Log.d(TAG, String.format("Not publishing[%s] Client: %s outBytes: %s", channel, client != null, outBytes != null));
             return;
         }
         if (outBytes != null) {
             onReceiveDispatch(channel, outBytes, null);
-            if (existsExternal(channel))
+            if (client != null && existsExternal(channel))
                 client.send(outBytes);
         }
     }

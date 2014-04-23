@@ -81,6 +81,15 @@ public class PicarusManager extends Manager {
     }
 
     @Override
+    public void shutdown() {
+        if (picarusConnection != null) {
+            service.unbindService(picarusConnection);
+            picarusConnection = null;
+        }
+        super.shutdown();
+    }
+
+    @Override
     public void reset() {
         super.reset();
         if (modelCache != null && !modelCache.isEmpty()) {
