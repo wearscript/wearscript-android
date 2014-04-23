@@ -67,6 +67,20 @@ public class Utils {
         }
     }
 
+    public static String getPackageGist(Context context) {
+        String gistId;
+        String packageName = context.getPackageName();
+        String[] nameComponents = packageName.split("\\.");
+        try {
+            gistId = nameComponents[1].split("_")[1];
+        } catch (NullPointerException e) {
+            return null;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
+        }
+        return gistId;
+    }
+
     static public byte[] LoadData(String path, String suffix) {
         return LoadFile(new File(new File(dataPath() + path), suffix));
     }

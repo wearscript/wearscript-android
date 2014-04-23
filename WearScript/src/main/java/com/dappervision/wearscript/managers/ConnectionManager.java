@@ -37,6 +37,7 @@ public class ConnectionManager extends Manager {
     private WearScriptConnectionImpl connection;
     private TreeSet<String> testChannels;  // NOTE(brandyn): Hack until we normalize the Java lib
     private int gistSyncPending;
+    private boolean isCustomPackage;
 
 
     public ConnectionManager(BackgroundService bs) {
@@ -44,6 +45,7 @@ public class ConnectionManager extends Manager {
         connection = new WearScriptConnectionImpl();
         GIST_LIST_SYNC_CHAN = connection.channel(connection.groupDevice(), "gistListSync");
         GIST_GET_SYNC_CHAN = connection.channel(connection.groupDevice(), "gistGetSync");
+        isCustomPackage = Utils.getPackageGist(bs) != null;
         reset();
     }
 
@@ -222,6 +224,10 @@ public class ConnectionManager extends Manager {
 
         @Override
         public void onReceive(String channel, byte[] dataRaw, List<Value> data) {
+            // BUG(brandyn): If the channel should go to a subchannel now it won't make it,
+            // we should modify channel name before this call
+            makeCall(channel, "'" + Base64.encodeToString(dataRaw, Base64.NO_WRAP) + "'");
+            if (isCustomPackage) return;
             // TODO(brandyn): Clean up gist sync behavior
             Log.d(TAG, "onReceive: " + channel);
             if ((channel.equals(this.groupDevice) || channel.equals(this.group)) && !channel.equals(GIST_LIST_SYNC_CHAN)) {
@@ -314,9 +320,6 @@ public class ConnectionManager extends Manager {
                 }
                 Utils.eventBusPost(new WarpHEvent(h));
             }
-            // BUG(brandyn): If the channel should go to a subchannel now it won't make it,
-            // we should modify channel name before this call
-            makeCall(channel, "'" + Base64.encodeToString(dataRaw, Base64.NO_WRAP) + "'");
         }
 
         @Override
