@@ -49,7 +49,7 @@ public class OpenCVManager extends Manager {
         reset();
     }
 
-    public void onEvent(OpenCVLoadEvent event) {
+    public void onEventBackgroundThread(OpenCVLoadEvent event) {
         synchronized (this) {
             loadOpenCV();
         }

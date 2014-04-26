@@ -167,7 +167,7 @@ public class ScriptActivity extends Activity {
         bs.onConfigurationChanged(newConfig);
     }
 
-    public void onEvent(StartActivityEvent event) {
+    public void onEventBackgroundThread(StartActivityEvent event) {
         startActivityForResult(event.getIntent(), event.getRequestCode());
     }
 

@@ -219,7 +219,7 @@ public class WarpManager extends Manager {
         }
     }
 
-    public void onEvent(WarpSetAnnotationEvent event) {
+    public void onEventAsync(WarpSetAnnotationEvent event) {
         synchronized (this) {
             Mat frame = ImageBGRFromString(event.getImage());
             if (sampleBGR == null || sampleBGR.height() != frame.height() || sampleBGR.width() != frame.width())
@@ -229,7 +229,7 @@ public class WarpManager extends Manager {
         }
     }
 
-    public void onEvent(WarpSetupHomographyEvent event) {
+    public void onEventAsync(WarpSetupHomographyEvent event) {
         synchronized (this) {
             setupMatrices(ParseJSONDoubleArray((JSONArray)(JSONValue.parse(event.getHomography()))));
         }

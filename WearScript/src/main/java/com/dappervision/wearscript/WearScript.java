@@ -17,6 +17,7 @@ import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LiveCardEvent;
+import com.dappervision.wearscript.events.LiveCardSetMenuEvent;
 import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.PebbleMessageEvent;
 import com.dappervision.wearscript.events.PicarusBenchmarkEvent;
@@ -435,8 +436,9 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void liveCardCreate(boolean nonSilent, double period) {
+    public void liveCardCreate(boolean nonSilent, double period, String menu) {
         requiresGDK();
+        Utils.eventBusPost(new LiveCardSetMenuEvent(menu));
         Utils.eventBusPost(new LiveCardEvent(nonSilent, period));
     }
 

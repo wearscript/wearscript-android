@@ -48,7 +48,7 @@ public class WifiManager extends Manager {
         manager.startScan();
     }
 
-    public void onEvent(WifiScanResultsEvent e) {
+    public void onEventBackgroundThread(WifiScanResultsEvent e) {
         makeCall(WIFI, getScanResults());
     }
 

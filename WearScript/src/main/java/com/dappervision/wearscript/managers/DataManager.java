@@ -36,6 +36,7 @@ public class DataManager extends Manager {
                 registerCallback(e.getType(), e.getCallback());
             }
         } else {
+            unregisterCallback(e.getType());
             unregisterProvider(e.getType());
         }
     }
@@ -64,7 +65,8 @@ public class DataManager extends Manager {
 
     public void unregisterProvider(Integer type) {
         DataProvider dp = providers.remove(type);
-        dp.unregister();
+        if (dp != null)
+            dp.unregister();
     }
 
     public void unregisterProviders() {
@@ -79,6 +81,10 @@ public class DataManager extends Manager {
 
     public void registerCallback(Integer type, String jsFunction) {
         jsCallbacks.put(type, jsFunction);
+    }
+
+    public void unregisterCallback(Integer type) {
+        jsCallbacks.remove(type);
     }
 
     public Context getContext() {

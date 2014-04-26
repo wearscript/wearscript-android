@@ -134,7 +134,7 @@ public class ConnectionManager extends Manager {
         }
     }
 
-    public void onEvent(SendEvent e) {
+    public void onEventBackgroundThread(SendEvent e) {
         String channel = e.getChannel();
         Log.d(TAG, "Sending Channel: " + channel);
         if (!connection.exists(channel)) {
@@ -144,19 +144,19 @@ public class ConnectionManager extends Manager {
         connection.publish(channel, e.getData());
     }
 
-    public void onEvent(ServerConnectEvent e) {
+    public void onEventBackgroundThread(ServerConnectEvent e) {
         registerCallback(ONCONNECT, e.getCallback());
         connection.connect(e.getServer());
     }
 
-    public void onEvent(SendSubEvent e) {
+    public void onEventBackgroundThread(SendSubEvent e) {
         String channel = connection.subchannel(e.getSubChannel());
         Log.d(TAG, "Sending Channel: " + channel);
         if (!connection.exists(channel)) {
             Log.d(TAG, "Channel doesn't exist: " + channel);
             return;
         }
-        onEvent(new SendEvent(channel, e.getData()));
+        onEventBackgroundThread(new SendEvent(channel, e.getData()));
     }
 
     public void onEvent(ChannelSubscribeEvent e) {

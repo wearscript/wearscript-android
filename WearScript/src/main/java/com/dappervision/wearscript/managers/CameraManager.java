@@ -97,7 +97,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public void onEvent(CameraEvents.Start e) {
+    public void onEventBackgroundThread(CameraEvents.Start e) {
         // State: Called after WS.cameraOn
         Log.d(TAG, "camflow: Start");
         synchronized (this) {
@@ -125,7 +125,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
-    public void onEvent(ActivityResultEvent event) {
+    public void onEventBackgroundThread(ActivityResultEvent event) {
         int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
         Intent intent = event.getIntent();
         Log.d(TAG, "Got request code: " + requestCode);

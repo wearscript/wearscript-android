@@ -796,6 +796,9 @@ function WearScript() {
         }
     }
     this.sensorOff = function(type) {
+        if (typeof type === "string") {
+            type = this.sensor(type);
+        }
         WSRAW.sensorOff(type);
     }
     this.dataLog = function (remote, local, period) {
@@ -934,7 +937,18 @@ function WearScript() {
         WSRAW.speechRecognize(prompt, this._funcwrap(function (x) {callback(atob(x))}));
     }
     this.liveCardCreate = function (nonSilent, period) {
-        WSRAW.liveCardCreate(nonSilent, period);
+        var menuParsed = [];
+        var menu = Array.prototype.slice.call(arguments).slice(2);
+        if (menu.length == 0) {
+            menu.push('Open');
+            menu.push(function () {WS.activityCreate()});
+            menu.push('Shutdown');
+            menu.push(function () {WS.shutdown()});
+        }
+        for (var i = 0; i < menu.length; i+=2) {
+            menuParsed.push({label: menu[i], callback: this._funcwrap(this._funcfix(menu[i + 1]))});
+        }
+        WSRAW.liveCardCreate(nonSilent, period, JSON.stringify(menuParsed));
     }
     this.liveCardDestroy = function () {
         WSRAW.liveCardDestroy();
