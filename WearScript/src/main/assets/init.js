@@ -678,16 +678,22 @@ function WearScript() {
     this.callbacks = {};
     this.cbCount = 0;
     this.picarusModelCount = 0;
-    this.PicarusModel = function (model, callback) {
-        this.id = WS.picarusModelCount;
-        WS.picarusModelCount += 1;
-        callback = WS._funcfix(callback);
-        this.loaded = false;
-        WSRAW.picarusModelCreate(model, this.id, WS._funcwrap((function () {
-            this.loaded = true;
-            callback();
-        }).bind(this)));
-
+    this.Media = function (url, loop) {
+        if (!loop)
+            loop = false;
+        WSRAW.mediaLoad(url, loop);
+        this.play = function () {
+            WSRAW.mediaPlay();
+        }.bind(this);
+        this.pause = function () {
+            WSRAW.mediaPause();
+        }.bind(this);
+        this.stop = function () {
+            WSRAW.mediaStop();
+        }.bind(this);
+    }
+    this.PicarusModel = function (id) {
+        this.id = id;
         this.process = function (input, callback) {
             callback = WS._funcfix(callback);
             WSRAW.picarusModelProcess(this.id, input, WS._funcwrap(function (x) {callback(atob(x))}));
@@ -701,6 +707,57 @@ function WearScript() {
             WSRAW.picarusModelProcessWarp(this.id, WS._funcwrap(function (x) {callback(atob(x))}));
         };
     };
+    this.picarusModelFactory = function(modelb64, callback) {
+        var id = WS.picarusModelCount;
+        WS.picarusModelCount += 1;
+        var model = new WS.PicarusModel(id);
+        callback = WS._funcfix(callback);
+        WSRAW.picarusModelCreate(modelb64, id, WS._funcwrap((function () {
+            callback(model);
+        }).bind(this)));
+    };
+    this.PicarusARTag = function (model) {
+        this.model = model;
+        this._parseData = function (x) {
+            var out = [];
+            if (!x)
+                return out;
+            x = msgpack.unpack(x);
+            if (!x)
+                return out;
+            for (var i = 0; i < x[0].length / 9; i+= 9) {
+                var points = [];
+                var dataCur = x[0].slice(i * 9);
+                points.push([dataCur[1], dataCur[2]]);
+                points.push([dataCur[3], dataCur[4]]);
+                points.push([dataCur[5], dataCur[6]]);
+                points.push([dataCur[7], dataCur[8]]);
+                out.push({id: dataCur[0], xy: points});
+            }
+            return out;
+        }
+        this.process = function (input, callback) {
+            this.model.process(input, (function (data) {
+                callback(this._parseData(data));
+            }).bind(this));
+        }
+        this.processStream = function (callback) {
+            this.model.processStream((function (data) {
+                callback(this._parseData(data));
+            }).bind(this));
+        }
+        this.processWarpTargets = function (callback) {
+            this.model.processWarpTargets((function (data) {
+                callback(this._parseData(data));
+            }).bind(this));
+        }
+    }
+    this.picarusARTagFactory = function (callback) {
+        var model_ar = btoa(msgpack.pack([{'kw': {}, 'name': 'picarus.ARMarkerDetector'}]).map(function (x) {return String.fromCharCode(x)}).join(''));
+        WS.picarusModelFactory(model_ar, (function (model) {
+           callback(new WS.PicarusARTag(model));
+        }).bind(this));
+    }
     this.Cards = function (cards) {
          this.cards = cards || [];
          this.isFunc = function (x) {return typeof x === 'function'};
@@ -743,9 +800,6 @@ function WearScript() {
               this.cards.push(card);
               return this;
          }
-    }
-    this.createMedia = function (url, looping) {
-        WSRAW.mediaLoad(url, looping);
     }
     this.scriptVersion = function (num) {
         WSRAW.scriptVersion(num);
@@ -973,6 +1027,21 @@ function WearScript() {
     this.bluetoothWrite = function (address, data) {
         WSRAW.bluetoothWrite(address, btoa(data));
     }
+    this.bluetoothEnable = function () {
+        WSRAW.bluetoothEnable();
+    }
+    this.bluetoothDisable = function () {
+        WSRAW.bluetoothDisable();
+    }
+    this.bluetoothBond = function (address, pin) {
+        WSRAW.bluetoothBond(address, pin);
+    }
+    this.bluetoothDiscover = function (callback) {
+        callback = this._funcfix(callback);
+        WSRAW.bluetoothDiscover(this._funcwrap(function (x) {callback(JSON.parse(x))}));
+    }
+
+
     this.pebbleSetTitle = function(text, clear) {
         WSRAW.pebbleSetTitle(text, clear);
     }

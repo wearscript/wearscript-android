@@ -25,7 +25,6 @@ import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.DataLogEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LambdaEvent;
-import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.SayEvent;
 import com.dappervision.wearscript.events.ScreenEvent;
 import com.dappervision.wearscript.events.ScriptEvent;
@@ -45,11 +44,8 @@ import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
-import com.dappervision.wearscript.ui.MediaPlayerFragment;
 import com.dappervision.wearscript.ui.ScriptActivity;
-import com.dappervision.wearscript.ui.WSActivity;
 import com.getpebble.android.kit.PebbleKit;
-import com.google.android.glass.widget.CardScrollView;
 
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
@@ -60,7 +56,7 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
-    protected static String TAG = "WearScript";
+    protected static String TAG = "BackgroundService";
     private final IBinder mBinder = new LocalBinder();
     private final Object lock = new Object(); // All calls to webview client must acquire lock
     protected TextToSpeech tts;
@@ -92,8 +88,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
     }
 
     public void updateActivityView(final ActivityEvent.Mode mode) {
-        if (activity == null)
+        Log.d(TAG, "updateActivityView: " + mode.toString());
+        if (activity == null) {
+            Log.d(TAG, "updateActivityView - activity is null, not setting");
             return;
+        }
         final ScriptActivity a = activity;
         a.runOnUiThread(new Thread() {
             public void run() {
@@ -309,6 +308,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         reset();
         synchronized (lock) {
             webview = createScriptView();
+            Log.d(TAG, "webview.isHardwareAccelerated: " + webview.isHardwareAccelerated());
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
             webview.getSettings().setJavaScriptEnabled(true);
             webview.addJavascriptInterface(new WearScript(this), "WSRAW");

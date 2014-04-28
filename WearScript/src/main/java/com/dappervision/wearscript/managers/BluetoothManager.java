@@ -72,8 +72,8 @@ public class BluetoothManager extends Manager {
                 Method convert = btDeviceInstance.getMethod("convertPinToBytes", String.class);
 
                 String pinString = mDevicePins.get(newDevice.getAddress());
-                if (pinString == null) {
-                    pinString = "1234";
+                if (pinString == null || pinString.equals("")) {
+                    return;
                 }
                 byte[] pin = (byte[]) convert.invoke(newDevice, pinString);
                 Method setPin = btDeviceInstance.getMethod("setPin", byte[].class);

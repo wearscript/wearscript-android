@@ -9,7 +9,7 @@ import android.view.MotionEvent;
 import com.dappervision.wearscript.R;
 import com.google.android.glass.touchpad.GestureDetector;
 
-public class WSActivity extends FragmentActivity {
+public class MediaActivity extends FragmentActivity {
     public static final String MODE_KEY = "MODE";
     public static final String MODE_MEDIA = "MODE_MEDIA";
     private GestureDetector gestureDetector;

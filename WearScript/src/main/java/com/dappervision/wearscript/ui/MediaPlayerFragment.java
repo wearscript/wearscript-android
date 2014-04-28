@@ -8,12 +8,13 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ProgressBar;
 
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
 import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.events.MediaPlayEvent;
+import com.dappervision.wearscript.events.MediaActionEvent;
 import com.google.android.glass.touchpad.Gesture;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Utils.getEventBus().register(this);
         setRetainInstance(true);
         mediaUri = getArguments().getParcelable(ARG_URL);
@@ -62,11 +64,15 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
         mp.prepareAsync();
     }
 
-    public void onEvent(MediaPlayEvent e) {
-        if (e.isPlaying()) {
+    public void onEvent(MediaActionEvent e) {
+        String action = e.getAction();
+        if (action.equals("play")) {
             mp.start();
-        } else {
+        } else if (action.equals("stop")) {
             mp.stop();
+            getActivity().finish();
+        } else if (action.equals("pause")) {
+            mp.pause();
         }
     }
 
@@ -99,8 +105,18 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause");
+        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getActivity().finish();
+    }
+
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.d(TAG, "onDestroy");
         if (mp.isPlaying())
             mp.stop();
         mp.release();
@@ -118,8 +134,9 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
             createMediaPlayer();
         }else if (i == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
             Log.w(TAG, "Unknown Error, resetting");
-            mediaPlayer.reset();
-            mediaPlayer.prepareAsync();
+            mediaPlayer.release();
+            mp = null;
+            createMediaPlayer();
         }
         return false;
     }

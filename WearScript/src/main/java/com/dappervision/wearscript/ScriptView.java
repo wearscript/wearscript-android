@@ -30,7 +30,10 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
     ScriptView(final BackgroundService context) {
         super(context);
         paused = false;
+        // NOTE(brandyn): Fix for KK error: http://stackoverflow.com/questions/20675554/webview-rendering-issue-in-android-kitkat
+        //setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         // Enable localStorage in webview
+        getSettings().setAllowUniversalAccessFromFileURLs(true);
         getSettings().setDomStorageEnabled(true);
         Utils.getEventBus().register(this);
         this.context = context;

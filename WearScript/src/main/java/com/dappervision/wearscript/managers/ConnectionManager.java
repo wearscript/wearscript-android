@@ -19,8 +19,11 @@ import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.events.WarpHEvent;
 
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
+import org.msgpack.util.json.JSON;
 
 import java.util.List;
 import java.util.TreeMap;
@@ -77,6 +80,7 @@ public class ConnectionManager extends Manager {
             testChannels.add(testChannel);
             TreeSet<String> subscribeChannels = new TreeSet<String>();
             subscribeChannels.add(testChannel);
+            subscribeChannels.add("android");
             subscribeChannels.add(connection.group());
             subscribeChannels.add(connection.groupDevice());
             subscribeChannels.add(GIST_LIST_SYNC_CHAN);
@@ -201,8 +205,7 @@ public class ConnectionManager extends Manager {
     class WearScriptConnectionImpl extends WearScriptConnection {
 
         WearScriptConnectionImpl() {
-            //HardwareDetector.isGlass ? "glass" : "phone"
-            super("glass", ((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
+            super(HardwareDetector.isGlass ? "android:glass" : "android:phone", ((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
         }
 
         @Override
@@ -230,20 +233,39 @@ public class ConnectionManager extends Manager {
             if (isCustomPackage) return;
             // TODO(brandyn): Clean up gist sync behavior
             Log.d(TAG, "onReceive: " + channel);
-            if ((channel.equals(this.groupDevice) || channel.equals(this.group)) && !channel.equals(GIST_LIST_SYNC_CHAN)) {
+            if ((channel.equals(this.groupDevice) || channel.equals(this.group) || channel.equals("android")) && !channel.equals(GIST_LIST_SYNC_CHAN)) {
                 String command = data.get(1).asRawValue().getString();
                 Log.d(TAG, String.format("Got %s %s", channel, command));
                 if (command.equals("script")) {
                     Value[] files = data.get(2).asMapValue().getKeyValueArray();
                     // TODO(brandyn): Verify that writing a script here isn't going to break anything while the old script is running
                     String path = null;
+                    TreeMap<String, String> filePaths = new TreeMap<String, String>();
+                    JSONObject manifest = null;
                     for (int i = 0; i < files.length / 2; i++) {
                         String name = files[i * 2].asRawValue().getString();
                         String pathCur = Utils.SaveData(files[i * 2 + 1].asRawValue().getByteArray(), "scripting/", false, name);
-                        if (name.equals("glass.html") && (path == null || HardwareDetector.isGlass))
-                            path = pathCur;
-                        else if (name.equals("phone.html") && !HardwareDetector.isGlass)
-                            name = pathCur;
+                        filePaths.put(name, pathCur);
+                        if (name.equals("manifest.json")) {
+                            manifest = (JSONObject) JSONValue.parse(files[i * 2 + 1].asRawValue().getString());
+                        }
+                    }
+                    if (manifest != null && manifest.containsKey("scripts")) {
+                        JSONObject scripts = (JSONObject)manifest.get("scripts");
+                        
+                        String scriptName = (String)scripts.get(this.groupDevice());
+                        if (scriptName == null) {
+                            scriptName = (String)scripts.get(this.group());
+                        }
+                        if (scriptName == null) {
+                            scriptName = (String)scripts.get("android");
+                        }
+                        if (scriptName != null) {
+                            Log.d(TAG, "Using script: " + scriptName);
+                            path = filePaths.get(scriptName);
+                        }
+                    } else {
+                        path = filePaths.get("glass.html");
                     }
                     if (path != null) {
                         Utils.eventBusPost(new ScriptEvent(path));

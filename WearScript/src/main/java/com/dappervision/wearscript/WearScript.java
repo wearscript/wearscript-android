@@ -18,6 +18,7 @@ import com.dappervision.wearscript.events.GistSyncEvent;
 import com.dappervision.wearscript.events.JsCall;
 import com.dappervision.wearscript.events.LiveCardEvent;
 import com.dappervision.wearscript.events.LiveCardSetMenuEvent;
+import com.dappervision.wearscript.events.MediaActionEvent;
 import com.dappervision.wearscript.events.MediaEvent;
 import com.dappervision.wearscript.events.PebbleMessageEvent;
 import com.dappervision.wearscript.events.PicarusBenchmarkEvent;
@@ -35,7 +36,6 @@ import com.dappervision.wearscript.events.ServerConnectEvent;
 import com.dappervision.wearscript.events.ShutdownEvent;
 import com.dappervision.wearscript.events.SoundEvent;
 import com.dappervision.wearscript.events.SpeechRecognizeEvent;
-import com.dappervision.wearscript.events.WarpDrawEvent;
 import com.dappervision.wearscript.events.WarpModeEvent;
 import com.dappervision.wearscript.events.WarpSetAnnotationEvent;
 import com.dappervision.wearscript.events.WarpSetupHomographyEvent;
@@ -157,6 +157,21 @@ public class WearScript {
         } catch (URISyntaxException e) {
             // TODO(kurtisnelson): Handle
         }
+    }
+
+    @JavascriptInterface
+    public void mediaPlay(){
+        Utils.eventBusPost(new MediaActionEvent("play"));
+    }
+
+    @JavascriptInterface
+    public void mediaPause(){
+        Utils.eventBusPost(new MediaActionEvent("pause"));
+    }
+
+    @JavascriptInterface
+    public void mediaStop(){
+        Utils.eventBusPost(new MediaActionEvent("stop"));
     }
 
     @JavascriptInterface
