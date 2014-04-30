@@ -14,6 +14,10 @@ import de.greenrobot.event.EventBus;
 
 public class Utils {
     protected static String TAG = "WearScript:Utils";
+    // setting this true will cause MainActivity to try to load
+    // assets/DBG_GIST_NAME/glass.html on start
+    private static final boolean DBG_PKG = false;
+    private static final String DBG_GIST_NAME = "0000";
 
     public static String SaveData(byte[] data, String path, boolean timestamp, String suffix) {
         try {
@@ -68,6 +72,7 @@ public class Utils {
     }
 
     public static String getPackageGist(Context context) {
+        if (DBG_PKG) return DBG_GIST_NAME;
         String gistId;
         String packageName = context.getPackageName();
         String[] nameComponents = packageName.split("\\.");
