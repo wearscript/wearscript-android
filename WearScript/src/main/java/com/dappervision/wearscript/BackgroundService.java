@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.media.AudioRecord;
 import android.os.Binder;
@@ -38,6 +39,7 @@ import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.DataManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.IBeaconManager;
 import com.dappervision.wearscript.managers.Manager;
 import com.dappervision.wearscript.managers.ManagerManager;
 import com.dappervision.wearscript.managers.PebbleManager;
@@ -273,18 +275,20 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
             ManagerManager.get().resetAll();
             HandlerHandler.get().resetAll();
-            // TODO(brandyn): Verify that if we create a new activity that the gestures still work
-            if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
-                if (activity != null) {
-                    ScriptActivity a = activity;
-                    ManagerManager.get().add(new GestureManager(a, this));
-                    ManagerManager.get().add(new EyeManager(a, this));
+            if(activity != null) {
+                ScriptActivity a = activity;
+                // TODO(brandyn): Verify that if we create a new activity that the gestures still work
+                if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
+                        ManagerManager.get().add(new GestureManager(a, this));
+                        ManagerManager.get().add(new EyeManager(a, this));
                 }
-            }
-            if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {
-                if(activity != null) {
-                    ScriptActivity a = activity;
-                    ManagerManager.get().add(new PebbleManager(a, this));
+
+                if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {
+                        ManagerManager.get().add(new PebbleManager(a, this));
+                }
+
+                if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) && ManagerManager.get().get(IBeaconManager.class) == null) {
+                        ManagerManager.get().add(new IBeaconManager(this));
                 }
             }
             updateActivityView(ActivityEvent.Mode.WEBVIEW);

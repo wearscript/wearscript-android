@@ -588,6 +588,7 @@ public class WearScript {
     }
 
     public static enum SENSOR {
+        IBEACON("ibeacon", -8),
         PEBBLE_ACCELEROMETER("pebbleAccelerometer", -7),
         BATTERY("battery", -3),
         PUPIL("pupil", -2),
