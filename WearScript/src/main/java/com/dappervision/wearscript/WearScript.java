@@ -42,6 +42,7 @@ import com.dappervision.wearscript.events.WarpSetupHomographyEvent;
 import com.dappervision.wearscript.events.WifiEvent;
 import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.BluetoothLEManager;
 import com.dappervision.wearscript.managers.BluetoothManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
@@ -501,6 +502,11 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void bluetoothLeRead(String device, String callback) {
+        Utils.eventBusPost(new CallbackRegistration(BluetoothLEManager.class, callback).setEvent(BluetoothLEManager.READ + device));
+    }
+
+    @JavascriptInterface
     public void bluetoothWrite(String address, String data) {
         Utils.eventBusPost(new BluetoothWriteEvent(address, data));
     }
@@ -588,6 +594,7 @@ public class WearScript {
     }
 
     public static enum SENSOR {
+        BTLE("btle", -9),
         IBEACON("ibeacon", -8),
         PEBBLE_ACCELEROMETER("pebbleAccelerometer", -7),
         BATTERY("battery", -3),

@@ -5,6 +5,7 @@ import android.hardware.SensorManager;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.WearScript;
+import com.dappervision.wearscript.dataproviders.BTLEDataProvider;
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
 import com.dappervision.wearscript.dataproviders.DataProvider;
@@ -56,6 +57,8 @@ public class DataManager extends Manager {
             dp = new PebbleDataProvider(this, samplePeriod, type);
         else if (type == WearScript.SENSOR.IBEACON.id())
             dp = new IBeaconDataProvider(this, samplePeriod);
+        else if (type == WearScript.SENSOR.BTLE.id())
+            dp = new BTLEDataProvider(this, samplePeriod);
         else
             throw new RuntimeException("Invalid type: " + type);
         registerProvider(type, dp);

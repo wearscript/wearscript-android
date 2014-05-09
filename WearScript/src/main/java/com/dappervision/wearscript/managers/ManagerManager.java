@@ -1,5 +1,7 @@
 package com.dappervision.wearscript.managers;
 
+import android.content.pm.PackageManager;
+
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.HardwareDetector;
 
@@ -41,6 +43,9 @@ public class ManagerManager {
         add(new PicarusManager(bs));
         if (HardwareDetector.hasGDK) {
             add(new CardTreeManager(bs));
+        }
+        if (bs.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)){
+            add(new BluetoothLEManager(bs));
         }
     }
 
