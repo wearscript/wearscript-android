@@ -7,10 +7,7 @@ import android.os.RemoteException;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.WearScript;
-import com.dappervision.wearscript.events.SendEvent;
-import com.dappervision.wearscript.events.SensorJSEvent;
+import com.dappervision.wearscript.events.CallbackRegistration;
 import com.radiusnetworks.ibeacon.IBeacon;
 import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.RangeNotifier;
@@ -18,13 +15,14 @@ import com.radiusnetworks.ibeacon.Region;
 
 import java.util.Collection;
 
-import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.MonitorNotifier;
-import com.radiusnetworks.ibeacon.Region;
 
 public class IBeaconManager extends Manager implements IBeaconConsumer{
 
-    com.radiusnetworks.ibeacon.IBeaconManager iBeaconManager;
+    public static final String RANGE_NOTIFICATION = "RANGE_NOTIFICATION";
+    public static final String ENTER_REGION = "ENTER_REGION";
+    public static final String EXIT_REGION = "EXIT_REGION";
+    private com.radiusnetworks.ibeacon.IBeaconManager iBeaconManager;
 
     Region MONITOR_REGION = new Region("myMonitoringUniqueId", null, null, null);
     Region RANGING_REGION = new Region("myRangingUniqueId", null, null, null);
@@ -36,22 +34,24 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
     @Override
     public void reset() {
         super.reset();
-        ibeaconSensorOff();
-        ibeaconSensorOn();
+        ibeaconOff();
+        ibeaconOn();
     }
 
     @Override
     public void shutdown() {
         super.shutdown();
-        ibeaconSensorOff();
+        ibeaconOff();
     }
 
-    public void ibeaconSensorOn() {
-        iBeaconManager = com.radiusnetworks.ibeacon.IBeaconManager.getInstanceForApplication(service);
-        iBeaconManager.bind(this);
+    public void ibeaconOn() {
+        if(iBeaconManager == null)
+            iBeaconManager = com.radiusnetworks.ibeacon.IBeaconManager.getInstanceForApplication(service);
+        if(!iBeaconManager.isBound(this))
+            iBeaconManager.bind(this);
     }
 
-    public void ibeaconSensorOff() {
+    public void ibeaconOff() {
         if(iBeaconManager == null)
             return;
         try {
@@ -64,15 +64,9 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
         iBeaconManager = null;
     }
 
-    public void onEvent(SensorJSEvent event) {
-        int type = event.getType();
-        if(event.getStatus()) {
-            if (type == WearScript.SENSOR.IBEACON.id())
-                ibeaconSensorOn();
-        }
-        else {
-            ibeaconSensorOff();
-        }
+    protected void setupCallback(CallbackRegistration e) {
+        super.setupCallback(e);
+        ibeaconOn();
     }
 
     @Override
@@ -82,7 +76,7 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
             public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
                 for(IBeacon myBeacon : iBeacons){
                     if(myBeacon.getAccuracy() >= 0)
-                        Utils.eventBusPost(new SendEvent("ibeacon:"+myBeacon.getProximityUuid(), myBeacon.getProximityUuid(), myBeacon.getRssi(), myBeacon.getMajor(), myBeacon.getMinor()));
+                        makeCall(RANGE_NOTIFICATION, myBeacon.getProximityUuid(), String.valueOf(myBeacon.getRssi()), String.valueOf(myBeacon.getMajor()), String.valueOf(myBeacon.getMinor()));
                 }
             }
         });
@@ -94,14 +88,12 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
         iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
-                Log.i(TAG, "I just saw an iBeacon for the firt time!");
-                Utils.eventBusPost(new SendEvent("ibeacon:enter", region.getProximityUuid(), region.getMajor(), region.getMinor()));
+                makeCall(ENTER_REGION, region.getProximityUuid(), String.valueOf(region.getUniqueId()), String.valueOf(region.getMajor()), String.valueOf(region.getMinor()));
             }
 
             @Override
             public void didExitRegion(Region region) {
-                Log.i(TAG, "I no longer see an iBeacon");
-                Utils.eventBusPost(new SendEvent("ibeacon:exit", region.getProximityUuid(), region.getMajor(), region.getMinor()));
+                makeCall(EXIT_REGION, region.getProximityUuid(), String.valueOf(region.getUniqueId()), String.valueOf(region.getMajor()), String.valueOf(region.getMinor()));
             }
 
             @Override

@@ -48,6 +48,7 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.IBeaconManager;
 import com.dappervision.wearscript.managers.OpenCVManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
@@ -482,6 +483,10 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void ibeaconRange(String callback) {
+        Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, callback).setEvent(IBeaconManager.RANGE_NOTIFICATION));
+    }
+    @JavascriptInterface
     public void bluetoothList(String callback) {
         Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
     }
@@ -594,8 +599,6 @@ public class WearScript {
     }
 
     public static enum SENSOR {
-        BTLE("btle", -9),
-        IBEACON("ibeacon", -8),
         PEBBLE_ACCELEROMETER("pebbleAccelerometer", -7),
         BATTERY("battery", -3),
         PUPIL("pupil", -2),

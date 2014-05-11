@@ -47,16 +47,6 @@ public class BluetoothLEManager extends Manager {
         gatts.clear();
     }
 
-    public void onEvent(SensorJSEvent event) {
-        int type = event.getType();
-        if(event.getStatus()) {
-            if (type == WearScript.SENSOR.BTLE.id())
-                scanOn();
-        }
-        else {
-            scanOff();
-        }
-    }
 
     @Override
     public void onEvent(CallbackRegistration r) {
