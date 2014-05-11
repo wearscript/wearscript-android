@@ -484,11 +484,11 @@ public class WearScript {
 
     @JavascriptInterface
     public void ibeacon(String range, String enter, String exit) {
-        if(range != null)
+        if(range != "null")
             Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, range).setEvent(IBeaconManager.RANGE_NOTIFICATION));
-        if(enter != null)
+        if(enter != "null")
             Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, enter).setEvent(IBeaconManager.ENTER_REGION));
-        if(exit != null)
+        if(exit != "null")
             Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, exit).setEvent(IBeaconManager.EXIT_REGION));
     }
 

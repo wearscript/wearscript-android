@@ -7,7 +7,6 @@ import android.os.RemoteException;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.events.CallbackRegistration;
 import com.radiusnetworks.ibeacon.IBeacon;
 import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.RangeNotifier;
@@ -24,8 +23,8 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
     public static final String EXIT_REGION = "EXIT_REGION";
     private com.radiusnetworks.ibeacon.IBeaconManager iBeaconManager;
 
-    Region MONITOR_REGION = new Region("myMonitoringUniqueId", null, null, null);
-    Region RANGING_REGION = new Region("myRangingUniqueId", null, null, null);
+    Region MONITOR_REGION = new Region("everythingRegion", null, null, null);
+    Region RANGING_REGION = new Region("everythingRegion", null, null, null);
 
     public IBeaconManager(BackgroundService bs) {
         super(bs);
@@ -35,7 +34,6 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
     public void reset() {
         super.reset();
         ibeaconOff();
-        ibeaconOn();
     }
 
     @Override
@@ -64,9 +62,17 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
         iBeaconManager = null;
     }
 
-    protected void setupCallback(CallbackRegistration e) {
-        super.setupCallback(e);
+    @Override
+    protected void registerCallback(String type, String jsFunction) {
+        super.registerCallback(type, jsFunction);
         ibeaconOn();
+    }
+
+    @Override
+    protected void unregisterCallback(String type) {
+        super.unregisterCallback(type);
+        if(jsCallbacks.isEmpty())
+            ibeaconOff();
     }
 
     @Override
@@ -88,12 +94,12 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
         iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
-                makeCall(ENTER_REGION, region.getProximityUuid(), String.valueOf(region.getUniqueId()), String.valueOf(region.getMajor()), String.valueOf(region.getMinor()));
+                makeCall(ENTER_REGION, region.getProximityUuid(), String.valueOf(region.getMajor()), String.valueOf(region.getMinor()));
             }
 
             @Override
             public void didExitRegion(Region region) {
-                makeCall(EXIT_REGION, region.getProximityUuid(), String.valueOf(region.getUniqueId()), String.valueOf(region.getMajor()), String.valueOf(region.getMinor()));
+                makeCall(EXIT_REGION, region.getProximityUuid(), String.valueOf(region.getMajor()), String.valueOf(region.getMinor()));
             }
 
             @Override

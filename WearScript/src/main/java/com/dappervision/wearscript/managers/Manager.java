@@ -69,13 +69,13 @@ public abstract class Manager {
     protected void makeCallDirect(String callback, String ... data) {
         if (callback == null || data == null)
             return;
-        String url = String.format("javascript:%s(%s);", callback, TextUtils.join(",", data));
+        String url = String.format("javascript:%s(%s);", callback, "\"" + TextUtils.join("\",\"", data) + "\"");
         Utils.eventBusPost(new JsCall(url));
     }
 
     protected String buildCallbackString(String key, String... data) {
         if (!jsCallbacks.containsKey(key))
             throw new RuntimeException("No such callback registered");
-        return String.format("javascript:%s(%s);", jsCallbacks.get(key), TextUtils.join(",", data));
+        return String.format("javascript:%s(%s);", jsCallbacks.get(key), "\"" + TextUtils.join("\",\"", data) + "\"");
     }
 }

@@ -41,7 +41,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
         setWebChromeClient(new WebChromeClient() {
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 String msg = cm.message() + " -- From line " + cm.lineNumber() + " of " + cm.sourceId();
-                Log.w("WearScriptWebView", msg);
+                Log.w(TAG, msg);
                 Utils.eventBusPost(new SendEvent("log", "WebView: " + msg));
                 return true;
             }
