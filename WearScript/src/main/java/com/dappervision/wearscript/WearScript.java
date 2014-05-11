@@ -483,9 +483,15 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void ibeaconRange(String callback) {
-        Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, callback).setEvent(IBeaconManager.RANGE_NOTIFICATION));
+    public void ibeacon(String range, String enter, String exit) {
+        if(range != null)
+            Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, range).setEvent(IBeaconManager.RANGE_NOTIFICATION));
+        if(enter != null)
+            Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, enter).setEvent(IBeaconManager.ENTER_REGION));
+        if(exit != null)
+            Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, exit).setEvent(IBeaconManager.EXIT_REGION));
     }
+
     @JavascriptInterface
     public void bluetoothList(String callback) {
         Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
