@@ -157,6 +157,12 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
     }
 
     @Override
+    public void loadUrl(String url) {
+        //Log.d(TAG, url); //really useful when writing new initjs stuff
+        super.loadUrl(url);
+    }
+
+    @Override
     public void renderingPaused(SurfaceHolder surfaceHolder, boolean b) {
         this.paused = b;
     }
