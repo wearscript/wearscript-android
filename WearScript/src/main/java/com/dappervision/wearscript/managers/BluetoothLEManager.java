@@ -10,16 +10,12 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 
 import com.dappervision.wearscript.BackgroundService;
-import com.dappervision.wearscript.Utils;
-import com.dappervision.wearscript.WearScript;
-import com.dappervision.wearscript.events.CallbackRegistration;
-import com.dappervision.wearscript.events.SendEvent;
-import com.dappervision.wearscript.events.SensorJSEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BluetoothLEManager extends Manager {
     public static final String READ = "READ:";
+    public static final String LIST = "LESCAN";
     static String TAG = "BluetoothManager";
     private BluetoothAdapter mBluetoothAdapter;
     protected ConcurrentHashMap<String, GattConnection> gatts;
@@ -49,15 +45,18 @@ public class BluetoothLEManager extends Manager {
 
 
     @Override
-    public void onEvent(CallbackRegistration r) {
-        super.onEvent(r);
-        if (r.getEvent().startsWith(READ)) {
-            String address = r.getEvent().substring(READ.length());
+    protected void registerCallback(String type, String jsFunction) {
+        super.registerCallback(type, jsFunction);
+        if (type.startsWith(READ)) {
+            scanOff();
+            String address = type.substring(READ.length());
             BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
             if(!gatts.containsKey(address)){
-                gatts.put(address, new GattConnection(r.getCallback()));
+                gatts.put(address, new GattConnection(jsFunction));
             }
             device.connectGatt(service, true, gatts.get(address));
+        }else if(type.equals(LIST)){
+            scanOn();
         }
 
     }
@@ -74,7 +73,7 @@ public class BluetoothLEManager extends Manager {
     private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
-            Utils.eventBusPost(new SendEvent("btle", bluetoothDevice.getAddress()));
+            makeCall(LIST, bluetoothDevice.getAddress(), bluetoothDevice.getName());
         }
     };
 

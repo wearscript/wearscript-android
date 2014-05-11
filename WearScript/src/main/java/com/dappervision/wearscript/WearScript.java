@@ -493,8 +493,12 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void bluetoothList(String callback) {
-        Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
+    public void bluetoothList(String callback, boolean btle) {
+        if(!btle) {
+            Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
+        }else{
+            Utils.eventBusPost(new CallbackRegistration(BluetoothLEManager.class, callback).setEvent(BluetoothLEManager.LIST));
+        }
     }
 
     @JavascriptInterface

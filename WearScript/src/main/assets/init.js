@@ -1022,9 +1022,13 @@ function WearScript() {
         exitCb = this._funcfix(exitCb);
         WSRAW.ibeacon(this._funcwrap(rangeCb), this._funcwrap(enterCb), this._funcwrap(exitCb));
     }
-    this.bluetoothList = function (callback) {
+    this.bluetoothList = function (callback, btle) {
         callback = this._funcfix(callback);
-        WSRAW.bluetoothList(this._funcwrap(function (x) {callback(JSON.parse(x))}));
+        if(btle) {
+            WSRAW.bluetoothList(this._funcwrap(callback), true);
+        } else {
+            WSRAW.bluetoothList(this._funcwrap(function (x) {callback(JSON.parse(x))}), false);
+        }
     }
     this.bluetoothRead = function (address, callback) {
         callback = this._funcfix(callback);
