@@ -1016,11 +1016,11 @@ function WearScript() {
     this.group = function () {
         return WSRAW.group();
     }
-    this.ibeacon = function (rangeCb, enterCb, exitCb) {
+    this.beacon = function (rangeCb, enterCb, exitCb) {
         rangeCb = this._funcfix(rangeCb);
         enterCb = this._funcfix(enterCb);
         exitCb = this._funcfix(exitCb);
-        WSRAW.ibeacon(this._funcwrap(rangeCb), this._funcwrap(enterCb), this._funcwrap(exitCb));
+        WSRAW.beacon(this._funcwrap(rangeCb), this._funcwrap(enterCb), this._funcwrap(exitCb));
     }
     this.bluetoothList = function (callback, btle) {
         callback = this._funcfix(callback);
