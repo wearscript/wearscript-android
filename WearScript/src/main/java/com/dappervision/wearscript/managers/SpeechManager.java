@@ -35,7 +35,7 @@ public class SpeechManager extends Manager {
                 spokenText = Base64.encodeToString(spokenText.getBytes(), Base64.NO_WRAP);
                 makeCall(SPEECH, String.format("\"%s\"", spokenText));
             } else if (resultCode == Activity.RESULT_CANCELED) {
-
+                makeCall(SPEECH, "\"\"");
             }
         }
     }
