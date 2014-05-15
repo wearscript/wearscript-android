@@ -41,7 +41,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
         setWebChromeClient(new WebChromeClient() {
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 String msg = cm.message() + " -- From line " + cm.lineNumber() + " of " + cm.sourceId();
-                Log.w("WearScriptWebView", msg);
+                Log.w(TAG, msg);
                 Utils.eventBusPost(new SendEvent("log", "WebView: " + msg));
                 return true;
             }
@@ -154,6 +154,12 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
             v.draw(canvas);
             holder.unlockCanvasAndPost(canvas);
         }
+    }
+
+    @Override
+    public void loadUrl(String url) {
+        //Log.d(TAG, url); //really useful when writing new initjs stuff
+        super.loadUrl(url);
     }
 
     @Override

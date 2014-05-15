@@ -10,6 +10,9 @@ apply plugin: 'android'
 
 repositories {
     mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
 }
 
 android {
@@ -17,7 +20,7 @@ android {
     buildToolsVersion "19.0.0"
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 19
         targetSdkVersion 19
     }
 }
@@ -25,6 +28,7 @@ android {
 dependencies {
     compile 'de.greenrobot:eventbus:2.2.0'
     compile 'com.polysfactory.lib.glass.bluetooth:glass-bluetooth:0.1.2'
+    compile 'com.radiusnetworks:AndroidIBeaconLibrary:0.7.6@aar'
     compile files('libs/android-websockets.jar')
     compile files('libs/commons-codec-1.6.jar')
     compile files('libs/gdk.jar')

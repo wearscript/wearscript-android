@@ -1,11 +1,17 @@
 package com.dappervision.wearscript.managers;
 
+import android.text.TextUtils;
+
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.events.JsCall;
 
+import org.apache.commons.codec.binary.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Manager {
@@ -50,7 +56,7 @@ public abstract class Manager {
         Utils.getEventBus().unregister(this);
     }
 
-    protected void makeCall(String key, String data) {
+    protected void makeCall(String key, String ... data) {
         Log.d(TAG, jsCallbacks.toString());
         if (!jsCallbacks.containsKey(key)) {
             Log.d(TAG, "Callback not found: " + key);
@@ -60,16 +66,22 @@ public abstract class Manager {
         Utils.eventBusPost(new JsCall(url));
     }
 
-    protected void makeCallDirect(String callback, String data) {
+    protected void makeCallDirect(String callback, String ... data) {
         if (callback == null || data == null)
             return;
-        String url = String.format("javascript:%s(%s);", callback, data);
+        String url = String.format("javascript:%s(%s);", callback, formatParams(data));
         Utils.eventBusPost(new JsCall(url));
     }
 
-    protected String buildCallbackString(String key, String data) {
+    protected String buildCallbackString(String key, String... data) {
         if (!jsCallbacks.containsKey(key))
             throw new RuntimeException("No such callback registered");
-        return String.format("javascript:%s(%s);", jsCallbacks.get(key), data);
+        return String.format("javascript:%s(%s);", jsCallbacks.get(key), formatParams(data));
+    }
+
+    private String formatParams(String[] data){
+        if(data.length == 1)
+            return data[0];
+        return "\"" + TextUtils.join("\",\"", data) + "\"";
     }
 }

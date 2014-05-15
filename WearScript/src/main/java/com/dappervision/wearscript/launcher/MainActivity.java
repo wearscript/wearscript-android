@@ -46,6 +46,16 @@ public class MainActivity extends FragmentActivity implements ScriptListFragment
                 } else {
                     if (DBG) Log.d(TAG, "Didn't find gist name in manifest.");
                 }
+            } else {
+                // Load from apk assets
+                if (DBG) Log.d(TAG, "Loading script from apk assets");
+                String filePath = "/android_asset/" + gist + "/" + "glass.html";
+                WearScriptInfo wsInfo = new WearScriptInfo("APK Script", filePath);
+                Intent intent = wsInfo.getIntent();
+                int flags = intent.getFlags() | Intent.FLAG_ACTIVITY_SINGLE_TOP;
+                intent.setFlags(flags);
+                startActivity(intent);
+                launchScriptList = false;
             }
         }
     }

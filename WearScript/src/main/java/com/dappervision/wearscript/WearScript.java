@@ -42,11 +42,13 @@ import com.dappervision.wearscript.events.WarpSetupHomographyEvent;
 import com.dappervision.wearscript.events.WifiEvent;
 import com.dappervision.wearscript.events.WifiScanEvent;
 import com.dappervision.wearscript.managers.BarcodeManager;
+import com.dappervision.wearscript.managers.BluetoothLEManager;
 import com.dappervision.wearscript.managers.BluetoothManager;
 import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.IBeaconManager;
 import com.dappervision.wearscript.managers.OpenCVManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
@@ -481,8 +483,22 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void bluetoothList(String callback) {
-        Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
+    public void beacon(String range, String enter, String exit) {
+        if(range != "null")
+            Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, range).setEvent(IBeaconManager.RANGE_NOTIFICATION));
+        if(enter != "null")
+            Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, enter).setEvent(IBeaconManager.ENTER_REGION));
+        if(exit != "null")
+            Utils.eventBusPost(new CallbackRegistration(IBeaconManager.class, exit).setEvent(IBeaconManager.EXIT_REGION));
+    }
+
+    @JavascriptInterface
+    public void bluetoothList(String callback, boolean btle) {
+        if(!btle) {
+            Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.LIST));
+        }else{
+            Utils.eventBusPost(new CallbackRegistration(BluetoothLEManager.class, callback).setEvent(BluetoothLEManager.LIST));
+        }
     }
 
     @JavascriptInterface
@@ -498,6 +514,11 @@ public class WearScript {
     @JavascriptInterface
     public void bluetoothRead(String device, String callback) {
         Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.READ + device));
+    }
+
+    @JavascriptInterface
+    public void bluetoothLeRead(String device, String callback) {
+        Utils.eventBusPost(new CallbackRegistration(BluetoothLEManager.class, callback).setEvent(BluetoothLEManager.READ + device));
     }
 
     @JavascriptInterface

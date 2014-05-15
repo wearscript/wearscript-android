@@ -1016,9 +1016,19 @@ function WearScript() {
     this.group = function () {
         return WSRAW.group();
     }
-    this.bluetoothList = function (callback) {
+    this.beacon = function (rangeCb, enterCb, exitCb) {
+        rangeCb = this._funcfix(rangeCb);
+        enterCb = this._funcfix(enterCb);
+        exitCb = this._funcfix(exitCb);
+        WSRAW.beacon(this._funcwrap(rangeCb), this._funcwrap(enterCb), this._funcwrap(exitCb));
+    }
+    this.bluetoothList = function (callback, btle) {
         callback = this._funcfix(callback);
-        WSRAW.bluetoothList(this._funcwrap(function (x) {callback(JSON.parse(x))}));
+        if(btle) {
+            WSRAW.bluetoothList(this._funcwrap(callback), true);
+        } else {
+            WSRAW.bluetoothList(this._funcwrap(function (x) {callback(JSON.parse(x))}), false);
+        }
     }
     this.bluetoothRead = function (address, callback) {
         callback = this._funcfix(callback);
