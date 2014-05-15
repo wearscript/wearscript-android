@@ -82,7 +82,7 @@ public class IBeaconManager extends Manager implements IBeaconConsumer{
             public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
                 for(IBeacon myBeacon : iBeacons){
                     if(myBeacon.getAccuracy() >= 0)
-                        makeCall(RANGE_NOTIFICATION, myBeacon.getProximityUuid(), String.valueOf(myBeacon.getRssi()), String.valueOf(myBeacon.getMajor()), String.valueOf(myBeacon.getMinor()));
+                        makeCall(RANGE_NOTIFICATION, myBeacon.getProximityUuid(), String.valueOf(myBeacon.getRssi()), String.valueOf(myBeacon.getMajor()), String.valueOf(myBeacon.getMinor()), String.valueOf(myBeacon.getProximity()));
                 }
             }
         });
