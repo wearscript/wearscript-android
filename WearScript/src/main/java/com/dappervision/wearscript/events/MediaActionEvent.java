@@ -4,6 +4,7 @@ public class MediaActionEvent {
 
     private final String action;
     private final int magnitude;
+    private int msecs;
 
     public MediaActionEvent(String action)
     {
@@ -13,7 +14,6 @@ public class MediaActionEvent {
     public MediaActionEvent(String action,int magnitude) {
         this.action = action; this.magnitude=magnitude;
     }
-
 
     public String getAction() {
         return action;

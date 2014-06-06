@@ -712,8 +712,9 @@ function WearScript() {
         {
             WSRAW.mediaJump(jumpTo);
         }.bind(this);
-
-
+        this.seekTo = function(msecs) {
+            WSRAW.mediaSeekTo(msecs);
+        }.bind(this);
     }
     this.PicarusModel = function (id) {
         this.id = id;
