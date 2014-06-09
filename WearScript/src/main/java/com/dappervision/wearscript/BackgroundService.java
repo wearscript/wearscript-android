@@ -311,6 +311,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             Log.d(TAG, "webview.isHardwareAccelerated: " + webview.isHardwareAccelerated());
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
             webview.getSettings().setJavaScriptEnabled(true);
+            webview.setWebViewClient(new WebViewClient());
             webview.addJavascriptInterface(new WearScript(this), "WSRAW");
             webview.setInitialScale(100);
             Log.i(TAG, "WebView: " + e.getScriptPath());
