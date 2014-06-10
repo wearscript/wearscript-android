@@ -1,8 +1,10 @@
 package com.dappervision.wearscript;
 
+import android.content.Intent;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
+import com.dappervision.wearscript.audio.AudioRecorder;
 import com.dappervision.wearscript.events.ActivityEvent;
 import com.dappervision.wearscript.events.BluetoothBondEvent;
 import com.dappervision.wearscript.events.BluetoothModeEvent;
@@ -325,6 +327,28 @@ public class WearScript {
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(0);
         Utils.eventBusPost(cr);
+    }
+
+    @JavascriptInterface
+    public void startAudioBuffer() {
+        Log.d(TAG, "in startAudioBuffer()!");
+
+        Intent intent = new Intent(bs, com.dappervision.wearscript.audio.AudioRecorder.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        bs.startService(intent);
+
+        /*Intent intent = new Intent();
+        intent.setAction("com.wearscript.audio.RECORD");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);*/
+        //bs.sendBroadcast(intent);
+
+        //bs.sendBroadcast(new Intent("com.wearscript.AUDIO"));
+    }
+
+    @JavascriptInterface
+    public void saveAudioBuffer() {
+        Log.d(TAG, "in saveAudioBuffer()");
+        Intent intent = new Intent(bs, com.dappervision.wearscript.audio.AudioRecorder.class).setAction("save_audio_intent").putExtra(AudioRecorder.MILLIS_EXTRA_KEY, System.currentTimeMillis());
+        bs.startService(intent);
     }
 
     @JavascriptInterface

@@ -94,6 +94,19 @@
             android:enabled="true"
             android:label="@string/app_name"
             android:theme="@style/MenuTheme"></activity>
+
+        <service
+            android:name=".audio.AudioRecorder"
+            android:enabled="true"
+            android:label="@string/app_name"
+            android:theme="@style/MenuTheme">
+
+            <intent-filter>
+                <action android:name="com.wearscript.AUDIO" />
+            </intent-filter>
+
+            </service>
+
         <receiver
             android:name=".launcher.StartAtBootReceiver"
             android:enabled="true"

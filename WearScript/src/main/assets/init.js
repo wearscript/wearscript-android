@@ -1094,5 +1094,11 @@ function WearScript() {
         callback = this._funcfix(callback);
         WSRAW.picarusStream(model, this._funcwrap(function (x) {callback(atob(x))}));
     }
+    this.startAudioBuffer = function() {
+        WSRAW.startAudioBuffer();
+    }
+    this.saveAudioBuffer = function() {
+        WSRAW.saveAudioBuffer();
+    }
 }
 WS = new WearScript();
