@@ -37,12 +37,6 @@ public class RecordingManager extends Manager {
         super.makeCall(key, "'" + data + "'");
     }
 
-    protected String buildCallbackString(String key, String data) {
-        if (!jsCallbacks.containsKey(key))
-            throw new RuntimeException("No such callback registered");
-        return String.format("javascript:%s('%s');", jsCallbacks.get(key), data);
-    }
-
     class RecordingBroadcastReceiver extends BroadcastReceiver {
         RecordingManager rm;
 
