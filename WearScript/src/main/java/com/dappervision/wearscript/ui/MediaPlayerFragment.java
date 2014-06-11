@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
+import android.os.Handler;
 
 import com.dappervision.wearscript.Log;
 import com.dappervision.wearscript.R;
@@ -18,6 +19,8 @@ import com.dappervision.wearscript.events.MediaActionEvent;
 import com.google.android.glass.touchpad.Gesture;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener {
     public static final String ARG_URL = "ARG_URL";
@@ -28,6 +31,13 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     private SurfaceHolder holder;
     private ProgressBar progressBar;
     private SurfaceView surfaceView;
+    private Handler stutterHandler;
+    private   Runnable stutter;
+    private int currentTime;
+    private boolean interrupt;
+    private List<Integer> seekTimes;
+    private int seekPosition=0;
+
 
     public static MediaPlayerFragment newInstance(Uri uri, boolean looping) {
         Bundle args = new Bundle();
@@ -73,6 +83,26 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
             getActivity().finish();
         } else if (action.equals("pause")) {
             mp.pause();
+        } else if (action.equals("playReverse"))
+        {
+            //remove sayEvent from import (test)
+//            mp.seekTo(mp.getDuration());
+//            stutterHandler= new Handler();
+//            mp.seekTo(mp.getDuration());
+//
+//            stutter =  new Runnable(){
+//                public void run() {
+//                    int newTime = mp.getDuration()-1;
+//                    if (newTime<=0)
+//                    {
+//                        mp.stop();
+//                    }
+//                    mp.seekTo(mp.getDuration()-1);
+//
+//                    stutterHandler.postDelayed(stutter, 100);
+//                }
+//            };
+//            stutterHandler.postDelayed(stutter, 100);
         }
     }
 
@@ -152,13 +182,71 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 
     @Override
     public boolean onGesture(Gesture gesture) {
-        if (gesture == Gesture.TAP) {
-            if (mp.isPlaying()) {
+        if (gesture == Gesture.TAP)
+        {
+            seekPosition=0;
+            interrupt=true;
+            if (mp.isPlaying())
+            {
                 mp.pause();
             } else {
                 mp.start();
             }
             return true;
+
+        }
+        if (gesture== Gesture.TWO_TAP)
+        {
+
+           seekTimes = new ArrayList<Integer>();
+            for (int i = mp.getDuration();i>=0;i-=100)
+            {
+                seekTimes.add(i);
+            }
+
+            mp.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener()
+            {
+                @Override
+                public void onSeekComplete(MediaPlayer mediaPlayer)
+                {
+                    if (seekPosition<seekTimes.size()&& !interrupt)
+                    {
+                        seekPosition++;
+                        mp.seekTo(seekTimes.get(seekPosition-1));
+                    }
+
+
+                }
+            });
+              interrupt=false;
+              mp.seekTo(seekTimes.get(0));
+              seekPosition++;
+
+//            final int sp=100;
+//            stutterHandler= new Handler();
+//            mp.seekTo(mp.getDuration());
+//            currentTime=mp.getDuration();
+//            stutter =  new Runnable(){
+//                public void run() {
+//
+//                    if (!interrupt) {
+//                        currentTime = currentTime - sp;
+//                        if (currentTime <= 0) {
+//
+//                            mp.seekTo(0);
+//                            mp.start();
+//                            Log.w(TAG, "stopped");
+//                        } else {
+//
+//                            mp.seekTo(currentTime);
+//                            mp.start();
+//                            stutterHandler.postDelayed(stutter, sp);
+//
+//                        }
+//                    }
+//                }
+//            };
+//            stutterHandler.postDelayed(stutter, sp);
         }
         return false;
     }

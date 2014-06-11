@@ -175,6 +175,9 @@ public class WearScript {
     }
 
     @JavascriptInterface
+    public void mediaPlayReverse(){ Utils.eventBusPost(new MediaActionEvent("playReverse")); }
+
+    @JavascriptInterface
     public void serverConnect(String server, String callback) {
         Log.i(TAG, "serverConnect: " + server);
         if (server.equals("{{WSUrl}}"))

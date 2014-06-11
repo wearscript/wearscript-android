@@ -691,6 +691,9 @@ function WearScript() {
         this.stop = function () {
             WSRAW.mediaStop();
         }.bind(this);
+        this.playReverse = function(){
+            WSRAW.mediaPlayReverse();
+        }.bind(this);
     }
     this.PicarusModel = function (id) {
         this.id = id;
