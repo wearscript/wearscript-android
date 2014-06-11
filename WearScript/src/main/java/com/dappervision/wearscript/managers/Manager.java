@@ -57,6 +57,7 @@ public abstract class Manager {
             return;
         }
         String url = buildCallbackString(key, data);
+        Log.d(TAG, "calling URL: " + url);
         Utils.eventBusPost(new JsCall(url));
     }
 
