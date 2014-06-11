@@ -50,6 +50,7 @@ public class RecordingManager extends Manager {
             if (intent.getAction().equals("com.wearscript.record.FILE_WRITTEN_AUDIO")) {
                 Log.d(TAG, "in RecordingBroadcastReceiver");
                 makeCall(SAVED, intent.getStringExtra("filepath"));
+                jsCallbacks.remove(SAVED);
             }
         }
     }
