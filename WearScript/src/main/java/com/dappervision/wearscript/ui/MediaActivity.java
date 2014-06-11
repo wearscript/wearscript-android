@@ -43,6 +43,7 @@ public class MediaActivity extends FragmentActivity {
         gestureDetector = new GestureDetector(this);
         gestureDetector.setBaseListener(fragment);
         gestureDetector.setScrollListener(fragment);
+
     }
 
     @Override

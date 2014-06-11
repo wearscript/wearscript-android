@@ -694,6 +694,12 @@ function WearScript() {
         this.playReverse = function(){
             WSRAW.mediaPlayReverse();
         }.bind(this);
+        this.onGesture = function (type,callback){
+            callback=WS._funcfix(callback);
+            WSRAW.mediaOnGesture(type,WS._funcwrap(callback));
+        }.bind(this);
+
+
     }
     this.PicarusModel = function (id) {
         this.id = id;

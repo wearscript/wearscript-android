@@ -47,11 +47,13 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.MediaManager;
 import com.dappervision.wearscript.managers.OpenCVManager;
 import com.dappervision.wearscript.managers.PicarusManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.WifiManager;
+import com.dappervision.wearscript.ui.MediaPlayerFragment;
 
 import org.json.simple.JSONObject;
 
@@ -176,6 +178,14 @@ public class WearScript {
 
     @JavascriptInterface
     public void mediaPlayReverse(){ Utils.eventBusPost(new MediaActionEvent("playReverse")); }
+
+
+    @JavascriptInterface
+    public void mediaOnGesture(String gesture, String callback)
+    {
+        Log.d(TAG,"setting callback " +gesture+" "+callback);
+        Utils.eventBusPost(new CallbackRegistration(MediaManager.class, callback).setEvent(gesture));
+    }
 
     @JavascriptInterface
     public void serverConnect(String server, String callback) {

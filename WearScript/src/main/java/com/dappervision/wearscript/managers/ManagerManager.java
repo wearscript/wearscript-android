@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ManagerManager {
     private static ManagerManager singleton;
-    Map<String, Manager> managers;
+    Map<String, Manager>  managers;
 
     private ManagerManager() {
         managers = new ConcurrentHashMap<String, Manager>();
@@ -39,6 +39,7 @@ public class ManagerManager {
         add(new WarpManager(bs));
         add(new LiveCardManager(bs));
         add(new PicarusManager(bs));
+        add(new MediaManager(bs));
         if (HardwareDetector.hasGDK) {
             add(new CardTreeManager(bs));
         }

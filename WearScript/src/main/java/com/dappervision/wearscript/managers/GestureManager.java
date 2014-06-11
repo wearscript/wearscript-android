@@ -4,6 +4,8 @@ import android.content.Context;
 import android.view.MotionEvent;
 
 import com.dappervision.wearscript.BackgroundService;
+import com.dappervision.wearscript.Log;
+import com.dappervision.wearscript.events.MediaGestureEvent;
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 
@@ -20,6 +22,9 @@ public class GestureManager extends Manager {
     public void onEvent(MotionEvent e) {
         detector.onMotionEvent(e);
     }
+
+
+
 }
 
 class MyGestureDetector extends GestureDetector implements GestureDetector.BaseListener, GestureDetector.FingerListener, GestureDetector.ScrollListener, GestureDetector.TwoFingerScrollListener {
@@ -39,6 +44,8 @@ class MyGestureDetector extends GestureDetector implements GestureDetector.BaseL
     public boolean onGesture(Gesture gesture) {
         parent.makeCall("onGesture", String.format("'%s'", gesture.name()));
         parent.makeCall("onGesture" + gesture.name(), "");
+        Log.d(TAG,"hello");
+
         return false;
     }
 
