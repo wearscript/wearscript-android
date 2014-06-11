@@ -53,6 +53,7 @@ import com.dappervision.wearscript.managers.MediaManager;
 import com.dappervision.wearscript.managers.OpenCVManager;
 import com.dappervision.wearscript.managers.PebbleManager;
 import com.dappervision.wearscript.managers.PicarusManager;
+import com.dappervision.wearscript.managers.RecordingManager;
 import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 
@@ -333,7 +334,7 @@ public class WearScript {
     public void startAudioBuffer() {
         Log.d(TAG, "in startAudioBuffer()!");
 
-        Intent intent = new Intent(bs, com.dappervision.wearscript.audio.AudioRecorder.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Intent intent = new Intent("com.wearscript.record.RECORD_AUDIO").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         bs.startService(intent);
 
         /*Intent intent = new Intent();
@@ -345,10 +346,13 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void saveAudioBuffer() {
+    public void saveAudioBuffer(String callback) {
         Log.d(TAG, "in saveAudioBuffer()");
-        Intent intent = new Intent(bs, com.dappervision.wearscript.audio.AudioRecorder.class).setAction("save_audio_intent").putExtra(AudioRecorder.MILLIS_EXTRA_KEY, System.currentTimeMillis());
+        Intent intent = new Intent("com.wearscript.record.SAVE_AUDIO").putExtra(AudioRecorder.MILLIS_EXTRA_KEY, System.currentTimeMillis());
         bs.startService(intent);
+        CallbackRegistration cr = new CallbackRegistration(RecordingManager.class, callback);
+        cr.setEvent(RecordingManager.SAVED);
+        Utils.eventBusPost(cr);
     }
 
     @JavascriptInterface
