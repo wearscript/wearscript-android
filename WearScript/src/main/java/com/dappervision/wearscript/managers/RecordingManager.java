@@ -7,9 +7,7 @@ import android.content.IntentFilter;
 
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.Log;
-import com.dappervision.wearscript.Utils;
 import com.dappervision.wearscript.events.CallbackRegistration;
-import com.dappervision.wearscript.events.JsCall;
 
 public class RecordingManager extends Manager {
     BroadcastReceiver broadcastReceiver;
@@ -36,13 +34,7 @@ public class RecordingManager extends Manager {
     }
 
     protected void makeCall(String key, String data) {
-        Log.d(TAG, jsCallbacks.toString());
-        if (!jsCallbacks.containsKey(key)) {
-            Log.d(TAG, "Callback not found: " + key);
-            return;
-        }
-        String url = buildCallbackString(key, data);
-        Utils.eventBusPost(new JsCall(url));
+        makeCall(key, "'" + data + "'");
     }
 
     class RecordingBroadcastReceiver extends BroadcastReceiver {
