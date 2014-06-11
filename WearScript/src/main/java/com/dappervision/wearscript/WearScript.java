@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
-import com.dappervision.wearscript.audio.AudioRecorder;
 import com.dappervision.wearscript.events.ActivityEvent;
 import com.dappervision.wearscript.events.BluetoothBondEvent;
 import com.dappervision.wearscript.events.BluetoothModeEvent;
@@ -348,7 +347,7 @@ public class WearScript {
     @JavascriptInterface
     public void saveAudioBuffer(String callback) {
         Log.d(TAG, "in saveAudioBuffer()");
-        Intent intent = new Intent("com.wearscript.record.SAVE_AUDIO").putExtra(AudioRecorder.MILLIS_EXTRA_KEY, System.currentTimeMillis());
+        Intent intent = new Intent("com.wearscript.record.SAVE_AUDIO").putExtra("millis", System.currentTimeMillis());
         bs.startService(intent);
         CallbackRegistration cr = new CallbackRegistration(RecordingManager.class, callback);
         cr.setEvent(RecordingManager.SAVED);
