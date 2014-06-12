@@ -691,12 +691,19 @@ function WearScript() {
         this.stop = function () {
             WSRAW.mediaStop();
         }.bind(this);
-        this.playReverse = function(){
-            WSRAW.mediaPlayReverse();
+        this.playReverse = function(speed){
+            WSRAW.mediaPlayReverse(speed);
         }.bind(this);
+        this.playFastForward = function(speed){
+                    WSRAW.mediaPlayFastForward(speed);
+                }.bind(this);
         this.onGesture = function (type,callback){
             callback=WS._funcfix(callback);
             WSRAW.mediaOnGesture(type,WS._funcwrap(callback));
+        }.bind(this);
+        this.jump = function(jumpTo)
+        {
+            WSRAW.mediaJump(jumpTo);
         }.bind(this);
 
 

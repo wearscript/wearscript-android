@@ -177,15 +177,19 @@ public class WearScript {
     }
 
     @JavascriptInterface
-    public void mediaPlayReverse(){ Utils.eventBusPost(new MediaActionEvent("playReverse")); }
+    public void mediaPlayReverse(int speed){ Utils.eventBusPost(new MediaActionEvent("playReverse",speed)); }
+
+    @JavascriptInterface
+    public void mediaPlayFastForward(int speed){ Utils.eventBusPost(new MediaActionEvent("playFastForward",speed)); }
 
 
     @JavascriptInterface
     public void mediaOnGesture(String gesture, String callback)
     {
-        Log.d(TAG,"setting callback " +gesture+" "+callback);
         Utils.eventBusPost(new CallbackRegistration(MediaManager.class, callback).setEvent(gesture));
     }
+    @JavascriptInterface
+    public void mediaJump(int jumpTo){ Utils.eventBusPost(new MediaActionEvent("jump",jumpTo)); }
 
     @JavascriptInterface
     public void serverConnect(String server, String callback) {

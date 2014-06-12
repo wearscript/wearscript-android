@@ -26,6 +26,8 @@ import com.google.android.glass.touchpad.GestureDetector;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener {
     public static final String ARG_URL = "ARG_URL";
@@ -42,6 +44,8 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     private int currentTime;
     private boolean interrupt;
     private List<Integer> seekTimes;
+    private int[] times;
+    private long prevJumpTime;
     private int seekPosition = 0;
 
 
@@ -85,22 +89,53 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     public void onEvent(MediaActionEvent e)
     {
         String action = e.getAction();
-          if (action.equals("play")) {
+          if (action.equals("play"))
+        {
+            interrupt=true;
             mp.start();
         } else if (action.equals("stop"))
         {
+            interrupt=true;
             mp.stop();
             getActivity().finish();
         } else if (action.equals("pause"))
         {
+            interrupt=true;
             mp.pause();
         } else if (action.equals("playReverse"))
         {
-            playReverse();
+            playReverse(e.getMagnitude());
+        }
+        else if (action.equals("jump"))
+        {
+            interrupt=true;
+            jump(e.getMagnitude());
+        }
+        else if (action.equals("playFastForward"))
+        {
+              playFastForward(e.getMagnitude());
         }
     }
 
-    private void stutter(int period) {
+    private void jump(int jumpVector)
+    {
+        if(jumpVector==0) return;
+        int newPosition = mp.getCurrentPosition() + jumpVector;
+        if (jumpVector>0 && newPosition>mp.getDuration())
+        {
+                mp.seekTo(mp.getDuration());
+        }
+        else if (jumpVector<0 && newPosition<0)
+        {
+                mp.seekTo(0);
+        }
+        else
+        {
+                mp.seekTo(newPosition);
+        }
+    }
+    private void stutter(int period)
+    {
 
         final int p = period;
         stutterHandler = new Handler();
@@ -149,33 +184,74 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 //        return true;
 //    }
 
-    private void playReverse()
+    private void modifiedSpeedPlayback(final int speed,int direction)
     {
+        mp.pause();
+        final int startDelay=100;
+        seekTimes = new ArrayList<Integer>();
 
-            seekTimes = new ArrayList<Integer>();
-            for (int i = mp.getDuration();i>=0;i-=100)
+        if (direction==0)
+        {
+            for (int i = mp.getDuration(); i >= 0; i -= speed) {
+                seekTimes.add(i);
+            }
+        }
+        else
+        {
+            for (int i = 0; i <mp.getDuration(); i += speed)
             {
                 seekTimes.add(i);
             }
-
-            mp.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener()
+        }
+        mp.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener()
+        {
+            @Override
+            public void onSeekComplete(MediaPlayer mediaPlayer)
             {
-                @Override
-                public void onSeekComplete(MediaPlayer mediaPlayer)
+                long currentTime=System.currentTimeMillis();
+                if (currentTime>prevJumpTime+2*speed)
                 {
-                    if (seekPosition<seekTimes.size()&& !interrupt)
-                    {
-                        seekPosition++;
-                        mp.seekTo(seekTimes.get(seekPosition-1));
-                    }
-                    else
-                        seekPosition=0;
+                    seekPosition++;
                 }
-            });
-              interrupt=false;
-              mp.seekTo(seekTimes.get(0));
-              seekPosition++;
+                if (seekPosition<seekTimes.size()&&!interrupt)
+                {
+                    seekPosition++;
+                    prevJumpTime=currentTime;
+                    mp.seekTo(seekTimes.get(seekPosition-1));
+                }
+                else
+                {
+                    seekPosition = 0;
+                    if(!interrupt)
+                        mp.start();
+                }
+            }
+        });
+        interrupt=false;
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                seekPosition++;
+                prevJumpTime=System.currentTimeMillis();
+                if(seekTimes.size()>0)
+                mp.seekTo(seekTimes.get(0));
+            }
+        },startDelay);
+
     }
+    private void playReverse(final int speed)
+    {
+              modifiedSpeedPlayback(speed,0);
+    }
+
+    private void playFastForward(int speed)
+    {
+        modifiedSpeedPlayback(speed,1);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_media_player, container, false);
@@ -254,7 +330,6 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     public boolean onGesture(Gesture gesture)
     {
         Utils.eventBusPost(new MediaGestureEvent(gesture));
-        Log.d(TAG,"posting media event "+gesture.name());
         return false;
     }
 
