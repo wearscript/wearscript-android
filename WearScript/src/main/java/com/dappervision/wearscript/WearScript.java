@@ -182,6 +182,11 @@ public class WearScript {
     @JavascriptInterface
     public void mediaPlayFastForward(int speed){ Utils.eventBusPost(new MediaActionEvent("playFastForward",speed)); }
 
+    @JavascriptInterface
+    public void mediaFastForward(int speed){ Utils.eventBusPost(new MediaActionEvent("fastForward",speed)); }
+
+    @JavascriptInterface
+    public void mediaRewind(int speed){ Utils.eventBusPost(new MediaActionEvent("rewind",speed)); }
 
     @JavascriptInterface
     public void mediaOnGesture(String gesture, String callback)

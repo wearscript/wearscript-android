@@ -49,6 +49,8 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     private int seekPosition = 0;
 
 
+
+
     public static MediaPlayerFragment newInstance(Uri uri, boolean looping) {
         Bundle args = new Bundle();
         args.putParcelable(ARG_URL, uri);
@@ -69,7 +71,8 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 
     }
 
-    private void createMediaPlayer() {
+    private void createMediaPlayer()
+    {
         if (progressBar != null)
             progressBar.setVisibility(View.VISIBLE);
         mp = new MediaPlayer();
@@ -89,7 +92,7 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
     public void onEvent(MediaActionEvent e)
     {
         String action = e.getAction();
-          if (action.equals("play"))
+        if (action.equals("play"))
         {
             interrupt=true;
             mp.start();
@@ -114,6 +117,14 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
         else if (action.equals("playFastForward"))
         {
               playFastForward(e.getMagnitude());
+        }
+        else if (action.equals("rewind"))
+        {
+            rewind(e.getMagnitude());
+        }
+        else if (action.equals("fastForward"))
+        {
+            fastForward(e.getMagnitude());
         }
     }
 
@@ -184,23 +195,47 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
 //        return true;
 //    }
 
-    private void modifiedSpeedPlayback(final int speed,int direction)
+    private void modifiedSpeedPlayback(final int speed,int direction,boolean fromEndpoint)
     {
+        if(speed<=0)return;
         mp.pause();
         final int startDelay=100;
         seekTimes = new ArrayList<Integer>();
+        final int duration = mp.getDuration();
+
+
 
         if (direction==0)
         {
-            for (int i = mp.getDuration(); i >= 0; i -= speed) {
-                seekTimes.add(i);
+            if (fromEndpoint)
+            {
+                for (int i = duration; i >= 0; i -= speed) {
+                    seekTimes.add(i);
+                }
+            }
+            else
+            {
+                for (int i = mp.getCurrentPosition(); i >= 0; i -= speed)
+                {
+                    seekTimes.add(i);
+                }
             }
         }
         else
         {
-            for (int i = 0; i <mp.getDuration(); i += speed)
+            if (fromEndpoint)
             {
-                seekTimes.add(i);
+                for (int i = 0; i < duration; i += speed)
+                {
+                    seekTimes.add(i);
+                }
+            }
+            else
+            {
+                for (int i = mp.getCurrentPosition(); i < duration; i += speed)
+                {
+                    seekTimes.add(i);
+                }
             }
         }
         mp.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener()
@@ -242,14 +277,24 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
         },startDelay);
 
     }
+
+    private void rewind(final int speed)
+    {
+        modifiedSpeedPlayback(speed,0,false);
+    }
+    private void fastForward(final int speed)
+    {
+        modifiedSpeedPlayback(speed,1,false);
+
+    }
     private void playReverse(final int speed)
     {
-              modifiedSpeedPlayback(speed,0);
+              modifiedSpeedPlayback(speed,0,true);
     }
 
     private void playFastForward(int speed)
     {
-        modifiedSpeedPlayback(speed,1);
+        modifiedSpeedPlayback(speed,1,true);
     }
 
     @Override
