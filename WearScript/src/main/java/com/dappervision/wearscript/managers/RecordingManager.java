@@ -11,7 +11,7 @@ import com.dappervision.wearscript.events.CallbackRegistration;
 
 public class RecordingManager extends Manager {
     BroadcastReceiver broadcastReceiver;
-    public String TAG = "RecordingManager";
+    public static String TAG = "RecordingManager";
     public static String SAVED = "SAVED";
 
     public RecordingManager(BackgroundService service) {
@@ -26,7 +26,7 @@ public class RecordingManager extends Manager {
             Log.d(TAG, "in onEvent(CallbackRegistration e)!");
 
             Log.d(TAG, "registering for callback");
-            broadcastReceiver = new RecordingBroadcastReceiver(this);
+            broadcastReceiver = new RecordingBroadcastReceiver();
             IntentFilter intentFilter = new IntentFilter("com.wearscript.record.FILE_WRITTEN_VIDEO");
             intentFilter.addAction("com.wearscript.record.FILE_WRITTEN_AUDIO");
             service.registerReceiver(broadcastReceiver, intentFilter);
@@ -37,11 +37,12 @@ public class RecordingManager extends Manager {
         super.makeCall(key, "'" + data + "'");
     }
 
-    class RecordingBroadcastReceiver extends BroadcastReceiver {
+    public static class RecordingBroadcastReceiver extends BroadcastReceiver {
         RecordingManager rm;
 
-        public RecordingBroadcastReceiver(RecordingManager rm) {
-            this.rm = rm;
+        public RecordingBroadcastReceiver() {
+            super();
+            this.rm = (RecordingManager) ManagerManager.get().get(RecordingManager.class);
         }
 
         @Override
@@ -49,8 +50,8 @@ public class RecordingManager extends Manager {
             Log.d(TAG, "in onReceive()");
             if (intent.getAction().equals("com.wearscript.record.FILE_WRITTEN_AUDIO")) {
                 Log.d(TAG, "in RecordingBroadcastReceiver");
-                makeCall(SAVED, intent.getStringExtra("filepath"));
-                jsCallbacks.remove(SAVED);
+                rm.makeCall(SAVED, intent.getStringExtra("filepath"));
+                rm.jsCallbacks.remove(SAVED);
             }
         }
     }

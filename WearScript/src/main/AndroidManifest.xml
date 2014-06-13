@@ -117,6 +117,17 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".managers.RecordingManager$RecordingBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:label="CallbackWhenRecordingSavedReceiver">
+            <intent-filter>
+                <action android:name="com.wearscript.record.FILE_WRITTEN_AUDIO" />
+                <action android:name="com.wearscript.record.FILE_WRITTEN_VIDEO" />
+            </intent-filter>
+        </receiver>
+
         <service android:name="com.dappervision.wearscript.BackgroundService" />
     </application>
 </manifest>
