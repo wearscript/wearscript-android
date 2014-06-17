@@ -691,6 +691,41 @@ function WearScript() {
         this.stop = function () {
             WSRAW.mediaStop();
         }.bind(this);
+        this.rewind = function (speed)
+        {
+            WSRAW.mediaRewind(speed);
+        }.bind(this);
+        this.fastForward = function(speed){
+            WSRAW.mediaFastForward(speed);
+        }.bind(this);
+        this.playReverse = function(speed){
+            WSRAW.mediaPlayReverse(speed);
+        }.bind(this);
+        this.playFastForward = function(speed){
+            WSRAW.mediaPlayFastForward(speed);
+        }.bind(this);
+        this.jump = function(deltaMsecs)
+        {
+            WSRAW.mediaJump(deltaMsecs);
+        }.bind(this);
+        this.seekTo = function(msecs) {
+            WSRAW.mediaSeekTo(msecs);
+        }.bind(this);
+        this.seekBackwards = function(msecs) {
+            WSRAW.mediaSeekBackwards(msecs);
+        }.bind(this);
+
+        this.seekToEnd = function() {
+            this.seekBackwards(0);
+        }
+        this.seekToBeginning = function() {
+            this.seekTo(0);
+        }
+
+        this.onGesture = function (type,callback){
+            callback=WS._funcfix(callback);
+            WSRAW.mediaOnGesture(type,WS._funcwrap(callback));
+        }.bind(this);
     }
     this.PicarusModel = function (id) {
         this.id = id;
@@ -1066,6 +1101,13 @@ function WearScript() {
     this.picarusStream = function(model, callback) {
         callback = this._funcfix(callback);
         WSRAW.picarusStream(model, this._funcwrap(function (x) {callback(atob(x))}));
+    }
+    this.startAudioBuffer = function() {
+        WSRAW.startAudioBuffer();
+    }
+    this.saveAudioBuffer = function(callback) {
+        callback = this._funcfix(callback);
+        WSRAW.saveAudioBuffer(this._funcwrap(callback));
     }
 }
 WS = new WearScript();

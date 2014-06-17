@@ -1,5 +1,6 @@
 package com.dappervision.wearscript;
 
+import android.content.Intent;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
@@ -47,10 +48,12 @@ import com.dappervision.wearscript.managers.CameraManager;
 import com.dappervision.wearscript.managers.ConnectionManager;
 import com.dappervision.wearscript.managers.EyeManager;
 import com.dappervision.wearscript.managers.GestureManager;
+import com.dappervision.wearscript.managers.MediaManager;
 import com.dappervision.wearscript.managers.OpenCVManager;
-import com.dappervision.wearscript.managers.PicarusManager;
-import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.PebbleManager;
+import com.dappervision.wearscript.managers.PicarusManager;
+import com.dappervision.wearscript.managers.RecordingManager;
+import com.dappervision.wearscript.managers.WarpManager;
 import com.dappervision.wearscript.managers.WifiManager;
 
 import org.json.simple.JSONObject;
@@ -173,6 +176,31 @@ public class WearScript {
     public void mediaStop(){
         Utils.eventBusPost(new MediaActionEvent("stop"));
     }
+
+    @JavascriptInterface
+    public void mediaPlayReverse(int speed){ Utils.eventBusPost(new MediaActionEvent("playReverse",speed)); }
+
+    @JavascriptInterface
+    public void mediaPlayFastForward(int speed){ Utils.eventBusPost(new MediaActionEvent("playFastForward",speed)); }
+
+    @JavascriptInterface
+    public void mediaFastForward(int speed){ Utils.eventBusPost(new MediaActionEvent("fastForward",speed)); }
+
+    @JavascriptInterface
+    public void mediaRewind(int speed){ Utils.eventBusPost(new MediaActionEvent("rewind",speed)); }
+
+    @JavascriptInterface
+    public void mediaOnGesture(String gesture, String callback)
+    {
+        Utils.eventBusPost(new CallbackRegistration(MediaManager.class, callback).setEvent(gesture));
+    }
+    @JavascriptInterface
+    public void mediaJump(int deltaMsecs){ Utils.eventBusPost(new MediaActionEvent("jump",deltaMsecs)); }
+
+    public void mediaSeekTo(int msecs) { Utils.eventBusPost(new MediaActionEvent("seekTo", msecs)); }
+
+    @JavascriptInterface
+    public void mediaSeekBackwards(int msecs) { Utils.eventBusPost(new MediaActionEvent("seekBackwards", msecs)); }
 
     @JavascriptInterface
     public void serverConnect(String server, String callback) {
@@ -298,6 +326,31 @@ public class WearScript {
         cameraOn(imagePeriod, maxHeight, maxWidth, background);
         CallbackRegistration cr = new CallbackRegistration(CameraManager.class, callback);
         cr.setEvent(0);
+        Utils.eventBusPost(cr);
+    }
+
+    @JavascriptInterface
+    public void startAudioBuffer() {
+        Log.d(TAG, "in startAudioBuffer()!");
+
+        Intent intent = new Intent("com.wearscript.record.RECORD_AUDIO").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        bs.startService(intent);
+
+        /*Intent intent = new Intent();
+        intent.setAction("com.wearscript.audio.RECORD");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);*/
+        //bs.sendBroadcast(intent);
+
+        //bs.sendBroadcast(new Intent("com.wearscript.AUDIO"));
+    }
+
+    @JavascriptInterface
+    public void saveAudioBuffer(String callback) {
+        Log.d(TAG, "in saveAudioBuffer()");
+        Intent intent = new Intent("com.wearscript.record.SAVE_AUDIO").putExtra("millis", System.currentTimeMillis());
+        bs.startService(intent);
+        CallbackRegistration cr = new CallbackRegistration(RecordingManager.class, callback);
+        cr.setEvent(RecordingManager.SAVED);
         Utils.eventBusPost(cr);
     }
 
