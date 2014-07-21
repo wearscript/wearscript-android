@@ -26,6 +26,7 @@ android {
 }
 
 dependencies {
+    compile 'com.crittercism:crittercism-android-agent:+'
     compile 'de.greenrobot:eventbus:2.2.0'
     compile 'com.polysfactory.lib.glass.bluetooth:glass-bluetooth:0.1.2'
     compile 'com.radiusnetworks:AndroidIBeaconLibrary:0.7.6@aar'
