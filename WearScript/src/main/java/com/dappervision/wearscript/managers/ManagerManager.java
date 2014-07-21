@@ -41,6 +41,7 @@ public class ManagerManager {
         add(new PicarusManager(bs));
         if (HardwareDetector.hasGDK) {
             add(new CardTreeManager(bs));
+            add(new EyeManager(bs));
         }
     }
 
