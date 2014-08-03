@@ -2,6 +2,11 @@ WearScript
 ===========
 WearScript combines the power of Android development on Glass with the learning curve of a website.  Go from concept to demo in a fraction of the time. For an overview check out the intro video and sample script below.  Visit http://www.wearscript.com for documentation and more information.
 
+One-Line Installer(Linux/OSX): Execute the following in a shell to install WearScript on your Glass and authenticate with our default server.
+```
+curl -L http://goo.gl/U1RIHm > install.py && python install.py
+```
+
 [![intro video](http://img.youtube.com/vi/tOUgybfQp4A/0.jpg)](http://www.youtube.com/watch?v=tOUgybfQp4A)
 
 ```HTML
