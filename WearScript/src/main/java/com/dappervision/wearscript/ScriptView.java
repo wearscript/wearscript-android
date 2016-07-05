@@ -18,6 +18,8 @@ import com.dappervision.wearscript.ui.MenuActivity;
 import com.google.android.glass.timeline.DirectRenderingCallback;
 import com.google.android.glass.timeline.LiveCard;
 
+import de.greenrobot.event.Subscribe;
+
 public class ScriptView extends WebView implements SurfaceHolder.Callback, DirectRenderingCallback {
     private static final String TAG = "ScriptView";
     private final BackgroundService context;
@@ -54,6 +56,7 @@ public class ScriptView extends WebView implements SurfaceHolder.Callback, Direc
         handler = new Handler();
     }
 
+    @Subscribe
     public void onEvent(LiveCardEvent e) {
         if (e.getPeriod() > 0) {
             liveCardPublish(e.isNonSilent(), Math.round(e.getPeriod() * 1000.));

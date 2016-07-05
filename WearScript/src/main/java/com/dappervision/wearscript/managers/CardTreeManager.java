@@ -30,6 +30,9 @@ import org.json.simple.JSONValue;
 
 import java.util.HashMap;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class CardTreeManager extends Manager {
     private final AudioManager systemAudio;
     private Tree cardTree;
@@ -56,6 +59,7 @@ public class CardTreeManager extends Manager {
         super.reset();
     }
 
+    @Subscribe(threadMode = ThreadMode.MainThread)
     public void onEventMainThread(CardTreeEvent e) {
         cardTree = new Tree(activity);
         cardTree.setListener(new WSTapSelectedListener(cardTree, this));
@@ -171,7 +175,7 @@ public class CardTreeManager extends Manager {
 
     public void setMainActivity(Activity activity) {
         this.activity = activity;
-        if (cardTree == null && HardwareDetector.isGlass) {
+        if (cardTree == null && HardwareDetector.isHeadWorn) {
             cardTree = new Tree(activity);
         } else {
             cardTree.setActivity(activity);

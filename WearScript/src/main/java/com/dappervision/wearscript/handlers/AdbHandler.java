@@ -3,6 +3,8 @@ package com.dappervision.wearscript.handlers;
 import com.dappervision.wearscript.events.ControlEvent;
 import com.mikedg.glass.control.inputhandler.AdbTcpInputHandler;
 
+import de.greenrobot.event.Subscribe;
+
 public class AdbHandler extends Handler {
     AdbTcpInputHandler adbTcpInputHandler;
     private boolean isStarted = false;
@@ -11,6 +13,7 @@ public class AdbHandler extends Handler {
         adbTcpInputHandler = new AdbTcpInputHandler();
     }
 
+    @Subscribe
     public void onEvent(ControlEvent event) {
         if(event.isAdb()){
             if(!isStarted)

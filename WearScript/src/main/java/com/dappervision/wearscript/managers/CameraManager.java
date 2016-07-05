@@ -34,6 +34,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class CameraManager extends Manager implements Camera.PreviewCallback {
     /* To Test this code, check the following conditions and all combinations
     * 1. Stream on/off
@@ -89,6 +92,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.Async)
     public void onEventAsync(OpenCVLoadedEvent event) {
         // State: Called after OpenCV is loaded, note this may happen when another module requests it
         synchronized (this) {
@@ -98,6 +102,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(CameraEvents.Start e) {
         // State: Called after WS.cameraOn
         Log.d(TAG, "camflow: Start");
@@ -126,6 +131,7 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(ActivityResultEvent event) {
         int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
         Intent intent = event.getIntent();

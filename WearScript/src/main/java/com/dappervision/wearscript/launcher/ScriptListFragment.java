@@ -62,7 +62,7 @@ public class ScriptListFragment extends Fragment {
     }
 
     public ListAdapter buildListAdapter() {
-        if (HardwareDetector.isGlass) {
+        if (HardwareDetector.hasGDK) {
             return new WearScriptsCardAdapter(this, mInstalledScripts);
         } else {
             return new WearScriptsAdapter(this, mInstalledScripts);
@@ -83,7 +83,7 @@ public class ScriptListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         LinearLayout layout = new LinearLayout(getActivity());
-        if (HardwareDetector.isGlass) {
+        if (HardwareDetector.hasGDK) {
             CardScrollView view = new CardScrollView(getActivity());
             view.setHorizontalScrollBarEnabled(true);
             view.setAdapter((CardScrollAdapter) mListAdapter);

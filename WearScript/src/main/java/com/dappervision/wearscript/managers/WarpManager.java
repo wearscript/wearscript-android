@@ -35,6 +35,9 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class WarpManager extends Manager {
     public static final String SAMPLE = "sample";
     public static final String TAG = "WarpManager";
@@ -208,6 +211,7 @@ public class WarpManager extends Manager {
         return new Mat(image.rows(), image.cols(), CvType.CV_8UC3);
     }
 
+    @Subscribe
     public void onEvent(WarpModeEvent event) {
         synchronized (this) {
             mode = event.getMode();
@@ -219,6 +223,7 @@ public class WarpManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.Async)
     public void onEventAsync(WarpSetAnnotationEvent event) {
         synchronized (this) {
             Mat frame = ImageBGRFromString(event.getImage());
@@ -229,6 +234,7 @@ public class WarpManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.Async)
     public void onEventAsync(WarpSetupHomographyEvent event) {
         synchronized (this) {
             setupMatrices(ParseJSONDoubleArray((JSONArray)(JSONValue.parse(event.getHomography()))));
@@ -259,6 +265,7 @@ public class WarpManager extends Manager {
         return null;
     }
 
+    @Subscribe(threadMode = ThreadMode.Async)
     public void onEventAsync(WarpHEvent event) {
         double[] h = event.getH();
         if (h == null)

@@ -55,6 +55,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class BackgroundService extends Service implements AudioRecord.OnRecordPositionUpdateListener, OnInitListener {
     protected static String TAG = "BackgroundService";
     private final IBinder mBinder = new LocalBinder();
@@ -266,18 +269,27 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
                 webview.onDestroy();
                 webview = null;
             }
-            sensorBuffer = new TreeMap<String, ArrayList<Value>>();
-            sensorTypes = new TreeMap<String, Integer>();
+            sensorBuffer = new TreeMap<>();
+            sensorTypes = new TreeMap<>();
             dataWifi = dataRemote = dataLocal = false;
             lastSensorSaveTime = sensorDelay = 0.;
 
             ManagerManager.get().resetAll();
             HandlerHandler.get().resetAll();
+<<<<<<< 92267dd04c99cc97bc175f911d8e552679b88684
             if(activity != null) {
                 ScriptActivity a = activity;
                 // TODO(brandyn): Verify that if we create a new activity that the gestures still work
                 if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
                         ManagerManager.get().add(new GestureManager(a, this));
+=======
+            // TODO(brandyn): Verify that if we create a new activity that the gestures still work
+            if (HardwareDetector.isHeadWorn && ManagerManager.get().get(GestureManager.class) == null) {
+                if (activity != null) {
+                    ScriptActivity a = activity;
+                    ManagerManager.get().add(new GestureManager(a, this));
+                    ManagerManager.get().add(new EyeManager(a, this));
+>>>>>>> Get compiling with latest Android SDK
                 }
             }
             if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {
@@ -389,14 +401,17 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             webview.onConfigurationChanged(newConfig);
     }
 
+    @Subscribe(threadMode = ThreadMode.MainThread)
     public void onEventMainThread(JsCall e) {
         loadUrl(e.getCall());
     }
 
+    @Subscribe(threadMode = ThreadMode.MainThread)
     public void onEventMainThread(SayEvent e) {
         say(e.getMsg(), e.getInterrupt());
     }
 
+    @Subscribe(threadMode = ThreadMode.MainThread)
     public void onEventMainThread(ActivityEvent e) {
         if (e.getMode() == ActivityEvent.Mode.CREATE) {
             CameraManager cm = ((CameraManager) getManager(CameraManager.class));
@@ -414,16 +429,19 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
         }
     }
 
+    @Subscribe
     public void onEvent(DataLogEvent e) {
         dataRemote = e.isServer();
         dataLocal = e.isLocal();
         sensorDelay = e.getSensorDelay() * 1000000000L;
     }
 
+    @Subscribe(threadMode = ThreadMode.MainThread)
     public void onEventMainThread(ScreenEvent e) {
         wake();
     }
 
+    @Subscribe(threadMode = ThreadMode.MainThread)
     public void onEventMainThread(ShutdownEvent e) {
         shutdown();
     }

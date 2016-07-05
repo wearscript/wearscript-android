@@ -3,7 +3,11 @@ package com.dappervision.wearscript.handlers;
 import com.dappervision.wearscript.glassbt.GlassDevice;
 import com.dappervision.wearscript.events.ControlEvent;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class ControlHandler extends Handler {
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(ControlEvent e) {
         if(e.isAdb())
             return;

@@ -27,6 +27,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class BluetoothManager extends Manager {
     public static final String LIST = "LIST";
     public static final String READ = "READ:";
@@ -213,6 +216,7 @@ public class BluetoothManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.Async)
     public void onEventAsync(BluetoothModeEvent e) {
         setup();
         if (mBluetoothAdapter == null)
@@ -273,6 +277,7 @@ public class BluetoothManager extends Manager {
         Log.d(TAG, "Connected");
     }
 
+    @Subscribe(threadMode = ThreadMode.Async)
     public void onEventAsync(BluetoothBondEvent e) {
         setup();
         BluetoothDevice device = (BluetoothDevice)mDevices.get(e.getAddress());
@@ -291,6 +296,7 @@ public class BluetoothManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.Async)
     public void onEventAsync(BluetoothWriteEvent e) {
         setup();
         Log.d(TAG, "Addr: " + e.getAddress() + " Buffer: " + new String(e.getBuffer()));

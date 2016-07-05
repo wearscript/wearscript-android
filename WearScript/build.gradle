@@ -1,20 +1,8 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:0.12.+'
-    }
-}
 apply plugin: 'com.android.application'
-
-repositories {
-    mavenCentral()
-}
 
 android {
     compileSdkVersion "Google Inc.:Glass Development Kit Preview:19"
-    buildToolsVersion "20.0.0"
+    buildToolsVersion '24'
 
     defaultConfig {
         minSdkVersion 15
@@ -25,17 +13,19 @@ android {
     lintOptions {
         abortOnError false
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
 }
 
 dependencies {
-    compile 'de.greenrobot:eventbus:2.2.0'
+    compile 'de.greenrobot:eventbus:3.0.0-beta1'
     compile 'com.polysfactory.lib.glass.bluetooth:glass-bluetooth:0.1.2'
     compile files('libs/android-websockets.jar')
     compile files('libs/commons-codec-1.6.jar')
     compile files('libs/java_websocket.jar')
-    compile files('libs/json-simple-1.1.1.jar')
-    compile files('libs/msgpack-0.6.9-SNAPSHOT.jar')
-    compile files('libs/jackson-core-2.2.3.jar')
+    compile 'org.msgpack:msgpack:0.6.12'
     compile files('libs/protocol-1.0.4.jar')
     compile files('libs/sentry-0.1.4.jar')
     compile files('libs/CardTree.jar')

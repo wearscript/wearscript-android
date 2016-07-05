@@ -23,11 +23,13 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
-import org.msgpack.util.json.JSON;
 
 import java.util.List;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
 
 public class ConnectionManager extends Manager {
     public static final String SENSORS_SUBCHAN = "sensors";
@@ -138,6 +140,7 @@ public class ConnectionManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(SendEvent e) {
         String channel = e.getChannel();
         Log.d(TAG, "Sending Channel: " + channel);
@@ -148,11 +151,13 @@ public class ConnectionManager extends Manager {
         connection.publish(channel, e.getData());
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(ServerConnectEvent e) {
         registerCallback(ONCONNECT, e.getCallback());
         connection.connect(e.getServer());
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(SendSubEvent e) {
         String channel = connection.subchannel(e.getSubChannel());
         Log.d(TAG, "Sending Channel: " + channel);
@@ -163,6 +168,7 @@ public class ConnectionManager extends Manager {
         onEventBackgroundThread(new SendEvent(channel, e.getData()));
     }
 
+    @Subscribe
     public void onEvent(ChannelSubscribeEvent e) {
         synchronized (this) {
             registerCallback(e.getChannel(), e.getCallback());
@@ -170,10 +176,12 @@ public class ConnectionManager extends Manager {
         }
     }
 
+    @Subscribe
     public void onEvent(GistSyncEvent e) {
         Utils.eventBusPost(new SendEvent("gist", "list", GIST_LIST_SYNC_CHAN));
     }
 
+    @Subscribe
     public void onEvent(ChannelUnsubscribeEvent e) {
         synchronized (this) {
             for (String channel : e.getChannels()) {
@@ -205,7 +213,7 @@ public class ConnectionManager extends Manager {
     class WearScriptConnectionImpl extends WearScriptConnection {
 
         WearScriptConnectionImpl() {
-            super(HardwareDetector.isGlass ? "android:glass" : "android:phone", ((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
+            super(HardwareDetector.isHeadWorn ? "android:glass" : "android:phone", ((WifiManager) service.getManager(WifiManager.class)).getMacAddress().replace(":", ""));
         }
 
         @Override

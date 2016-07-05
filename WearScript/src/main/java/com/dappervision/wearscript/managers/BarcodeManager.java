@@ -8,6 +8,8 @@ import com.dappervision.wearscript.events.BarcodeEvent;
 import com.dappervision.wearscript.events.CallbackRegistration;
 import com.dappervision.wearscript.ui.QRActivity;
 
+import de.greenrobot.event.Subscribe;
+
 public class BarcodeManager extends Manager {
     public static String QR_CODE = "QR_CODE";
 
@@ -16,6 +18,7 @@ public class BarcodeManager extends Manager {
         reset();
     }
 
+    @Subscribe
     public void onEvent(CallbackRegistration e) {
         if (e.getManager().equals(this.getClass())) {
             registerCallback(e.getEvent(), e.getCallback());
@@ -23,6 +26,7 @@ public class BarcodeManager extends Manager {
         }
     }
 
+    @Subscribe
     public void onEvent(BarcodeEvent e) {
         makeCall(e.getResult().getBytes(), e.getFormat());
     }

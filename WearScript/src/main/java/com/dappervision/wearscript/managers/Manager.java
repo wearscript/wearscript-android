@@ -8,6 +8,8 @@ import com.dappervision.wearscript.events.JsCall;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import de.greenrobot.event.Subscribe;
+
 public abstract class Manager {
     protected static final String TAG = "Manager";
     protected BackgroundService service;
@@ -21,6 +23,7 @@ public abstract class Manager {
         registerCallback(e.getEvent(), e.getCallback());
     }
 
+    @Subscribe
     public void onEvent(CallbackRegistration r) {
         if (r.getManager().equals(this.getClass())) {
             setupCallback(r);

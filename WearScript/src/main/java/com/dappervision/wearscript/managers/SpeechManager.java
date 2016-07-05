@@ -14,6 +14,8 @@ import com.dappervision.wearscript.events.StartActivityEvent;
 
 import java.util.List;
 
+import de.greenrobot.event.Subscribe;
+
 public class SpeechManager extends Manager {
     static private String SPEECH = "SPEECH";
 
@@ -22,6 +24,7 @@ public class SpeechManager extends Manager {
         reset();
     }
 
+    @Subscribe
     public void onEvent(ActivityResultEvent event) {
         int requestCode = event.getRequestCode(), resultCode = event.getResultCode();
         Intent intent = event.getIntent();
@@ -40,6 +43,7 @@ public class SpeechManager extends Manager {
         }
     }
 
+    @Subscribe
     public void onEvent(SpeechRecognizeEvent e) {
         registerCallback(SPEECH, e.getCallback());
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);

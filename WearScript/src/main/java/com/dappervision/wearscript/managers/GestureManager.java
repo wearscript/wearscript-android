@@ -7,6 +7,8 @@ import com.dappervision.wearscript.BackgroundService;
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 
+import de.greenrobot.event.Subscribe;
+
 public class GestureManager extends Manager {
     private static final String TAG = "GestureManager";
     private MyGestureDetector detector;
@@ -17,6 +19,7 @@ public class GestureManager extends Manager {
         reset();
     }
 
+    @Subscribe
     public void onEvent(MotionEvent e) {
         detector.onMotionEvent(e);
     }

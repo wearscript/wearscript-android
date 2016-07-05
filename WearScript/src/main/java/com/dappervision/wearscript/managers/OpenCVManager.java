@@ -36,6 +36,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class OpenCVManager extends Manager {
     private static final String TAG = "OpenCVManager";
     public static final String LOAD = "LOAD";
@@ -49,6 +52,7 @@ public class OpenCVManager extends Manager {
         reset();
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(OpenCVLoadEvent event) {
         synchronized (this) {
             loadOpenCV();

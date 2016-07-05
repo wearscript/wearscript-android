@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class PicarusManager extends Manager {
     public static final String TAG = "PicarusManager";
     public static String MODEL_STREAM = "MODELSTREAM:";
@@ -131,6 +134,7 @@ public class PicarusManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(PicarusBenchmarkEvent e) {
         File dir = new File(Utils.dataPath() + "/samples/");
         IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
@@ -159,6 +163,7 @@ public class PicarusManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(PicarusModelCreateEvent e) {
         IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
         try {
@@ -172,6 +177,7 @@ public class PicarusManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(PicarusModelProcessEvent e) {
         IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
         Long modelPointer = modelCache.get(e.getId());
@@ -185,18 +191,21 @@ public class PicarusManager extends Manager {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(PicarusModelProcessStreamEvent e) {
         synchronized (this) {
             modelStream.add(e.getId());
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(PicarusModelProcessWarpEvent e) {
         synchronized (this) {
             modelWarp.add(e.getId());
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(PicarusEvent e) {
         IPicarusService picarus = IPicarusService.Stub.asInterface(picarusService);
         try {
@@ -208,6 +217,7 @@ public class PicarusManager extends Manager {
         unregisterCallback(e.getCallback());
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(PicarusRegistrationSampleEvent e) {
         // TODO(brandyn): Look into whether this should be async
         synchronized (this) {

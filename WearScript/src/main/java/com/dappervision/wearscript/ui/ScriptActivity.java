@@ -23,6 +23,9 @@ import com.dappervision.wearscript.events.ScriptEvent;
 import com.dappervision.wearscript.events.StartActivityEvent;
 import com.dappervision.wearscript.managers.CameraManager;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class ScriptActivity extends Activity {
     protected static final String TAG = "ScriptActivity";
     private static final String EXTRA_NAME = "extra";
@@ -167,10 +170,12 @@ public class ScriptActivity extends Activity {
         bs.onConfigurationChanged(newConfig);
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(StartActivityEvent event) {
         startActivityForResult(event.getIntent(), event.getRequestCode());
     }
 
+    @Subscribe(threadMode = ThreadMode.MainThread)
     public void onEventMainThread(MediaEvent e){
         Intent intent = new Intent(this, MediaActivity.class);
         intent.putExtra(MediaActivity.MODE_KEY, MediaActivity.MODE_MEDIA);

@@ -17,6 +17,8 @@ import com.dappervision.wearscript.events.SensorJSEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import de.greenrobot.event.Subscribe;
+
 public class DataManager extends Manager {
     SensorManager sensorManager;
     ConcurrentHashMap<Integer, DataProvider> providers;
@@ -29,6 +31,7 @@ public class DataManager extends Manager {
         reset();
     }
 
+    @Subscribe
     public void onEvent(SensorJSEvent e) {
         if (e.getStatus()) {
             registerProvider(e.getType(), Math.round(e.getSampleTime() * 1000000000L));
@@ -123,6 +126,7 @@ public class DataManager extends Manager {
         provider.remoteSample(dp);
     }
 
+    @Subscribe
     public void onEvent(PebbleAccelerometerDataEvent e) {
         PebbleDataProvider provider = (PebbleDataProvider)providers.get(WearScript.SENSOR.PEBBLE_ACCELEROMETER.id());
         if (provider == null)

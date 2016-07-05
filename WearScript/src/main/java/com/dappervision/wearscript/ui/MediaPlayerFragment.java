@@ -19,6 +19,8 @@ import com.google.android.glass.touchpad.Gesture;
 
 import java.io.IOException;
 
+import de.greenrobot.event.Subscribe;
+
 public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener {
     public static final String ARG_URL = "ARG_URL";
     public static final String ARG_LOOP = "ARG_LOOP";
@@ -64,6 +66,7 @@ public class MediaPlayerFragment extends GestureFragment implements MediaPlayer.
         mp.prepareAsync();
     }
 
+    @Subscribe
     public void onEvent(MediaActionEvent e) {
         String action = e.getAction();
         if (action.equals("play")) {

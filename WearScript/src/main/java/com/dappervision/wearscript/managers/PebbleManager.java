@@ -20,6 +20,8 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import de.greenrobot.event.Subscribe;
+
 public class PebbleManager extends Manager{
     private static final String TAG = "PebbleManager";
     private final static UUID PEBBLE_APP_UUID = UUID.fromString("88c99af8-9512-4e23-b79e-ba437c788446");
@@ -173,6 +175,7 @@ public class PebbleManager extends Manager{
         data.addInt32(4, back ? 1 : 0);
     }
 
+    @Subscribe
     public void onEvent(PebbleMessageEvent event) {
         String type = event.getType();
         Log.i("manager on event", type);
@@ -187,7 +190,7 @@ public class PebbleManager extends Manager{
         }
     }
 
-
+    @Subscribe
     public void onEvent(SensorJSEvent event) {
         int type = event.getType();
         if(event.getStatus()) {

@@ -5,7 +5,6 @@ import android.util.Log;
 
 import com.codebutler.android_websockets.WebSocketClient;
 
-import org.apache.http.message.BasicNameValuePair;
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
 import org.msgpack.type.ValueFactory;
@@ -241,11 +240,10 @@ public abstract class WearScriptConnection {
                 return;
             }
             this.uri = uri;
-            List<BasicNameValuePair> extraHeaders = Arrays.asList();
             Log.i(TAG, "Lifecycle: Socket connecting");
             if (client != null)
                 client.disconnect();
-            client = new WebSocketClient(uri, new LocalListener(), extraHeaders);
+            client = new WebSocketClient(uri, new LocalListener(), null);
             reconnect();
         }
     }

@@ -28,6 +28,9 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class LiveCardManager extends Manager{
     private static final String TAG = "LiveCardManager";
     private ArrayList<String> menu;
@@ -43,11 +46,13 @@ public class LiveCardManager extends Manager{
         menu = new ArrayList<String>();
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(LiveCardMenuSelectedEvent event) {
         makeCall("item:" + event.getPosition(), "");
         Log.d(TAG, "Position: " + event.getPosition());
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(LiveCardSetMenuEvent event) {
         Log.d(TAG, "SetMenuActivity: " + event.getMenu());
         JSONArray data = (JSONArray)JSONValue.parse(event.getMenu());
@@ -59,6 +64,7 @@ public class LiveCardManager extends Manager{
         }
     }
 
+    @Subscribe
     public void onEvent(LiveCardAddItemsEvent event) {
         Log.d(TAG, "AddMenuItems");
         event.getActivity().addMenuItems(menu);

@@ -12,6 +12,9 @@ import com.dappervision.wearscript.events.WifiScanResultsEvent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import de.greenrobot.event.Subscribe;
+import de.greenrobot.event.ThreadMode;
+
 public class WifiManager extends Manager {
     public static final String SCAN_RESULTS_AVAILABLE_ACTION = android.net.wifi.WifiManager.SCAN_RESULTS_AVAILABLE_ACTION;
     public static String WIFI = "WIFI";
@@ -44,10 +47,12 @@ public class WifiManager extends Manager {
         return a.toJSONString();
     }
 
+    @Subscribe
     public void onEvent(WifiScanEvent e) {
         manager.startScan();
     }
 
+    @Subscribe(threadMode = ThreadMode.BackgroundThread)
     public void onEventBackgroundThread(WifiScanResultsEvent e) {
         makeCall(WIFI, getScanResults());
     }
@@ -59,6 +64,7 @@ public class WifiManager extends Manager {
         manager = (android.net.wifi.WifiManager) service.getSystemService(Context.WIFI_SERVICE);
     }
 
+    @Subscribe
     public void onEvent(WifiEvent e) {
         enabled = e.getStatus();
     }

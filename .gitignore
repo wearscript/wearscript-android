@@ -5,4 +5,5 @@
 gen
 build
 local.properties
+gradle
 .gradle

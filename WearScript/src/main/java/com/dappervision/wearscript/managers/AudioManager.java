@@ -7,6 +7,8 @@ import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.events.SoundEvent;
 import com.google.android.glass.media.Sounds;
 
+import de.greenrobot.event.Subscribe;
+
 public class AudioManager extends Manager {
     private android.media.AudioManager systemAudio;
 
@@ -16,6 +18,7 @@ public class AudioManager extends Manager {
         reset();
     }
 
+    @Subscribe
     public void onEvent(SoundEvent event) {
         String type = event.getType();
         if (type.equals("TAP"))

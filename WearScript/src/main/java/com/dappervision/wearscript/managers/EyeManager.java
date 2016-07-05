@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import com.dappervision.wearscript.BackgroundService;
 import com.dappervision.wearscript.events.CallbackRegistration;
 
+import de.greenrobot.event.Subscribe;
+
 public class EyeManager extends Manager {
     private static final String ACTION_ON_HEAD_STATE_CHANGED = "com.google.android.glass.action.ON_HEAD_STATE_CHANGED";
     private boolean isSetup;
@@ -18,6 +20,7 @@ public class EyeManager extends Manager {
         reset();
     }
 
+    @Subscribe
     public void onEvent(CallbackRegistration r) {
         if (r.getManager().equals(this.getClass()) && !isSetup) {
             setup();
