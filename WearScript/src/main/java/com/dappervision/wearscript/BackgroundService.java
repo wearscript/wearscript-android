@@ -273,12 +273,11 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
 
             ManagerManager.get().resetAll();
             HandlerHandler.get().resetAll();
-            // TODO(brandyn): Verify that if we create a new activity that the gestures still work
-            if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
-                if (activity != null) {
-                    ScriptActivity a = activity;
-                    ManagerManager.get().add(new GestureManager(a, this));
-                    ManagerManager.get().add(new EyeManager(a, this));
+            if(activity != null) {
+                ScriptActivity a = activity;
+                // TODO(brandyn): Verify that if we create a new activity that the gestures still work
+                if (HardwareDetector.isGlass && ManagerManager.get().get(GestureManager.class) == null) {
+                        ManagerManager.get().add(new GestureManager(a, this));
                 }
             }
             if (PebbleKit.isWatchConnected(getApplicationContext()) && ManagerManager.get().get(PebbleManager.class) == null) {

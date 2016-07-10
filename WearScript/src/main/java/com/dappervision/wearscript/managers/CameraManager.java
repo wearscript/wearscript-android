@@ -19,6 +19,7 @@ import com.dappervision.wearscript.events.CameraEvents;
 import com.dappervision.wearscript.events.OpenCVLoadEvent;
 import com.dappervision.wearscript.events.OpenCVLoadedEvent;
 import com.dappervision.wearscript.events.StartActivityEvent;
+import com.google.android.glass.content.Intents;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -131,8 +132,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
         Log.d(TAG, "Got request code: " + requestCode);
         if (requestCode == 1000) {
             if (resultCode == Activity.RESULT_OK) {
-                final String pictureFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_PICTURE_FILE_PATH);
-                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
+                final String pictureFilePath = intent.getStringExtra(Intents.EXTRA_PICTURE_FILE_PATH);
+                String thumbnailFilePath = intent.getStringExtra(Intents.EXTRA_THUMBNAIL_FILE_PATH);
                 Log.d(TAG, "CameraManager: " + jsCallbacks.toString());
                 if (jsCallbacks.containsKey(PHOTO) || jsCallbacks.containsKey(PHOTO_PATH)) {
                     // create empty file if it doesn't exist
@@ -205,8 +206,8 @@ public class CameraManager extends Manager implements Camera.PreviewCallback {
                 stateChange();
             }
             if (resultCode == Activity.RESULT_OK) {
-                String thumbnailFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
-                String videoFilePath = intent.getStringExtra(com.google.android.glass.media.CameraManager.EXTRA_VIDEO_FILE_PATH);
+                String thumbnailFilePath = intent.getStringExtra(Intents.EXTRA_THUMBNAIL_FILE_PATH);
+                String videoFilePath = intent.getStringExtra(Intents.EXTRA_VIDEO_FILE_PATH);
                 if (jsCallbacks.containsKey(VIDEO_PATH)) {
                     makeCall(VIDEO_PATH, "'" + videoFilePath + "'");
                     jsCallbacks.remove(VIDEO_PATH);
