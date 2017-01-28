@@ -17,6 +17,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebViewClient;
 
 import com.dappervision.wearscript.dataproviders.BatteryDataProvider;
 import com.dappervision.wearscript.dataproviders.DataPoint;
@@ -310,6 +311,7 @@ public class BackgroundService extends Service implements AudioRecord.OnRecordPo
             Log.d(TAG, "webview.isHardwareAccelerated: " + webview.isHardwareAccelerated());
             updateActivityView(ActivityEvent.Mode.WEBVIEW);
             webview.getSettings().setJavaScriptEnabled(true);
+            webview.setWebViewClient(new WebViewClient());
             webview.addJavascriptInterface(new WearScript(this), "WSRAW");
             webview.setInitialScale(100);
             Log.i(TAG, "WebView: " + e.getScriptPath());
