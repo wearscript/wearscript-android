@@ -500,6 +500,8 @@ public class WearScript {
         Utils.eventBusPost(new CallbackRegistration(BluetoothManager.class, callback).setEvent(BluetoothManager.READ + device));
     }
 
+    public String getGlassID() { return bs.getGlassID(); }
+
     @JavascriptInterface
     public void bluetoothWrite(String address, String data) {
         Utils.eventBusPost(new BluetoothWriteEvent(address, data));
